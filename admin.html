@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>管理者ダッシュボード | リクエコ求人ナビ</title>
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="css/style.min.css">
+  <link rel="stylesheet" href="css/admin.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+  <!-- ログイン画面 -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>リクエコ求人ナビ</h1>
+        <p>管理者ダッシュボード</p>
+      </div>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="username">ユーザー名</label>
+          <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">パスワード</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div id="login-error" class="login-error" style="display: none;"></div>
+        <button type="submit" class="btn-login-submit">ログイン</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 管理者ダッシュボード -->
+  <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
+    <!-- サイドバー -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>リクエコ求人ナビ</h2>
+        <p>管理画面</p>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active"><a href="#" data-section="overview"><span class="nav-icon">📊</span>概要</a></li>
+          <li><a href="#" data-section="companies"><span class="nav-icon">🏢</span>企業別データ</a></li>
+          <li><a href="#" data-section="applications"><span class="nav-icon">📝</span>応募データ</a></li>
+          <li><a href="#" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="btn-logout">ログアウト</button>
+      </div>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="admin-main">
+      <!-- ヘッダー -->
+      <header class="admin-header">
+        <h1 id="page-title">概要</h1>
+        <div class="header-actions">
+          <div class="date-range-picker">
+            <label for="date-range">期間:</label>
+            <select id="date-range">
+              <option value="7">過去7日間</option>
+              <option value="30" selected>過去30日間</option>
+              <option value="90">過去90日間</option>
+            </select>
+          </div>
+          <button id="refresh-btn" class="btn-refresh">更新</button>
+        </div>
+      </header>
+
+      <!-- 概要セクション -->
+      <section id="section-overview" class="admin-section active">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👁️</div>
+            <div class="stat-content">
+              <p class="stat-label">総ページビュー</p>
+              <p class="stat-value" id="total-pageviews">-</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">👤</div>
+            <div class="stat-content">
+              <p class="stat-label">ユニークユーザー</p>
+              <p class="stat-value" id="total-users">-</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏢</div>
+            <div class="stat-content">
+              <p class="stat-label">企業ページ閲覧</p>
+              <p class="stat-value" id="company-views">-</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+              <p class="stat-label">応募クリック</p>
+              <p class="stat-value" id="apply-clicks">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <h3>日別アクセス推移</h3>
+          <div id="daily-chart" class="chart-placeholder">
+            <p>データを読み込み中...</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <h3>企業別アクセスランキング</h3>
+          <table class="admin-table" id="overview-company-table">
+            <thead>
+              <tr>
+                <th>順位</th>
+                <th>企業名</th>
+                <th>ページビュー</th>
+                <th>応募クリック</th>
+                <th>CVR</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="5" class="loading-cell">データを読み込み中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 企業別データセクション -->
+      <section id="section-companies" class="admin-section">
+        <div class="filter-bar">
+          <input type="text" id="company-search" placeholder="企業名で検索..." class="search-input">
+          <select id="sort-by">
+            <option value="views">ページビュー順</option>
+            <option value="clicks">応募クリック順</option>
+            <option value="cvr">CVR順</option>
+            <option value="name">名前順</option>
+          </select>
+        </div>
+
+        <div class="company-cards" id="company-cards">
+          <div class="loading-placeholder">データを読み込み中...</div>
+        </div>
+      </section>
+
+      <!-- 応募データセクション -->
+      <section id="section-applications" class="admin-section">
+        <div class="table-container">
+          <h3>応募イベント一覧</h3>
+          <table class="admin-table" id="applications-table">
+            <thead>
+              <tr>
+                <th>日時</th>
+                <th>企業名</th>
+                <th>ボタン種別</th>
+                <th>参照元</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4" class="loading-cell">データを読み込み中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 設定セクション -->
+      <section id="section-settings" class="admin-section">
+        <div class="settings-card">
+          <h3>API設定</h3>
+          <div class="form-group">
+            <label>Cloud Functions エンドポイント</label>
+            <input type="text" id="api-endpoint" placeholder="https://asia-northeast1-xxx.cloudfunctions.net/getAnalyticsData">
+            <p class="form-hint">デプロイしたCloud FunctionsのURL（未設定の場合はデモデータを表示）</p>
+          </div>
+          <div class="form-group">
+            <label>GA4 プロパティID</label>
+            <input type="text" id="ga-property-id" value="G-E1XC94EG05" readonly>
+            <p class="form-hint">Google Analyticsのプロパティ ID</p>
+          </div>
+          <button class="btn-save" id="save-settings">設定を保存</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>管理者アカウント</h3>
+          <div class="form-group">
+            <label>新しいパスワード</label>
+            <input type="password" id="new-password" placeholder="新しいパスワード">
+          </div>
+          <div class="form-group">
+            <label>パスワード確認</label>
+            <input type="password" id="confirm-password" placeholder="パスワードを再入力">
+          </div>
+          <button class="btn-save" id="change-password">パスワード変更</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/admin.min.js"></script>
+</body>
+</html>

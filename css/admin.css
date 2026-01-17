@@ -1,0 +1,795 @@
+/* ========================================
+   管理者ダッシュボード スタイルシート
+======================================== */
+
+/* ========================================
+   共通設定
+======================================== */
+.admin-body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+  background: #f1f5f9;
+  min-height: 100vh;
+}
+
+/* ========================================
+   ログイン画面
+======================================== */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 20px;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.login-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #fff;
+  padding: 32px;
+  text-align: center;
+}
+
+.login-header h1 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.login-header p {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.login-form {
+  padding: 32px;
+}
+
+.login-form .form-group {
+  margin-bottom: 20px;
+}
+
+.login-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.login-error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.btn-login-submit {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-login-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* ========================================
+   ダッシュボードレイアウト
+======================================== */
+.admin-dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ========================================
+   サイドバー
+======================================== */
+.admin-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sidebar-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 0;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-nav li {
+  margin: 4px 12px;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.sidebar-nav a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.sidebar-nav li.active a {
+  background: rgba(99, 102, 241, 0.3);
+  color: #fff;
+}
+
+.nav-icon {
+  font-size: 18px;
+}
+
+.sidebar-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========================================
+   メインコンテンツ
+======================================== */
+.admin-main {
+  flex: 1;
+  margin-left: 260px;
+  min-height: 100vh;
+}
+
+.admin-header {
+  background: #fff;
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #1e293b;
+}
+
+.header-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-range-picker label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.date-range-picker select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.btn-refresh {
+  padding: 8px 16px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.btn-refresh:hover {
+  background: #4f46e5;
+}
+
+/* ========================================
+   セクション
+======================================== */
+.admin-section {
+  display: none;
+  padding: 32px;
+}
+
+.admin-section.active {
+  display: block;
+}
+
+/* ========================================
+   統計カード
+======================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-card .stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* ========================================
+   チャート
+======================================== */
+.chart-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.chart-placeholder {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.simple-chart {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 200px;
+  padding: 0 8px;
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  min-width: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.chart-bar {
+  width: 100%;
+  max-width: 40px;
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  min-height: 4px;
+  transition: height 0.3s;
+}
+
+.chart-bar:hover {
+  opacity: 0.8;
+}
+
+.bar-value {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  display: none;
+}
+
+.chart-bar:hover .bar-value {
+  display: block;
+}
+
+.bar-label {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+/* ========================================
+   テーブル
+======================================== */
+.table-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table-container h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-table th {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.admin-table td {
+  font-size: 14px;
+  color: #374151;
+}
+
+.admin-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.loading-cell {
+  text-align: center;
+  color: #94a3b8;
+  padding: 40px !important;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.type-badge.apply {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.type-badge.line {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.type-badge.consult {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* ========================================
+   フィルターバー
+======================================== */
+.filter-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 300px;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.filter-bar select {
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+/* ========================================
+   企業カード
+======================================== */
+.company-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.company-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.company-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.company-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.company-card-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.pattern-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.pattern-badge.standard {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.pattern-badge.modern {
+  background: #1e293b;
+  color: #fff;
+}
+
+.pattern-badge.classic {
+  background: #1a365d;
+  color: #c6a962;
+}
+
+.pattern-badge.minimal {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.pattern-badge.colorful {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.company-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-stat {
+  text-align: center;
+  padding: 12px 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.card-stat .stat-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.card-stat .stat-label {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.btn-view-page {
+  display: block;
+  text-align: center;
+  padding: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.btn-view-page:hover {
+  background: #e2e8f0;
+}
+
+.loading-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px;
+  color: #94a3b8;
+}
+
+/* ========================================
+   設定セクション
+======================================== */
+.settings-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settings-card h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.settings-card .form-group {
+  margin-bottom: 20px;
+}
+
+.settings-card label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.settings-card input {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.settings-card input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.form-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.btn-save {
+  padding: 10px 24px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-save:hover {
+  background: #4f46e5;
+}
+
+/* ========================================
+   レスポンシブ
+======================================== */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 991px) {
+  .admin-sidebar {
+    width: 80px;
+  }
+
+  .sidebar-header h2,
+  .sidebar-header p,
+  .sidebar-nav span:not(.nav-icon) {
+    display: none;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+  }
+
+  .sidebar-nav a {
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .admin-main {
+    margin-left: 80px;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-sidebar {
+    display: none;
+  }
+
+  .admin-main {
+    margin-left: 0;
+  }
+
+  .admin-header {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-section {
+    padding: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .company-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+
+  .search-input {
+    max-width: none;
+  }
+
+  .admin-table {
+    font-size: 12px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 8px;
+  }
+}

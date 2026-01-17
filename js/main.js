@@ -109,7 +109,7 @@ function initMobileMenu() {
       <li><a href="#content">コンテンツ</a></li>
       <li><a href="#about">当サイトについて</a></li>
       <li><a href="#contact">お問い合わせ</a></li>
-      <li><a href="#login">ログイン</a></li>
+      <li><a href="admin.html">管理者</a></li>
     </ul>
   `;
   document.querySelector('.header').after(mobileNav);
