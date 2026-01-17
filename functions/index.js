@@ -20,7 +20,7 @@ const corsHandler = cors({
 });
 
 // GA4プロパティID（数字のみ）
-const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '469598925'; // G-E1XC94EG05 の数字部分
+const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '520379160'; // G-E1XC94EG05 の数字部分
 
 // Analytics Data APIクライアント
 let analyticsDataClient;

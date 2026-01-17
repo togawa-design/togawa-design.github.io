@@ -13,13 +13,46 @@ const AdminDashboard = {
     gaPropertyId: 'G-E1XC94EG05',
     gaApiKey: 'AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo',
     // Cloud Functions API エンドポイント（デプロイ後に設定）
-    apiEndpoint: '' // 例: 'https://asia-northeast1-YOUR_PROJECT_ID.cloudfunctions.net/getAnalyticsData'
+    apiEndpoint: 'https://getanalyticsdata-xfog7mok6a-an.a.run.app',
+    // Firebase設定
+    firebaseConfig: {
+      apiKey: "AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo",
+      authDomain: "generated-area-484613-e3.firebaseapp.com",
+      projectId: "generated-area-484613-e3"
+    }
   },
+
+  // Firebase認証関連
+  firebaseAuth: null,
+  currentUser: null,
+  idToken: null,
 
   // 初期化
   init() {
+    this.initFirebase();
     this.checkSession();
     this.bindEvents();
+  },
+
+  // Firebase初期化
+  initFirebase() {
+    if (typeof firebase !== 'undefined') {
+      firebase.initializeApp(this.config.firebaseConfig);
+      this.firebaseAuth = firebase.auth();
+
+      // 認証状態の監視
+      this.firebaseAuth.onAuthStateChanged((user) => {
+        if (user) {
+          this.currentUser = user;
+          user.getIdToken().then((token) => {
+            this.idToken = token;
+          });
+        } else {
+          this.currentUser = null;
+          this.idToken = null;
+        }
+      });
+    }
   },
 
   // セッション確認
@@ -84,6 +117,14 @@ const AdminDashboard = {
     document.getElementById('change-password').addEventListener('click', () => {
       this.changePassword();
     });
+
+    // Googleログイン
+    const googleLoginBtn = document.getElementById('google-login-btn');
+    if (googleLoginBtn) {
+      googleLoginBtn.addEventListener('click', () => {
+        this.handleGoogleLogin();
+      });
+    }
   },
 
   // ログイン処理
@@ -104,9 +145,42 @@ const AdminDashboard = {
     }
   },
 
+  // Googleログイン処理
+  async handleGoogleLogin() {
+    if (!this.firebaseAuth) {
+      alert('Firebase認証が初期化されていません');
+      return;
+    }
+
+    const errorEl = document.getElementById('login-error');
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const result = await this.firebaseAuth.signInWithPopup(provider);
+      this.currentUser = result.user;
+      this.idToken = await result.user.getIdToken();
+
+      sessionStorage.setItem(this.config.sessionKey, 'authenticated');
+      sessionStorage.setItem('auth_method', 'google');
+      errorEl.style.display = 'none';
+      this.showDashboard();
+      this.loadDashboardData();
+    } catch (error) {
+      console.error('Google login error:', error);
+      errorEl.textContent = 'Googleログインに失敗しました: ' + error.message;
+      errorEl.style.display = 'block';
+    }
+  },
+
   // ログアウト処理
   handleLogout() {
     sessionStorage.removeItem(this.config.sessionKey);
+    sessionStorage.removeItem('auth_method');
+
+    // Firebase認証からもログアウト
+    if (this.firebaseAuth) {
+      this.firebaseAuth.signOut();
+    }
+
     this.showLogin();
   },
 
@@ -153,8 +227,16 @@ const AdminDashboard = {
     // APIエンドポイントが設定されている場合はAPIから取得
     const apiEndpoint = localStorage.getItem('api_endpoint') || this.config.apiEndpoint;
 
-    if (apiEndpoint) {
+    if (apiEndpoint && this.idToken) {
+      // Firebase認証でログインしている場合はAPIを使用
       await this.fetchGAData(days, apiEndpoint);
+    } else if (apiEndpoint && !this.idToken) {
+      // 認証なしでAPIを試行（403になる可能性あり）
+      try {
+        await this.fetchGAData(days, apiEndpoint);
+      } catch (e) {
+        this.loadMockData(days);
+      }
     } else {
       // デモ用モックデータ
       this.loadMockData(days);
@@ -167,7 +249,13 @@ const AdminDashboard = {
       // ローディング表示
       this.showLoading(true);
 
-      const response = await fetch(`${apiEndpoint}?days=${days}`);
+      // 認証トークンを取得
+      const headers = {};
+      if (this.idToken) {
+        headers['Authorization'] = `Bearer ${this.idToken}`;
+      }
+
+      const response = await fetch(`${apiEndpoint}?days=${days}`, { headers });
 
       if (!response.ok) {
         throw new Error(`API Error: ${response.status}`);
