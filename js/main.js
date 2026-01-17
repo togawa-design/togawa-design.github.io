@@ -1,4 +1,4 @@
-// 期間工求人ナビ - メインJavaScript
+// リクエコ求人ナビ - メインJavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
   // 検索カードのタブ切り替え
@@ -36,7 +36,7 @@ function initSearchTabs() {
         panel.classList.add('active');
       }
 
-      // 相談の場合はモーダル表示（簡易実装）
+      // 相談の場合はモーダル表示
       if (method === 'consult') {
         showConsultModal();
       }
@@ -44,7 +44,7 @@ function initSearchTabs() {
   });
 }
 
-// 相談モーダル（簡易版）
+// 相談モーダル
 function showConsultModal() {
   const existingModal = document.querySelector('.consult-modal');
   if (existingModal) {
@@ -78,9 +78,6 @@ function showConsultModal() {
 
   document.body.appendChild(modal);
 
-  // スタイルを追加
-  addModalStyles();
-
   // アニメーション用に少し遅延
   requestAnimationFrame(() => {
     modal.classList.add('active');
@@ -96,125 +93,6 @@ function showConsultModal() {
     modal.classList.remove('active');
     setTimeout(() => modal.remove(), 300);
   });
-}
-
-// モーダルスタイルを動的追加
-function addModalStyles() {
-  if (document.getElementById('modal-styles')) return;
-
-  const style = document.createElement('style');
-  style.id = 'modal-styles';
-  style.textContent = `
-    .consult-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 2000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .consult-modal.active {
-      opacity: 1;
-    }
-    .consult-modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-    }
-    .consult-modal-content {
-      position: relative;
-      background: #fff;
-      padding: 40px;
-      border-radius: 16px;
-      max-width: 500px;
-      width: 90%;
-      text-align: center;
-      transform: translateY(20px);
-      transition: transform 0.3s;
-    }
-    .consult-modal.active .consult-modal-content {
-      transform: translateY(0);
-    }
-    .consult-modal-close {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: none;
-      border: none;
-      font-size: 28px;
-      cursor: pointer;
-      color: #666;
-    }
-    .consult-modal-content h3 {
-      font-size: 24px;
-      margin-bottom: 10px;
-    }
-    .consult-modal-content p {
-      color: #666;
-      margin-bottom: 25px;
-    }
-    .consult-options {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .consult-option {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 15px 20px;
-      border-radius: 10px;
-      font-weight: 600;
-      transition: all 0.3s;
-    }
-    .consult-option .icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-      color: #fff;
-    }
-    .consult-option.line {
-      background: #e8f5e9;
-    }
-    .consult-option.line .icon {
-      background: #06c755;
-    }
-    .consult-option.line:hover {
-      background: #c8e6c9;
-    }
-    .consult-option.tel {
-      background: #e3f2fd;
-    }
-    .consult-option.tel .icon {
-      background: #2196f3;
-    }
-    .consult-option.tel:hover {
-      background: #bbdefb;
-    }
-    .consult-option.form {
-      background: #fff3e0;
-    }
-    .consult-option.form .icon {
-      background: #ff9800;
-    }
-    .consult-option.form:hover {
-      background: #ffe0b2;
-    }
-  `;
-  document.head.appendChild(style);
 }
 
 // モバイルメニュー
@@ -239,18 +117,6 @@ function initMobileMenu() {
   menuBtn.addEventListener('click', function() {
     this.classList.toggle('active');
     mobileNav.classList.toggle('active');
-
-    // ハンバーガーアニメーション
-    const spans = this.querySelectorAll('span');
-    if (this.classList.contains('active')) {
-      spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-      spans[1].style.opacity = '0';
-      spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
-    } else {
-      spans[0].style.transform = '';
-      spans[1].style.opacity = '';
-      spans[2].style.transform = '';
-    }
   });
 
   // リンククリックでメニューを閉じる
@@ -258,10 +124,6 @@ function initMobileMenu() {
     link.addEventListener('click', () => {
       menuBtn.classList.remove('active');
       mobileNav.classList.remove('active');
-      const spans = menuBtn.querySelectorAll('span');
-      spans[0].style.transform = '';
-      spans[1].style.opacity = '';
-      spans[2].style.transform = '';
     });
   });
 }
@@ -291,31 +153,15 @@ function initSmoothScroll() {
 // スクロール時のヘッダー効果
 function initHeaderScroll() {
   const header = document.querySelector('.header');
-  let lastScrollY = 0;
 
   window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-
-    if (currentScrollY > 100) {
-      header.style.boxShadow = '0 2px 20px rgba(0,0,0,0.15)';
+    if (window.scrollY > 100) {
+      header.classList.add('scrolled');
     } else {
-      header.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+      header.classList.remove('scrolled');
     }
-
-    lastScrollY = currentScrollY;
   });
 }
-
-// 求人カードのホバーエフェクト強化
-document.querySelectorAll('.job-card').forEach(card => {
-  card.addEventListener('mouseenter', function() {
-    this.style.transform = 'translateY(-8px)';
-  });
-
-  card.addEventListener('mouseleave', function() {
-    this.style.transform = '';
-  });
-});
 
 // 数字のカウントアップアニメーション
 function animateNumbers() {

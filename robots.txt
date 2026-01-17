@@ -1,0 +1,11 @@
+# robots.txt for リクエコ求人ナビ
+
+User-agent: *
+Allow: /
+
+# サイトマップの場所
+Sitemap: https://togawa-design.github.io/sitemap.xml
+
+# クロールを許可しないディレクトリ（必要に応じて追加）
+# Disallow: /admin/
+# Disallow: /private/

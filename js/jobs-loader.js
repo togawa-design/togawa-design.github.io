@@ -15,7 +15,8 @@
 const JobsLoader = {
   // Google SheetのID
   SHEET_ID: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
-  SHEET_NAME: 'Sheet1', // シート名（必要に応じて変更）
+  SHEET_NAME: 'Sheet1', // 求人データのシート名
+  STATS_SHEET_NAME: 'Stats', // 実績データのシート名
 
   // デフォルト画像（imageUrlが空の場合に使用）
   DEFAULT_IMAGE: 'images/default-job.svg',
@@ -23,6 +24,11 @@ const JobsLoader = {
   // CSVデータを取得するURL
   get csvUrl() {
     return `https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${this.SHEET_NAME}`;
+  },
+
+  // 実績データを取得するURL
+  get statsUrl() {
+    return `https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${this.STATS_SHEET_NAME}`;
   },
 
   // 求人データを取得
@@ -218,6 +224,64 @@ const JobsLoader = {
       .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
 
     container.innerHTML = visibleJobs.map(job => this.renderJobCard(job)).join('');
+  },
+
+  // 実績データを取得
+  async fetchStats() {
+    try {
+      const response = await fetch(this.statsUrl);
+      if (!response.ok) {
+        throw new Error('実績データの取得に失敗しました');
+      }
+      const csvText = await response.text();
+      return this.parseStatsCSV(csvText);
+    } catch (error) {
+      console.error('実績データの取得エラー:', error);
+      return null;
+    }
+  },
+
+  // 実績CSVをパース（キー・値形式）
+  parseStatsCSV(csvText) {
+    const lines = csvText.split('\n');
+    const stats = {};
+
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+
+      const values = this.parseCSVLine(lines[i]);
+      const key = values[0] ? values[0].replace(/"/g, '').trim() : '';
+      const value = values[1] ? values[1].replace(/"/g, '').trim() : '';
+      const label = values[2] ? values[2].replace(/"/g, '').trim() : '';
+
+      if (key) {
+        stats[key] = { value, label };
+      }
+    }
+
+    return stats;
+  },
+
+  // 実績を描画
+  async renderStats() {
+    const stats = await this.fetchStats();
+    if (!stats) return;
+
+    const statsContainer = document.querySelector('.hero-stats');
+    if (!statsContainer) return;
+
+    // 統計項目を描画
+    const items = Object.keys(stats).map(key => {
+      const stat = stats[key];
+      return `
+        <div class="stat-item">
+          <span class="stat-number">${this.escapeHtml(stat.value)}</span>
+          <span class="stat-label">${this.escapeHtml(stat.label)}</span>
+        </div>
+      `;
+    }).join('');
+
+    statsContainer.innerHTML = items;
   }
 };
 
@@ -226,5 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // jobs-containerが存在する場合のみ実行
   if (document.getElementById('jobs-container')) {
     JobsLoader.renderJobs();
+  }
+  // 実績を読み込み
+  if (document.querySelector('.hero-stats')) {
+    JobsLoader.renderStats();
   }
 });

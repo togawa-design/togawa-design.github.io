@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- パターン -->
+  <g opacity="0.1">
+    <circle cx="100" cy="100" r="4" fill="#fff"/>
+    <circle cx="200" cy="150" r="4" fill="#fff"/>
+    <circle cx="300" cy="80" r="4" fill="#fff"/>
+    <circle cx="400" cy="200" r="4" fill="#fff"/>
+    <circle cx="500" cy="120" r="4" fill="#fff"/>
+    <circle cx="600" cy="180" r="4" fill="#fff"/>
+    <circle cx="700" cy="90" r="4" fill="#fff"/>
+    <circle cx="800" cy="160" r="4" fill="#fff"/>
+    <circle cx="900" cy="110" r="4" fill="#fff"/>
+    <circle cx="1000" cy="190" r="4" fill="#fff"/>
+    <circle cx="1100" cy="140" r="4" fill="#fff"/>
+    <circle cx="150" cy="450" r="4" fill="#fff"/>
+    <circle cx="250" cy="520" r="4" fill="#fff"/>
+    <circle cx="350" cy="480" r="4" fill="#fff"/>
+    <circle cx="450" cy="550" r="4" fill="#fff"/>
+    <circle cx="550" cy="420" r="4" fill="#fff"/>
+    <circle cx="650" cy="500" r="4" fill="#fff"/>
+    <circle cx="750" cy="460" r="4" fill="#fff"/>
+    <circle cx="850" cy="530" r="4" fill="#fff"/>
+    <circle cx="950" cy="440" r="4" fill="#fff"/>
+    <circle cx="1050" cy="510" r="4" fill="#fff"/>
+  </g>
+
+  <!-- ロゴエリア -->
+  <rect x="440" y="180" width="320" height="80" rx="16" fill="rgba(255,255,255,0.15)"/>
+
+  <!-- サイト名 -->
+  <text x="600" y="240" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="42" font-weight="800">リクエコ求人ナビ</text>
+
+  <!-- サブタイトル -->
+  <text x="600" y="320" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="sans-serif" font-size="24" font-weight="500">製造業・工場求人専門サイト</text>
+
+  <!-- キャッチコピー -->
+  <text x="600" y="400" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="32" font-weight="700">大手メーカーの高待遇求人を多数掲載</text>
+
+  <!-- 特徴タグ -->
+  <g>
+    <rect x="280" y="460" width="140" height="40" rx="20" fill="rgba(255,255,255,0.2)"/>
+    <text x="350" y="488" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="16" font-weight="600">入社祝い金</text>
+
+    <rect x="440" y="460" width="120" height="40" rx="20" fill="rgba(255,255,255,0.2)"/>
+    <text x="500" y="488" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="16" font-weight="600">寮費無料</text>
+
+    <rect x="580" y="460" width="120" height="40" rx="20" fill="rgba(255,255,255,0.2)"/>
+    <text x="640" y="488" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="16" font-weight="600">満了金あり</text>
+
+    <rect x="720" y="460" width="180" height="40" rx="20" fill="rgba(255,255,255,0.2)"/>
+    <text x="810" y="488" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="16" font-weight="600">正社員登用あり</text>
+  </g>
+</svg>

@@ -3,23 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>期間工求人ナビ | 製造業・工場求人専門サイト</title>
-  <link rel="stylesheet" href="css/style.css">
+
+  <!-- 基本SEO -->
+  <title>リクエコ求人ナビ | 製造業・工場求人専門サイト【トヨタ・日産・ホンダなど大手メーカー多数】</title>
+  <meta name="description" content="期間工・期間従業員の求人情報を多数掲載。トヨタ、日産、ホンダなど大手自動車メーカーの高待遇求人が満載。入社祝い金・寮費無料・満了金ありの好条件求人を探すならリクエコ求人ナビ。">
+  <meta name="keywords" content="期間工,期間従業員,工場求人,製造業,トヨタ,日産,ホンダ,スバル,入社祝い金,寮費無料,満了金">
+  <meta name="author" content="リクエコ求人ナビ">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://togawa-design.github.io/">
+
+  <!-- OGP (Open Graph Protocol) -->
+  <meta property="og:title" content="リクエコ求人ナビ | 製造業・工場求人専門サイト">
+  <meta property="og:description" content="トヨタ、日産、ホンダなど大手自動車メーカーの期間工求人を多数掲載。入社祝い金・寮費無料など高待遇求人が満載。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://togawa-design.github.io/">
+  <meta property="og:image" content="https://togawa-design.github.io/images/ogp.png">
+  <meta property="og:site_name" content="リクエコ求人ナビ">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="リクエコ求人ナビ | 製造業・工場求人専門サイト">
+  <meta name="twitter:description" content="トヨタ、日産、ホンダなど大手自動車メーカーの期間工求人を多数掲載。高待遇求人が満載。">
+  <meta name="twitter:image" content="https://togawa-design.github.io/images/ogp.png">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/images/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+
+  <!-- テーマカラー -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="css/style.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- 構造化データ (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "リクエコ求人ナビ",
+    "url": "https://togawa-design.github.io/",
+    "description": "期間工・期間従業員の求人情報を多数掲載。大手自動車メーカーの高待遇求人が満載。",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://togawa-design.github.io/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "リクエコ求人ナビ",
+    "url": "https://togawa-design.github.io/",
+    "logo": "https://togawa-design.github.io/images/logo.png",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+81-120-XXX-XXX",
+      "contactType": "customer service",
+      "availableLanguage": "Japanese"
+    }
+  }
+  </script>
 </head>
 <body>
   <!-- ヘッダー -->
-  <header class="header">
+  <header class="header" role="banner">
     <div class="header-inner">
       <div class="logo">
         <a href="/">
-          <span class="logo-text">期間工求人ナビ</span>
+          <span class="logo-text">リクエコ求人ナビ</span>
           <span class="logo-sub">製造業・工場求人専門</span>
         </a>
       </div>
-      <nav class="main-nav">
+      <nav class="main-nav" aria-label="メインナビゲーション">
         <ul class="nav-list">
           <li><a href="#jobs">お仕事紹介</a></li>
           <li><a href="#content">コンテンツ</a></li>
@@ -42,10 +105,11 @@
     </div>
   </header>
 
+  <main role="main">
   <!-- メインビジュアル -->
-  <section class="hero">
+  <section class="hero" aria-labelledby="hero-title">
     <div class="hero-inner">
-      <h1 class="hero-title">
+      <h1 id="hero-title" class="hero-title">
         <span class="hero-title-main">あなたに合った期間工を見つけよう</span>
         <span class="hero-title-sub">大手メーカーの高待遇求人を多数掲載</span>
       </h1>
@@ -295,9 +359,10 @@
       </div>
     </div>
   </section>
+  </main>
 
   <!-- フッター -->
-  <footer class="footer" id="about">
+  <footer class="footer" id="about" role="contentinfo">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-col">
@@ -343,12 +408,12 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2025 期間工求人ナビ All Rights Reserved.</p>
+        <p><small>&copy; 2025 リクエコ求人ナビ All Rights Reserved.</small></p>
       </div>
     </div>
   </footer>
 
-  <script src="js/main.js"></script>
-  <script src="js/jobs-loader.js"></script>
+  <script src="js/main.min.js" defer></script>
+  <script src="js/jobs-loader.min.js" defer></script>
 </body>
 </html>
