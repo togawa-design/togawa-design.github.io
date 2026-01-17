@@ -15,7 +15,7 @@
 const JobsLoader = {
   // Google SheetのID
   SHEET_ID: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
-  SHEET_NAME: 'Sheet1', // 求人データのシート名
+  SHEET_NAME: '会社一覧', // 求人データのシート名
   STATS_SHEET_NAME: 'Stats', // 実績データのシート名
 
   // デフォルト画像（imageUrlが空の場合に使用）
