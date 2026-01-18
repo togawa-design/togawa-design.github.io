@@ -13,7 +13,7 @@ const AdminDashboard = {
     gaPropertyId: 'G-E1XC94EG05',
     gaApiKey: 'AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo',
     // Cloud Functions API エンドポイント（デプロイ後に設定）
-    apiEndpoint: 'https://getanalyticsdata-xfog7mok6a-an.a.run.app',
+    apiEndpoint: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData',
     // Firebase設定
     firebaseConfig: {
       apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
