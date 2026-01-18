@@ -10,7 +10,9 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-E1XC94EG05');
+    // debug_mode: URLパラメータで有効化
+    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
+    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
   </script>
 
   <!-- 基本SEO -->

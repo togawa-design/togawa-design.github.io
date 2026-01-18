@@ -626,13 +626,21 @@ const JobsLoader = {
 
   // Google Analyticsイベント送信
   trackEvent(eventName, eventParams = {}) {
+    // デバッグ用コンソール出力（debug_modeパラメータがある場合も出力）
+    var isDebug = window.location.hostname === 'localhost' ||
+                  window.location.hostname === '127.0.0.1' ||
+                  new URLSearchParams(window.location.search).has('debug_mode');
+    if (isDebug) {
+      console.log('[Analytics]', eventName, eventParams);
+    }
     // gtag が利用可能かチェック
     if (typeof gtag === 'function') {
       gtag('event', eventName, eventParams);
-    }
-    // デバッグ用コンソール出力（開発時のみ）
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('[Analytics]', eventName, eventParams);
+      if (isDebug) {
+        console.log('[Analytics] gtag sent successfully');
+      }
+    } else {
+      console.warn('[Analytics] gtag is not defined, event not sent:', eventName);
     }
   },
 
