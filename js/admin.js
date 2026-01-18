@@ -16,9 +16,9 @@ const AdminDashboard = {
     apiEndpoint: 'https://getanalyticsdata-xfog7mok6a-an.a.run.app',
     // Firebase設定
     firebaseConfig: {
-      apiKey: "AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo",
-      authDomain: "generated-area-484613-e3.firebaseapp.com",
-      projectId: "generated-area-484613-e3"
+      apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
+      authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
+      projectId: "generated-area-484613-e3-90bd4"
     }
   },
 
