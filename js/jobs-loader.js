@@ -15,13 +15,13 @@
 const JobsLoader = {
   // Google SheetのID
   SHEET_ID: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
-  SHEET_NAME: '会社一覧', // 求人データのシート名
+  SHEET_NAME: '会社一覧', // 会社一覧シート名
   STATS_SHEET_NAME: 'Stats', // 実績データのシート名
 
   // デフォルト画像（imageUrlが空の場合に使用）
   DEFAULT_IMAGE: 'images/default-job.svg',
 
-  // CSVデータを取得するURL
+  // 会社一覧CSVを取得するURL
   get csvUrl() {
     return `https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${this.SHEET_NAME}`;
   },
@@ -31,12 +31,42 @@ const JobsLoader = {
     return `https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${this.STATS_SHEET_NAME}`;
   },
 
-  // 求人データを取得
-  async fetchJobs() {
+  // 指定シートのCSVを取得するURL
+  getSheetUrl(sheetName) {
+    return `https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  },
+
+  // 会社一覧データを取得
+  async fetchCompanies() {
     try {
       const response = await fetch(this.csvUrl);
       if (!response.ok) {
-        throw new Error('データの取得に失敗しました');
+        throw new Error('会社一覧の取得に失敗しました');
+      }
+      const csvText = await response.text();
+      return this.parseCSV(csvText);
+    } catch (error) {
+      console.error('会社一覧の取得エラー:', error);
+      return null;
+    }
+  },
+
+  // 会社の求人データを取得（別ファイルのスプレッドシートから）
+  async fetchCompanyJobs(jobsSheetIdOrUrl) {
+    if (!jobsSheetIdOrUrl) return null;
+    try {
+      // スプレッドシートIDを抽出（URLの場合はIDを取り出す、IDの場合はそのまま使用）
+      const sheetId = this.extractSpreadsheetId(jobsSheetIdOrUrl.trim());
+      if (!sheetId) {
+        console.error('スプレッドシートIDを取得できませんでした:', jobsSheetIdOrUrl);
+        return null;
+      }
+
+      // 別ファイルのスプレッドシートからCSVを取得（最初のシートを使用）
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+      const response = await fetch(csvUrl);
+      if (!response.ok) {
+        throw new Error('求人データの取得に失敗しました');
       }
       const csvText = await response.text();
       return this.parseCSV(csvText);
@@ -44,6 +74,25 @@ const JobsLoader = {
       console.error('求人データの取得エラー:', error);
       return null;
     }
+  },
+
+  // スプレッドシートIDを抽出（URLまたはIDから）
+  extractSpreadsheetId(input) {
+    // URLからIDを抽出: https://docs.google.com/spreadsheets/d/XXXXX/edit...
+    const urlMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (urlMatch) {
+      return urlMatch[1];
+    }
+    // IDのみの場合（英数字、ハイフン、アンダースコアで構成）
+    if (/^[a-zA-Z0-9_-]+$/.test(input)) {
+      return input;
+    }
+    return null;
+  },
+
+  // 後方互換: fetchJobs は fetchCompanies のエイリアス
+  async fetchJobs() {
+    return this.fetchCompanies();
   },
 
   // CSVをパース
@@ -128,6 +177,7 @@ const JobsLoader = {
       'detailUrl': 'detailUrl',
       '表示': 'visible',
       'visible': 'visible',
+      '表示する': 'showCompany',
       '並び順': 'order',
       'order': 'order',
       '会社ドメイン': 'companyDomain',
@@ -150,10 +200,27 @@ const JobsLoader = {
       'designPattern': 'designPattern',
       'design_pattern': 'designPattern',
       'パターン': 'designPattern',
-      'pattern': 'designPattern'
+      'pattern': 'designPattern',
+      // 管理シート列（会社ごとの求人シート名）
+      '管理シート': 'jobsSheet',
+      'jobsSheet': 'jobsSheet',
+      'jobs_sheet': 'jobsSheet'
     };
 
     return mapping[header.replace(/"/g, '').trim()] || header.replace(/"/g, '').trim();
+  },
+
+  // 会社が表示対象かどうか判定（管理シートあり＋表示するが○）
+  isCompanyVisible(company) {
+    // 管理シートが空なら非表示
+    if (!company.jobsSheet || !company.jobsSheet.trim()) {
+      return false;
+    }
+    // 「表示する」列が○でなければ非表示
+    if (company.showCompany !== '○' && company.showCompany !== '◯') {
+      return false;
+    }
+    return true;
   },
 
   // 求人カードのHTMLを生成
@@ -225,7 +292,7 @@ const JobsLoader = {
     return params.get('id');
   },
 
-  // 会社ページを描画（複数求人対応）
+  // 会社ページを描画（複数求人対応・別シート対応）
   async renderJobDetail() {
     const container = document.getElementById('job-detail-container');
     if (!container) return;
@@ -241,59 +308,74 @@ const JobsLoader = {
       return;
     }
 
-    const jobs = await this.fetchJobs();
-    if (!jobs) {
+    // 会社一覧を取得
+    const companies = await this.fetchCompanies();
+    if (!companies) {
       container.innerHTML = `
         <div class="jobs-error">
-          <p>求人情報を取得できませんでした。</p>
+          <p>会社情報を取得できませんでした。</p>
           <button onclick="JobsLoader.renderJobDetail()">再読み込み</button>
         </div>
       `;
       return;
     }
 
-    // 同じ会社の求人をすべて取得
-    const companyJobs = jobs
-      .filter(j => j.companyDomain && j.companyDomain.trim() === companyDomain && j.visible !== 'false' && j.visible !== 'FALSE')
-      .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+    // 該当する会社を検索（表示対象のみ）
+    const companyInfo = companies.find(
+      c => c.companyDomain && c.companyDomain.trim() === companyDomain && this.isCompanyVisible(c)
+    );
 
-    if (companyJobs.length === 0) {
+    if (!companyInfo) {
       container.innerHTML = `
         <div class="jobs-error">
-          <p>求人が見つかりませんでした。</p>
+          <p>会社が見つかりませんでした。</p>
           <a href="/" class="btn-more">トップページに戻る</a>
         </div>
       `;
       return;
     }
 
-    // 最初の求人から会社情報を取得
-    const firstJob = companyJobs[0];
+    // 求人データを取得（管理シートが指定されていれば別シートから、なければ会社情報をそのまま使用）
+    let companyJobs = [];
+    if (companyInfo.jobsSheet && companyInfo.jobsSheet.trim()) {
+      // 別シートから求人を取得
+      const jobs = await this.fetchCompanyJobs(companyInfo.jobsSheet.trim());
+      if (jobs && jobs.length > 0) {
+        companyJobs = jobs
+          .filter(j => j.visible !== 'false' && j.visible !== 'FALSE')
+          .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+      }
+    }
+
+    // 求人がない場合は会社情報だけで表示（後方互換）
+    if (companyJobs.length === 0) {
+      companyJobs = [companyInfo];
+    }
 
     // ページタイトルとメタ情報を更新
-    document.title = `${firstJob.company}の求人一覧 | リクエコ求人ナビ`;
+    document.title = `${companyInfo.company}の求人一覧 | リクエコ求人ナビ`;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.content = `${firstJob.company}の期間工・期間従業員求人一覧。${companyJobs.length}件の求人を掲載中。`;
+      metaDesc.content = `${companyInfo.company}の期間工・期間従業員求人一覧。${companyJobs.length}件の求人を掲載中。`;
     }
 
     // パンくずリストを更新
     const breadcrumbCurrent = document.getElementById('breadcrumb-current');
     if (breadcrumbCurrent) {
-      breadcrumbCurrent.textContent = firstJob.company;
+      breadcrumbCurrent.textContent = companyInfo.company;
     }
 
     // 会社ページコンテンツを描画
-    container.innerHTML = this.renderCompanyPageContent(firstJob, companyJobs);
+    container.innerHTML = this.renderCompanyPageContent(companyInfo, companyJobs);
 
     // アナリティクス: 会社ページ閲覧トラッキング
-    this.trackCompanyPageView(firstJob);
+    this.trackCompanyPageView(companyInfo);
 
     // 応募ボタンのトラッキング設定
     this.setupApplyTracking();
 
     // 他社の求人を描画
-    this.renderRelatedJobs(jobs, companyDomain);
+    this.renderRelatedJobs(companies, companyDomain);
   },
 
   // デザインパターンのCSSクラスを取得
@@ -432,7 +514,7 @@ const JobsLoader = {
     if (!container) return;
 
     const relatedJobs = jobs
-      .filter(job => job.companyDomain !== currentDomain && job.visible !== 'false' && job.visible !== 'FALSE')
+      .filter(job => job.companyDomain !== currentDomain && this.isCompanyVisible(job))
       .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999))
       .slice(0, 3);
 
@@ -472,9 +554,9 @@ const JobsLoader = {
       return;
     }
 
-    // visible=falseのものを除外、orderでソート
+    // 表示対象の会社のみ抽出（管理シートあり＋表示が○）、orderでソート
     const visibleJobs = jobs
-      .filter(job => job.visible !== 'false' && job.visible !== 'FALSE')
+      .filter(job => this.isCompanyVisible(job))
       .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
 
     container.innerHTML = visibleJobs.map(job => this.renderJobCard(job)).join('');

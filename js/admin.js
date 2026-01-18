@@ -7,7 +7,7 @@ const AdminDashboard = {
     credentials: {
       username: 'admin',
       // パスワードはハッシュ化推奨。ここではデモ用に平文
-      password: 'rikueco2025'
+      password: 'receco2025'
     },
     sessionKey: 'rikueco_admin_session',
     gaPropertyId: 'G-E1XC94EG05',
