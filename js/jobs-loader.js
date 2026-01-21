@@ -534,13 +534,47 @@ const JobsLoader = {
       return;
     }
 
+    // URLパラメータから勤務地を取得
+    const params = new URLSearchParams(window.location.search);
+    const locationFilter = params.get('location');
+
     // ローディング表示
     container.innerHTML = `
       <div class="jobs-loading">
         <div class="loading-spinner"></div>
-        <p>求人情報を読み込んでいます...</p>
+        <p>${locationFilter ? `${locationFilter}の求人を読み込んでいます...` : '求人情報を読み込んでいます...'}</p>
       </div>
     `;
+
+    // 勤務地フィルターがある場合は全求人を取得
+    if (locationFilter) {
+      const filteredJobs = await this.getJobsByLocation(locationFilter);
+
+      if (!filteredJobs || filteredJobs.length === 0) {
+        container.innerHTML = `
+          <div class="jobs-error">
+            <p>${locationFilter}の求人が見つかりませんでした。</p>
+            <a href="/" class="btn-more">すべての求人を見る</a>
+          </div>
+        `;
+        return;
+      }
+
+      // フィルター表示を追加
+      const filterHeader = document.createElement('div');
+      filterHeader.className = 'location-filter-header';
+      filterHeader.innerHTML = `
+        <div class="filter-info">
+          <span class="filter-label">${locationFilter}の求人</span>
+          <span class="filter-count">${filteredJobs.length}件</span>
+        </div>
+        <a href="/" class="btn-clear-filter">フィルターを解除</a>
+      `;
+      container.before(filterHeader);
+
+      container.innerHTML = filteredJobs.map(job => this.renderJobCardForSearch(job)).join('');
+      return;
+    }
 
     const jobs = await this.fetchJobs();
 
@@ -560,6 +594,36 @@ const JobsLoader = {
       .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
 
     container.innerHTML = visibleJobs.map(job => this.renderJobCard(job)).join('');
+  },
+
+  // 検索結果用の求人カード（会社名を表示）
+  renderJobCardForSearch(job) {
+    const features = Array.isArray(job.features) ? job.features : [];
+    const featuresHtml = features.slice(0, 3).map(f => `<li>${this.escapeHtml(f)}</li>`).join('');
+
+    return `
+      <article class="job-card" data-job-id="${this.escapeHtml(job.id || '')}">
+        <div class="job-card-body">
+          <p class="job-company-name">${this.escapeHtml(job.company || '')}</p>
+          <h3 class="job-title">${this.escapeHtml(job.title || '')}</h3>
+          <p class="job-location">${this.escapeHtml(job.location || '')}</p>
+          <div class="job-benefits">
+            <div class="benefit-item highlight">
+              <span class="benefit-label">特典総額</span>
+              <span class="benefit-value">${this.escapeHtml(job.totalBonus || '')}</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-label">月収例</span>
+              <span class="benefit-value">${this.escapeHtml(job.monthlySalary || '')}</span>
+            </div>
+          </div>
+          ${featuresHtml ? `<ul class="job-features">${featuresHtml}</ul>` : ''}
+        </div>
+        <div class="job-card-footer">
+          <a href="company.html?id=${this.escapeHtml(job.companyDomain || '')}" class="btn-detail">詳細を見る</a>
+        </div>
+      </article>
+    `;
   },
 
   // 実績データを取得
@@ -596,6 +660,66 @@ const JobsLoader = {
     }
 
     return stats;
+  },
+
+  // すべての会社の求人データを取得
+  async fetchAllJobs() {
+    const companies = await this.fetchCompanies();
+    if (!companies) return [];
+
+    const allJobs = [];
+
+    for (const company of companies) {
+      if (!company.jobsSheetId) continue;
+
+      const jobs = await this.fetchCompanyJobs(company.jobsSheetId);
+      if (jobs) {
+        // 各求人に会社情報を付与
+        jobs.forEach(job => {
+          job.company = company.company;
+          job.companyDomain = company.companyDomain;
+          allJobs.push(job);
+        });
+      }
+    }
+
+    return allJobs;
+  },
+
+  // すべての勤務地を取得（都道府県ごとにグループ化）
+  async getLocationList() {
+    const allJobs = await this.fetchAllJobs();
+    const locationMap = {};
+
+    allJobs.forEach(job => {
+      if (!job.location) return;
+
+      // 都道府県を抽出（「愛知県」「群馬県」など）
+      const prefMatch = job.location.match(/^(.+?[都道府県])/);
+      const prefecture = prefMatch ? prefMatch[1] : job.location;
+
+      if (!locationMap[prefecture]) {
+        locationMap[prefecture] = {
+          prefecture: prefecture,
+          jobs: [],
+          count: 0
+        };
+      }
+      locationMap[prefecture].jobs.push(job);
+      locationMap[prefecture].count++;
+    });
+
+    // 件数でソート
+    return Object.values(locationMap).sort((a, b) => b.count - a.count);
+  },
+
+  // 勤務地で求人をフィルタリング
+  async getJobsByLocation(prefecture) {
+    const allJobs = await this.fetchAllJobs();
+    return allJobs.filter(job => {
+      if (!job.location) return false;
+      return job.location.includes(prefecture);
+    });
   },
 
   // 実績を描画

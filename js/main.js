@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // スクロール時のヘッダー効果
   initHeaderScroll();
+
+  // フッターリンク
+  initFooterLinks();
 });
 
 // 検索タブ機能
@@ -36,12 +39,92 @@ function initSearchTabs() {
         panel.classList.add('active');
       }
 
+      // 勤務地検索の場合はモーダル表示
+      if (method === 'location') {
+        showLocationModal();
+      }
+
       // 相談の場合はモーダル表示
       if (method === 'consult') {
         showConsultModal();
       }
     });
   });
+}
+
+// 勤務地検索モーダル
+async function showLocationModal() {
+  // 既存のモーダルを削除
+  const existingModal = document.querySelector('.location-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'location-modal';
+  modal.innerHTML = `
+    <div class="location-modal-overlay"></div>
+    <div class="location-modal-content">
+      <button class="location-modal-close">&times;</button>
+      <h3>勤務地から探す</h3>
+      <p>働きたいエリアを選択してください</p>
+      <div class="location-list">
+        <div class="location-loading">
+          <div class="loading-spinner"></div>
+          <span>勤務地を読み込み中...</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // アニメーション用に少し遅延
+  requestAnimationFrame(() => {
+    modal.classList.add('active');
+  });
+
+  // 閉じる機能
+  const closeModal = () => {
+    modal.classList.remove('active');
+    setTimeout(() => modal.remove(), 300);
+  };
+
+  modal.querySelector('.location-modal-close').addEventListener('click', closeModal);
+  modal.querySelector('.location-modal-overlay').addEventListener('click', closeModal);
+
+  // 勤務地リストを取得して表示
+  try {
+    const locations = await JobsLoader.getLocationList();
+    const listContainer = modal.querySelector('.location-list');
+
+    if (locations.length === 0) {
+      listContainer.innerHTML = '<p class="no-data">勤務地データがありません</p>';
+      return;
+    }
+
+    listContainer.innerHTML = locations.map(loc => `
+      <a href="?location=${encodeURIComponent(loc.prefecture)}#jobs" class="location-item" data-prefecture="${loc.prefecture}">
+        <span class="location-name">${loc.prefecture}</span>
+        <span class="location-count">${loc.count}件</span>
+      </a>
+    `).join('');
+
+    // クリックでモーダルを閉じてページ遷移
+    listContainer.querySelectorAll('.location-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const prefecture = item.dataset.prefecture;
+        closeModal();
+        // URLパラメータを設定してページ内検索
+        window.location.href = `?location=${encodeURIComponent(prefecture)}#jobs`;
+      });
+    });
+
+  } catch (error) {
+    console.error('勤務地の取得エラー:', error);
+    modal.querySelector('.location-list').innerHTML = '<p class="error">勤務地の取得に失敗しました</p>';
+  }
 }
 
 // 相談モーダル

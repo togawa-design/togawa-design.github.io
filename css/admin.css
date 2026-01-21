@@ -242,6 +242,25 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.btn-back-top {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-back-top:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
 .btn-logout {
   width: 100%;
   padding: 12px;

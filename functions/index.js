@@ -7,12 +7,22 @@
 const functions = require('@google-cloud/functions-framework');
 const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 const cors = require('cors');
+const admin = require('firebase-admin');
+
+// Firebase Admin初期化（クライアント側と同じFirebaseプロジェクトを使用）
+if (!admin.apps.length) {
+  admin.initializeApp({
+    projectId: 'generated-area-484613-e3-90bd4'
+  });
+}
 
 // CORS設定（許可するオリジンを本番環境に合わせて調整）
 const corsHandler = cors({
   origin: [
     'http://localhost:5500',
+    'http://localhost:5502',
     'http://127.0.0.1:5500',
+    'http://127.0.0.1:5502',
     'https://togawa-design.github.io'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -24,6 +34,25 @@ const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '520379160'; // G-E1XC94E
 
 // Analytics Data APIクライアント
 let analyticsDataClient;
+
+/**
+ * Firebase IDトークンを検証
+ */
+async function verifyToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    return decodedToken;
+  } catch (error) {
+    console.warn('Token verification failed:', error.message);
+    return null;
+  }
+}
 
 /**
  * Analytics Data APIクライアントを初期化
@@ -47,6 +76,19 @@ functions.http('getAnalyticsData', (req, res) => {
         res.status(204).send('');
         return;
       }
+
+      // Firebase IDトークン検証（認証必須）
+      const user = await verifyToken(req);
+      if (!user) {
+        res.status(401).json({
+          success: false,
+          error: 'Unauthorized: Valid Firebase ID token required',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      console.log(`Authenticated user: ${user.email || user.uid}`);
 
       const { type, days = 30 } = req.query;
       const client = getAnalyticsClient();

@@ -41,12 +41,20 @@ const AdminDashboard = {
       this.firebaseAuth = firebase.auth();
 
       // 認証状態の監視
-      this.firebaseAuth.onAuthStateChanged((user) => {
+      this.firebaseAuth.onAuthStateChanged(async (user) => {
         if (user) {
           this.currentUser = user;
-          user.getIdToken().then((token) => {
-            this.idToken = token;
-          });
+          try {
+            this.idToken = await user.getIdToken();
+            console.log('[Admin] Firebase ID token obtained');
+            // セッションがあり、トークンが取得できたらデータを再読み込み
+            const session = sessionStorage.getItem(this.config.sessionKey);
+            if (session) {
+              this.loadDashboardData();
+            }
+          } catch (e) {
+            console.error('[Admin] Failed to get ID token:', e);
+          }
         } else {
           this.currentUser = null;
           this.idToken = null;
@@ -248,6 +256,7 @@ const AdminDashboard = {
     try {
       // ローディング表示
       this.showLoading(true);
+      this.showSectionLoading(true);
 
       // 認証トークンを取得
       const headers = {};
@@ -282,15 +291,17 @@ const AdminDashboard = {
         this.renderDailyChartFromAPI(data.daily);
       }
 
-      // 企業別データを描画
+      // 企業別データを描画（(not set) を除外）
       if (data.companies) {
-        this.companyData = data.companies.map(c => ({
-          name: c.name,
-          domain: c.domain,
-          views: c.views,
-          clicks: c.clicks,
-          pattern: 'standard' // APIからはパターン情報は取れないのでデフォルト
-        }));
+        this.companyData = data.companies
+          .filter(c => c.domain && c.domain !== '(not set)' && c.name && c.name !== '(not set)')
+          .map(c => ({
+            name: c.name,
+            domain: c.domain,
+            views: c.views,
+            clicks: c.clicks,
+            pattern: 'standard' // APIからはパターン情報は取れないのでデフォルト
+          }));
         this.renderOverviewTable();
         this.renderCompanyCards();
       }
@@ -303,7 +314,8 @@ const AdminDashboard = {
       this.showLoading(false);
 
     } catch (error) {
-      console.error('API fetch error:', error);
+      console.error('[Admin] API fetch error:', error);
+      console.error('[Admin] idToken available:', !!this.idToken);
       this.showLoading(false);
       // エラー時はモックデータにフォールバック
       this.loadMockData(days);
@@ -316,6 +328,44 @@ const AdminDashboard = {
     if (refreshBtn) {
       refreshBtn.textContent = show ? '読み込み中...' : '更新';
       refreshBtn.disabled = show;
+    }
+  },
+
+  // 各セクションにローディング表示
+  showSectionLoading(show) {
+    const loadingHtml = '<div class="section-loading"><div class="loading-spinner"></div><span>データを読み込み中...</span></div>';
+
+    // 概要カード
+    const statCards = document.querySelectorAll('.stat-value');
+    statCards.forEach(card => {
+      if (show) {
+        card.dataset.originalText = card.textContent;
+        card.innerHTML = '<span class="loading-dots">...</span>';
+      }
+    });
+
+    // チャートエリア
+    const chartEl = document.getElementById('daily-chart');
+    if (chartEl && show) {
+      chartEl.innerHTML = loadingHtml;
+    }
+
+    // 企業別テーブル
+    const tableBody = document.querySelector('.data-table tbody');
+    if (tableBody && show) {
+      tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;">${loadingHtml}</td></tr>`;
+    }
+
+    // 企業カード
+    const companyCards = document.getElementById('company-cards');
+    if (companyCards && show) {
+      companyCards.innerHTML = loadingHtml;
+    }
+
+    // 応募ログテーブル
+    const logTable = document.querySelector('#applications-section .data-table tbody');
+    if (logTable && show) {
+      logTable.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;">${loadingHtml}</td></tr>`;
     }
   },
 
