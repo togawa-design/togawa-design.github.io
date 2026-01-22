@@ -10,22 +10,30 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    // debug_mode: URLパラメータまたは常時有効（テスト時）
     var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
     gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
   </script>
 
-  <!-- 基本SEO（動的に更新） -->
-  <title>求人詳細 | リクエコ求人ナビ</title>
-  <meta name="description" content="期間工・期間従業員の求人詳細。大手メーカーの高待遇求人が満載。">
+  <!-- 基本SEO -->
+  <title>求人している会社一覧 | リクエコ求人ナビ</title>
+  <meta name="description" content="期間工・期間従業員を募集している会社一覧。トヨタ、日産、ホンダなど大手自動車メーカーの高待遇求人を多数掲載。">
   <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://togawa-design.github.io/jobs.html">
 
   <!-- OGP -->
-  <meta property="og:title" content="求人詳細 | リクエコ求人ナビ">
-  <meta property="og:description" content="期間工・期間従業員の求人詳細。大手メーカーの高待遇求人が満載。">
-  <meta property="og:type" content="article">
+  <meta property="og:title" content="求人している会社一覧 | リクエコ求人ナビ">
+  <meta property="og:description" content="期間工・期間従業員を募集している会社一覧。大手自動車メーカーの高待遇求人を多数掲載。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://togawa-design.github.io/jobs.html">
+  <meta property="og:image" content="https://togawa-design.github.io/images/ogp.png">
   <meta property="og:site_name" content="リクエコ求人ナビ">
   <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="求人している会社一覧 | リクエコ求人ナビ">
+  <meta name="twitter:description" content="期間工・期間従業員を募集している会社一覧。大手自動車メーカーの高待遇求人を多数掲載。">
+  <meta name="twitter:image" content="https://togawa-design.github.io/images/ogp.png">
 
   <!-- Favicon -->
   <link rel="icon" href="/favicon.ico" sizes="any">
@@ -74,23 +82,28 @@
     </div>
   </header>
 
-  <main role="main">
-    <!-- パンくずリスト -->
-    <nav class="breadcrumb" aria-label="パンくずリスト">
-      <div class="container">
-        <ol>
-          <li><a href="/">ホーム</a></li>
-          <li><a href="/#jobs">求人一覧</a></li>
-          <li id="breadcrumb-current">求人詳細</li>
-        </ol>
-      </div>
-    </nav>
+  <!-- パンくずリスト -->
+  <nav class="breadcrumb" aria-label="パンくずリスト">
+    <div class="container">
+      <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <a itemprop="item" href="/"><span itemprop="name">トップ</span></a>
+          <meta itemprop="position" content="1">
+        </li>
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <span itemprop="name" id="breadcrumb-current">求人している会社一覧</span>
+          <meta itemprop="position" content="2">
+        </li>
+      </ol>
+    </div>
+  </nav>
 
-    <!-- 求人詳細コンテンツ -->
-    <section class="job-detail-section">
+  <main role="main">
+    <!-- 求人一覧ページコンテンツ -->
+    <section class="jobs-page-section">
       <div class="container">
-        <!-- ローディング表示 -->
-        <div id="job-detail-container">
+        <div id="jobs-page-container">
+          <!-- ローディング中の表示 -->
           <div class="jobs-loading">
             <div class="loading-spinner"></div>
             <p>求人情報を読み込んでいます...</p>
@@ -99,15 +112,15 @@
       </div>
     </section>
 
-    <!-- 他の求人セクション -->
-    <section class="related-jobs-section">
+    <!-- 勤務地から探す -->
+    <section class="jobs-locations-section" id="jobs-locations">
       <div class="container">
-        <h2 class="section-title">その他の求人</h2>
-        <div class="jobs-grid" id="related-jobs-container">
-          <!-- 他の求人が動的に読み込まれる -->
-        </div>
-        <div class="jobs-more">
-          <a href="/#jobs" class="btn-more">すべての求人を見る</a>
+        <h2 class="section-title">勤務地から探す</h2>
+        <div id="jobs-locations-container">
+          <div class="section-loading">
+            <div class="loading-spinner"></div>
+            <span>読み込み中...</span>
+          </div>
         </div>
       </div>
     </section>
@@ -159,7 +172,7 @@
         <div class="footer-col">
           <h3>お問い合わせ</h3>
           <ul>
-            <li><a href="#contact">お問い合わせフォーム</a></li>
+            <li><a href="/#contact">お問い合わせフォーム</a></li>
             <li><a href="#">よくある質問</a></li>
             <li>
               <p class="footer-tel">電話でのお問い合わせ</p>
@@ -175,7 +188,7 @@
     </div>
   </footer>
 
-  <script src="js/main.min.js" defer></script>
   <script src="js/jobs-loader.min.js" defer></script>
+  <script src="js/jobs-page.min.js" defer></script>
 </body>
 </html>

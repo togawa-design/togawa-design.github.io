@@ -2268,7 +2268,7 @@ img {
 
 .company-job-features li {
   background: var(--primary-light);
-  color: var(--primary);
+  color: #fff;
   padding: 6px 12px;
   border-radius: var(--radius-full);
   font-size: 13px;
@@ -2473,6 +2473,10 @@ img {
 
 .company-page.pattern-modern .company-cta p {
   color: rgba(255, 255, 255, 0.9);
+}
+
+.company-page.pattern-modern .company-job-features li {
+  color: #fff;
 }
 
 /* ========================================
@@ -2831,5 +2835,300 @@ img {
   .company-page.pattern-minimal .company-description,
   .company-page.pattern-minimal .company-jobs {
     padding: 24px 20px;
+  }
+}
+
+/* ========================================
+   勤務地ページ
+======================================== */
+.location-page-section {
+  padding: 48px 0;
+  min-height: 60vh;
+}
+
+.location-page-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.location-page-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.location-page-description {
+  font-size: 16px;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* 地域グループ */
+.location-regions {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.location-region {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+.location-region-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+.location-prefecture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.location-prefecture-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: var(--transition);
+  border: 1px solid var(--gray-200);
+}
+
+.location-prefecture-card:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.prefecture-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 4px;
+}
+
+.location-prefecture-card:hover .prefecture-name {
+  color: #fff;
+}
+
+.prefecture-count {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.location-prefecture-card:hover .prefecture-count {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 勤務地別求人一覧 */
+.location-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+/* 他のエリアセクション */
+.other-locations-section {
+  padding: 64px 0;
+  background: var(--gray-50);
+}
+
+.other-locations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.other-location-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px;
+  background: #fff;
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: var(--transition);
+  border: 1px solid var(--gray-200);
+  text-align: center;
+}
+
+.other-location-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.other-location-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 6px;
+}
+
+.other-location-card:hover .other-location-name {
+  color: var(--primary);
+}
+
+.other-location-count {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.other-locations-more {
+  text-align: center;
+}
+
+/* 勤務地ページのレスポンシブ */
+@media (max-width: 767px) {
+  .location-page-section {
+    padding: 32px 0;
+  }
+
+  .location-page-header {
+    margin-bottom: 32px;
+  }
+
+  .location-page-title {
+    font-size: 24px;
+  }
+
+  .location-page-description {
+    font-size: 14px;
+  }
+
+  .location-regions {
+    gap: 32px;
+  }
+
+  .location-region {
+    padding: 24px 20px;
+  }
+
+  .location-region-title {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .location-prefecture-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .location-prefecture-card {
+    padding: 16px 12px;
+  }
+
+  .prefecture-name {
+    font-size: 14px;
+  }
+
+  .prefecture-count {
+    font-size: 12px;
+  }
+
+  .location-jobs-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .other-locations-section {
+    padding: 48px 0;
+  }
+
+  .other-locations-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .other-location-card {
+    padding: 20px 16px;
+  }
+
+  .other-location-name {
+    font-size: 14px;
+  }
+
+  .other-location-count {
+    font-size: 12px;
+  }
+}
+
+/* ========================================
+   求人一覧ページ
+======================================== */
+.jobs-page-section {
+  padding: 48px 0;
+  min-height: 60vh;
+}
+
+.jobs-page-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.jobs-page-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.jobs-page-description {
+  font-size: 16px;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.jobs-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.jobs-locations-section {
+  padding: 64px 0;
+  background: var(--gray-50);
+}
+
+/* 求人一覧ページのレスポンシブ */
+@media (max-width: 767px) {
+  .jobs-page-section {
+    padding: 32px 0;
+  }
+
+  .jobs-page-header {
+    margin-bottom: 32px;
+  }
+
+  .jobs-page-title {
+    font-size: 24px;
+  }
+
+  .jobs-page-description {
+    font-size: 14px;
+  }
+
+  .jobs-page-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .jobs-locations-section {
+    padding: 48px 0;
   }
 }

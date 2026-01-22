@@ -12,9 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // スクロール時のヘッダー効果
   initHeaderScroll();
-
-  // フッターリンク
-  initFooterLinks();
 });
 
 // 検索タブ機能
@@ -104,20 +101,20 @@ async function showLocationModal() {
     }
 
     listContainer.innerHTML = locations.map(loc => `
-      <a href="?location=${encodeURIComponent(loc.prefecture)}#jobs" class="location-item" data-prefecture="${loc.prefecture}">
+      <a href="location.html?prefecture=${encodeURIComponent(loc.prefecture)}" class="location-item" data-prefecture="${loc.prefecture}">
         <span class="location-name">${loc.prefecture}</span>
         <span class="location-count">${loc.count}件</span>
       </a>
     `).join('');
 
-    // クリックでモーダルを閉じてページ遷移
+    // クリックでモーダルを閉じて新規ページに遷移
     listContainer.querySelectorAll('.location-item').forEach(item => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
         const prefecture = item.dataset.prefecture;
         closeModal();
-        // URLパラメータを設定してページ内検索
-        window.location.href = `?location=${encodeURIComponent(prefecture)}#jobs`;
+        // 勤務地一覧ページに遷移
+        window.location.href = `location.html?prefecture=${encodeURIComponent(prefecture)}`;
       });
     });
 

@@ -69,7 +69,16 @@ const JobsLoader = {
         throw new Error('求人データの取得に失敗しました');
       }
       const csvText = await response.text();
-      return this.parseCSV(csvText);
+      // デバッグ: CSV内容を確認
+      console.log('[DEBUG] 求人シートCSV取得:', sheetId);
+      console.log('[DEBUG] CSV行数:', csvText.split('\n').length);
+      console.log('[DEBUG] 1行目(ヘッダー):', csvText.split('\n')[0]);
+      console.log('[DEBUG] 3行目(データ):', csvText.split('\n')[2]);
+      // 求人シートは2行目まで固定なので、3行目からデータを読み込む
+      // headerRow=0 (1行目がヘッダー), dataStartRow=2 (3行目からデータ)
+      const result = this.parseCSV(csvText, 0, 2);
+      console.log('[DEBUG] パース結果:', result.length, '件', result);
+      return result;
     } catch (error) {
       console.error('求人データの取得エラー:', error);
       return null;
@@ -96,12 +105,14 @@ const JobsLoader = {
   },
 
   // CSVをパース
-  parseCSV(csvText) {
+  // headerRow: ヘッダー行のインデックス（デフォルト0 = 1行目）
+  // dataStartRow: データ開始行のインデックス（デフォルト1 = 2行目）
+  parseCSV(csvText, headerRow = 0, dataStartRow = 1) {
     const lines = csvText.split('\n');
-    const headers = this.parseCSVLine(lines[0]);
+    const headers = this.parseCSVLine(lines[headerRow] || '');
     const jobs = [];
 
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = dataStartRow; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
 
       const values = this.parseCSVLine(lines[i]);
@@ -204,10 +215,46 @@ const JobsLoader = {
       // 管理シート列（会社ごとの求人シート名）
       '管理シート': 'jobsSheet',
       'jobsSheet': 'jobsSheet',
-      'jobs_sheet': 'jobsSheet'
+      'jobs_sheet': 'jobsSheet',
+      // 掲載期間
+      '掲載開始日': 'publishStartDate',
+      'publishStartDate': 'publishStartDate',
+      'publish_start_date': 'publishStartDate',
+      '掲載終了日': 'publishEndDate',
+      'publishEndDate': 'publishEndDate',
+      'publish_end_date': 'publishEndDate',
+      // 求人詳細情報
+      '職種名': 'jobType',
+      'jobType': 'jobType',
+      'job_type': 'jobType',
+      '給与': 'salary',
+      'salary': 'salary',
+      '雇用形態': 'employmentType',
+      'employmentType': 'employmentType',
+      'employment_type': 'employmentType',
+      '資格・スキル': 'skills',
+      'skills': 'skills',
+      '資格': 'skills',
+      'スキル': 'skills'
     };
 
-    return mapping[header.replace(/"/g, '').trim()] || header.replace(/"/g, '').trim();
+    // ダブルクォートを除去してトリム
+    const cleanHeader = header.replace(/"/g, '').trim();
+
+    // マッピングに存在すればそれを使用
+    if (mapping[cleanHeader]) {
+      return mapping[cleanHeader];
+    }
+
+    // スペースで分割して最初の部分（英語名）を取得
+    // 例: "id 管理ID" → "id"
+    const parts = cleanHeader.split(/\s+/);
+    if (parts.length > 1 && mapping[parts[0]]) {
+      return mapping[parts[0]];
+    }
+
+    // それでもマッチしなければ最初の部分をそのまま返す
+    return parts[0] || cleanHeader;
   },
 
   // 会社が表示対象かどうか判定（管理シートあり＋表示するが○）
@@ -223,7 +270,44 @@ const JobsLoader = {
     return true;
   },
 
-  // 求人カードのHTMLを生成
+  // 求人が掲載期間内かどうか判定
+  isJobInPublishPeriod(job) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 掲載開始日チェック
+    if (job.publishStartDate && job.publishStartDate.trim()) {
+      const startDate = this.parseDate(job.publishStartDate);
+      if (startDate && today < startDate) {
+        return false; // まだ掲載開始日前
+      }
+    }
+
+    // 掲載終了日チェック
+    if (job.publishEndDate && job.publishEndDate.trim()) {
+      const endDate = this.parseDate(job.publishEndDate);
+      if (endDate && today > endDate) {
+        return false; // 掲載終了日を過ぎている
+      }
+    }
+
+    return true;
+  },
+
+  // 日付文字列をDateオブジェクトに変換
+  parseDate(dateStr) {
+    if (!dateStr) return null;
+    // YYYY/MM/DD または YYYY-MM-DD 形式に対応
+    const normalized = dateStr.trim().replace(/\//g, '-');
+    const date = new Date(normalized);
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    date.setHours(0, 0, 0, 0);
+    return date;
+  },
+
+  // 求人カードのHTMLを生成（TOP画面用：求人シートから特典総額・月収例を取得）
   renderJobCard(job) {
     const badges = job.badges ? job.badges.split(',').map(b => b.trim()) : [];
     const features = Array.isArray(job.features) ? job.features : [];
@@ -244,6 +328,17 @@ const JobsLoader = {
       : this.DEFAULT_IMAGE;
     const imageContent = `<img src="${this.escapeHtml(imageSrc)}" alt="${this.escapeHtml(job.company)}" onerror="this.parentElement.innerHTML='<div class=\\'job-image-placeholder\\'>${this.escapeHtml(job.company)}</div>'">`;
 
+    // 特典総額（_displayTotalBonus）と月収例（_displayMonthlySalary）はrenderJobsで設定される
+    const totalBonus = job._displayTotalBonus || job.totalBonus || '';
+    const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
+
+    // 特典総額が空の場合は非表示
+    const totalBonusHtml = totalBonus ? `
+            <div class="benefit-item highlight">
+              <span class="benefit-label">特典総額</span>
+              <span class="benefit-value">${this.escapeHtml(totalBonus)}</span>
+            </div>` : '';
+
     return `
       <article class="job-card" data-job-id="${this.escapeHtml(job.id || '')}">
         ${badgesHtml ? `<div class="job-card-header">${badgesHtml}</div>` : ''}
@@ -253,14 +348,10 @@ const JobsLoader = {
         <div class="job-card-body">
           <h3 class="job-title">${this.escapeHtml(job.title)}</h3>
           <p class="job-location">${this.escapeHtml(job.location)}</p>
-          <div class="job-benefits">
-            <div class="benefit-item highlight">
-              <span class="benefit-label">特典総額</span>
-              <span class="benefit-value">${this.escapeHtml(job.totalBonus)}</span>
-            </div>
+          <div class="job-benefits">${totalBonusHtml}
             <div class="benefit-item">
               <span class="benefit-label">月収例</span>
-              <span class="benefit-value">${this.escapeHtml(job.monthlySalary)}</span>
+              <span class="benefit-value">${this.escapeHtml(monthlySalary)}</span>
             </div>
           </div>
           ${featuresHtml ? `<ul class="job-features">${featuresHtml}</ul>` : ''}
@@ -343,6 +434,7 @@ const JobsLoader = {
       if (jobs && jobs.length > 0) {
         companyJobs = jobs
           .filter(j => j.visible !== 'false' && j.visible !== 'FALSE')
+          .filter(j => this.isJobInPublishPeriod(j)) // 掲載期間チェック
           .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
       }
     }
@@ -467,6 +559,13 @@ const JobsLoader = {
           </ul>
           ` : ''}
 
+          ${job.jobType ? `
+          <div class="company-job-description">
+            <h4>職種名</h4>
+            <p>${this.escapeHtml(job.jobType).replace(/\n/g, '<br>')}</p>
+          </div>
+          ` : ''}
+
           ${job.jobDescription ? `
           <div class="company-job-description">
             <h4>仕事内容</h4>
@@ -474,10 +573,31 @@ const JobsLoader = {
           </div>
           ` : ''}
 
+          ${job.salary ? `
+          <div class="company-job-description">
+            <h4>給与</h4>
+            <p>${this.escapeHtml(job.salary).replace(/\n/g, '<br>')}</p>
+          </div>
+          ` : ''}
+
+          ${job.employmentType ? `
+          <div class="company-job-description">
+            <h4>雇用形態</h4>
+            <p>${this.escapeHtml(job.employmentType).replace(/\n/g, '<br>')}</p>
+          </div>
+          ` : ''}
+
           ${job.requirements ? `
           <div class="company-job-description">
             <h4>応募資格</h4>
             <p>${this.escapeHtml(job.requirements).replace(/\n/g, '<br>')}</p>
+          </div>
+          ` : ''}
+
+          ${job.skills ? `
+          <div class="company-job-description">
+            <h4>資格・スキル</h4>
+            <p>${this.escapeHtml(job.skills).replace(/\n/g, '<br>')}</p>
           </div>
           ` : ''}
 
@@ -576,9 +696,9 @@ const JobsLoader = {
       return;
     }
 
-    const jobs = await this.fetchJobs();
+    const companies = await this.fetchCompanies();
 
-    if (!jobs || jobs.length === 0) {
+    if (!companies || companies.length === 0) {
       container.innerHTML = `
         <div class="jobs-error">
           <p>求人情報を取得できませんでした。</p>
@@ -589,11 +709,94 @@ const JobsLoader = {
     }
 
     // 表示対象の会社のみ抽出（管理シートあり＋表示が○）、orderでソート
-    const visibleJobs = jobs
-      .filter(job => this.isCompanyVisible(job))
+    const visibleCompanies = companies
+      .filter(company => this.isCompanyVisible(company))
       .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
 
-    container.innerHTML = visibleJobs.map(job => this.renderJobCard(job)).join('');
+    // 各会社の求人シートからデータを取得して表示用プロパティを設定
+    const companiesWithJobData = await Promise.all(
+      visibleCompanies.map(async (company) => {
+        // デバッグ: 会社データの全キーを確認
+        console.log('[DEBUG] 会社データ:', company.company, Object.keys(company), company);
+        // デフォルトは管理シート（会社一覧）の値を使用
+        company._displayTotalBonus = '';
+        company._displayMonthlySalary = company.monthlySalary || '';
+
+        if (company.jobsSheet && company.jobsSheet.trim()) {
+          const companyJobs = await this.fetchCompanyJobs(company.jobsSheet.trim());
+          console.log('[DEBUG] 求人シートデータ:', company.company, companyJobs);
+          if (companyJobs && companyJobs.length > 0) {
+            // 表示順でソート
+            const sortedJobs = companyJobs
+              .filter(j => j.visible !== 'false' && j.visible !== 'FALSE')
+              .filter(j => this.isJobInPublishPeriod(j))
+              .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+
+            console.log('[DEBUG] ソート後の求人:', company.company, sortedJobs);
+            if (sortedJobs.length > 0) {
+              // 表示順1の求人から特典総額を取得
+              const firstJob = sortedJobs[0];
+              console.log('[DEBUG] 表示順1の求人:', firstJob, 'totalBonus:', firstJob.totalBonus, 'monthlySalary:', firstJob.monthlySalary);
+              company._displayTotalBonus = firstJob.totalBonus || '';
+
+              // 全求人の中で最も高い月収例を取得（求人シートに値があれば優先）
+              const maxMonthlySalary = this.getMaxMonthlySalary(sortedJobs);
+              console.log('[DEBUG] 最高月収例:', maxMonthlySalary);
+              if (maxMonthlySalary) {
+                company._displayMonthlySalary = maxMonthlySalary;
+              }
+            }
+          }
+        }
+        return company;
+      })
+    );
+
+    container.innerHTML = companiesWithJobData.map(company => this.renderJobCard(company)).join('');
+  },
+
+  // 月収例から最高額を取得
+  getMaxMonthlySalary(jobs) {
+    let maxSalary = 0;
+    let maxSalaryStr = '';
+
+    jobs.forEach(job => {
+      if (!job.monthlySalary) return;
+
+      const salaryStr = job.monthlySalary;
+      let salary = 0;
+
+      // 「万円」の前の数字を取得（例: 35万円、35.5万円）
+      const manMatch = salaryStr.match(/(\d+(?:\.\d+)?)\s*万/);
+      if (manMatch) {
+        salary = parseFloat(manMatch[1]) * 10000;
+      } else {
+        // 「円」の前の数字を取得（例: 350,000円）
+        const yenMatch = salaryStr.match(/(\d{1,3}(?:,\d{3})*)\s*円/);
+        if (yenMatch) {
+          salary = parseInt(yenMatch[1].replace(/,/g, ''));
+        } else {
+          // ¥マーク形式（例: ¥355,000、¥350000）
+          const yenSymbolMatch = salaryStr.match(/[¥￥]\s*(\d{1,3}(?:,\d{3})*|\d+)/);
+          if (yenSymbolMatch) {
+            salary = parseInt(yenSymbolMatch[1].replace(/,/g, ''));
+          } else {
+            // 数字のみ（カンマ区切り対応）
+            const numMatch = salaryStr.match(/(\d{1,3}(?:,\d{3})*|\d+)/);
+            if (numMatch) {
+              salary = parseInt(numMatch[1].replace(/,/g, ''));
+            }
+          }
+        }
+      }
+
+      if (salary > maxSalary) {
+        maxSalary = salary;
+        maxSalaryStr = salaryStr;
+      }
+    });
+
+    return maxSalaryStr;
   },
 
   // 検索結果用の求人カード（会社名を表示）
@@ -670,9 +873,10 @@ const JobsLoader = {
     const allJobs = [];
 
     for (const company of companies) {
-      if (!company.jobsSheetId) continue;
+      // 表示対象の会社のみ処理
+      if (!this.isCompanyVisible(company)) continue;
 
-      const jobs = await this.fetchCompanyJobs(company.jobsSheetId);
+      const jobs = await this.fetchCompanyJobs(company.jobsSheet);
       if (jobs) {
         // 各求人に会社情報を付与
         jobs.forEach(job => {
@@ -830,6 +1034,32 @@ const JobsLoader = {
         this.trackApplyClick({ companyDomain }, 'line');
       });
     });
+  },
+
+  // フッターの勤務地リンクを動的に更新
+  async renderFooterLocations() {
+    const container = document.getElementById('footer-locations');
+    if (!container) return;
+
+    try {
+      const locations = await this.getLocationList();
+
+      // 上位4件を取得
+      const topLocations = locations.slice(0, 4);
+
+      if (topLocations.length === 0) {
+        container.innerHTML = '<li><a href="location.html">すべてのエリア</a></li>';
+        return;
+      }
+
+      // 上位4件 + すべてのエリアリンク
+      container.innerHTML = topLocations.map(loc =>
+        `<li><a href="location.html?prefecture=${encodeURIComponent(loc.prefecture)}">${this.escapeHtml(loc.prefecture)}の求人</a></li>`
+      ).join('') + '<li><a href="location.html">すべてのエリア</a></li>';
+
+    } catch (error) {
+      console.error('フッター勤務地の取得エラー:', error);
+    }
   }
 };
 
@@ -846,5 +1076,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 実績を読み込み
   if (document.querySelector('.hero-stats')) {
     JobsLoader.renderStats();
+  }
+  // フッターの勤務地リンクを動的に更新
+  if (document.getElementById('footer-locations')) {
+    JobsLoader.renderFooterLocations();
   }
 });
