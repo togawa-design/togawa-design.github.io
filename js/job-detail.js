@@ -1,21 +1,20 @@
 // 求人詳細ページ（ランディングページ風）
 const JobDetailPage = {
   async init() {
-    const params = new URLSearchParams(window.location.search);
-    const companyDomain = params.get('company');
-    const jobId = params.get('job');
+    const companyDomain = Utils.getUrlParam('company');
+    const jobId = Utils.getUrlParam('job');
 
     if (!companyDomain || !jobId) {
-      this.showError('求人が見つかりませんでした。');
+      Utils.showError('job-detail-container', '求人が見つかりませんでした。');
       return;
     }
 
-    // ローディング表示を確認
-    this.showLoading();
+    // ローディング表示
+    Utils.showLoading('job-detail-container', '求人情報を読み込んでいます...');
 
     try {
       // JobsLoaderが読み込まれるまで待機
-      await this.waitForJobsLoader();
+      await Utils.waitForJobsLoader();
 
       const allJobs = await JobsLoader.fetchAllJobs();
       const job = allJobs.find(j => {
@@ -23,7 +22,7 @@ const JobDetailPage = {
       });
 
       if (!job) {
-        this.showError('求人が見つかりませんでした。');
+        Utils.showError('job-detail-container', '求人が見つかりませんでした。');
         return;
       }
 
@@ -32,69 +31,21 @@ const JobDetailPage = {
       this.updateSEO(job);
       this.renderRelatedJobs(allJobs, companyDomain, jobId);
 
-      if (typeof gtag === 'function') {
-        gtag('event', 'view_job_detail', {
-          company: job.company,
-          job_title: job.title,
-          location: job.location
-        });
-      }
+      Utils.trackEvent('view_job_detail', {
+        company: job.company,
+        job_title: job.title,
+        location: job.location
+      });
 
     } catch (error) {
       console.error('求人詳細の取得エラー:', error);
-      this.showError('データの取得に失敗しました。');
-    }
-  },
-
-  // JobsLoaderが読み込まれるまで待機
-  waitForJobsLoader() {
-    return new Promise((resolve) => {
-      if (typeof JobsLoader !== 'undefined' && JobsLoader.fetchAllJobs) {
-        resolve();
-        return;
-      }
-
-      const checkInterval = setInterval(() => {
-        if (typeof JobsLoader !== 'undefined' && JobsLoader.fetchAllJobs) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 50);
-
-      // タイムアウト（5秒）
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        resolve();
-      }, 5000);
-    });
-  },
-
-  // ローディング表示
-  showLoading() {
-    const container = document.getElementById('job-detail-container');
-    if (container && !container.querySelector('.job-detail-loading')) {
-      container.innerHTML = `
-        <div class="job-detail-loading">
-          <div class="job-detail-loading-inner">
-            <div class="loading-spinner large"></div>
-            <p class="loading-text">求人情報を読み込んでいます...</p>
-            <p class="loading-subtext">しばらくお待ちください</p>
-          </div>
-        </div>
-      `;
+      Utils.showError('job-detail-container', 'データの取得に失敗しました。');
     }
   },
 
   renderJobDetail(job) {
     const container = document.getElementById('job-detail-container');
     if (!container) return;
-
-    const escapeHtml = (str) => {
-      if (!str) return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    };
 
     const features = Array.isArray(job.features) ? job.features : [];
 
@@ -104,12 +55,12 @@ const JobDetailPage = {
         <section class="lp-hero-section">
           <div class="lp-hero-bg"></div>
           <div class="lp-hero-inner">
-            <p class="lp-hero-label">${escapeHtml(job.company)}</p>
-            <h1 class="lp-hero-title">${escapeHtml(job.title)}</h1>
+            <p class="lp-hero-label">${Utils.escapeHtml(job.company)}</p>
+            <h1 class="lp-hero-title">${Utils.escapeHtml(job.title)}</h1>
             <div class="lp-hero-meta">
               <span class="lp-hero-location">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                ${escapeHtml(job.location)}
+                ${Utils.escapeHtml(job.location)}
               </span>
             </div>
             <a href="#apply-section" class="lp-hero-cta">今すぐ応募する</a>
@@ -128,7 +79,7 @@ const JobDetailPage = {
                 </div>
                 <div class="lp-point-content">
                   <span class="lp-point-label">特典総額</span>
-                  <span class="lp-point-value">${escapeHtml(job.totalBonus)}</span>
+                  <span class="lp-point-value">${Utils.escapeHtml(job.totalBonus)}</span>
                 </div>
               </div>
               ` : ''}
@@ -139,7 +90,7 @@ const JobDetailPage = {
                 </div>
                 <div class="lp-point-content">
                   <span class="lp-point-label">月収例</span>
-                  <span class="lp-point-value">${escapeHtml(job.monthlySalary)}</span>
+                  <span class="lp-point-value">${Utils.escapeHtml(job.monthlySalary)}</span>
                 </div>
               </div>
               ` : ''}
@@ -150,14 +101,14 @@ const JobDetailPage = {
                 </div>
                 <div class="lp-point-content">
                   <span class="lp-point-label">雇用形態</span>
-                  <span class="lp-point-value">${escapeHtml(job.employmentType)}</span>
+                  <span class="lp-point-value">${Utils.escapeHtml(job.employmentType)}</span>
                 </div>
               </div>
               ` : ''}
             </div>
             ${features.length > 0 ? `
             <div class="lp-tags">
-              ${features.map(f => `<span class="lp-tag">${escapeHtml(f)}</span>`).join('')}
+              ${features.map(f => `<span class="lp-tag">${Utils.escapeHtml(f)}</span>`).join('')}
             </div>
             ` : ''}
           </div>
@@ -171,42 +122,42 @@ const JobDetailPage = {
               ${job.jobDescription ? `
               <div class="lp-detail-row">
                 <div class="lp-detail-label">仕事内容</div>
-                <div class="lp-detail-value">${escapeHtml(job.jobDescription).replace(/\n/g, '<br>')}</div>
+                <div class="lp-detail-value">${Utils.nl2br(job.jobDescription)}</div>
               </div>
               ` : ''}
               ${job.salary ? `
               <div class="lp-detail-row">
                 <div class="lp-detail-label">給与</div>
-                <div class="lp-detail-value">${escapeHtml(job.salary).replace(/\n/g, '<br>')}</div>
+                <div class="lp-detail-value">${Utils.nl2br(job.salary)}</div>
               </div>
               ` : ''}
               ${job.requirements ? `
               <div class="lp-detail-row">
                 <div class="lp-detail-label">応募資格</div>
-                <div class="lp-detail-value">${escapeHtml(job.requirements).replace(/\n/g, '<br>')}</div>
+                <div class="lp-detail-value">${Utils.nl2br(job.requirements)}</div>
               </div>
               ` : ''}
               ${job.workingHours ? `
               <div class="lp-detail-row">
                 <div class="lp-detail-label">勤務時間</div>
-                <div class="lp-detail-value">${escapeHtml(job.workingHours).replace(/\n/g, '<br>')}</div>
+                <div class="lp-detail-value">${Utils.nl2br(job.workingHours)}</div>
               </div>
               ` : ''}
               ${job.holidays ? `
               <div class="lp-detail-row">
                 <div class="lp-detail-label">休日・休暇</div>
-                <div class="lp-detail-value">${escapeHtml(job.holidays).replace(/\n/g, '<br>')}</div>
+                <div class="lp-detail-value">${Utils.nl2br(job.holidays)}</div>
               </div>
               ` : ''}
               ${job.benefits ? `
               <div class="lp-detail-row">
                 <div class="lp-detail-label">待遇・福利厚生</div>
-                <div class="lp-detail-value">${escapeHtml(job.benefits).replace(/\n/g, '<br>')}</div>
+                <div class="lp-detail-value">${Utils.nl2br(job.benefits)}</div>
               </div>
               ` : ''}
               <div class="lp-detail-row">
                 <div class="lp-detail-label">勤務地</div>
-                <div class="lp-detail-value">${escapeHtml(job.location)}</div>
+                <div class="lp-detail-value">${Utils.escapeHtml(job.location)}</div>
               </div>
             </div>
           </div>
@@ -219,7 +170,7 @@ const JobDetailPage = {
             <p class="lp-apply-text">経験・学歴不問！あなたのご応募をお待ちしています。</p>
             <div class="lp-apply-buttons">
               <a href="#" class="lp-apply-btn primary">この求人に応募する</a>
-              <a href="company.html?id=${escapeHtml(job.companyDomain)}" class="lp-apply-btn secondary">${escapeHtml(job.company)}の企業情報を見る</a>
+              <a href="company.html?id=${Utils.escapeHtml(job.companyDomain)}" class="lp-apply-btn secondary">${Utils.escapeHtml(job.company)}の企業情報を見る</a>
             </div>
           </div>
         </section>
@@ -230,7 +181,7 @@ const JobDetailPage = {
   updateBreadcrumb(job) {
     const companyLink = document.getElementById('breadcrumb-company');
     if (companyLink) {
-      companyLink.innerHTML = `<a href="company.html?id=${encodeURIComponent(job.companyDomain)}">${this.escapeHtml(job.company)}</a>`;
+      companyLink.innerHTML = `<a href="company.html?id=${encodeURIComponent(job.companyDomain)}">${Utils.escapeHtml(job.company)}</a>`;
     }
     const current = document.getElementById('breadcrumb-current');
     if (current) {
@@ -261,25 +212,6 @@ const JobDetailPage = {
     }
 
     container.innerHTML = relatedJobs.map(job => JobsLoader.renderJobCard(job)).join('');
-  },
-
-  showError(message) {
-    const container = document.getElementById('job-detail-container');
-    if (container) {
-      container.innerHTML = `
-        <div class="jobs-error">
-          <p>${message}</p>
-          <a href="/" class="btn-back">トップページへ戻る</a>
-        </div>
-      `;
-    }
-  },
-
-  escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
   }
 };
 
