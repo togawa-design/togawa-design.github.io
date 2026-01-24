@@ -173,7 +173,7 @@ const JobsLoader = {
       'タイトル': 'title',
       'title': 'title',
       '勤務地': 'location',
-      'location': 'location',
+      'location': 'companyAddress',
       '特典総額': 'totalBonus',
       'totalBonus': 'totalBonus',
       '月収例': 'monthlySalary',
@@ -194,8 +194,12 @@ const JobsLoader = {
       '会社ドメイン': 'companyDomain',
       'companyDomain': 'companyDomain',
       'company_domain': 'companyDomain',
+      '会社住所': 'companyAddress',
+      'companyAddress': 'companyAddress',
       '説明': 'description',
       'description': 'description',
+      'お仕事内容': 'jobContent',
+      'jobContent': 'jobContent',
       '仕事内容': 'jobDescription',
       'jobDescription': 'jobDescription',
       '応募資格': 'requirements',
@@ -347,7 +351,7 @@ const JobsLoader = {
         </div>
         <div class="job-card-body">
           <h3 class="job-title">${this.escapeHtml(job.title)}</h3>
-          <p class="job-location">${this.escapeHtml(job.location)}</p>
+          <p class="job-location">${this.escapeHtml(job.companyAddress || job.location || '')}</p>
           <div class="job-benefits">${totalBonusHtml}
             <div class="benefit-item">
               <span class="benefit-label">月収例</span>
@@ -367,6 +371,27 @@ const JobsLoader = {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  },
+
+  // HTMLサニタイズ（許可するタグのみ残す）
+  sanitizeHtml(html) {
+    if (!html || html === '<br>' || html === '<div><br></div>') {
+      return '';
+    }
+    const allowedTags = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'br', 'div', 'p'];
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    const allElements = temp.querySelectorAll('*');
+    allElements.forEach(el => {
+      if (!allowedTags.includes(el.tagName.toLowerCase())) {
+        el.replaceWith(...el.childNodes);
+      } else {
+        while (el.attributes.length > 0) {
+          el.removeAttribute(el.attributes[0].name);
+        }
+      }
+    });
+    return temp.innerHTML;
   },
 
   // 詳細URLを取得（companyDomainがあればcompany.html?id=xxx、なければdetailUrl）
@@ -435,7 +460,12 @@ const JobsLoader = {
         companyJobs = jobs
           .filter(j => j.visible !== 'false' && j.visible !== 'FALSE')
           .filter(j => this.isJobInPublishPeriod(j)) // 掲載期間チェック
-          .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+          .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999))
+          .map(j => ({
+            ...j,
+            company: companyInfo.company,
+            companyDomain: companyInfo.companyDomain
+          }));
       }
     }
 
@@ -500,7 +530,7 @@ const JobsLoader = {
         ${companyInfo.description ? `
         <div class="company-description">
           <h2>会社について</h2>
-          <p>${this.escapeHtml(companyInfo.description).replace(/\n/g, '<br>')}</p>
+          <div class="company-description-content">${this.sanitizeHtml(companyInfo.description)}</div>
         </div>
         ` : ''}
 
@@ -522,107 +552,43 @@ const JobsLoader = {
     `;
   },
 
-  // 会社ページ内の求人カードを生成
+  // 会社ページ内の求人カードを生成（シンプル版）
   renderCompanyJobCard(job) {
-    const badges = job.badges ? job.badges.split(',').map(b => b.trim()) : [];
     const features = Array.isArray(job.features) ? job.features : [];
 
-    let badgesHtml = '';
-    if (badges.includes('NEW') || badges.includes('new')) {
-      badgesHtml += '<span class="job-badge new">NEW</span>';
-    }
-    if (badges.includes('人気') || badges.includes('hot')) {
-      badgesHtml += '<span class="job-badge hot">人気</span>';
+    // 仕事内容を短く切り詰める（100文字まで）
+    let shortDesc = '';
+    if (job.jobDescription) {
+      shortDesc = job.jobDescription.length > 100
+        ? job.jobDescription.substring(0, 100) + '...'
+        : job.jobDescription;
     }
 
     return `
-      <div class="company-job-card">
-        <div class="company-job-card-header">
-          ${badgesHtml}
-          <h3 class="company-job-title">${this.escapeHtml(job.title)}</h3>
-          <p class="company-job-location">${this.escapeHtml(job.location)}</p>
+      <div class="job-list-card">
+        <div class="job-list-card-header">
+          <h3 class="job-list-title">
+            <a href="job-detail.html?company=${this.escapeHtml(job.companyDomain || '')}&job=${this.escapeHtml(job.id || '')}">${this.escapeHtml(job.title)}</a>
+          </h3>
         </div>
-        <div class="company-job-card-body">
-          <div class="company-job-benefits">
-            <div class="company-job-benefit highlight">
-              <span class="label">特典総額</span>
-              <span class="value">${this.escapeHtml(job.totalBonus)}</span>
-            </div>
-            <div class="company-job-benefit">
-              <span class="label">月収例</span>
-              <span class="value">${this.escapeHtml(job.monthlySalary)}</span>
-            </div>
-          </div>
-          ${features.length > 0 ? `
-          <ul class="company-job-features">
-            ${features.map(f => `<li>${this.escapeHtml(f)}</li>`).join('')}
+        <div class="job-list-card-body">
+          <ul class="job-list-info">
+            <li><span class="info-label">勤務地</span><span class="info-value">${this.escapeHtml(job.location)}</span></li>
+            <li><span class="info-label">給与</span><span class="info-value">${this.escapeHtml(job.monthlySalary || job.salary || '')}</span></li>
+            <li><span class="info-label">雇用形態</span><span class="info-value">${this.escapeHtml(job.employmentType || '')}</span></li>
+            ${job.totalBonus ? `<li><span class="info-label">特典総額</span><span class="info-value highlight">${this.escapeHtml(job.totalBonus)}</span></li>` : ''}
           </ul>
-          ` : ''}
-
-          ${job.jobType ? `
-          <div class="company-job-description">
-            <h4>職種名</h4>
-            <p>${this.escapeHtml(job.jobType).replace(/\n/g, '<br>')}</p>
+          ${features.length > 0 ? `
+          <div class="job-list-tags">
+            ${features.map(f => `<span class="job-tag">${this.escapeHtml(f)}</span>`).join('')}
           </div>
           ` : ''}
-
-          ${job.jobDescription ? `
-          <div class="company-job-description">
-            <h4>仕事内容</h4>
-            <p>${this.escapeHtml(job.jobDescription).replace(/\n/g, '<br>')}</p>
-          </div>
+          ${shortDesc ? `
+          <p class="job-list-desc">${this.escapeHtml(shortDesc)}</p>
           ` : ''}
-
-          ${job.salary ? `
-          <div class="company-job-description">
-            <h4>給与</h4>
-            <p>${this.escapeHtml(job.salary).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          ${job.employmentType ? `
-          <div class="company-job-description">
-            <h4>雇用形態</h4>
-            <p>${this.escapeHtml(job.employmentType).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          ${job.requirements ? `
-          <div class="company-job-description">
-            <h4>応募資格</h4>
-            <p>${this.escapeHtml(job.requirements).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          ${job.skills ? `
-          <div class="company-job-description">
-            <h4>資格・スキル</h4>
-            <p>${this.escapeHtml(job.skills).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          ${job.benefits ? `
-          <div class="company-job-description">
-            <h4>待遇・福利厚生</h4>
-            <p>${this.escapeHtml(job.benefits).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          ${job.workingHours ? `
-          <div class="company-job-description">
-            <h4>勤務時間</h4>
-            <p>${this.escapeHtml(job.workingHours).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          ${job.holidays ? `
-          <div class="company-job-description">
-            <h4>休日・休暇</h4>
-            <p>${this.escapeHtml(job.holidays).replace(/\n/g, '<br>')}</p>
-          </div>
-          ` : ''}
-
-          <a href="#" class="btn-apply-job">この求人に応募する</a>
+        </div>
+        <div class="job-list-card-footer">
+          <a href="job-detail.html?company=${this.escapeHtml(job.companyDomain || '')}&job=${this.escapeHtml(job.id || '')}" class="btn-detail">詳細を見る</a>
         </div>
       </div>
     `;

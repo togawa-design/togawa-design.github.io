@@ -21,7 +21,12 @@
       "Bash(gcloud firebase projects:list:*)",
       "Bash(ls:*)",
       "Bash(npx cleancss:*)",
-      "Bash(npx csso:*)"
+      "Bash(npx csso:*)",
+      "Bash(git flow init:*)",
+      "Bash(git stash:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(terser:*)"
     ]
   }
 }
