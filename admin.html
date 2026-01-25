@@ -696,6 +696,58 @@
           </div>
           <button class="btn-save" id="save-password">パスワード変更</button>
         </div>
+
+        <div class="settings-card">
+          <h3>求人フィード出力</h3>
+          <p class="form-hint">Indeed、Google しごと検索、求人ボックスなどに求人を掲載するためのフィードを生成します。</p>
+
+          <div class="feed-buttons">
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>Indeed XML フィード</strong>
+                <p class="form-hint">Indeedに求人を掲載するためのXMLフィード</p>
+              </div>
+              <button id="btn-download-indeed" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>Google しごと検索 JSON-LD</strong>
+                <p class="form-hint">Google検索に求人を表示するための構造化データ</p>
+              </div>
+              <button id="btn-download-google" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>求人ボックス/スタンバイ XML</strong>
+                <p class="form-hint">求人ボックス・スタンバイ用のXMLフィード</p>
+              </div>
+              <button id="btn-download-jobbox" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>CSV エクスポート</strong>
+                <p class="form-hint">Excelやスプレッドシートで編集可能なCSV形式</p>
+              </div>
+              <button id="btn-download-csv" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+          </div>
+
+          <div id="feed-status" class="feed-status" style="display: none;">
+            <div class="loading-spinner-small"></div>
+            <span>フィードを生成中...</span>
+          </div>
+        </div>
       </section>
 
       <!-- 企業詳細分析セクション -->

@@ -7,6 +7,7 @@ import { initFirebase, checkSession, handleLogin, handleGoogleLogin, handleLogou
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
 import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection } from './lp-settings.js';
+import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
 
 // ログイン画面表示
 function showLogin() {
@@ -290,6 +291,75 @@ function bindEvents() {
         alert('パスワードを変更しました');
       } else {
         alert('パスワードは4文字以上で入力してください');
+      }
+    });
+  }
+
+  // 求人フィードダウンロード
+  const feedStatus = document.getElementById('feed-status');
+  const showFeedLoading = () => {
+    if (feedStatus) feedStatus.style.display = 'flex';
+  };
+  const hideFeedLoading = () => {
+    if (feedStatus) feedStatus.style.display = 'none';
+  };
+
+  const btnDownloadIndeed = document.getElementById('btn-download-indeed');
+  if (btnDownloadIndeed) {
+    btnDownloadIndeed.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadIndeedXml();
+        alert('Indeed XMLフィードをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+  }
+
+  const btnDownloadGoogle = document.getElementById('btn-download-google');
+  if (btnDownloadGoogle) {
+    btnDownloadGoogle.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadGoogleJsonLd();
+        alert('Google JSON-LDをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+  }
+
+  const btnDownloadJobbox = document.getElementById('btn-download-jobbox');
+  if (btnDownloadJobbox) {
+    btnDownloadJobbox.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadJobBoxXml();
+        alert('求人ボックスXMLをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+  }
+
+  const btnDownloadCsv = document.getElementById('btn-download-csv');
+  if (btnDownloadCsv) {
+    btnDownloadCsv.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadCsv();
+        alert('CSVをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
       }
     });
   }

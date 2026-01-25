@@ -3064,10 +3064,84 @@
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(99, 102, 241, 0.3);
   border-radius: 50%;
-  border-top-color: #fff;
+  border-top-color: #6366f1;
   animation: spin 0.8s linear infinite;
+}
+
+/* ========================================
+   求人フィード出力
+======================================== */
+.feed-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.feed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  gap: 16px;
+}
+
+.feed-info {
+  flex: 1;
+}
+
+.feed-info strong {
+  display: block;
+  color: #1e293b;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.feed-info .form-hint {
+  margin: 0;
+  font-size: 12px;
+}
+
+.feed-item .btn-secondary {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.feed-item .btn-icon {
+  font-size: 14px;
+}
+
+.feed-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border-radius: 8px;
+  margin-top: 16px;
+  color: #3b82f6;
+  font-size: 14px;
+}
+
+@media (max-width: 767px) {
+  .feed-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .feed-item .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @keyframes spin {
