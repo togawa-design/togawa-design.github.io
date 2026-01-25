@@ -61,15 +61,17 @@ function parseLocation(location) {
 function parseSalary(salaryStr) {
   if (!salaryStr) return { min: null, max: null, currency: 'JPY', period: 'MONTH' };
 
+  // 数値の場合は文字列に変換
+  const str = String(salaryStr);
   let amount = 0;
 
   // 「万」単位
-  const manMatch = salaryStr.match(/(\d+(?:\.\d+)?)\s*万/);
+  const manMatch = str.match(/(\d+(?:\.\d+)?)\s*万/);
   if (manMatch) {
     amount = parseFloat(manMatch[1]) * 10000;
   } else {
     // 数値を抽出
-    const numMatch = salaryStr.match(/(\d{1,3}(?:,\d{3})*|\d+)/);
+    const numMatch = str.match(/(\d{1,3}(?:,\d{3})*|\d+)/);
     if (numMatch) {
       amount = parseInt(numMatch[1].replace(/,/g, ''));
     }
