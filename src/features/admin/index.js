@@ -6,7 +6,7 @@ import { config } from './config.js';
 import { initFirebase, checkSession, handleLogin, handleGoogleLogin, handleLogout, getIdToken } from './auth.js';
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
-import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview } from './lp-settings.js';
+import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection } from './lp-settings.js';
 
 // ログイン画面表示
 function showLogin() {
@@ -24,8 +24,34 @@ function showDashboard() {
   if (dashboard) dashboard.style.display = 'flex';
 }
 
+// モバイルメニュー開閉
+function openMobileMenu() {
+  const sidebar = document.getElementById('admin-sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  const menuBtn = document.getElementById('mobile-menu-btn');
+
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('active');
+  if (menuBtn) menuBtn.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileMenu() {
+  const sidebar = document.getElementById('admin-sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  const menuBtn = document.getElementById('mobile-menu-btn');
+
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+  if (menuBtn) menuBtn.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
 // セクション切り替え
 function switchSection(sectionName) {
+  // モバイルメニューを閉じる
+  closeMobileMenu();
+
   // ナビゲーションのactive状態を更新
   document.querySelectorAll('.sidebar-nav li').forEach(li => {
     li.classList.remove('active');
@@ -72,6 +98,31 @@ function switchSection(sectionName) {
 
 // イベントバインド
 function bindEvents() {
+  // モバイルメニュー
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+      const sidebar = document.getElementById('admin-sidebar');
+      if (sidebar && sidebar.classList.contains('open')) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
+    });
+  }
+
+  // サイドバー閉じるボタン
+  const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener('click', closeMobileMenu);
+  }
+
+  // オーバーレイクリックでメニューを閉じる
+  const mobileOverlay = document.getElementById('mobile-overlay');
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', closeMobileMenu);
+  }
+
   // ログインフォーム
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
@@ -220,6 +271,9 @@ function bindEvents() {
 
   // LP設定: セクション並び替え
   initSectionSortable();
+
+  // LP設定: ポイント追加/削除
+  initPointsSection();
 
   // LP設定: セクション表示/非表示切り替え
   document.querySelectorAll('#lp-section-order input[type="checkbox"]').forEach(checkbox => {

@@ -44,11 +44,15 @@
 
   <!-- 管理者ダッシュボード -->
   <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
+    <!-- モバイルオーバーレイ -->
+    <div id="mobile-overlay" class="mobile-overlay"></div>
+
     <!-- サイドバー -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="admin-sidebar">
       <div class="sidebar-header">
         <h2>リクエコ求人ナビ</h2>
         <p>管理画面</p>
+        <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="メニューを閉じる">&times;</button>
       </div>
       <nav class="sidebar-nav">
         <div class="nav-section">
@@ -83,6 +87,9 @@
     <main class="admin-main">
       <!-- ヘッダー -->
       <header class="admin-header">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="メニューを開く">
+          <span class="hamburger-icon"></span>
+        </button>
         <h1 id="page-title">概要</h1>
         <div class="header-actions">
           <div class="date-range-picker">
@@ -525,23 +532,13 @@
 
             <div class="form-section">
               <h4>ポイント（特徴）</h4>
-              <div class="point-inputs">
-                <div class="point-input-group">
-                  <label>ポイント1</label>
-                  <input type="text" id="lp-point-title-1" placeholder="タイトル">
-                  <input type="text" id="lp-point-desc-1" placeholder="説明文">
-                </div>
-                <div class="point-input-group">
-                  <label>ポイント2</label>
-                  <input type="text" id="lp-point-title-2" placeholder="タイトル">
-                  <input type="text" id="lp-point-desc-2" placeholder="説明文">
-                </div>
-                <div class="point-input-group">
-                  <label>ポイント3</label>
-                  <input type="text" id="lp-point-title-3" placeholder="タイトル">
-                  <input type="text" id="lp-point-desc-3" placeholder="説明文">
-                </div>
+              <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
+              <div class="point-inputs" id="point-inputs-container">
+                <!-- JavaScriptで動的に生成 -->
               </div>
+              <button type="button" id="btn-add-point" class="btn-add-item">
+                <span>+</span> ポイントを追加
+              </button>
             </div>
 
             <div class="form-section">
@@ -557,6 +554,46 @@
               <div class="form-group">
                 <label for="lp-faq">FAQ（形式: Q:質問|A:回答||Q:質問2|A:回答2）</label>
                 <textarea id="lp-faq" rows="4" placeholder="Q:未経験でも応募できますか？|A:はい、未経験の方も大歓迎です。||Q:寮はありますか？|A:はい、完全個室の寮を完備しています。"></textarea>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>広告トラッキング設定</h4>
+              <p class="form-hint">TikTok広告やGoogle広告のコンバージョン計測に使用します。</p>
+              <div class="form-group">
+                <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
+                <input type="text" id="lp-tiktok-pixel" placeholder="例: CXXXXXXXXXXXXXX">
+                <p class="form-hint">TikTok Ads ManagerのPixel IDを入力してください</p>
+              </div>
+              <div class="form-group">
+                <label for="lp-google-ads-id">Google Ads コンバージョンID</label>
+                <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789">
+                <p class="form-hint">Google Adsのコンバージョン追跡タグIDを入力してください</p>
+              </div>
+              <div class="form-group">
+                <label for="lp-google-ads-label">Google Ads コンバージョンラベル</label>
+                <input type="text" id="lp-google-ads-label" placeholder="例: AbCdEfGhIjKlMn">
+                <p class="form-hint">コンバージョンアクション作成時に発行されるラベルを入力してください</p>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>OGP設定（広告プレビュー用）</h4>
+              <p class="form-hint">広告やSNSでシェアされた時に表示される情報です。</p>
+              <div class="form-group">
+                <label for="lp-ogp-title">OGPタイトル</label>
+                <input type="text" id="lp-ogp-title" placeholder="例: 月収32万円以上可！製造スタッフ募集">
+                <p class="form-hint">空欄の場合はヒーロータイトルが使用されます</p>
+              </div>
+              <div class="form-group">
+                <label for="lp-ogp-description">OGP説明文</label>
+                <input type="text" id="lp-ogp-description" placeholder="例: 未経験歓迎・寮完備の高待遇求人！今すぐチェック">
+                <p class="form-hint">空欄の場合は自動生成されます</p>
+              </div>
+              <div class="form-group">
+                <label for="lp-ogp-image">OGP画像URL</label>
+                <input type="text" id="lp-ogp-image" placeholder="https://example.com/ogp-image.jpg">
+                <p class="form-hint">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</p>
               </div>
             </div>
 

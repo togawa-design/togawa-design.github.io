@@ -5,12 +5,17 @@ import { LPRenderer, LPEditor } from '@features/lp/index.js';
 import { trackEvent, hasUrlParam, getUrlParam } from '@shared/utils.js';
 import '@shared/jobs-loader.js';
 
+// UTMパラメータのキー一覧
+const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+
 class CompanyLPPage {
   constructor() {
     this.renderer = new LPRenderer();
     this.editor = new LPEditor();
     this.isEditMode = hasUrlParam('edit');
     this.companyDomain = null;
+    this.utmParams = {};
+    this.lpSettings = null;
   }
 
   async init() {
@@ -20,6 +25,9 @@ class CompanyLPPage {
       this.showError('会社が指定されていません。');
       return;
     }
+
+    // UTMパラメータを取得・保存
+    this.captureUTMParams();
 
     try {
       // JobsLoaderの読み込みを待機
@@ -41,23 +49,26 @@ class CompanyLPPage {
       const jobs = await this.fetchJobs(company);
 
       // LP設定を取得
-      const lpSettings = await this.fetchLPSettings(this.companyDomain) || {};
+      this.lpSettings = await this.fetchLPSettings(this.companyDomain) || {};
+
+      // 広告タグを設置
+      this.setupAdTracking(this.lpSettings);
 
       // LPを描画
       this.hideLoading();
       const contentEl = document.getElementById('lp-content');
       if (contentEl) {
-        this.renderer.render(company, jobs, lpSettings, contentEl);
+        this.renderer.render(company, jobs, this.lpSettings, contentEl);
         this.setupEventListeners(company);
       }
 
       // 編集モードの場合
       if (this.isEditMode) {
-        this.editor.enable(lpSettings, this.companyDomain);
+        this.editor.enable(this.lpSettings, this.companyDomain);
       }
 
-      // SEOを更新
-      this.updateSEO(company, jobs);
+      // SEO/OGPを更新
+      this.updateSEO(company, jobs, this.lpSettings);
 
       // アナリティクス
       if (!this.isEditMode) {
@@ -140,10 +151,24 @@ class CompanyLPPage {
             pointDesc2: rowData.pointDesc2 || rowData['ポイント2説明'] || '',
             pointTitle3: rowData.pointTitle3 || rowData['ポイント3タイトル'] || '',
             pointDesc3: rowData.pointDesc3 || rowData['ポイント3説明'] || '',
+            pointTitle4: rowData.pointTitle4 || rowData['ポイント4タイトル'] || '',
+            pointDesc4: rowData.pointDesc4 || rowData['ポイント4説明'] || '',
+            pointTitle5: rowData.pointTitle5 || rowData['ポイント5タイトル'] || '',
+            pointDesc5: rowData.pointDesc5 || rowData['ポイント5説明'] || '',
+            pointTitle6: rowData.pointTitle6 || rowData['ポイント6タイトル'] || '',
+            pointDesc6: rowData.pointDesc6 || rowData['ポイント6説明'] || '',
             faq: rowData.faq || rowData['FAQ'] || '',
             designPattern: rowData.designPattern || rowData['デザインパターン'] || 'standard',
             sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
-            sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || ''
+            sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
+            // 広告トラッキング設定
+            tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
+            googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
+            googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
+            // OGP設定
+            ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
+            ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
+            ogpImage: rowData.ogpImage || rowData['OGP画像'] || ''
           };
         }
       }
@@ -200,41 +225,234 @@ class CompanyLPPage {
     });
 
     // 応募ボタントラッキング
-    document.querySelectorAll('.lp-btn-apply-hero, .lp-btn-apply-main, .lp-btn-apply-footer').forEach(btn => {
+    document.querySelectorAll('.lp-btn-apply-hero, .lp-btn-apply-main, .lp-btn-apply-footer, .lp-btn-apply-header').forEach(btn => {
       btn.addEventListener('click', () => {
+        const buttonLocation = btn.classList.contains('lp-btn-apply-hero') ? 'hero' :
+                              btn.classList.contains('lp-btn-apply-main') ? 'main' :
+                              btn.classList.contains('lp-btn-apply-header') ? 'header' : 'footer';
+
+        // GA4トラッキング
         trackEvent('lp_apply_click', {
           company_domain: company.companyDomain,
           company_name: company.company,
-          button_location: btn.classList.contains('lp-btn-apply-hero') ? 'hero' :
-                          btn.classList.contains('lp-btn-apply-main') ? 'main' : 'footer'
+          button_location: buttonLocation,
+          ...this.utmParams
+        });
+
+        // 広告コンバージョントラッキング
+        this.trackConversion('SubmitForm', {
+          content_name: company.company,
+          content_category: 'job_application',
+          button_location: buttonLocation,
+          ...this.utmParams
+        });
+      });
+    });
+
+    // 電話ボタントラッキング
+    document.querySelectorAll('.lp-btn-tel-header, .lp-btn-tel-footer').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const buttonLocation = btn.classList.contains('lp-btn-tel-header') ? 'header' : 'footer';
+
+        // GA4トラッキング
+        trackEvent('lp_tel_click', {
+          company_domain: company.companyDomain,
+          company_name: company.company,
+          button_location: buttonLocation,
+          ...this.utmParams
+        });
+
+        // 広告コンバージョントラッキング（電話コンバージョン）
+        this.trackConversion('Contact', {
+          content_name: company.company,
+          content_category: 'phone_call',
+          button_location: buttonLocation,
+          ...this.utmParams
         });
       });
     });
   }
 
-  updateSEO(company, jobs) {
-    const title = `${company.company} 求人情報 | リクエコ求人ナビ`;
-    const description = jobs.length > 0
-      ? `${company.company}の求人情報。${jobs[0].title}など${jobs.length}件の募集中。`
-      : `${company.company}の求人情報ページです。`;
+  updateSEO(company, jobs, lpSettings = {}) {
+    // OGP設定があればそちらを優先
+    const ogpTitle = lpSettings.ogpTitle || lpSettings.heroTitle || '';
+    const ogpDescription = lpSettings.ogpDescription || '';
+    const ogpImage = lpSettings.ogpImage || lpSettings.heroImage || '';
+
+    const title = ogpTitle
+      ? `${ogpTitle} | ${company.company}`
+      : `${company.company} 求人情報 | リクエコ求人ナビ`;
+    const description = ogpDescription
+      ? ogpDescription
+      : (jobs.length > 0
+          ? `${company.company}の求人情報。${jobs[0].title}など${jobs.length}件の募集中。`
+          : `${company.company}の求人情報ページです。`);
 
     document.title = title;
 
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.content = description;
 
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.content = title;
+    const ogTitleMeta = document.querySelector('meta[property="og:title"]');
+    if (ogTitleMeta) ogTitleMeta.content = title;
 
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.content = description;
+    const ogDescMeta = document.querySelector('meta[property="og:description"]');
+    if (ogDescMeta) ogDescMeta.content = description;
+
+    // OGP画像を設定
+    if (ogpImage) {
+      let ogImageMeta = document.querySelector('meta[property="og:image"]');
+      if (!ogImageMeta) {
+        ogImageMeta = document.createElement('meta');
+        ogImageMeta.setAttribute('property', 'og:image');
+        document.head.appendChild(ogImageMeta);
+      }
+      ogImageMeta.content = ogpImage;
+
+      // Twitter Card用
+      let twitterImageMeta = document.querySelector('meta[name="twitter:image"]');
+      if (!twitterImageMeta) {
+        twitterImageMeta = document.createElement('meta');
+        twitterImageMeta.setAttribute('name', 'twitter:image');
+        document.head.appendChild(twitterImageMeta);
+      }
+      twitterImageMeta.content = ogpImage;
+    }
+
+    // og:urlを設定
+    let ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    if (!ogUrlMeta) {
+      ogUrlMeta = document.createElement('meta');
+      ogUrlMeta.setAttribute('property', 'og:url');
+      document.head.appendChild(ogUrlMeta);
+    }
+    // UTMパラメータを除いたURLを設定
+    ogUrlMeta.content = `${window.location.origin}${window.location.pathname}?c=${this.companyDomain}`;
+
+    // Twitter Cardの設定
+    let twitterCardMeta = document.querySelector('meta[name="twitter:card"]');
+    if (!twitterCardMeta) {
+      twitterCardMeta = document.createElement('meta');
+      twitterCardMeta.setAttribute('name', 'twitter:card');
+      document.head.appendChild(twitterCardMeta);
+    }
+    twitterCardMeta.content = 'summary_large_image';
+  }
+
+  // UTMパラメータを取得・保存
+  captureUTMParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    UTM_PARAMS.forEach(param => {
+      const value = urlParams.get(param);
+      if (value) {
+        this.utmParams[param] = value;
+      }
+    });
+
+    // セッションストレージに保存（応募時に参照するため）
+    if (Object.keys(this.utmParams).length > 0) {
+      sessionStorage.setItem(`utm_params_${this.companyDomain}`, JSON.stringify(this.utmParams));
+      console.log('[LP] UTM params captured:', this.utmParams);
+    } else {
+      // 保存済みのUTMパラメータがあれば復元
+      const saved = sessionStorage.getItem(`utm_params_${this.companyDomain}`);
+      if (saved) {
+        try {
+          this.utmParams = JSON.parse(saved);
+        } catch (e) {
+          // パースエラーは無視
+        }
+      }
+    }
+  }
+
+  // 広告トラッキングを設定
+  setupAdTracking(lpSettings) {
+    // TikTok Pixel
+    if (lpSettings.tiktokPixelId) {
+      this.initTikTokPixel(lpSettings.tiktokPixelId);
+    }
+
+    // Google Ads
+    if (lpSettings.googleAdsId) {
+      this.initGoogleAds(lpSettings.googleAdsId);
+    }
+  }
+
+  // TikTok Pixelを初期化
+  initTikTokPixel(pixelId) {
+    if (!pixelId || window.ttq) return;
+
+    // TikTok Pixel Base Code
+    !function (w, d, t) {
+      w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+      ttq.load(pixelId);
+      ttq.page();
+    }(window, document, 'ttq');
+
+    console.log('[LP] TikTok Pixel initialized:', pixelId);
+  }
+
+  // Google Adsを初期化
+  initGoogleAds(adsId) {
+    if (!adsId) return;
+
+    // Google Ads gtagが既に存在する場合は設定のみ追加
+    if (typeof gtag === 'function') {
+      gtag('config', adsId);
+      console.log('[LP] Google Ads configured:', adsId);
+      return;
+    }
+
+    // gtagがない場合はスクリプトを読み込む
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${adsId}`;
+    document.head.appendChild(script);
+
+    script.onload = () => {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', adsId);
+      console.log('[LP] Google Ads initialized:', adsId);
+    };
+  }
+
+  // コンバージョンをトラッキング
+  trackConversion(eventType, eventData = {}) {
+    // TikTok Pixel
+    if (window.ttq) {
+      window.ttq.track(eventType, eventData);
+      console.log('[LP] TikTok event tracked:', eventType, eventData);
+    }
+
+    // Google Ads コンバージョン
+    if (this.lpSettings?.googleAdsId && this.lpSettings?.googleAdsLabel && typeof gtag === 'function') {
+      gtag('event', 'conversion', {
+        'send_to': `${this.lpSettings.googleAdsId}/${this.lpSettings.googleAdsLabel}`,
+        ...eventData
+      });
+      console.log('[LP] Google Ads conversion tracked:', this.lpSettings.googleAdsId);
+    }
   }
 
   trackPageView(company) {
     trackEvent('lp_view', {
       company_domain: company.companyDomain,
-      company_name: company.company
+      company_name: company.company,
+      ...this.utmParams
     });
+
+    // TikTok Pixel PageView（初期化時に既にpage()が呼ばれているが、追加情報付きで再送信）
+    if (window.ttq) {
+      window.ttq.track('ViewContent', {
+        content_name: company.company,
+        content_category: 'company_lp'
+      });
+    }
   }
 }
 

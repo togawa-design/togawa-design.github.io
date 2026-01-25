@@ -8,6 +8,7 @@ import { parseCSVLine } from './csv-utils.js';
 import { getCompaniesCache, loadCompanyManageData } from './company-manager.js';
 
 let previewUpdateTimer = null;
+const MAX_POINTS = 6;
 
 // LP設定用の会社リストを読み込み
 export async function loadCompanyListForLP() {
@@ -66,12 +67,18 @@ export async function loadLPSettings(companyDomain) {
         setInputValue('lp-hero-title', settings.heroTitle);
         setInputValue('lp-hero-subtitle', settings.heroSubtitle);
         setInputValue('lp-hero-image', settings.heroImage);
-        setInputValue('lp-point-title-1', settings.pointTitle1);
-        setInputValue('lp-point-desc-1', settings.pointDesc1);
-        setInputValue('lp-point-title-2', settings.pointTitle2);
-        setInputValue('lp-point-desc-2', settings.pointDesc2);
-        setInputValue('lp-point-title-3', settings.pointTitle3);
-        setInputValue('lp-point-desc-3', settings.pointDesc3);
+
+        // ポイントを動的にレンダリング
+        const points = [];
+        for (let i = 1; i <= 6; i++) {
+          const title = settings[`pointTitle${i}`] || '';
+          const desc = settings[`pointDesc${i}`] || '';
+          if (title || desc) {
+            points.push({ title, desc });
+          }
+        }
+        renderPointInputs(points.length > 0 ? points : [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]);
+
         setInputValue('lp-cta-text', settings.ctaText || '今すぐ応募する');
         setInputValue('lp-faq', settings.faq);
 
@@ -88,6 +95,16 @@ export async function loadLPSettings(companyDomain) {
           applySectionVisibility(settings.sectionVisibility);
         }
 
+        // 広告トラッキング設定
+        setInputValue('lp-tiktok-pixel', settings.tiktokPixelId);
+        setInputValue('lp-google-ads-id', settings.googleAdsId);
+        setInputValue('lp-google-ads-label', settings.googleAdsLabel);
+
+        // OGP設定
+        setInputValue('lp-ogp-title', settings.ogpTitle);
+        setInputValue('lp-ogp-description', settings.ogpDescription);
+        setInputValue('lp-ogp-image', settings.ogpImage);
+
         updateHeroImagePresetSelection(settings.heroImage || '');
         return;
       }
@@ -102,6 +119,129 @@ export async function loadLPSettings(companyDomain) {
 function setInputValue(id, value) {
   const el = document.getElementById(id);
   if (el) el.value = value || '';
+}
+
+// ポイント入力フィールドをレンダリング
+export function renderPointInputs(points = [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]) {
+  const container = document.getElementById('point-inputs-container');
+  if (!container) return;
+
+  container.innerHTML = points.map((point, index) => `
+    <div class="point-input-group" data-point-index="${index}">
+      <label>ポイント${index + 1}</label>
+      <input type="text" class="point-title" placeholder="タイトル" value="${escapeHtml(point.title || '')}">
+      <input type="text" class="point-desc" placeholder="説明文" value="${escapeHtml(point.desc || '')}">
+      <button type="button" class="btn-remove-point" title="削除">&times;</button>
+    </div>
+  `).join('');
+
+  // 削除ボタンのイベント
+  container.querySelectorAll('.btn-remove-point').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const group = e.target.closest('.point-input-group');
+      if (group && container.children.length > 1) {
+        group.remove();
+        reindexPoints();
+        updateAddButtonState();
+        debouncedUpdatePreview();
+      }
+    });
+  });
+
+  // 入力時にプレビュー更新
+  container.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', () => debouncedUpdatePreview());
+  });
+
+  updateAddButtonState();
+}
+
+// ポイントのインデックスを振り直す
+function reindexPoints() {
+  const container = document.getElementById('point-inputs-container');
+  if (!container) return;
+
+  container.querySelectorAll('.point-input-group').forEach((group, index) => {
+    group.dataset.pointIndex = index;
+    const label = group.querySelector('label');
+    if (label) label.textContent = `ポイント${index + 1}`;
+  });
+}
+
+// 追加ボタンの状態を更新
+function updateAddButtonState() {
+  const container = document.getElementById('point-inputs-container');
+  const addBtn = document.getElementById('btn-add-point');
+  if (!container || !addBtn) return;
+
+  const count = container.children.length;
+  addBtn.disabled = count >= MAX_POINTS;
+}
+
+// ポイントを追加
+export function addPoint() {
+  const container = document.getElementById('point-inputs-container');
+  if (!container) return;
+
+  const count = container.children.length;
+  if (count >= MAX_POINTS) return;
+
+  const newIndex = count;
+  const div = document.createElement('div');
+  div.className = 'point-input-group';
+  div.dataset.pointIndex = newIndex;
+  div.innerHTML = `
+    <label>ポイント${newIndex + 1}</label>
+    <input type="text" class="point-title" placeholder="タイトル" value="">
+    <input type="text" class="point-desc" placeholder="説明文" value="">
+    <button type="button" class="btn-remove-point" title="削除">&times;</button>
+  `;
+
+  // 削除ボタンのイベント
+  div.querySelector('.btn-remove-point').addEventListener('click', () => {
+    if (container.children.length > 1) {
+      div.remove();
+      reindexPoints();
+      updateAddButtonState();
+      debouncedUpdatePreview();
+    }
+  });
+
+  // 入力時にプレビュー更新
+  div.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', () => debouncedUpdatePreview());
+  });
+
+  container.appendChild(div);
+  updateAddButtonState();
+
+  // 新しいフィールドにフォーカス
+  div.querySelector('.point-title').focus();
+}
+
+// 現在のポイントデータを取得
+export function getPointsData() {
+  const container = document.getElementById('point-inputs-container');
+  if (!container) return [];
+
+  const points = [];
+  container.querySelectorAll('.point-input-group').forEach(group => {
+    const title = group.querySelector('.point-title')?.value || '';
+    const desc = group.querySelector('.point-desc')?.value || '';
+    points.push({ title, desc });
+  });
+  return points;
+}
+
+// ポイント追加ボタンの初期化
+export function initPointsSection() {
+  const addBtn = document.getElementById('btn-add-point');
+  if (addBtn) {
+    addBtn.addEventListener('click', addPoint);
+  }
+
+  // 初期状態で3つのポイントを表示
+  renderPointInputs();
 }
 
 // LP設定CSVをパース
@@ -120,22 +260,32 @@ function parseLPSettingsCSV(csvText, companyDomain) {
     });
 
     if (rowData.companyDomain === companyDomain || rowData['会社ドメイン'] === companyDomain) {
-      return {
+      const result = {
         heroTitle: rowData.heroTitle || rowData['ヒーロータイトル'] || '',
         heroSubtitle: rowData.heroSubtitle || rowData['ヒーローサブタイトル'] || '',
         heroImage: rowData.heroImage || rowData['ヒーロー画像'] || '',
-        pointTitle1: rowData.pointTitle1 || rowData['ポイント1タイトル'] || '',
-        pointDesc1: rowData.pointDesc1 || rowData['ポイント1説明'] || '',
-        pointTitle2: rowData.pointTitle2 || rowData['ポイント2タイトル'] || '',
-        pointDesc2: rowData.pointDesc2 || rowData['ポイント2説明'] || '',
-        pointTitle3: rowData.pointTitle3 || rowData['ポイント3タイトル'] || '',
-        pointDesc3: rowData.pointDesc3 || rowData['ポイント3説明'] || '',
         ctaText: rowData.ctaText || rowData['CTAテキスト'] || '',
         faq: rowData.faq || rowData['FAQ'] || '',
         designPattern: rowData.designPattern || rowData['デザインパターン'] || '',
         sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
-        sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || ''
+        sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
+        // 広告トラッキング設定
+        tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
+        googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
+        googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
+        // OGP設定
+        ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
+        ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
+        ogpImage: rowData.ogpImage || rowData['OGP画像'] || ''
       };
+
+      // ポイント1〜6を動的に読み込み
+      for (let i = 1; i <= 6; i++) {
+        result[`pointTitle${i}`] = rowData[`pointTitle${i}`] || rowData[`ポイント${i}タイトル`] || '';
+        result[`pointDesc${i}`] = rowData[`pointDesc${i}`] || rowData[`ポイント${i}説明`] || '';
+      }
+
+      return result;
     }
   }
   return null;
@@ -145,13 +295,15 @@ function parseLPSettingsCSV(csvText, companyDomain) {
 export function clearLPForm() {
   const fields = [
     'lp-hero-title', 'lp-hero-subtitle', 'lp-hero-image',
-    'lp-point-title-1', 'lp-point-desc-1',
-    'lp-point-title-2', 'lp-point-desc-2',
-    'lp-point-title-3', 'lp-point-desc-3',
-    'lp-faq'
+    'lp-faq',
+    'lp-tiktok-pixel', 'lp-google-ads-id', 'lp-google-ads-label',
+    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image'
   ];
   fields.forEach(id => setInputValue(id, ''));
   setInputValue('lp-cta-text', '今すぐ応募する');
+
+  // ポイントを初期状態に戻す
+  renderPointInputs();
 
   const standardRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (standardRadio) standardRadio.checked = true;
@@ -215,23 +367,36 @@ export async function saveLPSettings() {
     return;
   }
 
+  // ポイントデータを取得
+  const points = getPointsData();
+
   const settings = {
     companyDomain: companyDomain,
     designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'standard',
     heroTitle: document.getElementById('lp-hero-title')?.value || '',
     heroSubtitle: document.getElementById('lp-hero-subtitle')?.value || '',
     heroImage: document.getElementById('lp-hero-image')?.value || '',
-    pointTitle1: document.getElementById('lp-point-title-1')?.value || '',
-    pointDesc1: document.getElementById('lp-point-desc-1')?.value || '',
-    pointTitle2: document.getElementById('lp-point-title-2')?.value || '',
-    pointDesc2: document.getElementById('lp-point-desc-2')?.value || '',
-    pointTitle3: document.getElementById('lp-point-title-3')?.value || '',
-    pointDesc3: document.getElementById('lp-point-desc-3')?.value || '',
     ctaText: document.getElementById('lp-cta-text')?.value || '',
     faq: document.getElementById('lp-faq')?.value || '',
     sectionOrder: getSectionOrder().join(','),
     sectionVisibility: JSON.stringify(getSectionVisibility())
   };
+
+  // ポイント1〜6を設定
+  for (let i = 0; i < 6; i++) {
+    settings[`pointTitle${i + 1}`] = points[i]?.title || '';
+    settings[`pointDesc${i + 1}`] = points[i]?.desc || '';
+  }
+
+  // 広告トラッキング設定
+  settings.tiktokPixelId = document.getElementById('lp-tiktok-pixel')?.value || '';
+  settings.googleAdsId = document.getElementById('lp-google-ads-id')?.value || '';
+  settings.googleAdsLabel = document.getElementById('lp-google-ads-label')?.value || '';
+
+  // OGP設定
+  settings.ogpTitle = document.getElementById('lp-ogp-title')?.value || '';
+  settings.ogpDescription = document.getElementById('lp-ogp-description')?.value || '';
+  settings.ogpImage = document.getElementById('lp-ogp-image')?.value || '';
 
   const gasApiUrl = spreadsheetConfig.gasApiUrl;
   if (gasApiUrl) {
@@ -456,5 +621,9 @@ export default {
   toggleLPPreview,
   closeLPPreview,
   updateLPPreview,
-  initSectionSortable
+  initSectionSortable,
+  renderPointInputs,
+  addPoint,
+  getPointsData,
+  initPointsSection
 };
