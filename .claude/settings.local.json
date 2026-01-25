@@ -26,7 +26,13 @@
       "Bash(git stash:*)",
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
-      "Bash(terser:*)"
+      "Bash(terser:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(timeout 10 npm run dev)",
+      "Bash(xargs:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)"
     ]
   }
 }

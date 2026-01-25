@@ -4,20 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E1XC94EG05"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
-    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
-  </script>
-
   <!-- 基本SEO（動的に更新） -->
   <title>求人情報 | リクエコ求人ナビ</title>
   <meta name="description" content="期間工・期間従業員の求人詳細。大手メーカーの高待遇求人が満載。">
-  <meta name="robots" content="index, follow">
 
   <!-- OGP -->
   <meta property="og:title" content="求人情報 | リクエコ求人ナビ">
@@ -95,6 +84,10 @@
     </div>
   </footer>
 
+  <!-- 既存のJobsLoaderは必要（データ取得用） -->
+  <script src="js/jobs-loader.min.js"></script>
+
+  <!-- Vite ES Module -->
   <script type="module" src="/src/pages/lp.js"></script>
 </body>
 </html>
