@@ -2,6 +2,13 @@
  * 求人管理機能モジュール
  */
 import { escapeHtml } from '@shared/utils.js';
+import {
+  generateIndeedXml,
+  generateGoogleJobsJsonLd,
+  generateJobBoxXml,
+  generateCsv,
+  downloadFile
+} from '@features/admin/job-feed-generator.js';
 
 // 設定
 const config = {
@@ -380,6 +387,119 @@ async function deleteJob() {
 }
 
 /**
+ * フィード生成用の求人データを準備
+ */
+function prepareJobsForFeed() {
+  // 公開中の求人のみをフィルタリング
+  return jobsCache.filter(job => {
+    const isVisible = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+    return isVisible && job.title;
+  }).map(job => ({
+    ...job,
+    company: companyName,
+    companyDomain: companyDomain,
+    companyAddress: job.location || ''
+  }));
+}
+
+/**
+ * ローディング表示
+ */
+function showFeedLoading() {
+  const feedStatus = document.getElementById('feed-status');
+  if (feedStatus) feedStatus.style.display = 'flex';
+}
+
+function hideFeedLoading() {
+  const feedStatus = document.getElementById('feed-status');
+  if (feedStatus) feedStatus.style.display = 'none';
+}
+
+/**
+ * Indeed XMLをダウンロード
+ */
+async function downloadIndeed() {
+  const jobs = prepareJobsForFeed();
+  if (jobs.length === 0) {
+    alert('ダウンロードできる求人がありません');
+    return;
+  }
+
+  try {
+    showFeedLoading();
+    const xml = generateIndeedXml(jobs);
+    downloadFile(xml, `indeed-${companyDomain}.xml`, 'application/xml');
+  } catch (error) {
+    alert('フィード生成に失敗しました: ' + error.message);
+  } finally {
+    hideFeedLoading();
+  }
+}
+
+/**
+ * Google JSON-LDをダウンロード
+ */
+async function downloadGoogle() {
+  const jobs = prepareJobsForFeed();
+  if (jobs.length === 0) {
+    alert('ダウンロードできる求人がありません');
+    return;
+  }
+
+  try {
+    showFeedLoading();
+    const jsonLd = generateGoogleJobsJsonLd(jobs);
+    downloadFile(jsonLd, `google-jobs-${companyDomain}.json`, 'application/json');
+  } catch (error) {
+    alert('フィード生成に失敗しました: ' + error.message);
+  } finally {
+    hideFeedLoading();
+  }
+}
+
+/**
+ * 求人ボックスXMLをダウンロード
+ */
+async function downloadJobbox() {
+  const jobs = prepareJobsForFeed();
+  if (jobs.length === 0) {
+    alert('ダウンロードできる求人がありません');
+    return;
+  }
+
+  try {
+    showFeedLoading();
+    const xml = generateJobBoxXml(jobs);
+    downloadFile(xml, `jobbox-${companyDomain}.xml`, 'application/xml');
+  } catch (error) {
+    alert('フィード生成に失敗しました: ' + error.message);
+  } finally {
+    hideFeedLoading();
+  }
+}
+
+/**
+ * CSVをダウンロード
+ */
+async function downloadCsvFeed() {
+  const jobs = prepareJobsForFeed();
+  if (jobs.length === 0) {
+    alert('ダウンロードできる求人がありません');
+    return;
+  }
+
+  try {
+    showFeedLoading();
+    const csv = generateCsv(jobs);
+    downloadFile(csv, `jobs-${companyDomain}.csv`, 'text/csv;charset=utf-8');
+  } catch (error) {
+    alert('フィード生成に失敗しました: ' + error.message);
+  } finally {
+    hideFeedLoading();
+  }
+}
+
+/**
  * イベントリスナーの設定
  */
 function setupEventListeners() {
@@ -399,6 +519,12 @@ function setupEventListeners() {
       closeJobModal();
     }
   });
+
+  // フィードダウンロードボタン
+  document.getElementById('btn-download-indeed')?.addEventListener('click', downloadIndeed);
+  document.getElementById('btn-download-google')?.addEventListener('click', downloadGoogle);
+  document.getElementById('btn-download-jobbox')?.addEventListener('click', downloadJobbox);
+  document.getElementById('btn-download-csv')?.addEventListener('click', downloadCsvFeed);
 }
 
 /**

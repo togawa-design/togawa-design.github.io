@@ -53,6 +53,36 @@
           <p>この会社の求人データは、専用の管理シートで管理されています。</p>
         </div>
 
+        <!-- 求人フィード出力 -->
+        <div class="feed-export-section">
+          <div class="feed-export-header">
+            <h3>求人フィード出力</h3>
+            <p class="form-hint">各求人媒体に掲載するためのフィードをダウンロードできます</p>
+          </div>
+          <div class="feed-export-buttons">
+            <button id="btn-download-indeed" class="btn-feed" title="Indeed用XMLフィード">
+              <span class="feed-icon">📄</span>
+              <span class="feed-label">Indeed XML</span>
+            </button>
+            <button id="btn-download-google" class="btn-feed" title="Google しごと検索用JSON-LD">
+              <span class="feed-icon">📄</span>
+              <span class="feed-label">Google JSON-LD</span>
+            </button>
+            <button id="btn-download-jobbox" class="btn-feed" title="求人ボックス/スタンバイ用XML">
+              <span class="feed-icon">📄</span>
+              <span class="feed-label">求人ボックス XML</span>
+            </button>
+            <button id="btn-download-csv" class="btn-feed" title="CSV形式でエクスポート">
+              <span class="feed-icon">📊</span>
+              <span class="feed-label">CSV</span>
+            </button>
+          </div>
+          <div id="feed-status" class="feed-status" style="display: none;">
+            <div class="loading-spinner-small"></div>
+            <span>フィードを生成中...</span>
+          </div>
+        </div>
+
         <div class="table-container">
           <table class="admin-table" id="jobs-table">
             <thead>

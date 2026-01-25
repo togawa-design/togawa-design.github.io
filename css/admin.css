@@ -3151,6 +3151,83 @@
 }
 
 /* ========================================
+   求人フィードエクスポートセクション（job-manage）
+======================================== */
+.feed-export-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.feed-export-header {
+  margin-bottom: 16px;
+}
+
+.feed-export-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.feed-export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-feed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-feed:hover {
+  background: #f8fafc;
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.btn-feed:active {
+  transform: scale(0.98);
+}
+
+.btn-feed .feed-icon {
+  font-size: 16px;
+}
+
+.btn-feed .feed-label {
+  white-space: nowrap;
+}
+
+.btn-feed:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .feed-export-buttons {
+    flex-direction: column;
+  }
+
+  .btn-feed {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+/* ========================================
    ロゴアップローダー
 ======================================== */
 .logo-uploader {
