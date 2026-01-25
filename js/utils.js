@@ -140,8 +140,12 @@ const RikuekoUtils = {
    * @param {number} timeout - タイムアウト（ミリ秒）
    * @returns {Promise<object>} JobsLoaderオブジェクト
    */
-  async waitForJobsLoader(timeout = 5000) {
-    return this.waitForGlobal('JobsLoader', timeout);
+  async waitForJobsLoader(timeout = 10000) {
+    // JobsLoaderが既に定義されているか確認
+    if (typeof window.JobsLoader !== 'undefined') {
+      return window.JobsLoader;
+    }
+    return this.waitForGlobal('JobsLoader', timeout, 100);
   },
 
   /**

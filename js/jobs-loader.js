@@ -1048,3 +1048,6 @@ document.addEventListener('DOMContentLoaded', () => {
     JobsLoader.renderFooterLocations();
   }
 });
+
+// グローバルにエクスポート
+window.JobsLoader = JobsLoader;

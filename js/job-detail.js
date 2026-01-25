@@ -16,10 +16,35 @@ const JobDetailPage = {
       // JobsLoaderが読み込まれるまで待機
       await Utils.waitForJobsLoader();
 
-      const allJobs = await JobsLoader.fetchAllJobs();
-      const job = allJobs.find(j => {
-        return j.companyDomain === companyDomain && String(j.id) === String(jobId);
-      });
+      // 会社一覧を取得
+      const companies = await JobsLoader.fetchCompanies();
+      if (!companies) {
+        Utils.showError('job-detail-container', 'データの取得に失敗しました。');
+        return;
+      }
+
+      // 該当する会社を検索
+      const companyInfo = companies.find(
+        c => c.companyDomain && c.companyDomain.trim() === companyDomain
+      );
+
+      if (!companyInfo) {
+        Utils.showError('job-detail-container', '会社が見つかりませんでした。');
+        return;
+      }
+
+      // その会社の求人シートから求人を取得
+      let job = null;
+      if (companyInfo.jobsSheet && companyInfo.jobsSheet.trim()) {
+        const companyJobs = await JobsLoader.fetchCompanyJobs(companyInfo.jobsSheet.trim());
+        if (companyJobs) {
+          job = companyJobs.find(j => String(j.id) === String(jobId));
+          if (job) {
+            job.company = companyInfo.company;
+            job.companyDomain = companyInfo.companyDomain;
+          }
+        }
+      }
 
       if (!job) {
         Utils.showError('job-detail-container', '求人が見つかりませんでした。');
@@ -29,7 +54,9 @@ const JobDetailPage = {
       this.renderJobDetail(job);
       this.updateBreadcrumb(job);
       this.updateSEO(job);
-      this.renderRelatedJobs(allJobs, companyDomain, jobId);
+
+      // 関連求人は全求人から取得（バックグラウンドで）
+      this.renderRelatedJobsAsync(companies, companyDomain, jobId);
 
       Utils.trackEvent('view_job_detail', {
         company: job.company,
@@ -39,7 +66,37 @@ const JobDetailPage = {
 
     } catch (error) {
       console.error('求人詳細の取得エラー:', error);
-      Utils.showError('job-detail-container', 'データの取得に失敗しました。');
+      Utils.showError('job-detail-container', 'データの取得に失敗しました。しばらくしてから再度お試しください。');
+    }
+  },
+
+  async renderRelatedJobsAsync(companies, currentCompanyDomain, currentJobId) {
+    try {
+      // 表示対象の会社から関連求人を収集
+      const relatedJobs = [];
+      for (const company of companies) {
+        if (!JobsLoader.isCompanyVisible(company)) continue;
+        if (company.companyDomain === currentCompanyDomain) continue; // 同じ会社は除外
+
+        if (company.jobsSheet && company.jobsSheet.trim()) {
+          const jobs = await JobsLoader.fetchCompanyJobs(company.jobsSheet.trim());
+          if (jobs && jobs.length > 0) {
+            // 各求人に会社情報を付与
+            jobs.forEach(j => {
+              j.company = company.company;
+              j.companyDomain = company.companyDomain;
+            });
+            relatedJobs.push(...jobs.slice(0, 2)); // 各会社から最大2件
+          }
+        }
+
+        // 十分な関連求人が集まったら終了
+        if (relatedJobs.length >= 6) break;
+      }
+
+      this.renderRelatedJobs(relatedJobs.slice(0, 6), currentCompanyDomain, currentJobId);
+    } catch (error) {
+      console.error('関連求人の取得エラー:', error);
     }
   },
 
@@ -197,24 +254,33 @@ const JobDetailPage = {
     }
   },
 
-  async renderRelatedJobs(allJobs, currentCompanyDomain, currentJobId) {
+  renderRelatedJobs(relatedJobs, currentCompanyDomain, currentJobId) {
     const container = document.getElementById('related-jobs-container');
     if (!container) return;
 
-    const relatedJobs = allJobs
-      .filter(job => !(job.companyDomain === currentCompanyDomain && job.id === currentJobId))
-      .filter(job => JobsLoader.isCompanyVisible ? JobsLoader.isCompanyVisible(job) : true)
+    // 現在の求人は除外
+    const filteredJobs = relatedJobs
+      .filter(job => !(job.companyDomain === currentCompanyDomain && String(job.id) === String(currentJobId)))
       .slice(0, 6);
 
-    if (relatedJobs.length === 0) {
+    if (filteredJobs.length === 0) {
       container.innerHTML = '<p class="no-data">関連する求人がありません。</p>';
       return;
     }
 
-    container.innerHTML = relatedJobs.map(job => JobsLoader.renderJobCard(job)).join('');
+    container.innerHTML = filteredJobs.map(job => JobsLoader.renderJobCard(job)).join('');
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  JobDetailPage.init();
-});
+// ページ読み込み完了後に初期化
+// defer属性付きスクリプトは順番通りに実行されるが、
+// DOMContentLoadedのタイミングで全スクリプトがロード済みとは限らない
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    // 次のイベントループで実行（他のスクリプトの初期化を待つ）
+    setTimeout(() => JobDetailPage.init(), 0);
+  });
+} else {
+  // すでにDOM解析完了している場合
+  setTimeout(() => JobDetailPage.init(), 0);
+}
