@@ -287,7 +287,17 @@ export function initAdminDashboard() {
   // セッション確認
   if (checkSession()) {
     showDashboard();
-    loadDashboardData();
+    // Firebase認証が完了したらデータを読み込む
+    document.addEventListener('authReady', () => {
+      loadDashboardData();
+    }, { once: true });
+    // フォールバック: 認証に時間がかかる場合は3秒後に読み込み
+    setTimeout(() => {
+      if (!getIdToken()) {
+        console.log('[Admin] Auth timeout, loading with mock data');
+        loadDashboardData();
+      }
+    }, 3000);
   } else {
     showLogin();
   }

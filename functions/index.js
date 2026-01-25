@@ -19,14 +19,17 @@ if (!admin.apps.length) {
 // CORS設定（許可するオリジンを本番環境に合わせて調整）
 const corsHandler = cors({
   origin: [
+    'http://localhost:3000',
     'http://localhost:5500',
     'http://localhost:5502',
+    'http://127.0.0.1:3000',
     'http://127.0.0.1:5500',
     'http://127.0.0.1:5502',
     'https://togawa-design.github.io'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 });
 
 // GA4プロパティID（数字のみ）
