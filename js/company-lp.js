@@ -40,6 +40,7 @@ const CompanyLP = {
   isEditMode: false,
   editedData: {},
   currentCompanyDomain: null,
+  draggedSection: null,
 
   // 初期化
   async init() {
@@ -151,7 +152,9 @@ const CompanyLP = {
             pointTitle3: rowData.pointTitle3 || rowData['ポイント3タイトル'] || '',
             pointDesc3: rowData.pointDesc3 || rowData['ポイント3説明'] || '',
             faq: rowData.faq || rowData['FAQ'] || '',
-            designPattern: rowData.designPattern || rowData['デザインパターン'] || 'standard'
+            designPattern: rowData.designPattern || rowData['デザインパターン'] || 'standard',
+            sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
+            sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || ''
           };
         }
       }
@@ -178,14 +181,43 @@ const CompanyLP = {
     // メインの求人情報（最初の求人または会社情報）
     const mainJob = jobs.length > 0 ? jobs[0] : company;
 
-    contentEl.innerHTML = `
-      ${this.renderHeroSection(company, mainJob, lpSettings)}
-      ${this.renderPointsSection(company, mainJob, lpSettings)}
-      ${this.renderJobsSection(company, jobs)}
-      ${this.renderDetailsSection(company, mainJob)}
-      ${lpSettings.faq ? this.renderFAQSection(lpSettings.faq) : ''}
-      ${this.renderApplySection(company, lpSettings)}
-    `;
+    // セクション表示設定を解析
+    let sectionVisibility = { points: true, jobs: true, details: true, faq: true };
+    if (lpSettings.sectionVisibility) {
+      try {
+        sectionVisibility = { ...sectionVisibility, ...JSON.parse(lpSettings.sectionVisibility) };
+      } catch (e) {
+        console.error('セクション表示設定のパースエラー:', e);
+      }
+    }
+
+    // 各セクションのHTML生成関数を定義
+    const sections = {
+      hero: () => this.renderHeroSection(company, mainJob, lpSettings),
+      points: () => sectionVisibility.points ? this.renderPointsSection(company, mainJob, lpSettings) : '',
+      jobs: () => sectionVisibility.jobs ? this.renderJobsSection(company, jobs) : '',
+      details: () => sectionVisibility.details ? this.renderDetailsSection(company, mainJob) : '',
+      faq: () => (sectionVisibility.faq && lpSettings.faq) ? this.renderFAQSection(lpSettings.faq) : '',
+      apply: () => this.renderApplySection(company, lpSettings)
+    };
+
+    // セクション順序を取得（デフォルト順序）
+    const defaultOrder = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+    let sectionOrder = defaultOrder;
+
+    if (lpSettings.sectionOrder) {
+      const customOrder = lpSettings.sectionOrder.split(',').map(s => s.trim()).filter(s => s);
+      if (customOrder.length > 0) {
+        // カスタム順序に含まれていないセクションを追加
+        const missingSecions = defaultOrder.filter(s => !customOrder.includes(s));
+        sectionOrder = [...customOrder, ...missingSecions];
+      }
+    }
+
+    // セクションを順序に従って描画
+    contentEl.innerHTML = sectionOrder
+      .map(sectionName => sections[sectionName] ? sections[sectionName]() : '')
+      .join('');
 
     // イベントリスナーを設定
     this.setupEventListeners(company);
@@ -586,6 +618,9 @@ const CompanyLP = {
 
     // 編集可能要素にイベントを設定
     this.setupEditableElements();
+
+    // セクション並び替え機能を設定
+    this.setupSectionSortable();
   },
 
   // 編集ツールバーを描画
@@ -670,6 +705,98 @@ const CompanyLP = {
         this.startImageEditing(el, field, label);
       });
     });
+  },
+
+  // セクション並び替え機能を設定
+  setupSectionSortable() {
+    const contentEl = document.getElementById('lp-content');
+    if (!contentEl) return;
+
+    // セクション要素を取得
+    const sections = contentEl.querySelectorAll('section');
+    if (sections.length === 0) return;
+
+    // 各セクションにdata-section属性とドラッグハンドルを追加
+    sections.forEach((section, idx) => {
+      // セクション種類を特定
+      let sectionType = 'unknown';
+      if (section.classList.contains('lp-hero')) sectionType = 'hero';
+      else if (section.classList.contains('lp-points')) sectionType = 'points';
+      else if (section.classList.contains('lp-jobs')) sectionType = 'jobs';
+      else if (section.classList.contains('lp-details')) sectionType = 'details';
+      else if (section.classList.contains('lp-faq')) sectionType = 'faq';
+      else if (section.classList.contains('lp-apply')) sectionType = 'apply';
+
+      section.dataset.section = sectionType;
+      section.classList.add('lp-sortable-section');
+
+      // ドラッグハンドルを追加
+      const handle = document.createElement('div');
+      handle.className = 'lp-section-drag-handle';
+      handle.innerHTML = `
+        <span class="lp-section-label">${this.getSectionLabel(sectionType)}</span>
+        <span class="lp-section-drag-icon">⋮⋮</span>
+      `;
+      section.insertBefore(handle, section.firstChild);
+
+      // ドラッグイベントを設定
+      section.setAttribute('draggable', 'true');
+
+      section.addEventListener('dragstart', (e) => {
+        this.draggedSection = section;
+        section.classList.add('lp-section-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        // ドラッグ画像を設定
+        e.dataTransfer.setDragImage(section, 50, 30);
+      });
+
+      section.addEventListener('dragend', () => {
+        section.classList.remove('lp-section-dragging');
+        this.draggedSection = null;
+        // 並び順を保存
+        this.saveSectionOrder();
+      });
+
+      section.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        if (this.draggedSection && this.draggedSection !== section) {
+          const allSections = [...contentEl.querySelectorAll('section')];
+          const draggedIdx = allSections.indexOf(this.draggedSection);
+          const targetIdx = allSections.indexOf(section);
+
+          if (draggedIdx < targetIdx) {
+            section.parentNode.insertBefore(this.draggedSection, section.nextSibling);
+          } else {
+            section.parentNode.insertBefore(this.draggedSection, section);
+          }
+        }
+      });
+    });
+  },
+
+  // セクション名を取得
+  getSectionLabel(type) {
+    const labels = {
+      hero: 'ヒーロー',
+      points: 'ポイント',
+      jobs: '求人一覧',
+      details: '募集要項',
+      faq: 'FAQ',
+      apply: '応募'
+    };
+    return labels[type] || 'セクション';
+  },
+
+  // セクション順序を保存
+  saveSectionOrder() {
+    const contentEl = document.getElementById('lp-content');
+    if (!contentEl) return;
+
+    const sections = contentEl.querySelectorAll('section');
+    const order = Array.from(sections).map(s => s.dataset.section);
+    this.editedData.sectionOrder = order.join(',');
   },
 
   // 編集ラベルを表示

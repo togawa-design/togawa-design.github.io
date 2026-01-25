@@ -401,6 +401,16 @@ const AdminCompany = {
             if (patternRadio) patternRadio.checked = true;
           }
 
+          // セクション順序を反映
+          if (settings.sectionOrder) {
+            this.applySectionOrder(settings.sectionOrder);
+          }
+
+          // セクション表示状態を反映
+          if (settings.sectionVisibility) {
+            this.applySectionVisibility(settings.sectionVisibility);
+          }
+
           this.updateHeroImagePresetSelection(settings.heroImage || '');
           return;
         }
@@ -440,7 +450,9 @@ const AdminCompany = {
           pointDesc3: rowData.pointDesc3 || rowData['ポイント3説明'] || '',
           ctaText: rowData.ctaText || rowData['CTAテキスト'] || '',
           faq: rowData.faq || rowData['FAQ'] || '',
-          designPattern: rowData.designPattern || rowData['デザインパターン'] || ''
+          designPattern: rowData.designPattern || rowData['デザインパターン'] || '',
+          sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
+          sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || ''
         };
       }
     }
@@ -539,7 +551,9 @@ const AdminCompany = {
       pointTitle3: document.getElementById('lp-point-title-3').value,
       pointDesc3: document.getElementById('lp-point-desc-3').value,
       ctaText: document.getElementById('lp-cta-text').value,
-      faq: document.getElementById('lp-faq').value
+      faq: document.getElementById('lp-faq').value,
+      sectionOrder: this.getSectionOrder().join(','),
+      sectionVisibility: JSON.stringify(this.getSectionVisibility())
     };
 
     const gasApiUrl = AdminDashboard.spreadsheetConfig.gasApiUrl;
@@ -810,6 +824,48 @@ const AdminCompany = {
 
     const orderedSections = sectionOrder.map(s => sections[s] || '').join('');
 
+    const dragDropScript = isEditMode ? `
+    <script>
+      (function() {
+        let draggedSection = null;
+
+        document.querySelectorAll('.preview-section').forEach(section => {
+          section.setAttribute('draggable', 'true');
+
+          section.addEventListener('dragstart', function(e) {
+            draggedSection = this;
+            this.classList.add('section-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+          });
+
+          section.addEventListener('dragend', function() {
+            this.classList.remove('section-dragging');
+            draggedSection = null;
+            // 親ウィンドウに順序変更を通知
+            const newOrder = Array.from(document.querySelectorAll('.preview-section')).map(s => s.dataset.section);
+            window.parent.postMessage({ type: 'sectionOrderChanged', order: newOrder }, '*');
+          });
+
+          section.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            if (draggedSection && draggedSection !== this) {
+              const sections = [...document.querySelectorAll('.preview-section')];
+              const draggedIdx = sections.indexOf(draggedSection);
+              const targetIdx = sections.indexOf(this);
+
+              if (draggedIdx < targetIdx) {
+                this.parentNode.insertBefore(draggedSection, this.nextSibling);
+              } else {
+                this.parentNode.insertBefore(draggedSection, this);
+              }
+            }
+          });
+        });
+      })();
+    <\/script>` : '';
+
     return `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -822,11 +878,18 @@ const AdminCompany = {
     body { margin: 0; padding: 0; }
     .lp-hero { min-height: 50vh; }
     .preview-note { background: #fef3c7; color: #92400e; padding: 8px 16px; text-align: center; font-size: 12px; position: sticky; top: 0; z-index: 1000; }
+    .edit-mode .preview-section { cursor: grab; position: relative; transition: transform 0.2s, box-shadow 0.2s; }
+    .edit-mode .preview-section:hover { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5); }
+    .edit-mode .preview-section.section-dragging { opacity: 0.5; cursor: grabbing; }
+    .edit-mode .section-edit-overlay { position: absolute; top: 8px; left: 8px; z-index: 100; }
+    .edit-mode .section-label { background: rgba(99, 102, 241, 0.9); color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: grab; }
+    .edit-mode .preview-section:hover .section-label { background: #6366f1; }
   </style>
 </head>
 <body class="lp-body lp-pattern-${Utils.escapeHtml(pattern)}${isEditMode ? ' edit-mode' : ''}">
-  <div class="preview-note">${isEditMode ? '編集モード' : 'プレビューモード'}</div>
+  <div class="preview-note">${isEditMode ? '編集モード - セクションをドラッグして並び替え' : 'プレビューモード'}</div>
   ${orderedSections}
+  ${dragDropScript}
 </body>
 </html>`;
   },
@@ -848,6 +911,56 @@ const AdminCompany = {
       details: document.getElementById('section-details-visible')?.checked ?? true,
       faq: document.getElementById('section-faq-visible')?.checked ?? true
     };
+  },
+
+  // セクション順序を適用
+  applySectionOrder(orderString) {
+    const orderList = document.getElementById('lp-section-order');
+    if (!orderList || !orderString) return;
+
+    const order = orderString.split(',').map(s => s.trim()).filter(s => s);
+    if (order.length === 0) return;
+
+    const items = Array.from(orderList.querySelectorAll('.section-order-item'));
+    const itemMap = {};
+    items.forEach(item => {
+      itemMap[item.dataset.section] = item;
+    });
+
+    // 順序に従ってリストを並び替え
+    order.forEach(section => {
+      const item = itemMap[section];
+      if (item) {
+        orderList.appendChild(item);
+      }
+    });
+  },
+
+  // セクション表示状態を適用
+  applySectionVisibility(visibilityString) {
+    if (!visibilityString) return;
+
+    try {
+      const visibility = JSON.parse(visibilityString);
+      if (visibility.points !== undefined) {
+        const el = document.getElementById('section-points-visible');
+        if (el) el.checked = visibility.points;
+      }
+      if (visibility.jobs !== undefined) {
+        const el = document.getElementById('section-jobs-visible');
+        if (el) el.checked = visibility.jobs;
+      }
+      if (visibility.details !== undefined) {
+        const el = document.getElementById('section-details-visible');
+        if (el) el.checked = visibility.details;
+      }
+      if (visibility.faq !== undefined) {
+        const el = document.getElementById('section-faq-visible');
+        if (el) el.checked = visibility.faq;
+      }
+    } catch (e) {
+      console.error('セクション表示状態のパースエラー:', e);
+    }
   },
 
   // セクション並び替え初期化
@@ -902,6 +1015,27 @@ const AdminCompany = {
   // 編集モード切り替え
   togglePreviewEditMode(enabled) {
     this.updateLPPreview();
+  },
+
+  // プレビューからのセクション順序変更を反映
+  updateSectionOrderFromPreview(newOrder) {
+    const orderList = document.getElementById('lp-section-order');
+    if (!orderList || !newOrder || !Array.isArray(newOrder)) return;
+
+    // 現在のリストアイテムを取得
+    const items = Array.from(orderList.querySelectorAll('.section-order-item'));
+    const itemMap = {};
+    items.forEach(item => {
+      itemMap[item.dataset.section] = item;
+    });
+
+    // 新しい順序でリストを並び替え
+    newOrder.forEach(section => {
+      const item = itemMap[section];
+      if (item) {
+        orderList.appendChild(item);
+      }
+    });
   },
 
   // セクションにフォーカス
@@ -1328,6 +1462,13 @@ const AdminCompany = {
 
     // LP設定: セクション並び替え
     this.initSectionSortable();
+
+    // LP設定: プレビューからのセクション順序変更を受信
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'sectionOrderChanged') {
+        this.updateSectionOrderFromPreview(e.data.order);
+      }
+    });
 
     // LP設定: セクション表示/非表示切り替え
     document.querySelectorAll('#lp-section-order input[type="checkbox"]').forEach(checkbox => {

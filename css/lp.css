@@ -1382,6 +1382,70 @@
   pointer-events: auto;
 }
 
+/* ========================================
+   セクション並び替え機能
+   ======================================== */
+
+.lp-edit-mode .lp-sortable-section {
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.lp-section-drag-handle {
+  display: none;
+}
+
+.lp-edit-mode .lp-section-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  background: rgba(99, 102, 241, 0.95);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+
+.lp-edit-mode .lp-section-drag-handle:hover {
+  background: #6366f1;
+}
+
+.lp-section-drag-icon {
+  font-size: 16px;
+  opacity: 0.8;
+  letter-spacing: -2px;
+}
+
+.lp-edit-mode .lp-sortable-section:hover {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+}
+
+.lp-edit-mode .lp-section-dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.7);
+}
+
+.lp-edit-mode .lp-section-dragging .lp-section-drag-handle {
+  cursor: grabbing;
+  background: #4f46e5;
+}
+
+/* ヒーローセクションのドラッグハンドル位置調整 */
+.lp-edit-mode .lp-hero .lp-section-drag-handle {
+  top: auto;
+  bottom: 10px;
+  left: 10px;
+}
+
 /* レスポンシブ - 編集ツールバー */
 @media (max-width: 768px) {
   .lp-edit-toolbar-inner {
@@ -1397,5 +1461,14 @@
     left: 10px !important;
     right: 10px !important;
     min-width: auto;
+  }
+
+  .lp-edit-mode .lp-section-drag-handle {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .lp-section-label {
+    display: none;
   }
 }

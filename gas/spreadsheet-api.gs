@@ -374,8 +374,21 @@ function saveLPSettings(settingsData) {
       'pointTitle3',
       'pointDesc3',
       'ctaText',
-      'faq'
+      'faq',
+      'sectionOrder',
+      'sectionVisibility'
     ]);
+  }
+
+  // 既存シートにsectionOrder/sectionVisibility列がなければ追加
+  const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (!existingHeaders.includes('sectionOrder')) {
+    const newCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, newCol).setValue('sectionOrder');
+  }
+  if (!existingHeaders.includes('sectionVisibility')) {
+    const newCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, newCol).setValue('sectionVisibility');
   }
 
   const data = sheet.getDataRange().getValues();
@@ -415,7 +428,9 @@ function saveLPSettings(settingsData) {
       'ポイント3タイトル': 'pointTitle3',
       'ポイント3説明': 'pointDesc3',
       'CTAテキスト': 'ctaText',
-      'FAQ': 'faq'
+      'FAQ': 'faq',
+      'セクション順序': 'sectionOrder',
+      'セクション表示': 'sectionVisibility'
     };
     const key = mapping[header];
     return key ? (settingsData[key] || '') : '';
