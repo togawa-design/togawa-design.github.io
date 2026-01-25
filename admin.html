@@ -160,18 +160,186 @@
 
       <!-- 企業別データセクション -->
       <section id="section-companies" class="admin-section">
-        <div class="filter-bar">
-          <input type="text" id="company-search" placeholder="企業名で検索..." class="search-input">
-          <select id="sort-by">
-            <option value="views">ページビュー順</option>
-            <option value="clicks">応募クリック順</option>
-            <option value="cvr">CVR順</option>
-            <option value="name">名前順</option>
-          </select>
+        <!-- 分析タブ -->
+        <div class="analytics-tabs">
+          <button class="analytics-tab active" data-tab="overview-tab">概要</button>
+          <button class="analytics-tab" data-tab="engagement-tab">エンゲージメント</button>
+          <button class="analytics-tab" data-tab="traffic-tab">流入元</button>
+          <button class="analytics-tab" data-tab="funnel-tab">ファネル</button>
+          <button class="analytics-tab" data-tab="trends-tab">時系列</button>
         </div>
 
-        <div class="company-cards" id="company-cards">
-          <div class="loading-placeholder">データを読み込み中...</div>
+        <!-- 概要タブ -->
+        <div id="overview-tab" class="analytics-tab-content active">
+          <div class="filter-bar">
+            <input type="text" id="company-search" placeholder="企業名で検索..." class="search-input">
+            <select id="sort-by">
+              <option value="views">ページビュー順</option>
+              <option value="clicks">応募クリック順</option>
+              <option value="cvr">CVR順</option>
+              <option value="name">名前順</option>
+            </select>
+          </div>
+          <div class="company-cards" id="company-cards">
+            <div class="loading-placeholder">データを読み込み中...</div>
+          </div>
+        </div>
+
+        <!-- エンゲージメントタブ -->
+        <div id="engagement-tab" class="analytics-tab-content">
+          <div class="stats-grid stats-grid-3">
+            <div class="stat-card">
+              <div class="stat-icon">⏱️</div>
+              <div class="stat-content">
+                <p class="stat-label">平均滞在時間</p>
+                <p class="stat-value" id="avg-session-duration">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📊</div>
+              <div class="stat-content">
+                <p class="stat-label">エンゲージメント率</p>
+                <p class="stat-value" id="engagement-rate">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">↩️</div>
+              <div class="stat-content">
+                <p class="stat-label">直帰率</p>
+                <p class="stat-value" id="bounce-rate">-</p>
+              </div>
+            </div>
+          </div>
+          <div class="table-container">
+            <h3>企業別エンゲージメント</h3>
+            <table class="admin-table" id="engagement-company-table">
+              <thead>
+                <tr>
+                  <th>企業名</th>
+                  <th>閲覧数</th>
+                  <th>総エンゲージ時間</th>
+                  <th>平均時間/閲覧</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 流入元タブ -->
+        <div id="traffic-tab" class="analytics-tab-content">
+          <div class="analytics-row">
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>チャネル別セッション</h3>
+                <div id="channel-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-col">
+              <div class="table-container">
+                <h3>参照元/メディア</h3>
+                <table class="admin-table" id="source-table">
+                  <thead>
+                    <tr>
+                      <th>参照元</th>
+                      <th>メディア</th>
+                      <th>セッション</th>
+                      <th>ユーザー</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ファネルタブ -->
+        <div id="funnel-tab" class="analytics-tab-content">
+          <div class="funnel-container">
+            <h3>コンバージョンファネル</h3>
+            <div id="funnel-chart" class="funnel-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+          <div class="analytics-row">
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>アクション種別内訳</h3>
+                <div id="action-breakdown-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-col">
+              <div class="table-container">
+                <h3>企業別CVR</h3>
+                <table class="admin-table" id="company-funnel-table">
+                  <thead>
+                    <tr>
+                      <th>企業</th>
+                      <th>閲覧</th>
+                      <th>クリック</th>
+                      <th>CVR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 時系列タブ -->
+        <div id="trends-tab" class="analytics-tab-content">
+          <div class="stats-grid stats-grid-2">
+            <div class="stat-card">
+              <div class="stat-icon">📅</div>
+              <div class="stat-content">
+                <p class="stat-label">ピーク曜日</p>
+                <p class="stat-value" id="peak-day">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🕐</div>
+              <div class="stat-content">
+                <p class="stat-label">ピーク時間帯</p>
+                <p class="stat-value" id="peak-hour">-</p>
+              </div>
+            </div>
+          </div>
+          <div class="analytics-row">
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>曜日別アクセス</h3>
+                <div id="day-of-week-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>時間帯別アクセス</h3>
+                <div id="hour-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -455,28 +623,28 @@
       <!-- 設定セクション -->
       <section id="section-settings" class="admin-section">
         <div class="settings-card">
-          <h3>スプレッドシート連携（GAS API）</h3>
+          <h3>スプレッドシート連携</h3>
+          <div class="form-group">
+            <label>スプレッドシートID</label>
+            <code class="config-value">1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0</code>
+          </div>
           <div class="form-group">
             <label>GAS Web App URL</label>
-            <input type="text" id="gas-api-url" placeholder="https://script.google.com/macros/s/xxxxx/exec">
-            <p class="form-hint">Google Apps Scriptをデプロイして取得したURL。設定すると会社情報・LP設定がスプレッドシートに直接保存されます。</p>
+            <code class="config-value" style="font-size: 0.75rem; word-break: break-all;">https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec</code>
           </div>
-          <button class="btn-save" id="save-gas-settings">GAS設定を保存</button>
+          <a href="https://docs.google.com/spreadsheets/d/1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0/edit" target="_blank" class="btn-link">スプレッドシートを開く</a>
         </div>
 
         <div class="settings-card">
           <h3>API設定</h3>
           <div class="form-group">
             <label>Cloud Functions エンドポイント</label>
-            <input type="text" id="api-endpoint" placeholder="https://asia-northeast1-xxx.cloudfunctions.net/getAnalyticsData">
-            <p class="form-hint">デプロイしたCloud FunctionsのURL（未設定の場合はデモデータを表示）</p>
+            <code class="config-value" style="font-size: 0.75rem; word-break: break-all;">https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData</code>
           </div>
           <div class="form-group">
             <label>GA4 プロパティID</label>
-            <input type="text" id="ga-property-id" value="G-E1XC94EG05" readonly>
-            <p class="form-hint">Google Analyticsのプロパティ ID</p>
+            <code class="config-value">G-E1XC94EG05</code>
           </div>
-          <button class="btn-save" id="save-settings">設定を保存</button>
         </div>
 
         <div class="settings-card">
@@ -489,7 +657,130 @@
             <label>パスワード確認</label>
             <input type="password" id="confirm-password" placeholder="パスワードを再入力">
           </div>
-          <button class="btn-save" id="change-password">パスワード変更</button>
+          <button class="btn-save" id="save-password">パスワード変更</button>
+        </div>
+      </section>
+
+      <!-- 企業詳細分析セクション -->
+      <section id="section-company-detail" class="admin-section">
+        <div class="section-header detail-header">
+          <button id="btn-back-to-companies" class="btn-back">← 企業一覧に戻る</button>
+          <h3 id="company-detail-title">企業分析</h3>
+          <a href="#" id="detail-view-page-btn" target="_blank" class="btn-secondary">企業ページを開く</a>
+        </div>
+
+        <!-- サマリー統計 -->
+        <div class="detail-summary">
+          <div class="detail-stat-card">
+            <div class="detail-stat-icon">👁️</div>
+            <div class="detail-stat-content">
+              <p class="detail-stat-value" id="detail-total-views">-</p>
+              <p class="detail-stat-label">総閲覧数</p>
+            </div>
+          </div>
+          <div class="detail-stat-card">
+            <div class="detail-stat-icon">📝</div>
+            <div class="detail-stat-content">
+              <p class="detail-stat-value" id="detail-total-clicks">-</p>
+              <p class="detail-stat-label">応募クリック</p>
+            </div>
+          </div>
+          <div class="detail-stat-card">
+            <div class="detail-stat-icon">📊</div>
+            <div class="detail-stat-content">
+              <p class="detail-stat-value" id="detail-cvr">-</p>
+              <p class="detail-stat-label">CVR</p>
+            </div>
+          </div>
+          <div class="detail-stat-card">
+            <div class="detail-stat-icon">📅</div>
+            <div class="detail-stat-content">
+              <p class="detail-stat-value" id="detail-avg-daily">-</p>
+              <p class="detail-stat-label">日平均閲覧</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- グラフエリア -->
+        <div class="detail-charts-grid">
+          <!-- 日別推移グラフ -->
+          <div class="detail-chart-container detail-chart-wide">
+            <h4>日別閲覧数推移</h4>
+            <div id="detail-daily-chart" class="detail-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 求人別応募数 -->
+          <div class="detail-chart-container">
+            <h4>求人別応募数</h4>
+            <div id="detail-job-chart" class="detail-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 流入元グラフ -->
+          <div class="detail-chart-container">
+            <h4>流入元</h4>
+            <div id="detail-traffic-chart" class="detail-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 性別比率 -->
+          <div class="detail-chart-container">
+            <h4>応募者性別比率</h4>
+            <div id="detail-gender-chart" class="detail-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 年齢層分布 -->
+          <div class="detail-chart-container">
+            <h4>年齢層分布</h4>
+            <div id="detail-age-chart" class="detail-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 詳細テーブル -->
+        <div class="detail-tables-grid">
+          <!-- 求人別パフォーマンス -->
+          <div class="detail-table-container">
+            <h4>求人別パフォーマンス</h4>
+            <table class="admin-table" id="detail-job-table">
+              <thead>
+                <tr>
+                  <th>求人タイトル</th>
+                  <th>閲覧数</th>
+                  <th>応募数</th>
+                  <th>CVR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="loading-cell">データを読み込み中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 最近の応募 -->
+          <div class="detail-table-container">
+            <h4>最近の応募</h4>
+            <table class="admin-table" id="detail-recent-applications">
+              <thead>
+                <tr>
+                  <th>日時</th>
+                  <th>求人</th>
+                  <th>種別</th>
+                  <th>流入元</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="loading-cell">データを読み込み中...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </main>
@@ -529,8 +820,19 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="edit-image-url">会社画像URL</label>
-              <input type="url" id="edit-image-url" placeholder="https://example.com/image.jpg">
+              <label>会社ロゴ</label>
+              <div class="logo-uploader" id="logo-uploader-area">
+                <div class="logo-preview" id="logo-preview">
+                  <span class="upload-placeholder">ロゴをアップロード</span>
+                </div>
+                <input type="file" id="logo-file-input" accept="image/*" style="display: none;">
+                <input type="hidden" id="edit-logo-url" name="logoUrl">
+                <div class="logo-actions">
+                  <button type="button" class="btn-small" id="logo-upload-btn">画像を選択</button>
+                  <button type="button" class="btn-small btn-danger" id="logo-remove-btn" style="display: none;">削除</button>
+                </div>
+                <p class="form-hint">推奨: 400x400px以下、PNG/JPG/WebP</p>
+              </div>
             </div>
             <div class="form-group">
               <label for="edit-order">並び順</label>
@@ -539,7 +841,18 @@
           </div>
           <div class="form-group">
             <label for="edit-description">説明</label>
-            <textarea id="edit-description" rows="3" placeholder="会社の説明文を入力..."></textarea>
+            <div class="rich-editor-container">
+              <div class="rich-editor-toolbar">
+                <button type="button" class="toolbar-btn" data-command="bold" title="太字"><b>B</b></button>
+                <button type="button" class="toolbar-btn" data-command="italic" title="斜体"><i>I</i></button>
+                <button type="button" class="toolbar-btn" data-command="insertUnorderedList" title="箇条書き">・</button>
+                <button type="button" class="toolbar-btn" data-command="insertOrderedList" title="番号リスト">1.</button>
+                <span class="toolbar-separator"></span>
+                <button type="button" class="toolbar-btn" id="insert-image-btn" title="画像を挿入">🖼️</button>
+              </div>
+              <div id="edit-description" class="rich-editor" contenteditable="true" placeholder="会社の説明文を入力..."></div>
+              <input type="file" id="description-image-input" accept="image/*" style="display: none;">
+            </div>
           </div>
           <div class="form-group">
             <label class="checkbox-label">
@@ -650,6 +963,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script type="module" src="/src/pages/admin.js"></script>
 </body>
 </html>

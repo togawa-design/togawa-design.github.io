@@ -267,10 +267,12 @@ export async function getLocationList() {
   const locationMap = {};
 
   allJobs.forEach(job => {
-    if (!job.location) return;
+    // companyAddressまたはlocationフィールドを参照
+    const locationValue = job.companyAddress || job.location;
+    if (!locationValue) return;
 
-    const prefMatch = job.location.match(/^(.+?[都道府県])/);
-    const prefecture = prefMatch ? prefMatch[1] : job.location;
+    const prefMatch = locationValue.match(/^(.+?[都道府県])/);
+    const prefecture = prefMatch ? prefMatch[1] : locationValue;
 
     if (!locationMap[prefecture]) {
       locationMap[prefecture] = { prefecture, jobs: [], count: 0 };
@@ -285,7 +287,10 @@ export async function getLocationList() {
 // 勤務地で求人をフィルタリング
 export async function getJobsByLocation(prefecture) {
   const allJobs = await fetchAllJobs();
-  return allJobs.filter(job => job.location && job.location.includes(prefecture));
+  return allJobs.filter(job => {
+    const locationValue = job.companyAddress || job.location;
+    return locationValue && locationValue.includes(prefecture);
+  });
 }
 
 // 実績データを取得

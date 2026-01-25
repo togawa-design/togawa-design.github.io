@@ -22,9 +22,7 @@ export const spreadsheetConfig = {
   sheetId: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
   companySheetName: '会社一覧',
   lpSettingsSheetName: 'LP設定',
-  get gasApiUrl() {
-    return localStorage.getItem('gas_api_url') || '';
-  }
+  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
 };
 
 // パターンラベル取得

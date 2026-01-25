@@ -2,12 +2,11 @@
  * 会社編集機能モジュール
  */
 import { escapeHtml } from '@shared/utils.js';
+import { uploadCompanyLogo, uploadCompanyImage, compressContentImage } from '@features/admin/image-uploader.js';
 
 // 設定
 const config = {
-  get gasApiUrl() {
-    return localStorage.getItem('gas_api_url') || '';
-  }
+  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
 };
 
 // 状態
@@ -53,7 +52,8 @@ function sanitizeHtml(html) {
     return '';
   }
 
-  const allowedTags = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'br', 'div', 'p'];
+  const allowedTags = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'br', 'div', 'p', 'img'];
+  const allowedAttributes = ['src', 'alt', 'style'];
   const temp = document.createElement('div');
   temp.innerHTML = html;
 
@@ -62,8 +62,16 @@ function sanitizeHtml(html) {
     if (!allowedTags.includes(el.tagName.toLowerCase())) {
       el.replaceWith(...el.childNodes);
     } else {
-      while (el.attributes.length > 0) {
-        el.removeAttribute(el.attributes[0].name);
+      // 許可された属性以外を削除
+      const attrs = Array.from(el.attributes);
+      attrs.forEach(attr => {
+        if (!allowedAttributes.includes(attr.name)) {
+          el.removeAttribute(attr.name);
+        }
+      });
+      // img要素の場合、スタイル属性を追加（最大幅設定）
+      if (el.tagName.toLowerCase() === 'img' && !el.style.maxWidth) {
+        el.style.maxWidth = '100%';
       }
     }
   });
@@ -162,9 +170,13 @@ function populateForm(data) {
   setVal('company-name', data.company);
   setVal('company-domain', data.companyDomain || data.company_domain);
   setVal('design-pattern', data.designPattern || 'standard');
-  setVal('image-url', data.imageUrl);
   setVal('order', data.order);
   setVal('company-address', data.companyAddress || data.location);
+
+  // ロゴURL設定
+  const logoUrl = data.logoUrl || data.imageUrl || '';
+  setVal('logo-url', logoUrl);
+  updateLogoPreview(logoUrl);
 
   const showCompanyEl = document.getElementById('show-company');
   if (showCompanyEl) {
@@ -180,6 +192,24 @@ function populateForm(data) {
   if (data.company) {
     const pageTitle = document.getElementById('page-title');
     if (pageTitle) pageTitle.textContent = `${data.company} の編集`;
+  }
+}
+
+/**
+ * ロゴプレビューを更新
+ */
+function updateLogoPreview(url) {
+  const preview = document.getElementById('logo-preview');
+  const removeBtn = document.getElementById('logo-remove-btn');
+
+  if (!preview) return;
+
+  if (url) {
+    preview.innerHTML = `<img src="${escapeHtml(url)}" alt="会社ロゴ">`;
+    if (removeBtn) removeBtn.style.display = '';
+  } else {
+    preview.innerHTML = '<span class="upload-placeholder">ロゴをアップロード</span>';
+    if (removeBtn) removeBtn.style.display = 'none';
   }
 }
 
@@ -261,11 +291,14 @@ async function saveCompany() {
 
   const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
 
+  const logoUrl = getVal('logo-url');
+
   const companyData = {
     company: getVal('company-name'),
     companyDomain: getVal('company-domain'),
     designPattern: document.getElementById('design-pattern')?.value || 'standard',
-    imageUrl: getVal('image-url'),
+    logoUrl: logoUrl,
+    imageUrl: logoUrl, // 後方互換性のため
     order: getVal('order'),
     companyAddress: getVal('company-address'),
     description: document.getElementById('description')?.value || '',
@@ -415,6 +448,197 @@ function setupEventListeners() {
   document.getElementById('company-domain')?.addEventListener('input', (e) => {
     if (isNewMode) {
       e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    }
+  });
+
+  // ロゴアップロード
+  setupLogoUpload();
+
+  // エディタ内画像挿入
+  setupEditorImageInsert('description-insert-image', 'description-image-input', 'description-editor');
+  setupEditorImageInsert('job-content-insert-image', 'job-content-image-input', 'job-content-editor');
+}
+
+/**
+ * ロゴアップロードの設定
+ */
+function setupLogoUpload() {
+  const uploadBtn = document.getElementById('logo-upload-btn');
+  const fileInput = document.getElementById('logo-file-input');
+  const removeBtn = document.getElementById('logo-remove-btn');
+  const preview = document.getElementById('logo-preview');
+  const logoUrlInput = document.getElementById('logo-url');
+
+  if (!uploadBtn || !fileInput) return;
+
+  // アップロードボタンクリック
+  uploadBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // プレビュークリック
+  preview?.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // ファイル選択時
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const domain = document.getElementById('company-domain')?.value?.trim();
+    if (!domain) {
+      alert('先に会社ドメインを入力してください');
+      return;
+    }
+
+    try {
+      preview.classList.add('uploading');
+      preview.innerHTML = '<span class="upload-placeholder">アップロード中...</span>';
+
+      const url = await uploadCompanyLogo(file, domain);
+
+      logoUrlInput.value = url;
+      updateLogoPreview(url);
+
+    } catch (error) {
+      console.error('ロゴアップロードエラー:', error);
+      alert('ロゴのアップロードに失敗しました: ' + error.message);
+      updateLogoPreview(logoUrlInput.value);
+    } finally {
+      preview.classList.remove('uploading');
+      fileInput.value = '';
+    }
+  });
+
+  // 削除ボタン
+  removeBtn?.addEventListener('click', () => {
+    logoUrlInput.value = '';
+    updateLogoPreview('');
+  });
+
+  // ドラッグ&ドロップ
+  preview?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    preview.classList.add('drag-over');
+  });
+
+  preview?.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    preview.classList.remove('drag-over');
+  });
+
+  preview?.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    preview.classList.remove('drag-over');
+
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) return;
+
+    const domain = document.getElementById('company-domain')?.value?.trim();
+    if (!domain) {
+      alert('先に会社ドメインを入力してください');
+      return;
+    }
+
+    try {
+      preview.classList.add('uploading');
+      preview.innerHTML = '<span class="upload-placeholder">アップロード中...</span>';
+
+      const url = await uploadCompanyLogo(files[0], domain);
+
+      logoUrlInput.value = url;
+      updateLogoPreview(url);
+
+    } catch (error) {
+      console.error('ロゴアップロードエラー:', error);
+      alert('ロゴのアップロードに失敗しました: ' + error.message);
+      updateLogoPreview(logoUrlInput.value);
+    } finally {
+      preview.classList.remove('uploading');
+    }
+  });
+}
+
+/**
+ * エディタ内画像挿入の設定
+ */
+function setupEditorImageInsert(buttonId, inputId, editorId) {
+  const button = document.getElementById(buttonId);
+  const input = document.getElementById(inputId);
+  const editor = document.getElementById(editorId);
+
+  if (!button || !input || !editor) return;
+
+  button.addEventListener('click', () => {
+    input.click();
+  });
+
+  input.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const domain = document.getElementById('company-domain')?.value?.trim();
+    if (!domain) {
+      alert('先に会社ドメインを入力してください');
+      return;
+    }
+
+    try {
+      // プレースホルダー画像を挿入
+      const placeholderId = `img-placeholder-${Date.now()}`;
+      const placeholder = document.createElement('img');
+      placeholder.id = placeholderId;
+      placeholder.src = URL.createObjectURL(file);
+      placeholder.alt = 'アップロード中...';
+      placeholder.className = 'uploading';
+      placeholder.style.maxWidth = '100%';
+      placeholder.style.opacity = '0.5';
+
+      editor.focus();
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.insertNode(placeholder);
+        range.setStartAfter(placeholder);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        editor.appendChild(placeholder);
+      }
+
+      // アップロード
+      const url = await uploadCompanyImage(file, domain);
+
+      // プレースホルダーを実際の画像に置き換え
+      const placeholderEl = document.getElementById(placeholderId);
+      if (placeholderEl) {
+        placeholderEl.src = url;
+        placeholderEl.alt = '';
+        placeholderEl.className = '';
+        placeholderEl.style.opacity = '1';
+        placeholderEl.removeAttribute('id');
+      }
+
+      // hidden inputを更新
+      const container = editor.closest('.rich-editor-container');
+      const hiddenInput = container?.querySelector('input[type="hidden"]');
+      if (hiddenInput) {
+        hiddenInput.value = sanitizeHtml(editor.innerHTML);
+      }
+
+    } catch (error) {
+      console.error('画像アップロードエラー:', error);
+      alert('画像のアップロードに失敗しました: ' + error.message);
+
+      // プレースホルダーを削除
+      const placeholderEl = editor.querySelector('img.uploading');
+      if (placeholderEl) {
+        placeholderEl.remove();
+      }
+    } finally {
+      input.value = '';
     }
   });
 }

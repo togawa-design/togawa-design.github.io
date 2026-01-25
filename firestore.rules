@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // applications コレクション - 応募データ
+    match /applications/{docId} {
+      // クライアントからの書き込みを許可（応募ボタンクリック時）
+      allow create: if true;
+      // 読み取りは認証済みユーザーのみ（管理画面用）
+      allow read: if request.auth != null;
+      // 更新・削除は禁止
+      allow update, delete: if false;
+    }
+
+    // その他のコレクションはデフォルトで拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

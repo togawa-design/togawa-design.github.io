@@ -1,0 +1,51 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 画像ファイルの共通バリデーション
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidSize() {
+      // 5MB以下
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // 企業ロゴ: companies/{companyDomain}/logo.webp
+    match /companies/{companyDomain}/logo.{ext} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // 認証済みユーザーのみ書き込み可能
+      allow write: if request.auth != null && isImage() && isValidSize();
+    }
+
+    // 企業説明画像: companies/{companyDomain}/images/{fileName}
+    match /companies/{companyDomain}/images/{fileName} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // 認証済みユーザーのみ書き込み可能
+      allow write: if request.auth != null && isImage() && isValidSize();
+    }
+
+    // 求人画像: jobs/{companyDomain}/{jobId}/{fileName}
+    match /jobs/{companyDomain}/{jobId}/{fileName} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // 認証済みユーザーのみ書き込み可能
+      allow write: if request.auth != null && isImage() && isValidSize();
+    }
+
+    // LP画像: lp/{companyDomain}/{fileName}
+    match /lp/{companyDomain}/{fileName} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // 認証済みユーザーのみ書き込み可能
+      allow write: if request.auth != null && isImage() && isValidSize();
+    }
+
+    // その他はすべて拒否
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

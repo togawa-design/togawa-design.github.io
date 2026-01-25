@@ -18,15 +18,13 @@ export function getCompanyData() {
 export async function loadDashboardData() {
   const dateRangeEl = document.getElementById('date-range');
   const days = dateRangeEl?.value || 7;
-  const apiEndpoint = localStorage.getItem('api_endpoint') || config.apiEndpoint;
-  const idToken = getIdToken();
+  const apiEndpoint = config.apiEndpoint;
 
-  if (apiEndpoint && idToken) {
-    await fetchGAData(days, apiEndpoint);
-  } else if (apiEndpoint && !idToken) {
+  if (apiEndpoint) {
     try {
       await fetchGAData(days, apiEndpoint);
     } catch (e) {
+      console.error('[Admin] API fetch failed, loading mock data:', e);
       loadMockData(days);
     }
   } else {
@@ -332,10 +330,19 @@ export function renderCompanyCards() {
             <span class="stat-label">CVR</span>
           </div>
         </div>
-        <a href="company.html?c=${escapeHtml(company.domain)}" target="_blank" class="btn-view-page">ページを確認</a>
+        <button class="btn-view-status" data-domain="${escapeHtml(company.domain)}" data-name="${escapeHtml(company.name)}">会社の状況を確認</button>
       </div>
     `;
   }).join('');
+
+  // 詳細ボタンのイベントリスナー
+  container.querySelectorAll('.btn-view-status').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const domain = e.target.dataset.domain;
+      const name = e.target.dataset.name;
+      showCompanyDetailSection(domain, name);
+    });
+  });
 }
 
 // 企業フィルター
@@ -416,11 +423,1012 @@ function renderMockApplicationsData() {
   `).join('');
 }
 
+// 分析タブの初期化
+export function initAnalyticsTabs() {
+  const tabs = document.querySelectorAll('.analytics-tab');
+  const contents = document.querySelectorAll('.analytics-tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetId = tab.dataset.tab;
+
+      // タブの切り替え
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // コンテンツの切り替え
+      contents.forEach(c => c.classList.remove('active'));
+      const targetContent = document.getElementById(targetId);
+      if (targetContent) {
+        targetContent.classList.add('active');
+
+        // タブごとのデータ読み込み
+        loadTabData(targetId);
+      }
+    });
+  });
+}
+
+// タブごとのデータ読み込み
+async function loadTabData(tabId) {
+  const dateRangeEl = document.getElementById('date-range');
+  const days = dateRangeEl?.value || 30;
+  const apiEndpoint = config.apiEndpoint;
+
+  switch (tabId) {
+    case 'engagement-tab':
+      await loadEngagementData(days, apiEndpoint);
+      break;
+    case 'traffic-tab':
+      await loadTrafficData(days, apiEndpoint);
+      break;
+    case 'funnel-tab':
+      await loadFunnelData(days, apiEndpoint);
+      break;
+    case 'trends-tab':
+      await loadTrendData(days, apiEndpoint);
+      break;
+  }
+}
+
+// エンゲージメントデータ読み込み
+async function loadEngagementData(days, apiEndpoint) {
+  try {
+    const headers = {};
+    const idToken = getIdToken();
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(`${apiEndpoint}?type=engagement&days=${days}`, { headers });
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      renderEngagementData(result.data);
+    } else {
+      renderMockEngagementData();
+    }
+  } catch (error) {
+    console.error('[Admin] Engagement data error:', error);
+    renderMockEngagementData();
+  }
+}
+
+// エンゲージメントデータ描画
+function renderEngagementData(data) {
+  const overall = data.overall || {};
+
+  updateElement('avg-session-duration', `${overall.avgSessionDuration || 0}秒`);
+  updateElement('engagement-rate', `${overall.engagementRate || 0}%`);
+  updateElement('bounce-rate', `${overall.bounceRate || 0}%`);
+
+  // 企業別エンゲージメントテーブル
+  const tbody = document.querySelector('#engagement-company-table tbody');
+  if (tbody && data.byCompany && data.byCompany.length > 0) {
+    tbody.innerHTML = data.byCompany.map(c => `
+      <tr>
+        <td>${escapeHtml(c.name || c.domain)}</td>
+        <td>${formatNumber(c.views)}</td>
+        <td>${Math.round(c.engagementTime)}秒</td>
+        <td>${c.avgTimePerView}秒</td>
+      </tr>
+    `).join('');
+  } else if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+  }
+}
+
+// モックエンゲージメントデータ
+function renderMockEngagementData() {
+  updateElement('avg-session-duration', '45.2秒');
+  updateElement('engagement-rate', '68.5%');
+  updateElement('bounce-rate', '31.5%');
+
+  const tbody = document.querySelector('#engagement-company-table tbody');
+  if (tbody) {
+    const mockData = [
+      { name: 'トヨタ自動車', views: 1250, time: 4500, avg: '3.6' },
+      { name: '日産自動車', views: 980, time: 3200, avg: '3.3' },
+      { name: '本田技研工業', views: 856, time: 2800, avg: '3.3' },
+    ];
+    tbody.innerHTML = mockData.map(c => `
+      <tr>
+        <td>${c.name}</td>
+        <td>${formatNumber(c.views)}</td>
+        <td>${c.time}秒</td>
+        <td>${c.avg}秒</td>
+      </tr>
+    `).join('');
+  }
+}
+
+// 流入元データ読み込み
+async function loadTrafficData(days, apiEndpoint) {
+  try {
+    const headers = {};
+    const idToken = getIdToken();
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(`${apiEndpoint}?type=traffic&days=${days}`, { headers });
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      renderTrafficData(result.data);
+    } else {
+      renderMockTrafficData();
+    }
+  } catch (error) {
+    console.error('[Admin] Traffic data error:', error);
+    renderMockTrafficData();
+  }
+}
+
+// 流入元データ描画
+function renderTrafficData(data) {
+  // チャネル別チャート
+  const chartEl = document.getElementById('channel-chart');
+  if (chartEl && data.channels && data.channels.length > 0) {
+    const maxSessions = Math.max(...data.channels.map(c => c.sessions));
+    chartEl.innerHTML = `
+      <div class="horizontal-bar-chart">
+        ${data.channels.map(c => {
+          const percent = maxSessions > 0 ? (c.sessions / maxSessions) * 100 : 0;
+          return `
+            <div class="bar-row">
+              <span class="bar-label">${escapeHtml(c.channel)}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${percent}%"></div>
+                <span class="bar-value">${formatNumber(c.sessions)}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // 参照元テーブル
+  const tbody = document.querySelector('#source-table tbody');
+  if (tbody && data.sources && data.sources.length > 0) {
+    tbody.innerHTML = data.sources.map(s => `
+      <tr>
+        <td>${escapeHtml(s.source)}</td>
+        <td>${escapeHtml(s.medium)}</td>
+        <td>${formatNumber(s.sessions)}</td>
+        <td>${formatNumber(s.users)}</td>
+      </tr>
+    `).join('');
+  } else if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+  }
+}
+
+// モック流入元データ
+function renderMockTrafficData() {
+  const chartEl = document.getElementById('channel-chart');
+  if (chartEl) {
+    const mockChannels = [
+      { channel: 'Organic Search', sessions: 1250 },
+      { channel: 'Direct', sessions: 890 },
+      { channel: 'Social', sessions: 456 },
+      { channel: 'Referral', sessions: 234 },
+    ];
+    const maxSessions = 1250;
+    chartEl.innerHTML = `
+      <div class="horizontal-bar-chart">
+        ${mockChannels.map(c => {
+          const percent = (c.sessions / maxSessions) * 100;
+          return `
+            <div class="bar-row">
+              <span class="bar-label">${c.channel}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${percent}%"></div>
+                <span class="bar-value">${formatNumber(c.sessions)}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  const tbody = document.querySelector('#source-table tbody');
+  if (tbody) {
+    const mockSources = [
+      { source: 'google', medium: 'organic', sessions: 890, users: 756 },
+      { source: '(direct)', medium: '(none)', sessions: 456, users: 412 },
+      { source: 'yahoo', medium: 'organic', sessions: 234, users: 198 },
+    ];
+    tbody.innerHTML = mockSources.map(s => `
+      <tr>
+        <td>${s.source}</td>
+        <td>${s.medium}</td>
+        <td>${formatNumber(s.sessions)}</td>
+        <td>${formatNumber(s.users)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+// ファネルデータ読み込み
+async function loadFunnelData(days, apiEndpoint) {
+  try {
+    const headers = {};
+    const idToken = getIdToken();
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(`${apiEndpoint}?type=funnel&days=${days}`, { headers });
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      renderFunnelData(result.data);
+    } else {
+      renderMockFunnelData();
+    }
+  } catch (error) {
+    console.error('[Admin] Funnel data error:', error);
+    renderMockFunnelData();
+  }
+}
+
+// ファネルデータ描画
+function renderFunnelData(data) {
+  // ファネルチャート
+  const funnelEl = document.getElementById('funnel-chart');
+  if (funnelEl && data.funnel && data.funnel.length > 0) {
+    funnelEl.innerHTML = data.funnel.map(stage => `
+      <div class="funnel-stage">
+        <span class="funnel-stage-name">${escapeHtml(stage.stage)}</span>
+        <span class="funnel-stage-count">${formatNumber(stage.count)}</span>
+        <span class="funnel-stage-rate">${stage.rate}%</span>
+      </div>
+    `).join('');
+  }
+
+  // アクション内訳チャート
+  const actionEl = document.getElementById('action-breakdown-chart');
+  if (actionEl && data.actionBreakdown && data.actionBreakdown.length > 0) {
+    const maxCount = Math.max(...data.actionBreakdown.map(a => a.count));
+    actionEl.innerHTML = `
+      <div class="horizontal-bar-chart">
+        ${data.actionBreakdown.map(a => {
+          const percent = maxCount > 0 ? (a.count / maxCount) * 100 : 0;
+          return `
+            <div class="bar-row">
+              <span class="bar-label">${escapeHtml(a.label)}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${percent}%"></div>
+                <span class="bar-value">${formatNumber(a.count)}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // 企業別CVRテーブル
+  const tbody = document.querySelector('#company-funnel-table tbody');
+  if (tbody && data.byCompany && data.byCompany.length > 0) {
+    tbody.innerHTML = data.byCompany.map(c => `
+      <tr>
+        <td>${escapeHtml(c.domain)}</td>
+        <td>${formatNumber(c.views)}</td>
+        <td>${formatNumber(c.clicks)}</td>
+        <td>${c.cvr}%</td>
+      </tr>
+    `).join('');
+  } else if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+  }
+}
+
+// モックファネルデータ
+function renderMockFunnelData() {
+  const funnelEl = document.getElementById('funnel-chart');
+  if (funnelEl) {
+    const mockFunnel = [
+      { stage: 'サイト訪問', count: 5000, rate: '100' },
+      { stage: '企業ページ閲覧', count: 2500, rate: '50.0' },
+      { stage: 'ページスクロール', count: 1800, rate: '36.0' },
+      { stage: 'アクション', count: 150, rate: '6.0' },
+    ];
+    funnelEl.innerHTML = mockFunnel.map(stage => `
+      <div class="funnel-stage">
+        <span class="funnel-stage-name">${stage.stage}</span>
+        <span class="funnel-stage-count">${formatNumber(stage.count)}</span>
+        <span class="funnel-stage-rate">${stage.rate}%</span>
+      </div>
+    `).join('');
+  }
+
+  const actionEl = document.getElementById('action-breakdown-chart');
+  if (actionEl) {
+    const mockActions = [
+      { label: '応募ボタン', count: 89 },
+      { label: 'LINE相談', count: 45 },
+      { label: 'フォーム送信', count: 16 },
+    ];
+    const maxCount = 89;
+    actionEl.innerHTML = `
+      <div class="horizontal-bar-chart">
+        ${mockActions.map(a => {
+          const percent = (a.count / maxCount) * 100;
+          return `
+            <div class="bar-row">
+              <span class="bar-label">${a.label}</span>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${percent}%"></div>
+                <span class="bar-value">${a.count}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  const tbody = document.querySelector('#company-funnel-table tbody');
+  if (tbody) {
+    const mockData = [
+      { domain: 'toyota', views: 1250, clicks: 89, cvr: '7.1' },
+      { domain: 'nissan', views: 980, clicks: 67, cvr: '6.8' },
+      { domain: 'honda', views: 856, clicks: 54, cvr: '6.3' },
+    ];
+    tbody.innerHTML = mockData.map(c => `
+      <tr>
+        <td>${c.domain}</td>
+        <td>${formatNumber(c.views)}</td>
+        <td>${c.clicks}</td>
+        <td>${c.cvr}%</td>
+      </tr>
+    `).join('');
+  }
+}
+
+// 時系列データ読み込み
+async function loadTrendData(days, apiEndpoint) {
+  try {
+    const headers = {};
+    const idToken = getIdToken();
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
+    const response = await fetch(`${apiEndpoint}?type=trends&days=${days}`, { headers });
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      renderTrendData(result.data);
+    } else {
+      renderMockTrendData();
+    }
+  } catch (error) {
+    console.error('[Admin] Trend data error:', error);
+    renderMockTrendData();
+  }
+}
+
+// 時系列データ描画
+function renderTrendData(data) {
+  // ピーク情報
+  if (data.insights) {
+    updateElement('peak-day', data.insights.peakDay || '-');
+    updateElement('peak-hour', data.insights.peakHour || '-');
+  }
+
+  // 曜日別チャート
+  const dayChartEl = document.getElementById('day-of-week-chart');
+  if (dayChartEl && data.byDayOfWeek && data.byDayOfWeek.length > 0) {
+    const maxSessions = Math.max(...data.byDayOfWeek.map(d => d.sessions));
+    dayChartEl.innerHTML = `
+      <div class="day-chart">
+        ${data.byDayOfWeek.map(d => {
+          const heightPercent = maxSessions > 0 ? (d.sessions / maxSessions) * 100 : 0;
+          return `
+            <div class="day-bar" style="height: ${heightPercent}%" data-day="${escapeHtml(d.day)}">
+              <span class="day-value">${formatNumber(d.sessions)}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // 時間帯別チャート
+  const hourChartEl = document.getElementById('hour-chart');
+  if (hourChartEl && data.byHour && data.byHour.length > 0) {
+    const maxSessions = Math.max(...data.byHour.map(h => h.sessions));
+    hourChartEl.innerHTML = `
+      <div class="hour-chart">
+        ${data.byHour.map(h => {
+          const heightPercent = maxSessions > 0 ? (h.sessions / maxSessions) * 100 : 0;
+          return `
+            <div class="hour-bar" style="height: ${heightPercent}%" data-hour="${h.hour}"></div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+}
+
+// モック時系列データ
+function renderMockTrendData() {
+  updateElement('peak-day', '木');
+  updateElement('peak-hour', '14時');
+
+  const dayChartEl = document.getElementById('day-of-week-chart');
+  if (dayChartEl) {
+    const mockDays = [
+      { day: '日', sessions: 120 },
+      { day: '月', sessions: 180 },
+      { day: '火', sessions: 220 },
+      { day: '水', sessions: 250 },
+      { day: '木', sessions: 280 },
+      { day: '金', sessions: 240 },
+      { day: '土', sessions: 150 },
+    ];
+    const maxSessions = 280;
+    dayChartEl.innerHTML = `
+      <div class="day-chart">
+        ${mockDays.map(d => {
+          const heightPercent = (d.sessions / maxSessions) * 100;
+          return `
+            <div class="day-bar" style="height: ${heightPercent}%" data-day="${d.day}">
+              <span class="day-value">${d.sessions}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  const hourChartEl = document.getElementById('hour-chart');
+  if (hourChartEl) {
+    const mockHours = [];
+    for (let i = 0; i < 24; i++) {
+      let sessions = 10;
+      if (i >= 9 && i <= 18) sessions = 30 + Math.floor(Math.random() * 50);
+      if (i >= 12 && i <= 15) sessions = 50 + Math.floor(Math.random() * 40);
+      mockHours.push({ hour: i, sessions });
+    }
+    const maxSessions = Math.max(...mockHours.map(h => h.sessions));
+    hourChartEl.innerHTML = `
+      <div class="hour-chart">
+        ${mockHours.map(h => {
+          const heightPercent = (h.sessions / maxSessions) * 100;
+          return `
+            <div class="hour-bar" style="height: ${heightPercent}%" data-hour="${h.hour}"></div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+}
+
+// ===== 企業詳細セクション機能 =====
+
+// 現在表示中の企業情報
+let currentCompanyDetail = { domain: '', name: '' };
+
+// 企業詳細セクションを表示
+export async function showCompanyDetailSection(domain, name) {
+  currentCompanyDetail = { domain, name };
+
+  // タイトル更新
+  const titleEl = document.getElementById('company-detail-title');
+  if (titleEl) titleEl.textContent = `${name} の分析`;
+
+  // ページリンク更新
+  const pageBtn = document.getElementById('detail-view-page-btn');
+  if (pageBtn) pageBtn.href = `company.html?c=${domain}`;
+
+  // セクション切り替え
+  document.querySelectorAll('.admin-section').forEach(section => {
+    section.classList.remove('active');
+  });
+  const detailSection = document.getElementById('section-company-detail');
+  if (detailSection) {
+    detailSection.classList.add('active');
+  }
+
+  // ページタイトル更新
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle) {
+    pageTitle.textContent = '企業詳細分析';
+  }
+
+  // サイドバーのactive状態をクリア
+  document.querySelectorAll('.sidebar-nav li').forEach(li => {
+    li.classList.remove('active');
+  });
+
+  // ローディング表示
+  showDetailLoading(true);
+
+  // データ取得
+  const dateRangeEl = document.getElementById('date-range');
+  const days = dateRangeEl?.value || 30;
+
+  try {
+    await loadCompanyDetailData(domain, days);
+  } catch (error) {
+    console.error('[Admin] Company detail error:', error);
+    loadMockCompanyDetailData(domain, name);
+  }
+}
+
+// 企業一覧に戻る
+export function backToCompanies() {
+  // セクション切り替え
+  document.querySelectorAll('.admin-section').forEach(section => {
+    section.classList.remove('active');
+  });
+  const companiesSection = document.getElementById('section-companies');
+  if (companiesSection) {
+    companiesSection.classList.add('active');
+  }
+
+  // サイドバーのactive状態を更新
+  document.querySelectorAll('.sidebar-nav li').forEach(li => {
+    li.classList.remove('active');
+  });
+  const activeLink = document.querySelector('[data-section="companies"]');
+  if (activeLink) {
+    activeLink.parentElement.classList.add('active');
+  }
+
+  // ページタイトル更新
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle) {
+    pageTitle.textContent = '企業別データ';
+  }
+}
+
+// 企業詳細ローディング表示
+function showDetailLoading(show) {
+  const loadingHtml = '<div class="loading-placeholder">データを読み込み中...</div>';
+
+  if (show) {
+    document.querySelectorAll('.detail-stat-value').forEach(el => {
+      el.textContent = '-';
+    });
+    document.querySelectorAll('.detail-chart').forEach(el => {
+      el.innerHTML = loadingHtml;
+    });
+    document.querySelectorAll('.detail-table-container tbody').forEach(el => {
+      el.innerHTML = '<tr><td colspan="4" class="loading-cell">データを読み込み中...</td></tr>';
+    });
+  }
+}
+
+// 企業詳細データを取得
+async function loadCompanyDetailData(domain, days) {
+  const apiEndpoint = config.apiEndpoint;
+  const headers = {};
+  const idToken = getIdToken();
+  if (idToken) {
+    headers['Authorization'] = `Bearer ${idToken}`;
+  }
+
+  const response = await fetch(`${apiEndpoint}?type=company-detail&domain=${domain}&days=${days}`, { headers });
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || 'API Error');
+  }
+
+  renderCompanyDetailData(result.data, domain);
+}
+
+// 企業詳細データを描画
+async function renderCompanyDetailData(data, domain) {
+  // サマリー更新
+  const company = companyData.find(c => c.domain === domain) || {};
+  const totalViews = data.summary?.totalViews || company.views || 0;
+  const totalClicks = company.clicks || 0;
+  const cvr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : 0;
+  const avgDaily = data.summary?.avgDailyViews || 0;
+
+  updateElement('detail-total-views', formatNumber(totalViews));
+  updateElement('detail-total-clicks', formatNumber(totalClicks));
+  updateElement('detail-cvr', `${cvr}%`);
+  updateElement('detail-avg-daily', formatNumber(Math.round(avgDaily)));
+
+  // 日別チャート
+  renderDetailDailyChart(data.daily || []);
+
+  // 流入元チャート
+  renderDetailTrafficChart(data.traffic || []);
+
+  // 性別チャート（Google Signalsデータを使用）
+  const genderData = data.gender || {};
+  renderDetailGenderChart({
+    male: genderData.male || 0,
+    female: genderData.female || 0,
+    other: genderData.unknown || 0
+  });
+
+  // 年齢層チャート（Google Signalsデータを使用）
+  // GA4の年齢層: 18-24, 25-34, 35-44, 45-54, 55-64, 65+
+  const ageData = data.age || {};
+  const convertedAge = convertGAAgeBrackets(ageData);
+  renderDetailAgeChart(convertedAge);
+
+  // 求人別データ（まだGA4では取得できない）
+  renderDetailJobChart([]);
+  renderDetailJobTable([]);
+
+  // 最近の応募データを取得
+  await loadRecentApplications(domain);
+}
+
+// GA4の年齢層フォーマットを変換
+function convertGAAgeBrackets(gaAge) {
+  // GA4形式: 18-24, 25-34, 35-44, 45-54, 55-64, 65+
+  // 内部形式: 20s, 30s, 40s, 50s
+  return {
+    '20s': (gaAge['18-24'] || 0) + (gaAge['25-34'] || 0),
+    '30s': gaAge['35-44'] || 0,
+    '40s': gaAge['45-54'] || 0,
+    '50s': (gaAge['55-64'] || 0) + (gaAge['65+'] || 0)
+  };
+}
+
+// モック企業詳細データ
+function loadMockCompanyDetailData(domain, name) {
+  const company = companyData.find(c => c.domain === domain) || { views: 1000, clicks: 50 };
+  const totalViews = company.views;
+  const totalClicks = company.clicks;
+  const cvr = ((totalClicks / totalViews) * 100).toFixed(1);
+
+  updateElement('detail-total-views', formatNumber(totalViews));
+  updateElement('detail-total-clicks', formatNumber(totalClicks));
+  updateElement('detail-cvr', `${cvr}%`);
+  updateElement('detail-avg-daily', formatNumber(Math.round(totalViews / 30)));
+
+  // モック日別データ
+  const mockDaily = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    mockDaily.push({
+      date: `${date.getMonth() + 1}/${date.getDate()}`,
+      views: Math.floor(20 + Math.random() * 60)
+    });
+  }
+  renderDetailDailyChart(mockDaily);
+
+  // モック求人別データ
+  const mockJobs = [
+    { title: '製造スタッフ', applications: 23 },
+    { title: '組立作業員', applications: 18 },
+    { title: '検査・検品', applications: 12 },
+    { title: '機械オペレーター', applications: 8 },
+    { title: 'フォークリフト', applications: 5 }
+  ];
+  renderDetailJobChart(mockJobs);
+
+  // モック流入元データ
+  const mockTraffic = [
+    { channel: 'Organic Search', count: Math.floor(totalViews * 0.45) },
+    { channel: 'Direct', count: Math.floor(totalViews * 0.28) },
+    { channel: 'Social', count: Math.floor(totalViews * 0.18) },
+    { channel: 'Referral', count: Math.floor(totalViews * 0.09) }
+  ];
+  renderDetailTrafficChart(mockTraffic);
+
+  // モック性別データ
+  const mockGender = {
+    male: Math.floor(totalClicks * 0.72),
+    female: Math.floor(totalClicks * 0.25),
+    other: Math.floor(totalClicks * 0.03)
+  };
+  renderDetailGenderChart(mockGender);
+
+  // モック年齢層データ
+  const mockAge = {
+    '20s': Math.floor(totalClicks * 0.35),
+    '30s': Math.floor(totalClicks * 0.32),
+    '40s': Math.floor(totalClicks * 0.23),
+    '50s': Math.floor(totalClicks * 0.10)
+  };
+  renderDetailAgeChart(mockAge);
+
+  // モック求人テーブル
+  renderDetailJobTable(mockJobs.map(j => ({
+    ...j,
+    views: Math.floor(totalViews * (j.applications / totalClicks)),
+    cvr: ((j.applications / (totalViews * (j.applications / totalClicks))) * 100).toFixed(1)
+  })));
+
+  // 最近の応募はFirestoreから取得
+  loadRecentApplications(domain);
+}
+
+// 日別チャート描画
+function renderDetailDailyChart(data) {
+  const chartEl = document.getElementById('detail-daily-chart');
+  if (!chartEl || !data.length) {
+    if (chartEl) chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    return;
+  }
+
+  const maxViews = Math.max(...data.map(d => d.views));
+
+  chartEl.innerHTML = `
+    <div class="detail-line-chart">
+      ${data.map((d, i) => {
+        const heightPercent = maxViews > 0 ? (d.views / maxViews) * 100 : 0;
+        return `
+          <div class="detail-line-bar" style="height: ${Math.max(heightPercent, 2)}%" data-date="${d.date}">
+            <span class="bar-tooltip">${d.date}: ${d.views}件</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// 求人別チャート描画
+function renderDetailJobChart(data) {
+  const chartEl = document.getElementById('detail-job-chart');
+  if (!chartEl) return;
+
+  if (!data.length) {
+    chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    return;
+  }
+
+  const maxApps = Math.max(...data.map(d => d.applications));
+
+  chartEl.innerHTML = `
+    <div class="detail-bar-chart">
+      ${data.slice(0, 5).map((d, i) => {
+        const widthPercent = maxApps > 0 ? (d.applications / maxApps) * 100 : 0;
+        return `
+          <div class="detail-bar-row">
+            <span class="detail-bar-label" title="${escapeHtml(d.title)}">${escapeHtml(d.title)}</span>
+            <div class="detail-bar-track">
+              <div class="detail-bar-fill job-${i + 1}" style="width: ${widthPercent}%"></div>
+              <span class="detail-bar-value">${d.applications}件</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// 流入元チャート描画
+function renderDetailTrafficChart(data) {
+  const chartEl = document.getElementById('detail-traffic-chart');
+  if (!chartEl) return;
+
+  if (!data.length) {
+    chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    return;
+  }
+
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  const colors = ['organic', 'direct', 'social', 'referral'];
+
+  // グラデーション用の角度計算
+  let gradientStops = [];
+  let currentAngle = 0;
+  data.forEach((d, i) => {
+    const percent = (d.count / total) * 100;
+    const colorClass = colors[i % colors.length];
+    const colorMap = { organic: '#10b981', direct: '#6366f1', social: '#f59e0b', referral: '#8b5cf6' };
+    gradientStops.push(`${colorMap[colorClass]} ${currentAngle}deg ${currentAngle + (percent * 3.6)}deg`);
+    currentAngle += percent * 3.6;
+  });
+
+  chartEl.innerHTML = `
+    <div class="detail-pie-chart">
+      <div class="pie-visual" style="background: conic-gradient(${gradientStops.join(', ')});"></div>
+      <div class="pie-legend">
+        ${data.map((d, i) => {
+          const percent = ((d.count / total) * 100).toFixed(1);
+          return `
+            <div class="pie-legend-item">
+              <span class="pie-color ${colors[i % colors.length]}"></span>
+              <span class="pie-label">${escapeHtml(d.channel)}</span>
+              <span class="pie-value">${percent}%</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// 性別チャート描画
+function renderDetailGenderChart(data) {
+  const chartEl = document.getElementById('detail-gender-chart');
+  if (!chartEl) return;
+
+  const total = data.male + data.female + data.other;
+  if (total === 0) {
+    chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    return;
+  }
+
+  const malePercent = ((data.male / total) * 100).toFixed(1);
+  const femalePercent = ((data.female / total) * 100).toFixed(1);
+  const otherPercent = ((data.other / total) * 100).toFixed(1);
+
+  const maleAngle = (data.male / total) * 360;
+  const femaleAngle = (data.female / total) * 360;
+
+  chartEl.innerHTML = `
+    <div class="detail-pie-chart">
+      <div class="pie-visual" style="background: conic-gradient(#3b82f6 0deg ${maleAngle}deg, #ec4899 ${maleAngle}deg ${maleAngle + femaleAngle}deg, #94a3b8 ${maleAngle + femaleAngle}deg 360deg);"></div>
+      <div class="pie-legend">
+        <div class="pie-legend-item">
+          <span class="pie-color male"></span>
+          <span class="pie-label">男性</span>
+          <span class="pie-value">${data.male}人 (${malePercent}%)</span>
+        </div>
+        <div class="pie-legend-item">
+          <span class="pie-color female"></span>
+          <span class="pie-label">女性</span>
+          <span class="pie-value">${data.female}人 (${femalePercent}%)</span>
+        </div>
+        <div class="pie-legend-item">
+          <span class="pie-color other"></span>
+          <span class="pie-label">その他</span>
+          <span class="pie-value">${data.other}人 (${otherPercent}%)</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// 年齢層チャート描画
+function renderDetailAgeChart(data) {
+  const chartEl = document.getElementById('detail-age-chart');
+  if (!chartEl) return;
+
+  const total = data['20s'] + data['30s'] + data['40s'] + data['50s'];
+  if (total === 0) {
+    chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    return;
+  }
+
+  const ages = [
+    { key: '20s', label: '20代', color: 'age-20s', colorCode: '#3b82f6' },
+    { key: '30s', label: '30代', color: 'age-30s', colorCode: '#10b981' },
+    { key: '40s', label: '40代', color: 'age-40s', colorCode: '#f59e0b' },
+    { key: '50s', label: '50代以上', color: 'age-50s', colorCode: '#ef4444' }
+  ];
+
+  let gradientStops = [];
+  let currentAngle = 0;
+  ages.forEach(age => {
+    const percent = (data[age.key] / total) * 100;
+    gradientStops.push(`${age.colorCode} ${currentAngle}deg ${currentAngle + (percent * 3.6)}deg`);
+    currentAngle += percent * 3.6;
+  });
+
+  chartEl.innerHTML = `
+    <div class="detail-pie-chart">
+      <div class="pie-visual" style="background: conic-gradient(${gradientStops.join(', ')});"></div>
+      <div class="pie-legend">
+        ${ages.map(age => {
+          const percent = ((data[age.key] / total) * 100).toFixed(1);
+          return `
+            <div class="pie-legend-item">
+              <span class="pie-color ${age.color}"></span>
+              <span class="pie-label">${age.label}</span>
+              <span class="pie-value">${data[age.key]}人 (${percent}%)</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// 求人別テーブル描画
+function renderDetailJobTable(data) {
+  const tbody = document.querySelector('#detail-job-table tbody');
+  if (!tbody) return;
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(job => `
+    <tr>
+      <td>${escapeHtml(job.title)}</td>
+      <td>${formatNumber(job.views)}</td>
+      <td>${job.applications}</td>
+      <td>${job.cvr}%</td>
+    </tr>
+  `).join('');
+}
+
+// Firestoreから最近の応募データを取得
+async function loadRecentApplications(domain) {
+  const apiEndpoint = config.apiEndpoint;
+  const headers = {};
+  const idToken = getIdToken();
+  if (idToken) {
+    headers['Authorization'] = `Bearer ${idToken}`;
+  }
+
+  try {
+    const response = await fetch(`${apiEndpoint}?type=recent-applications&domain=${domain}&limit=10`, { headers });
+    const result = await response.json();
+
+    if (result.success && result.data && result.data.applications) {
+      const applications = result.data.applications.map(app => ({
+        date: app.date,
+        job: app.jobTitle || '-',
+        type: app.type || 'apply',
+        source: app.source || 'Direct'
+      }));
+      renderDetailRecentApplications(applications);
+    } else {
+      renderDetailRecentApplications([]);
+    }
+  } catch (error) {
+    console.error('[Admin] Recent applications error:', error);
+    renderDetailRecentApplications([]);
+  }
+}
+
+// 最近の応募テーブル描画
+function renderDetailRecentApplications(data) {
+  const tbody = document.querySelector('#detail-recent-applications tbody');
+  if (!tbody) return;
+
+  const typeLabels = {
+    apply: '応募',
+    line: 'LINE',
+    consult: '相談'
+  };
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(app => `
+    <tr>
+      <td>${escapeHtml(app.date)}</td>
+      <td>${escapeHtml(app.job)}</td>
+      <td><span class="type-badge ${app.type}">${typeLabels[app.type] || app.type}</span></td>
+      <td>${escapeHtml(app.source)}</td>
+    </tr>
+  `).join('');
+}
+
+// 企業詳細セクションのイベント初期化
+export function initCompanyDetailSection() {
+  // 戻るボタン
+  const backBtn = document.getElementById('btn-back-to-companies');
+  if (backBtn) {
+    backBtn.addEventListener('click', backToCompanies);
+  }
+}
+
 export default {
   loadDashboardData,
   renderOverviewTable,
   renderCompanyCards,
   filterCompanies,
   sortCompanies,
-  getCompanyData
+  getCompanyData,
+  initAnalyticsTabs,
+  showCompanyDetailSection,
+  backToCompanies,
+  initCompanyDetailSection
 };

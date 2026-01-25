@@ -176,6 +176,21 @@
     </div>
   </footer>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    // Firebase初期化（応募データ記録用）
+    const firebaseConfig = {
+      apiKey: "AIzaSyDummyKey",
+      authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
+      projectId: "generated-area-484613-e3-90bd4",
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    window.firebaseDb = firebase.firestore();
+  </script>
   <script type="module" src="/src/pages/job-detail.js"></script>
 </body>
 </html>

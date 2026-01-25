@@ -4,7 +4,7 @@
 
 import { config } from './config.js';
 import { initFirebase, checkSession, handleLogin, handleGoogleLogin, handleLogout, getIdToken } from './auth.js';
-import { loadDashboardData, filterCompanies, sortCompanies } from './analytics.js';
+import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
 import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview } from './lp-settings.js';
 
@@ -240,25 +240,6 @@ function bindEvents() {
     });
   }
 
-  // 設定: APIエンドポイント保存
-  const saveApiEndpoint = document.getElementById('save-api-endpoint');
-  if (saveApiEndpoint) {
-    saveApiEndpoint.addEventListener('click', () => {
-      const endpoint = document.getElementById('api-endpoint')?.value?.trim() || '';
-      localStorage.setItem('api_endpoint', endpoint);
-      alert('APIエンドポイントを保存しました');
-    });
-  }
-
-  // 設定: GAS API URL保存
-  const saveGasApiUrl = document.getElementById('save-gas-api-url');
-  if (saveGasApiUrl) {
-    saveGasApiUrl.addEventListener('click', () => {
-      const url = document.getElementById('gas-api-url')?.value?.trim() || '';
-      localStorage.setItem('gas_api_url', url);
-      alert('GAS API URLを保存しました');
-    });
-  }
 }
 
 // 初期化
@@ -267,18 +248,6 @@ export function initAdminDashboard() {
   const savedPassword = localStorage.getItem('admin_password');
   if (savedPassword) {
     config.credentials.password = savedPassword;
-  }
-
-  // 設定画面のAPIエンドポイント入力欄に現在の値を表示
-  const apiEndpointInput = document.getElementById('api-endpoint');
-  if (apiEndpointInput) {
-    apiEndpointInput.value = localStorage.getItem('api_endpoint') || '';
-  }
-
-  // GAS API URLの入力欄に現在の値を表示
-  const gasApiUrlInput = document.getElementById('gas-api-url');
-  if (gasApiUrlInput) {
-    gasApiUrlInput.value = localStorage.getItem('gas_api_url') || '';
   }
 
   // Firebase初期化
@@ -304,6 +273,12 @@ export function initAdminDashboard() {
 
   // イベントバインド
   bindEvents();
+
+  // 分析タブの初期化
+  initAnalyticsTabs();
+
+  // 企業詳細セクションの初期化
+  initCompanyDetailSection();
 }
 
 // グローバルにエクスポート（後方互換）
@@ -314,7 +289,7 @@ if (typeof window !== 'undefined') {
       sheetId: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
       companySheetName: '会社一覧',
       lpSettingsSheetName: 'LP設定',
-      get gasApiUrl() { return localStorage.getItem('gas_api_url') || ''; }
+      gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
     },
     init: initAdminDashboard,
     switchSection,

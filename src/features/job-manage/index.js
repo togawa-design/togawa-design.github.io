@@ -5,9 +5,7 @@ import { escapeHtml } from '@shared/utils.js';
 
 // 設定
 const config = {
-  get gasApiUrl() {
-    return localStorage.getItem('gas_api_url') || '';
-  }
+  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
 };
 
 // 状態

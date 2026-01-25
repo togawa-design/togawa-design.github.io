@@ -28,7 +28,7 @@ export function renderJobDetail(job) {
               ${escapeHtml(job.location)}
             </span>
           </div>
-          <a href="#apply-section" class="lp-hero-cta">今すぐ応募する</a>
+          <a href="#apply-section" class="lp-hero-cta" data-apply-btn data-job-id="${escapeHtml(String(job.id))}" data-company-domain="${escapeHtml(job.companyDomain)}" data-company-name="${escapeHtml(job.company)}" data-job-title="${escapeHtml(job.title)}">今すぐ応募する</a>
         </div>
       </section>
 
@@ -87,7 +87,7 @@ export function renderJobDetail(job) {
           <h2 class="lp-apply-heading">まずはお気軽にご応募ください</h2>
           <p class="lp-apply-text">経験・学歴不問！あなたのご応募をお待ちしています。</p>
           <div class="lp-apply-buttons">
-            <a href="#" class="lp-apply-btn primary">この求人に応募する</a>
+            <a href="#" class="lp-apply-btn primary" data-apply-btn data-job-id="${escapeHtml(String(job.id))}" data-company-domain="${escapeHtml(job.companyDomain)}" data-company-name="${escapeHtml(job.company)}" data-job-title="${escapeHtml(job.title)}">この求人に応募する</a>
             <a href="company.html?id=${escapeHtml(job.companyDomain)}" class="lp-apply-btn secondary">${escapeHtml(job.company)}の企業情報を見る</a>
           </div>
         </div>
@@ -162,6 +162,52 @@ export async function renderRelatedJobsAsync(companies, currentCompanyDomain, cu
   }
 }
 
+// Firestoreに応募データを保存
+async function saveApplicationToFirestore(data) {
+  try {
+    if (!window.firebaseDb) {
+      console.warn('[Application] Firestore not initialized');
+      return;
+    }
+
+    await window.firebaseDb.collection('applications').add({
+      companyDomain: data.company_domain,
+      companyName: data.company_name,
+      jobId: data.job_id,
+      jobTitle: data.job_title,
+      type: 'apply', // apply, line, consult
+      source: document.referrer || 'direct',
+      userAgent: navigator.userAgent,
+      timestamp: new Date(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('[Application] Saved to Firestore');
+  } catch (error) {
+    console.error('[Application] Failed to save:', error);
+  }
+}
+
+// 応募ボタンのクリックトラッキングを設定
+function setupApplyButtonTracking() {
+  document.querySelectorAll('[data-apply-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const data = {
+        company_domain: btn.dataset.companyDomain,
+        company_name: btn.dataset.companyName,
+        job_id: btn.dataset.jobId,
+        job_title: btn.dataset.jobTitle
+      };
+
+      // GA4にイベント送信
+      trackEvent('click_apply', data);
+
+      // Firestoreに保存
+      saveApplicationToFirestore(data);
+    });
+  });
+}
+
 // ページ初期化
 export async function initJobDetailPage() {
   const companyDomain = getUrlParam('company');
@@ -216,10 +262,15 @@ export async function initJobDetailPage() {
     renderRelatedJobsAsync(companies, companyDomain, jobId);
 
     trackEvent('view_job_detail', {
-      company: job.company,
+      company_domain: job.companyDomain,
+      company_name: job.company,
+      job_id: String(job.id),
       job_title: job.title,
       location: job.location
     });
+
+    // 応募ボタンのクリックイベントを設定
+    setupApplyButtonTracking();
 
   } catch (error) {
     console.error('求人詳細の取得エラー:', error);
