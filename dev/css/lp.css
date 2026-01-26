@@ -757,12 +757,12 @@
    ======================================== */
 
 .lp-pattern-modern {
-  --lp-primary: #3b82f6;
-  --lp-primary-dark: #2563eb;
+  --lp-primary: #1e40af;
+  --lp-primary-dark: #1e3a8a;
 }
 
 .lp-pattern-modern .lp-hero-bg {
-  background: linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%);
+  background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%);
 }
 
 .lp-pattern-modern .lp-point-card {
@@ -770,7 +770,7 @@
 }
 
 .lp-pattern-modern .lp-point-number {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
 }
 
 /* ========================================
