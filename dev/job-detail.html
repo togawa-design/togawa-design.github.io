@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/jobDetail-CUZbhVWd.js"></script>
+  <script type="module" crossorigin src="/dev/js/jobDetail-C29v81wX.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-BE8OECDH.js">
   <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-CErzUEmq.js">
@@ -68,7 +68,7 @@
           <span class="line-icon">LINE</span>
           <span>友だち追加</span>
         </a>
-        <a href="admin.html" class="btn-login">管理者</a>
+        <a href="mypage.html" class="btn-mypage" id="header-mypage-btn">マイページ</a>
       </div>
       <button class="mobile-menu-btn" aria-label="メニュー">
         <span></span>
@@ -144,6 +144,7 @@
             <li><a href="#">運営会社</a></li>
             <li><a href="#">プライバシーポリシー</a></li>
             <li><a href="#">利用規約</a></li>
+            <li><a href="admin.html">管理画面</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -181,20 +182,103 @@
     </div>
   </footer>
 
+  <!-- 応募モーダル -->
+  <div id="apply-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content apply-modal-content">
+      <button class="modal-close" aria-label="閉じる">&times;</button>
+
+      <!-- ステップ表示 -->
+      <div id="apply-step-login" class="apply-step">
+        <h2 class="modal-title">応募するにはログインが必要です</h2>
+        <p class="modal-text">アカウントをお持ちでない方は、簡単に新規登録できます。</p>
+        <div class="apply-auth-buttons">
+          <button type="button" class="btn-google-login" id="btn-google-login">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Googleでログイン
+          </button>
+          <div class="auth-divider"><span>または</span></div>
+          <form id="login-form" class="auth-form">
+            <div class="form-group">
+              <input type="email" id="login-email" placeholder="メールアドレス" required>
+            </div>
+            <div class="form-group">
+              <input type="password" id="login-password" placeholder="パスワード" required>
+            </div>
+            <button type="submit" class="btn-primary">ログイン</button>
+          </form>
+          <p class="auth-switch">アカウントをお持ちでない方は <a href="#" id="show-register">新規登録</a></p>
+          <div id="login-error" class="form-error" style="display: none;"></div>
+        </div>
+      </div>
+
+      <div id="apply-step-register" class="apply-step" style="display: none;">
+        <h2 class="modal-title">新規登録</h2>
+        <div class="apply-auth-buttons">
+          <button type="button" class="btn-google-login" id="btn-google-register">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Googleで登録
+          </button>
+          <div class="auth-divider"><span>または</span></div>
+          <form id="register-form" class="auth-form">
+            <div class="form-group">
+              <input type="text" id="register-name" placeholder="お名前" required>
+            </div>
+            <div class="form-group">
+              <input type="email" id="register-email" placeholder="メールアドレス" required>
+            </div>
+            <div class="form-group">
+              <input type="password" id="register-password" placeholder="パスワード（6文字以上）" required minlength="6">
+            </div>
+            <button type="submit" class="btn-primary">登録する</button>
+          </form>
+          <p class="auth-switch">すでにアカウントをお持ちの方は <a href="#" id="show-login">ログイン</a></p>
+          <div id="register-error" class="form-error" style="display: none;"></div>
+        </div>
+      </div>
+
+      <div id="apply-step-form" class="apply-step" style="display: none;">
+        <h2 class="modal-title">応募フォーム</h2>
+        <p class="modal-subtitle" id="apply-job-info"></p>
+        <form id="apply-form" class="apply-form">
+          <div class="form-group">
+            <label>お名前 <span class="required">*</span></label>
+            <input type="text" id="apply-name" required>
+          </div>
+          <div class="form-group">
+            <label>電話番号 <span class="required">*</span></label>
+            <input type="tel" id="apply-phone" required>
+          </div>
+          <div class="form-group">
+            <label>メールアドレス <span class="required">*</span></label>
+            <input type="email" id="apply-email" required>
+          </div>
+          <div class="form-group">
+            <label>備考・質問（任意）</label>
+            <textarea id="apply-message" rows="3" placeholder="企業へのメッセージや質問があればご記入ください"></textarea>
+          </div>
+          <button type="submit" class="btn-primary btn-full">応募する</button>
+        </form>
+        <div id="apply-form-error" class="form-error" style="display: none;"></div>
+      </div>
+
+      <div id="apply-step-complete" class="apply-step" style="display: none;">
+        <div class="apply-complete">
+          <div class="apply-complete-icon">✓</div>
+          <h2 class="modal-title">応募が完了しました</h2>
+          <p class="modal-text">企業からの連絡をお待ちください。<br>マイページで応募状況や企業からのメッセージを確認できます。</p>
+          <div class="apply-complete-actions">
+            <a href="mypage.html#messages" class="btn-primary">マイページでメッセージを確認</a>
+            <button type="button" class="btn-secondary modal-close-btn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script>
-    // Firebase初期化（応募データ記録用）
-    const firebaseConfig = {
-      apiKey: "AIzaSyDummyKey",
-      authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
-      projectId: "generated-area-484613-e3-90bd4",
-    };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    window.firebaseDb = firebase.firestore();
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </body>
 </html>

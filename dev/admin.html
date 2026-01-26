@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/admin-82tQTtQp.js"></script>
+  <script type="module" crossorigin src="/dev/js/admin-opvkTAHU.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-BE8OECDH.js">
   <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-CErzUEmq.js">
@@ -73,6 +73,12 @@
           <ul>
             <li><a href="#" data-section="company-manage"><span class="nav-icon">🏭</span>会社一覧</a></li>
             <li><a href="#" data-section="lp-settings"><span class="nav-icon">🎨</span>LP設定</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">応募者対応</h3>
+          <ul>
+            <li><a href="#" data-section="applicant-select"><span class="nav-icon">💬</span>応募者管理</a></li>
           </ul>
         </div>
         <div class="nav-section">
@@ -374,6 +380,18 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- 応募者管理（会社選択）セクション -->
+      <section id="section-applicant-select" class="admin-section">
+        <div class="section-header">
+          <h3>応募者管理</h3>
+        </div>
+        <p class="section-description">応募者とのメッセージのやり取りや、応募状況の管理ができます。会社を選択してください。</p>
+        <div class="company-select-grid" id="applicant-company-grid">
+          <!-- JSで会社カードを生成 -->
+          <div class="loading-cell">会社一覧を読み込み中...</div>
         </div>
       </section>
 
