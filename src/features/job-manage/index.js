@@ -13,8 +13,27 @@ import { initApplicantsSection, loadApplicantsData } from '@features/applicants/
 
 // 設定
 const config = {
-  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
+  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec',
+  firebaseConfig: {
+    apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
+    authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
+    projectId: "generated-area-484613-e3-90bd4"
+  }
 };
+
+/**
+ * Firebase初期化
+ */
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    console.warn('[JobManager] Firebase not loaded');
+    return false;
+  }
+  if (!firebase.apps.length) {
+    firebase.initializeApp(config.firebaseConfig);
+  }
+  return true;
+}
 
 // 状態
 let companyDomain = null;
@@ -1353,6 +1372,9 @@ function setupEventListeners() {
  * 初期化
  */
 export async function initJobManager() {
+  // Firebase初期化
+  initFirebase();
+
   const params = new URLSearchParams(window.location.search);
   companyDomain = params.get('domain');
   companyName = params.get('company') || companyDomain;
