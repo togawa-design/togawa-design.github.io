@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E1XC94EG05"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
+    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
+  </script>
+
+  <!-- 基本SEO -->
+  <title>求人している会社一覧 | リクエコ求人ナビ</title>
+  <meta name="description" content="期間工・期間従業員を募集している会社一覧。トヨタ、日産、ホンダなど大手自動車メーカーの高待遇求人を多数掲載。">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://togawa-design.github.io/jobs.html">
+
+  <!-- OGP -->
+  <meta property="og:title" content="求人している会社一覧 | リクエコ求人ナビ">
+  <meta property="og:description" content="期間工・期間従業員を募集している会社一覧。大手自動車メーカーの高待遇求人を多数掲載。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://togawa-design.github.io/jobs.html">
+  <meta property="og:image" content="https://togawa-design.github.io/images/ogp.png">
+  <meta property="og:site_name" content="リクエコ求人ナビ">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="求人している会社一覧 | リクエコ求人ナビ">
+  <meta name="twitter:description" content="期間工・期間従業員を募集している会社一覧。大手自動車メーカーの高待遇求人を多数掲載。">
+  <meta name="twitter:image" content="https://togawa-design.github.io/images/ogp.png">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/images/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+
+  <!-- テーマカラー -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/js/jobs-BglFEWye.js"></script>
+  <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/js/utils-BE8OECDH.js">
+  <link rel="modulepreload" crossorigin href="/js/jobs-loader-CErzUEmq.js">
+  <link rel="modulepreload" crossorigin href="/js/index-BCF2U2NH.js">
+  <link rel="modulepreload" crossorigin href="/js/index-Bh1PJkDF.js">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="logo">
+        <a href="./">
+          <span class="logo-text">リクエコ求人ナビ</span>
+          <span class="logo-sub">製造業・工場求人専門</span>
+        </a>
+      </div>
+      <nav class="main-nav" aria-label="メインナビゲーション">
+        <ul class="nav-list">
+          <li><a href="./#jobs">お仕事紹介</a></li>
+          <li><a href="./#content">コンテンツ</a></li>
+          <li><a href="./#about">当サイトについて</a></li>
+          <li><a href="./#contact">お問い合わせ</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <a href="mypage.html" class="btn-mypage" id="header-mypage-btn">マイページ</a>
+      </div>
+      <button class="mobile-menu-btn" aria-label="メニュー">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- パンくずリスト -->
+  <nav class="breadcrumb" aria-label="パンくずリスト">
+    <div class="container">
+      <ol itemscope itemtype="https://schema.org/BreadcrumbList">
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <a itemprop="item" href="./"><span itemprop="name">トップ</span></a>
+          <meta itemprop="position" content="1">
+        </li>
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+          <span itemprop="name" id="breadcrumb-current">求人している会社一覧</span>
+          <meta itemprop="position" content="2">
+        </li>
+      </ol>
+    </div>
+  </nav>
+
+  <main role="main">
+    <!-- 求人一覧ページコンテンツ -->
+    <section class="jobs-page-section">
+      <div class="container">
+        <div id="jobs-page-container">
+          <!-- ローディング中の表示 -->
+          <div class="jobs-loading">
+            <div class="loading-spinner"></div>
+            <p>求人情報を読み込んでいます...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 勤務地から探す -->
+    <section class="jobs-locations-section" id="jobs-locations">
+      <div class="container">
+        <h2 class="section-title">勤務地から探す</h2>
+        <div id="jobs-locations-container">
+          <div class="section-loading">
+            <div class="loading-spinner"></div>
+            <span>読み込み中...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- フッター -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3>サイトについて</h3>
+          <ul>
+            <li><a href="#">当サイトについて</a></li>
+            <li><a href="#">運営会社</a></li>
+            <li><a href="#">プライバシーポリシー</a></li>
+            <li><a href="#">利用規約</a></li>
+            <li><a href="admin.html">管理画面</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>勤務地から探す</h3>
+          <ul id="footer-locations">
+            <li><a href="location.html">すべてのエリア</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>メーカーから探す</h3>
+          <ul>
+            <li><a href="#">トヨタの求人</a></li>
+            <li><a href="#">日産の求人</a></li>
+            <li><a href="#">ホンダの求人</a></li>
+            <li><a href="#">スバルの求人</a></li>
+            <li><a href="#">その他のメーカー</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>お問い合わせ</h3>
+          <ul>
+            <li><a href="./#contact">お問い合わせフォーム</a></li>
+            <li><a href="#">よくある質問</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p><small>&copy; 2025 リクエコ求人ナビ All Rights Reserved.</small></p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

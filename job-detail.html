@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E1XC94EG05"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
+    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
+  </script>
+
+  <!-- 基本SEO（動的に更新） -->
+  <title>求人詳細 | リクエコ求人ナビ</title>
+  <meta name="description" content="期間工・期間従業員の求人詳細。大手メーカーの高待遇求人が満載。">
+  <meta name="robots" content="index, follow">
+
+  <!-- OGP -->
+  <meta property="og:title" content="求人詳細 | リクエコ求人ナビ">
+  <meta property="og:description" content="期間工・期間従業員の求人詳細。大手メーカーの高待遇求人が満載。">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="リクエコ求人ナビ">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/images/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+
+  <!-- テーマカラー -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/js/jobDetail-C29v81wX.js"></script>
+  <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/js/utils-BE8OECDH.js">
+  <link rel="modulepreload" crossorigin href="/js/jobs-loader-CErzUEmq.js">
+  <link rel="modulepreload" crossorigin href="/js/index-BCF2U2NH.js">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="logo">
+        <a href="./">
+          <span class="logo-text">リクエコ求人ナビ</span>
+          <span class="logo-sub">製造業・工場求人専門</span>
+        </a>
+      </div>
+      <nav class="main-nav" aria-label="メインナビゲーション">
+        <ul class="nav-list">
+          <li><a href="./#jobs">お仕事紹介</a></li>
+          <li><a href="./#content">コンテンツ</a></li>
+          <li><a href="./#about">当サイトについて</a></li>
+          <li><a href="./#contact">お問い合わせ</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <a href="mypage.html" class="btn-mypage" id="header-mypage-btn">マイページ</a>
+      </div>
+      <button class="mobile-menu-btn" aria-label="メニュー">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main role="main">
+    <!-- パンくずリスト -->
+    <nav class="breadcrumb" aria-label="パンくずリスト">
+      <div class="container">
+        <ol>
+          <li><a href="./">ホーム</a></li>
+          <li><a href="./#jobs">求人一覧</a></li>
+          <li id="breadcrumb-company"><a href="#">企業名</a></li>
+          <li id="breadcrumb-current">求人詳細</li>
+        </ol>
+      </div>
+    </nav>
+
+    <!-- 求人詳細コンテンツ -->
+    <section class="job-detail-section">
+      <div class="container">
+        <div id="job-detail-container">
+          <div class="job-detail-loading">
+            <div class="job-detail-loading-inner">
+              <div class="loading-spinner large"></div>
+              <p class="loading-text">求人情報を読み込んでいます...</p>
+              <p class="loading-subtext">しばらくお待ちください</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 他の求人セクション -->
+    <section class="related-jobs-section">
+      <div class="container">
+        <h2 class="section-title">その他の求人</h2>
+        <div class="jobs-grid" id="related-jobs-container">
+        </div>
+        <div class="jobs-more">
+          <a href="./#jobs" class="btn-more">すべての求人を見る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- フッター -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3>サイトについて</h3>
+          <ul>
+            <li><a href="#">当サイトについて</a></li>
+            <li><a href="#">運営会社</a></li>
+            <li><a href="#">プライバシーポリシー</a></li>
+            <li><a href="#">利用規約</a></li>
+            <li><a href="admin.html">管理画面</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>勤務地から探す</h3>
+          <ul id="footer-locations">
+            <li><a href="location.html">すべてのエリア</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>メーカーから探す</h3>
+          <ul>
+            <li><a href="#">トヨタの求人</a></li>
+            <li><a href="#">日産の求人</a></li>
+            <li><a href="#">ホンダの求人</a></li>
+            <li><a href="#">スバルの求人</a></li>
+            <li><a href="#">その他のメーカー</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>お問い合わせ</h3>
+          <ul>
+            <li><a href="#contact">お問い合わせフォーム</a></li>
+            <li><a href="#">よくある質問</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p><small>&copy; 2025 リクエコ求人ナビ All Rights Reserved.</small></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 応募モーダル -->
+  <div id="apply-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content apply-modal-content">
+      <button class="modal-close" aria-label="閉じる">&times;</button>
+
+      <!-- ステップ表示 -->
+      <div id="apply-step-login" class="apply-step">
+        <h2 class="modal-title">応募するにはログインが必要です</h2>
+        <p class="modal-text">アカウントをお持ちでない方は、簡単に新規登録できます。</p>
+        <div class="apply-auth-buttons">
+          <button type="button" class="btn-google-login" id="btn-google-login">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Googleでログイン
+          </button>
+          <div class="auth-divider"><span>または</span></div>
+          <form id="login-form" class="auth-form">
+            <div class="form-group">
+              <input type="email" id="login-email" placeholder="メールアドレス" required>
+            </div>
+            <div class="form-group">
+              <input type="password" id="login-password" placeholder="パスワード" required>
+            </div>
+            <button type="submit" class="btn-primary">ログイン</button>
+          </form>
+          <p class="auth-switch">アカウントをお持ちでない方は <a href="#" id="show-register">新規登録</a></p>
+          <div id="login-error" class="form-error" style="display: none;"></div>
+        </div>
+      </div>
+
+      <div id="apply-step-register" class="apply-step" style="display: none;">
+        <h2 class="modal-title">新規登録</h2>
+        <div class="apply-auth-buttons">
+          <button type="button" class="btn-google-login" id="btn-google-register">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Googleで登録
+          </button>
+          <div class="auth-divider"><span>または</span></div>
+          <form id="register-form" class="auth-form">
+            <div class="form-group">
+              <input type="text" id="register-name" placeholder="お名前" required>
+            </div>
+            <div class="form-group">
+              <input type="email" id="register-email" placeholder="メールアドレス" required>
+            </div>
+            <div class="form-group">
+              <input type="password" id="register-password" placeholder="パスワード（6文字以上）" required minlength="6">
+            </div>
+            <button type="submit" class="btn-primary">登録する</button>
+          </form>
+          <p class="auth-switch">すでにアカウントをお持ちの方は <a href="#" id="show-login">ログイン</a></p>
+          <div id="register-error" class="form-error" style="display: none;"></div>
+        </div>
+      </div>
+
+      <div id="apply-step-form" class="apply-step" style="display: none;">
+        <h2 class="modal-title">応募フォーム</h2>
+        <p class="modal-subtitle" id="apply-job-info"></p>
+        <form id="apply-form" class="apply-form">
+          <div class="form-group">
+            <label>お名前 <span class="required">*</span></label>
+            <input type="text" id="apply-name" required>
+          </div>
+          <div class="form-group">
+            <label>電話番号 <span class="required">*</span></label>
+            <input type="tel" id="apply-phone" required>
+          </div>
+          <div class="form-group">
+            <label>メールアドレス <span class="required">*</span></label>
+            <input type="email" id="apply-email" required>
+          </div>
+          <div class="form-group">
+            <label>備考・質問（任意）</label>
+            <textarea id="apply-message" rows="3" placeholder="企業へのメッセージや質問があればご記入ください"></textarea>
+          </div>
+          <button type="submit" class="btn-primary btn-full">応募する</button>
+        </form>
+        <div id="apply-form-error" class="form-error" style="display: none;"></div>
+      </div>
+
+      <div id="apply-step-complete" class="apply-step" style="display: none;">
+        <div class="apply-complete">
+          <div class="apply-complete-icon">✓</div>
+          <h2 class="modal-title">応募が完了しました</h2>
+          <p class="modal-text">企業からの連絡をお待ちください。<br>マイページで応募状況や企業からのメッセージを確認できます。</p>
+          <div class="apply-complete-actions">
+            <a href="mypage.html#messages" class="btn-primary">マイページでメッセージを確認</a>
+            <button type="button" class="btn-secondary modal-close-btn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>マイページ | リクエコ求人ナビ</title>
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/mypage.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/js/mypage-D8QMTjbU.js"></script>
+  <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
+</head>
+<body class="mypage-body">
+  <!-- ヘッダー -->
+  <header class="header mypage-header">
+    <div class="header-inner">
+      <div class="logo">
+        <a href="./">
+          <span class="logo-text">リクエコ求人ナビ</span>
+          <span class="logo-sub">製造業・工場求人専門</span>
+        </a>
+      </div>
+      <div class="header-actions">
+        <!-- ユーザー認証UIはJSで動的に挿入 -->
+      </div>
+    </div>
+  </header>
+
+  <!-- マイページコンテナ -->
+  <div class="mypage-container">
+    <!-- サイドバー -->
+    <aside class="mypage-sidebar">
+      <div class="mypage-user-info" id="mypage-user-info">
+        <div class="mypage-user-avatar" id="mypage-user-avatar"></div>
+        <div class="mypage-user-name" id="mypage-user-name">読み込み中...</div>
+        <div class="mypage-user-email" id="mypage-user-email"></div>
+      </div>
+      <nav class="mypage-nav">
+        <ul>
+          <li>
+            <a href="#profile" class="mypage-nav-item active" data-section="profile">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 10C12.76 10 15 7.76 15 5C15 2.24 12.76 0 10 0C7.24 0 5 2.24 5 5C5 7.76 7.24 10 10 10ZM10 12.5C6.66 12.5 0 14.17 0 17.5V20H20V17.5C20 14.17 13.34 12.5 10 12.5Z" fill="currentColor"/>
+              </svg>
+              プロフィール
+            </a>
+          </li>
+          <li>
+            <a href="#applications" class="mypage-nav-item" data-section="applications">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M17.5 2.5H12.925C12.5 1.05 11.175 0 9.5 0C7.825 0 6.5 1.05 6.075 2.5H2.5C1.125 2.5 0 3.625 0 5V17.5C0 18.875 1.125 20 2.5 20H17.5C18.875 20 20 18.875 20 17.5V5C20 3.625 18.875 2.5 17.5 2.5ZM10 2.5C10.6875 2.5 11.25 3.0625 11.25 3.75C11.25 4.4375 10.6875 5 10 5C9.3125 5 8.75 4.4375 8.75 3.75C8.75 3.0625 9.3125 2.5 10 2.5ZM12.5 15H5V12.5H12.5V15ZM15 10H5V7.5H15V10Z" fill="currentColor"/>
+              </svg>
+              応募履歴
+            </a>
+          </li>
+          <li>
+            <a href="#messages" class="mypage-nav-item" data-section="messages">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M18 0H2C0.9 0 0 0.9 0 2V14C0 15.1 0.9 16 2 16H16L20 20V2C20 0.9 19.1 0 18 0ZM16 12H4V10H16V12ZM16 9H4V7H16V9ZM16 6H4V4H16V6Z" fill="currentColor"/>
+              </svg>
+              メッセージ
+              <span id="unread-badge" class="unread-badge" style="display: none;">0</span>
+            </a>
+          </li>
+          <li>
+            <a href="#favorites" class="mypage-nav-item" data-section="favorites">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 17.5L8.55 16.175C3.4 11.475 0 8.4 0 4.65C0 1.575 2.475 -0.9 5.55 -0.9C7.275 -0.9 8.925 -0.1 10 1.125C11.075 -0.1 12.725 -0.9 14.45 -0.9C17.525 -0.9 20 1.575 20 4.65C20 8.4 16.6 11.475 11.45 16.175L10 17.5Z" fill="currentColor" transform="translate(0, 2.15)"/>
+              </svg>
+              お気に入り
+            </a>
+          </li>
+          <li>
+            <a href="#settings" class="mypage-nav-item" data-section="settings">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M17.14 10.94C17.18 10.64 17.2 10.33 17.2 10C17.2 9.67 17.18 9.36 17.14 9.06L19.16 7.48C19.34 7.34 19.39 7.07 19.28 6.87L17.36 3.55C17.24 3.33 16.99 3.26 16.77 3.33L14.38 4.29C13.88 3.91 13.35 3.59 12.76 3.35L12.4 0.81C12.36 0.57 12.16 0.4 11.92 0.4H8.08C7.84 0.4 7.65 0.57 7.61 0.81L7.25 3.35C6.66 3.59 6.12 3.92 5.63 4.29L3.24 3.33C3.02 3.25 2.77 3.33 2.65 3.55L0.74 6.87C0.62 7.08 0.66 7.34 0.86 7.48L2.88 9.06C2.84 9.36 2.8 9.69 2.8 10C2.8 10.31 2.82 10.64 2.86 10.94L0.84 12.52C0.66 12.66 0.61 12.93 0.72 13.13L2.64 16.45C2.76 16.67 3.01 16.74 3.23 16.67L5.62 15.71C6.12 16.09 6.65 16.41 7.24 16.65L7.6 19.19C7.65 19.43 7.84 19.6 8.08 19.6H11.92C12.16 19.6 12.36 19.43 12.39 19.19L12.75 16.65C13.34 16.41 13.88 16.08 14.37 15.71L16.76 16.67C16.98 16.75 17.23 16.67 17.35 16.45L19.27 13.13C19.39 12.91 19.34 12.66 19.15 12.52L17.14 10.94ZM10 13.6C8.02 13.6 6.4 11.98 6.4 10C6.4 8.02 8.02 6.4 10 6.4C11.98 6.4 13.6 8.02 13.6 10C13.6 11.98 11.98 13.6 10 13.6Z" fill="currentColor"/>
+              </svg>
+              設定
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="mypage-sidebar-footer">
+        <a href="./" class="mypage-back-link">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M13.3333 8H2.66667M2.66667 8L6.66667 4M2.66667 8L6.66667 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          トップへ戻る
+        </a>
+      </div>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="mypage-main">
+      <!-- ローディング -->
+      <div id="mypage-loading" class="mypage-loading">
+        <div class="loading-spinner"></div>
+        <p>読み込み中...</p>
+      </div>
+
+      <!-- 未ログイン時 -->
+      <div id="mypage-not-logged-in" class="mypage-not-logged-in" style="display: none;">
+        <div class="mypage-empty-state">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <path d="M32 32C40.84 32 48 24.84 48 16C48 7.16 40.84 0 32 0C23.16 0 16 7.16 16 16C16 24.84 23.16 32 32 32ZM32 40C21.32 40 0 45.36 0 56V64H64V56C64 45.36 42.68 40 32 40Z" fill="#e2e8f0"/>
+          </svg>
+          <h2>ログインが必要です</h2>
+          <p>マイページを利用するにはログインしてください</p>
+          <button id="mypage-login-btn" class="btn-primary">ログイン</button>
+        </div>
+      </div>
+
+      <!-- プロフィールセクション -->
+      <section id="section-profile" class="mypage-section" style="display: none;">
+        <h1 class="mypage-section-title">プロフィール</h1>
+
+        <div class="mypage-card">
+          <div class="mypage-card-header">
+            <h2>基本情報</h2>
+            <button id="btn-edit-profile" class="btn-secondary-small">編集</button>
+          </div>
+          <div class="mypage-card-body">
+            <div id="profile-view" class="profile-view">
+              <div class="profile-grid">
+                <div class="profile-item">
+                  <label>お名前</label>
+                  <span id="profile-name">-</span>
+                </div>
+                <div class="profile-item">
+                  <label>メールアドレス</label>
+                  <span id="profile-email">-</span>
+                </div>
+                <div class="profile-item">
+                  <label>電話番号</label>
+                  <span id="profile-phone">-</span>
+                </div>
+                <div class="profile-item">
+                  <label>年齢</label>
+                  <span id="profile-age">-</span>
+                </div>
+                <div class="profile-item profile-item-full">
+                  <label>現住所</label>
+                  <span id="profile-address">-</span>
+                </div>
+              </div>
+            </div>
+
+            <form id="profile-edit-form" class="profile-edit-form" style="display: none;">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="edit-name">お名前</label>
+                  <input type="text" id="edit-name" name="name" placeholder="山田 太郎">
+                </div>
+                <div class="form-group">
+                  <label for="edit-phone">電話番号</label>
+                  <input type="tel" id="edit-phone" name="phone" placeholder="090-1234-5678">
+                </div>
+                <div class="form-group">
+                  <label for="edit-age">年齢</label>
+                  <select id="edit-age" name="age">
+                    <option value="">選択してください</option>
+                    <option value="18-24">18〜24歳</option>
+                    <option value="25-29">25〜29歳</option>
+                    <option value="30-34">30〜34歳</option>
+                    <option value="35-39">35〜39歳</option>
+                    <option value="40-44">40〜44歳</option>
+                    <option value="45-49">45〜49歳</option>
+                    <option value="50+">50歳以上</option>
+                  </select>
+                </div>
+                <div class="form-group form-group-full">
+                  <label for="edit-address">現住所</label>
+                  <input type="text" id="edit-address" name="address" placeholder="愛知県名古屋市">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" id="btn-cancel-profile" class="btn-secondary">キャンセル</button>
+                <button type="submit" class="btn-primary">保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- 応募履歴セクション -->
+      <section id="section-applications" class="mypage-section" style="display: none;">
+        <h1 class="mypage-section-title">応募履歴</h1>
+
+        <div id="applications-list" class="applications-list">
+          <div class="mypage-empty-state">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <path d="M42 6H30.33C29.45 3.15 26.79 1 23.67 1C20.55 1 17.89 3.15 17.01 6H6C3.79 6 2 7.79 2 10V42C2 44.21 3.79 46 6 46H42C44.21 46 46 44.21 46 42V10C46 7.79 44.21 6 42 6ZM24 6C25.1 6 26 6.9 26 8C26 9.1 25.1 10 24 10C22.9 10 22 9.1 22 8C22 6.9 22.9 6 24 6Z" fill="#e2e8f0"/>
+            </svg>
+            <h3>応募履歴がありません</h3>
+            <p>求人に応募すると、ここに履歴が表示されます</p>
+            <a href="jobs.html" class="btn-primary">求人を探す</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- メッセージセクション -->
+      <section id="section-messages" class="mypage-section" style="display: none;">
+        <h1 class="mypage-section-title">メッセージ</h1>
+
+        <div class="messages-layout">
+          <!-- 応募一覧（左側） -->
+          <div class="messages-sidebar">
+            <div id="message-threads-list" class="message-threads-list">
+              <div class="mypage-loading">
+                <div class="loading-spinner"></div>
+                <p>読み込み中...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- メッセージ詳細（右側） -->
+          <div class="messages-content">
+            <div id="message-detail" class="message-detail">
+              <div class="message-detail-empty">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                  <path d="M43.2 0H4.8C2.16 0 0 2.16 0 4.8V33.6C0 36.24 2.16 38.4 4.8 38.4H38.4L48 48V4.8C48 2.16 45.84 0 43.2 0ZM38.4 28.8H9.6V24H38.4V28.8ZM38.4 21.6H9.6V16.8H38.4V21.6ZM38.4 14.4H9.6V9.6H38.4V14.4Z" fill="#e2e8f0"/>
+                </svg>
+                <p>左側から応募を選択してください</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- お気に入りセクション -->
+      <section id="section-favorites" class="mypage-section" style="display: none;">
+        <h1 class="mypage-section-title">お気に入り</h1>
+
+        <div id="favorites-list" class="favorites-list">
+          <div class="mypage-empty-state">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <path d="M24 42L20.55 38.925C8.4 27.9 0 20.4 0 11.4C0 3.9 5.85 -2 13.2 -2C17.4 -2 21.42 -0.02 24 3.18C26.58 -0.02 30.6 -2 34.8 -2C42.15 -2 48 3.9 48 11.4C48 20.4 39.6 27.9 27.45 38.925L24 42Z" fill="#e2e8f0" transform="translate(0, 5)"/>
+            </svg>
+            <h3>お気に入りがありません</h3>
+            <p>気になる求人をお気に入りに追加すると、ここに表示されます</p>
+            <a href="jobs.html" class="btn-primary">求人を探す</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 設定セクション -->
+      <section id="section-settings" class="mypage-section" style="display: none;">
+        <h1 class="mypage-section-title">設定</h1>
+
+        <div class="mypage-card">
+          <div class="mypage-card-header">
+            <h2>パスワード変更</h2>
+          </div>
+          <div class="mypage-card-body">
+            <form id="password-form" class="settings-form">
+              <div class="form-group">
+                <label for="new-password">新しいパスワード</label>
+                <input type="password" id="new-password" name="newPassword" placeholder="6文字以上" minlength="6">
+              </div>
+              <div class="form-group">
+                <label for="confirm-password">パスワード（確認）</label>
+                <input type="password" id="confirm-password" name="confirmPassword" placeholder="パスワードを再入力">
+              </div>
+              <div class="form-error" id="password-error"></div>
+              <div class="form-success" id="password-success"></div>
+              <button type="submit" class="btn-primary">パスワードを変更</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="mypage-card mypage-card-danger">
+          <div class="mypage-card-header">
+            <h2>アカウント削除</h2>
+          </div>
+          <div class="mypage-card-body">
+            <p class="danger-text">アカウントを削除すると、すべてのデータが削除されます。この操作は取り消せません。</p>
+            <button id="btn-delete-account" class="btn-danger">アカウントを削除</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+</body>
+</html>
