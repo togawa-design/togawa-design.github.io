@@ -3,17 +3,38 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // applications コレクション - 応募データ
     match /applications/{docId} {
-      // クライアントからの書き込みを許可（応募ボタンクリック時）
-      allow create: if true;
-      // 読み取りは認証済みユーザーのみ（管理画面用）
-      allow read: if request.auth != null;
-      // 更新・削除は禁止
-      allow update, delete: if false;
+      // 読み書き全て許可（開発用）
+      allow read, write: if true;
     }
 
-    // その他のコレクションはデフォルトで拒否
+    // assignees コレクション - 担当者データ
+    match /assignees/{docId} {
+      allow read, write: if true;
+    }
+
+    // companies コレクション - 会社別設定
+    match /companies/{companyDomain} {
+      allow read, write: if true;
+
+      // サブコレクション: assignees
+      match /assignees/{assigneeId} {
+        allow read, write: if true;
+      }
+    }
+
+    // pageviews コレクション - ページビューデータ
+    match /pageviews/{docId} {
+      allow read, write: if true;
+    }
+
+    // users コレクション - ユーザープロフィール
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // その他のコレクションも許可（開発用）
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }

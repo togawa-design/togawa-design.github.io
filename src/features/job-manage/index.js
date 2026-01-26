@@ -582,12 +582,24 @@ function formatDuration(seconds) {
 }
 
 /**
- * Firestoreからアクセス解析データを取得
+ * Cloud Functions（GA4 API）からアクセス解析データを取得
  */
 async function loadAnalyticsData() {
   const periodSelect = document.getElementById('analytics-period');
   const periodType = periodSelect?.value || '7days';
-  const period = getAnalyticsPeriod(periodType);
+
+  // 日数を計算
+  let days = 7;
+  switch (periodType) {
+    case '7days': days = 7; break;
+    case '30days': days = 30; break;
+    case 'month': {
+      const now = new Date();
+      days = now.getDate();
+      break;
+    }
+    case 'last-month': days = 30; break;
+  }
 
   // ローディング表示
   const jobTbody = document.getElementById('job-analytics-tbody');
@@ -599,32 +611,37 @@ async function loadAnalyticsData() {
   if (deviceTbody) deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">読み込み中...</td></tr>';
 
   try {
-    // Firestoreからページビューデータを取得
-    const db = firebase.firestore();
-    const snapshot = await db.collection('pageviews')
-      .where('companyDomain', '==', companyDomain)
-      .where('timestamp', '>=', period.start)
-      .where('timestamp', '<=', period.end)
-      .get();
+    const apiEndpoint = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData';
 
-    const pageviews = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      timestamp: doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp)
-    }));
+    // 概要データを取得
+    const overviewRes = await fetch(`${apiEndpoint}?type=overview&days=${days}`);
+    const overviewData = await overviewRes.json();
 
-    // データがない場合はデモデータを表示
-    if (pageviews.length === 0) {
-      renderAnalyticsDemo();
-      return;
+    // 流入元データを取得
+    const trafficRes = await fetch(`${apiEndpoint}?type=traffic&days=${days}`);
+    const trafficData = await trafficRes.json();
+
+    // 会社別詳細データを取得（company_domainがある場合）
+    let companyDetailData = null;
+    if (companyDomain) {
+      const companyRes = await fetch(`${apiEndpoint}?type=company-detail&days=${days}&domain=${encodeURIComponent(companyDomain)}`);
+      companyDetailData = await companyRes.json();
     }
 
-    analyticsCache = pageviews;
-    renderAnalyticsData(pageviews);
+    if (!overviewData.success) {
+      throw new Error(overviewData.error || 'データ取得エラー');
+    }
+
+    analyticsCache = {
+      overview: overviewData.data,
+      traffic: trafficData.data,
+      companyDetail: companyDetailData?.data
+    };
+
+    renderGA4AnalyticsData(analyticsCache);
 
   } catch (error) {
     console.error('アクセス解析データ取得エラー:', error);
-    // エラー時もデモデータを表示
     renderAnalyticsDemo();
   }
 }
@@ -793,6 +810,106 @@ function renderAnalyticsData(pageviews) {
           <td>${item.percentage}%</td>
         </tr>
       `).join('');
+    }
+  }
+}
+
+/**
+ * GA4 APIデータを描画
+ */
+function renderGA4AnalyticsData(data) {
+  const { overview, traffic, companyDetail } = data;
+
+  // サマリー
+  document.getElementById('analytics-pv').textContent = (overview?.pageViews || 0).toLocaleString();
+  document.getElementById('analytics-users').textContent = (overview?.users || 0).toLocaleString();
+
+  const sessions = overview?.sessions || 0;
+  const pageViews = overview?.pageViews || 0;
+  const pagesPerSession = sessions > 0 ? (pageViews / sessions).toFixed(1) : '-';
+  document.getElementById('analytics-pages-per-session').textContent = pagesPerSession;
+  document.getElementById('analytics-avg-time').textContent = '-'; // GA4 APIでは取得が複雑
+
+  // 求人別アクセス
+  const jobTbody = document.getElementById('job-analytics-tbody');
+  if (jobTbody) {
+    if (companyDetail?.jobs && companyDetail.jobs.length > 0) {
+      jobTbody.innerHTML = companyDetail.jobs.map(item => `
+        <tr>
+          <td>${escapeHtml(item.jobTitle || item.pagePath || '不明')}</td>
+          <td>${item.views || 0}</td>
+          <td>${item.users || '-'}</td>
+          <td>-</td>
+          <td>-</td>
+        </tr>
+      `).join('');
+    } else {
+      // ページパスベースのデータを表示
+      jobTbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="loading-cell">
+            この会社の求人別データはまだありません。<br>
+            <small>※ GA4でカスタムイベント（view_job_detail）の設定が必要です</small>
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  // 流入元
+  const sourceTbody = document.getElementById('source-analytics-tbody');
+  if (sourceTbody) {
+    const sources = traffic?.sources || [];
+    if (sources.length > 0) {
+      const totalSessions = sources.reduce((acc, s) => acc + (s.sessions || 0), 0);
+      sourceTbody.innerHTML = sources.slice(0, 10).map(item => {
+        const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
+        return `
+          <tr>
+            <td>${escapeHtml(item.source || '(direct)')}</td>
+            <td>${item.sessions || 0}</td>
+            <td>${percentage}%</td>
+          </tr>
+        `;
+      }).join('');
+    } else if (traffic?.channels && traffic.channels.length > 0) {
+      const totalSessions = traffic.channels.reduce((acc, c) => acc + (c.sessions || 0), 0);
+      sourceTbody.innerHTML = traffic.channels.map(item => {
+        const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
+        return `
+          <tr>
+            <td>${escapeHtml(item.channel || '不明')}</td>
+            <td>${item.sessions || 0}</td>
+            <td>${percentage}%</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      sourceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
+    }
+  }
+
+  // デバイス別
+  const deviceTbody = document.getElementById('device-analytics-tbody');
+  if (deviceTbody) {
+    const devices = traffic?.devices || [];
+    if (devices.length > 0) {
+      const totalSessions = devices.reduce((acc, d) => acc + (d.sessions || 0), 0);
+      deviceTbody.innerHTML = devices.map(item => {
+        const deviceName = item.device === 'mobile' ? 'モバイル' :
+                          item.device === 'desktop' ? 'デスクトップ' :
+                          item.device === 'tablet' ? 'タブレット' : item.device;
+        const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
+        return `
+          <tr>
+            <td>${escapeHtml(deviceName)}</td>
+            <td>${item.sessions || 0}</td>
+            <td>${percentage}%</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
     }
   }
 }
