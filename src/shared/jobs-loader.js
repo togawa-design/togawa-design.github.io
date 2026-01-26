@@ -77,7 +77,8 @@ export function normalizeHeader(header) {
     '職種名': 'jobType', 'jobType': 'jobType', 'job_type': 'jobType',
     '給与': 'salary', 'salary': 'salary',
     '雇用形態': 'employmentType', 'employmentType': 'employmentType', 'employment_type': 'employmentType',
-    '資格・スキル': 'skills', 'skills': 'skills', '資格': 'skills', 'スキル': 'skills'
+    '資格・スキル': 'skills', 'skills': 'skills', '資格': 'skills', 'スキル': 'skills',
+    '検索タグ': 'tags', 'tags': 'tags'
   };
 
   const cleanHeader = header.replace(/"/g, '').trim();
@@ -106,8 +107,20 @@ export function parseCSV(csvText, headerRow = 0, dataStartRow = 1) {
       item[key] = values[index] || '';
     });
 
+    // featuresをパース
     if (item.features) {
       item.features = item.features.split(',').map(f => f.trim()).filter(f => f);
+    } else {
+      item.features = [];
+    }
+
+    // tagsをパースしてfeaturesにマージ
+    if (item.tags) {
+      item.tags = item.tags.split(',').map(t => t.trim()).filter(t => t);
+      // 検索タグをfeaturesにマージ（重複除外）
+      item.features = [...new Set([...item.features, ...item.tags])];
+    } else {
+      item.tags = [];
     }
 
     items.push(item);
