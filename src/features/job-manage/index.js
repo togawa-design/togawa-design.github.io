@@ -24,6 +24,7 @@ let currentEditingJob = null;
 let isNewJob = false;
 let applicationsCache = [];
 let reportData = null;
+let analyticsCache = null;
 
 /**
  * 日付をinput[type="date"]用にフォーマット
@@ -498,6 +499,281 @@ async function downloadCsvFeed() {
     alert('フィード生成に失敗しました: ' + error.message);
   } finally {
     hideFeedLoading();
+  }
+}
+
+// ========================================
+// アクセス解析機能
+// ========================================
+
+/**
+ * アクセス解析の期間を計算
+ */
+function getAnalyticsPeriod(type) {
+  const now = new Date();
+  let start, end;
+
+  switch (type) {
+    case '7days': {
+      end = new Date(now);
+      start = new Date(now);
+      start.setDate(now.getDate() - 6);
+      break;
+    }
+    case '30days': {
+      end = new Date(now);
+      start = new Date(now);
+      start.setDate(now.getDate() - 29);
+      break;
+    }
+    case 'month': {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now);
+      break;
+    }
+    case 'last-month': {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+      break;
+    }
+    default:
+      end = new Date(now);
+      start = new Date(now);
+      start.setDate(now.getDate() - 6);
+  }
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+}
+
+/**
+ * 秒数を読みやすい形式に変換
+ */
+function formatDuration(seconds) {
+  if (!seconds || isNaN(seconds)) return '-';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  if (mins > 0) {
+    return `${mins}分${secs}秒`;
+  }
+  return `${secs}秒`;
+}
+
+/**
+ * Firestoreからアクセス解析データを取得
+ */
+async function loadAnalyticsData() {
+  const periodSelect = document.getElementById('analytics-period');
+  const periodType = periodSelect?.value || '7days';
+  const period = getAnalyticsPeriod(periodType);
+
+  // ローディング表示
+  const jobTbody = document.getElementById('job-analytics-tbody');
+  const sourceTbody = document.getElementById('source-analytics-tbody');
+  const deviceTbody = document.getElementById('device-analytics-tbody');
+
+  if (jobTbody) jobTbody.innerHTML = '<tr><td colspan="5" class="loading-cell">データを読み込み中...</td></tr>';
+  if (sourceTbody) sourceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">読み込み中...</td></tr>';
+  if (deviceTbody) deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">読み込み中...</td></tr>';
+
+  try {
+    // Firestoreからページビューデータを取得
+    const db = firebase.firestore();
+    const snapshot = await db.collection('pageviews')
+      .where('companyDomain', '==', companyDomain)
+      .where('timestamp', '>=', period.start)
+      .where('timestamp', '<=', period.end)
+      .get();
+
+    const pageviews = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp)
+    }));
+
+    // データがない場合はデモデータを表示
+    if (pageviews.length === 0) {
+      renderAnalyticsDemo();
+      return;
+    }
+
+    analyticsCache = pageviews;
+    renderAnalyticsData(pageviews);
+
+  } catch (error) {
+    console.error('アクセス解析データ取得エラー:', error);
+    // エラー時もデモデータを表示
+    renderAnalyticsDemo();
+  }
+}
+
+/**
+ * デモデータを表示（データがない場合）
+ */
+function renderAnalyticsDemo() {
+  // サマリー
+  document.getElementById('analytics-pv').textContent = '- (未連携)';
+  document.getElementById('analytics-users').textContent = '-';
+  document.getElementById('analytics-pages-per-session').textContent = '-';
+  document.getElementById('analytics-avg-time').textContent = '-';
+
+  // 求人別
+  const jobTbody = document.getElementById('job-analytics-tbody');
+  if (jobTbody) {
+    jobTbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="loading-cell">
+          アクセス解析データがありません。<br>
+          Google Analyticsとの連携を設定すると、詳細なアクセスデータを確認できます。
+        </td>
+      </tr>
+    `;
+  }
+
+  // 流入元
+  const sourceTbody = document.getElementById('source-analytics-tbody');
+  if (sourceTbody) {
+    sourceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データなし</td></tr>';
+  }
+
+  // デバイス
+  const deviceTbody = document.getElementById('device-analytics-tbody');
+  if (deviceTbody) {
+    deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データなし</td></tr>';
+  }
+}
+
+/**
+ * アクセス解析データを描画
+ */
+function renderAnalyticsData(pageviews) {
+  // サマリー計算
+  const totalPV = pageviews.length;
+  const uniqueUsers = new Set(pageviews.map(pv => pv.userId || pv.sessionId)).size;
+  const sessions = new Set(pageviews.map(pv => pv.sessionId)).size;
+  const pagesPerSession = sessions > 0 ? (totalPV / sessions).toFixed(1) : '-';
+
+  // 平均滞在時間の計算（仮）
+  const avgTime = pageviews.reduce((acc, pv) => acc + (pv.duration || 0), 0) / totalPV;
+
+  document.getElementById('analytics-pv').textContent = totalPV.toLocaleString();
+  document.getElementById('analytics-users').textContent = uniqueUsers.toLocaleString();
+  document.getElementById('analytics-pages-per-session').textContent = pagesPerSession;
+  document.getElementById('analytics-avg-time').textContent = formatDuration(avgTime);
+
+  // 求人別集計
+  const jobStats = {};
+  pageviews.forEach(pv => {
+    const jobId = pv.jobId || 'unknown';
+    const jobTitle = pv.jobTitle || pv.pagePath || '不明';
+    if (!jobStats[jobId]) {
+      jobStats[jobId] = { jobTitle, pv: 0, users: new Set(), bounces: 0, totalDuration: 0 };
+    }
+    jobStats[jobId].pv++;
+    jobStats[jobId].users.add(pv.userId || pv.sessionId);
+    if (pv.bounce) jobStats[jobId].bounces++;
+    jobStats[jobId].totalDuration += pv.duration || 0;
+  });
+
+  const jobData = Object.values(jobStats)
+    .map(item => ({
+      ...item,
+      users: item.users.size,
+      bounceRate: item.pv > 0 ? Math.round((item.bounces / item.pv) * 100) : 0,
+      avgDuration: item.pv > 0 ? item.totalDuration / item.pv : 0
+    }))
+    .sort((a, b) => b.pv - a.pv)
+    .slice(0, 10);
+
+  const jobTbody = document.getElementById('job-analytics-tbody');
+  if (jobTbody) {
+    if (jobData.length === 0) {
+      jobTbody.innerHTML = '<tr><td colspan="5" class="loading-cell">データがありません</td></tr>';
+    } else {
+      jobTbody.innerHTML = jobData.map(item => `
+        <tr>
+          <td>${escapeHtml(item.jobTitle)}</td>
+          <td>${item.pv}</td>
+          <td>${item.users}</td>
+          <td>${item.bounceRate}%</td>
+          <td>${formatDuration(item.avgDuration)}</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // 流入元別集計
+  const sourceStats = {};
+  pageviews.forEach(pv => {
+    let source = pv.source || pv.utmSource || pv.referrer || 'direct';
+    if (source.includes('google')) source = 'Google検索';
+    else if (source.includes('indeed')) source = 'Indeed';
+    else if (source.includes('jobbox') || source.includes('stanby')) source = '求人ボックス';
+    else if (source.includes('line')) source = 'LINE';
+    else if (source === 'direct' || source === '(direct)' || !source) source = '直接流入';
+    else source = 'その他';
+
+    sourceStats[source] = (sourceStats[source] || 0) + 1;
+  });
+
+  const sourceData = Object.entries(sourceStats)
+    .map(([source, count]) => ({
+      source,
+      count,
+      percentage: totalPV > 0 ? Math.round((count / totalPV) * 100) : 0
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const sourceTbody = document.getElementById('source-analytics-tbody');
+  if (sourceTbody) {
+    if (sourceData.length === 0) {
+      sourceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
+    } else {
+      sourceTbody.innerHTML = sourceData.map(item => `
+        <tr>
+          <td>${escapeHtml(item.source)}</td>
+          <td>${item.count}</td>
+          <td>${item.percentage}%</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // デバイス別集計
+  const deviceStats = {};
+  pageviews.forEach(pv => {
+    let device = pv.device || pv.deviceCategory || 'unknown';
+    if (device === 'mobile' || device.includes('mobile')) device = 'モバイル';
+    else if (device === 'desktop' || device.includes('desktop')) device = 'デスクトップ';
+    else if (device === 'tablet' || device.includes('tablet')) device = 'タブレット';
+    else device = 'その他';
+
+    deviceStats[device] = (deviceStats[device] || 0) + 1;
+  });
+
+  const deviceData = Object.entries(deviceStats)
+    .map(([device, count]) => ({
+      device,
+      count,
+      percentage: totalPV > 0 ? Math.round((count / totalPV) * 100) : 0
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const deviceTbody = document.getElementById('device-analytics-tbody');
+  if (deviceTbody) {
+    if (deviceData.length === 0) {
+      deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
+    } else {
+      deviceTbody.innerHTML = deviceData.map(item => `
+        <tr>
+          <td>${escapeHtml(item.device)}</td>
+          <td>${item.count}</td>
+          <td>${item.percentage}%</td>
+        </tr>
+      `).join('');
+    }
   }
 }
 
@@ -998,6 +1274,9 @@ function switchSection(sectionId) {
   if (sectionId === 'jobs') {
     if (pageTitle) pageTitle.textContent = `${companyName} の求人一覧`;
     if (headerActions) headerActions.style.display = 'flex';
+  } else if (sectionId === 'analytics') {
+    if (pageTitle) pageTitle.textContent = 'アクセス解析';
+    if (headerActions) headerActions.style.display = 'none';
   } else if (sectionId === 'reports') {
     if (pageTitle) pageTitle.textContent = '応募レポート';
     if (headerActions) headerActions.style.display = 'none';
@@ -1053,6 +1332,9 @@ function setupEventListeners() {
   document.getElementById('btn-generate-report')?.addEventListener('click', generateReport);
   document.getElementById('btn-report-csv')?.addEventListener('click', downloadReportCsv);
   document.getElementById('btn-report-excel')?.addEventListener('click', downloadReportExcel);
+
+  // アクセス解析機能
+  document.getElementById('btn-load-analytics')?.addEventListener('click', loadAnalyticsData);
 }
 
 /**

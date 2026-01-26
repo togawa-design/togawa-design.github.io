@@ -27,6 +27,7 @@
         <ul>
           <li><a href="admin.html" data-section="back"><span class="nav-icon">←</span>管理画面に戻る</a></li>
           <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
+          <li><a href="#" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
           <li><a href="#" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
         </ul>
       </nav>
@@ -102,6 +103,130 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- アクセス解析セクション -->
+      <section id="section-analytics" class="admin-section">
+        <div class="analytics-header">
+          <h2>アクセス解析</h2>
+          <p class="section-description">求人ページへのアクセス状況を確認できます</p>
+        </div>
+
+        <!-- 期間選択 -->
+        <div class="analytics-controls">
+          <div class="analytics-period-select">
+            <label for="analytics-period">期間</label>
+            <select id="analytics-period">
+              <option value="7days" selected>過去7日間</option>
+              <option value="30days">過去30日間</option>
+              <option value="month">今月</option>
+              <option value="last-month">先月</option>
+            </select>
+          </div>
+          <button id="btn-load-analytics" class="btn-primary">データ取得</button>
+        </div>
+
+        <!-- サマリーカード -->
+        <div class="analytics-summary">
+          <div class="analytics-card">
+            <div class="analytics-icon">👁️</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-pv">-</span>
+              <span class="analytics-label">総PV数</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-icon">👤</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-users">-</span>
+              <span class="analytics-label">ユニークユーザー</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-icon">📄</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-pages-per-session">-</span>
+              <span class="analytics-label">平均閲覧ページ</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-icon">⏱️</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-avg-time">-</span>
+              <span class="analytics-label">平均滞在時間</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 求人別アクセス数 -->
+        <div class="analytics-section">
+          <h3>求人別アクセス数</h3>
+          <div class="analytics-table-container">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th>求人タイトル</th>
+                  <th>PV</th>
+                  <th>ユーザー</th>
+                  <th>直帰率</th>
+                  <th>平均滞在時間</th>
+                </tr>
+              </thead>
+              <tbody id="job-analytics-tbody">
+                <tr>
+                  <td colspan="5" class="loading-cell">「データ取得」ボタンをクリックしてください</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 流入元別 -->
+        <div class="analytics-section">
+          <h3>流入元別アクセス</h3>
+          <div class="analytics-table-container">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th>流入元</th>
+                  <th>セッション</th>
+                  <th>割合</th>
+                </tr>
+              </thead>
+              <tbody id="source-analytics-tbody">
+                <tr>
+                  <td colspan="3" class="loading-cell">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- デバイス別 -->
+        <div class="analytics-section">
+          <h3>デバイス別アクセス</h3>
+          <div class="analytics-table-container">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th>デバイス</th>
+                  <th>セッション</th>
+                  <th>割合</th>
+                </tr>
+              </thead>
+              <tbody id="device-analytics-tbody">
+                <tr>
+                  <td colspan="3" class="loading-cell">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 注意書き -->
+        <div class="analytics-note">
+          <p>※ アクセス解析データはGoogle Analyticsから取得しています。データ反映には最大24時間かかる場合があります。</p>
         </div>
       </section>
 
