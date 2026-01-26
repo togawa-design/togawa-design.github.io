@@ -85,8 +85,8 @@ jobs:
               mv dev /tmp/dev-backup
             fi
 
-            # ルートの既存ファイルを削除（.gitと.nojekyllは除く）
-            find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.nojekyll' ! -name 'dev' -exec rm -rf {} +
+            # ルートの既存ファイルを削除（.git、.nojekyll、buildは除く）
+            find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.nojekyll' ! -name 'dev' ! -name 'build' -exec rm -rf {} +
 
             # ビルド成果物をコピー
             cp -r ./build/* .
