@@ -162,36 +162,366 @@ export async function renderRelatedJobsAsync(companies, currentCompanyDomain, cu
   }
 }
 
+// 応募モーダル関連の変数
+let currentJobData = null;
+let firebaseAuth = null;
+
+// Firebase認証を初期化
+function initFirebaseAuth() {
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    console.warn('[Auth] Firebase Auth not loaded');
+    return false;
+  }
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
+    authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
+    projectId: "generated-area-484613-e3-90bd4"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  firebaseAuth = firebase.auth();
+  window.firebaseDb = firebase.firestore();
+
+  // 認証状態の監視
+  firebaseAuth.onAuthStateChanged((user) => {
+    if (user && currentJobData) {
+      // ログイン済みなら応募フォームを表示
+      showApplyStep('form');
+      prefillApplyForm(user);
+    }
+  });
+
+  return true;
+}
+
 // Firestoreに応募データを保存
 async function saveApplicationToFirestore(data) {
   try {
     if (!window.firebaseDb) {
       console.warn('[Application] Firestore not initialized');
-      return;
+      return null;
     }
 
-    await window.firebaseDb.collection('applications').add({
+    const user = firebaseAuth?.currentUser;
+    const applicationData = {
       companyDomain: data.company_domain,
       companyName: data.company_name,
       jobId: data.job_id,
       jobTitle: data.job_title,
-      type: 'apply', // apply, line, consult
+      applicantName: data.name,
+      applicantPhone: data.phone,
+      applicantEmail: data.email,
+      applicantMessage: data.message || '',
+      userId: user?.uid || null,
+      status: 'new',
+      type: 'apply',
       source: document.referrer || 'direct',
       userAgent: navigator.userAgent,
       timestamp: new Date(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
 
-    console.log('[Application] Saved to Firestore');
+    const docRef = await window.firebaseDb.collection('applications').add(applicationData);
+    console.log('[Application] Saved to Firestore:', docRef.id);
+    return docRef.id;
   } catch (error) {
     console.error('[Application] Failed to save:', error);
+    return null;
   }
 }
 
-// 応募ボタンのクリックトラッキングを設定
+// 応募モーダルを表示
+function showApplyModal(jobData) {
+  currentJobData = jobData;
+  const modal = document.getElementById('apply-modal');
+  if (!modal) return;
+
+  // 求人情報を設定
+  const jobInfo = document.getElementById('apply-job-info');
+  if (jobInfo) {
+    jobInfo.textContent = `${jobData.company_name} - ${jobData.job_title}`;
+  }
+
+  // ログイン状態をチェック
+  const user = firebaseAuth?.currentUser;
+  if (user) {
+    showApplyStep('form');
+    prefillApplyForm(user);
+  } else {
+    showApplyStep('login');
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+// 応募モーダルを閉じる
+function hideApplyModal() {
+  const modal = document.getElementById('apply-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  document.body.style.overflow = '';
+  currentJobData = null;
+}
+
+// 応募ステップを表示
+function showApplyStep(step) {
+  const steps = ['login', 'register', 'form', 'complete'];
+  steps.forEach(s => {
+    const el = document.getElementById(`apply-step-${s}`);
+    if (el) {
+      el.style.display = s === step ? 'block' : 'none';
+    }
+  });
+}
+
+// フォームに値を事前入力
+async function prefillApplyForm(user) {
+  if (!user) return;
+
+  const nameInput = document.getElementById('apply-name');
+  const emailInput = document.getElementById('apply-email');
+
+  if (nameInput && user.displayName) {
+    nameInput.value = user.displayName;
+  }
+  if (emailInput && user.email) {
+    emailInput.value = user.email;
+  }
+
+  // Firestoreからプロフィール情報を取得
+  try {
+    const doc = await window.firebaseDb.collection('users').doc(user.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      const phoneInput = document.getElementById('apply-phone');
+      if (phoneInput && data.profile?.phone) {
+        phoneInput.value = data.profile.phone;
+      }
+      if (nameInput && data.profile?.name) {
+        nameInput.value = data.profile.name;
+      }
+    }
+  } catch (e) {
+    console.warn('[Apply] Failed to fetch user profile:', e);
+  }
+}
+
+// エラーメッセージを表示
+function showFormError(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+}
+
+// エラーメッセージを非表示
+function hideFormError(elementId) {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.style.display = 'none';
+  }
+}
+
+// 応募モーダルのイベントを設定
+function setupApplyModal() {
+  initFirebaseAuth();
+
+  const modal = document.getElementById('apply-modal');
+  if (!modal) return;
+
+  // 閉じるボタン
+  modal.querySelectorAll('.modal-close, .modal-close-btn').forEach(btn => {
+    btn.addEventListener('click', hideApplyModal);
+  });
+
+  // 背景クリックで閉じる
+  modal.querySelector('.modal-backdrop')?.addEventListener('click', hideApplyModal);
+
+  // ログイン/登録切り替え
+  document.getElementById('show-register')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showApplyStep('register');
+  });
+
+  document.getElementById('show-login')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showApplyStep('login');
+  });
+
+  // Googleログイン
+  document.getElementById('btn-google-login')?.addEventListener('click', handleGoogleLogin);
+  document.getElementById('btn-google-register')?.addEventListener('click', handleGoogleLogin);
+
+  // メールログイン
+  document.getElementById('login-form')?.addEventListener('submit', handleEmailLogin);
+
+  // メール登録
+  document.getElementById('register-form')?.addEventListener('submit', handleEmailRegister);
+
+  // 応募フォーム送信
+  document.getElementById('apply-form')?.addEventListener('submit', handleApplySubmit);
+}
+
+// Googleログイン処理
+async function handleGoogleLogin() {
+  if (!firebaseAuth) return;
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await firebaseAuth.signInWithPopup(provider);
+    // onAuthStateChangedで処理される
+  } catch (error) {
+    console.error('[Auth] Google login error:', error);
+    showFormError('login-error', getAuthErrorMessage(error.code));
+  }
+}
+
+// メールログイン処理
+async function handleEmailLogin(e) {
+  e.preventDefault();
+  if (!firebaseAuth) return;
+
+  const email = document.getElementById('login-email')?.value;
+  const password = document.getElementById('login-password')?.value;
+
+  hideFormError('login-error');
+
+  try {
+    await firebaseAuth.signInWithEmailAndPassword(email, password);
+    // onAuthStateChangedで処理される
+  } catch (error) {
+    console.error('[Auth] Email login error:', error);
+    showFormError('login-error', getAuthErrorMessage(error.code));
+  }
+}
+
+// メール登録処理
+async function handleEmailRegister(e) {
+  e.preventDefault();
+  if (!firebaseAuth) return;
+
+  const name = document.getElementById('register-name')?.value;
+  const email = document.getElementById('register-email')?.value;
+  const password = document.getElementById('register-password')?.value;
+
+  hideFormError('register-error');
+
+  try {
+    const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+
+    // 表示名を更新
+    if (name) {
+      await result.user.updateProfile({ displayName: name });
+    }
+
+    // Firestoreにユーザードキュメントを作成
+    await window.firebaseDb.collection('users').doc(result.user.uid).set({
+      uid: result.user.uid,
+      email: result.user.email,
+      displayName: name || '',
+      profile: {
+        name: name || '',
+        phone: '',
+        age: '',
+        address: ''
+      },
+      authProvider: 'email',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // onAuthStateChangedで処理される
+  } catch (error) {
+    console.error('[Auth] Register error:', error);
+    showFormError('register-error', getAuthErrorMessage(error.code));
+  }
+}
+
+// 応募フォーム送信処理
+async function handleApplySubmit(e) {
+  e.preventDefault();
+
+  const name = document.getElementById('apply-name')?.value;
+  const phone = document.getElementById('apply-phone')?.value;
+  const email = document.getElementById('apply-email')?.value;
+  const message = document.getElementById('apply-message')?.value;
+
+  hideFormError('apply-form-error');
+
+  if (!name || !phone || !email) {
+    showFormError('apply-form-error', '必須項目を入力してください');
+    return;
+  }
+
+  if (!currentJobData) {
+    showFormError('apply-form-error', 'エラーが発生しました。再度お試しください');
+    return;
+  }
+
+  try {
+    // 応募データを保存
+    const applicationId = await saveApplicationToFirestore({
+      ...currentJobData,
+      name,
+      phone,
+      email,
+      message
+    });
+
+    if (!applicationId) {
+      throw new Error('Failed to save application');
+    }
+
+    // ユーザープロフィールを更新
+    const user = firebaseAuth?.currentUser;
+    if (user) {
+      await window.firebaseDb.collection('users').doc(user.uid).update({
+        'profile.name': name,
+        'profile.phone': phone,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(() => {});
+    }
+
+    // GA4にイベント送信
+    trackEvent('submit_application', currentJobData);
+
+    // 完了画面を表示
+    showApplyStep('complete');
+
+  } catch (error) {
+    console.error('[Apply] Submit error:', error);
+    showFormError('apply-form-error', '応募の送信に失敗しました。もう一度お試しください');
+  }
+}
+
+// 認証エラーメッセージを日本語に変換
+function getAuthErrorMessage(errorCode) {
+  const messages = {
+    'auth/email-already-in-use': 'このメールアドレスは既に登録されています',
+    'auth/invalid-email': 'メールアドレスの形式が正しくありません',
+    'auth/weak-password': 'パスワードは6文字以上で設定してください',
+    'auth/user-not-found': 'アカウントが見つかりません',
+    'auth/wrong-password': 'パスワードが正しくありません',
+    'auth/invalid-credential': 'メールアドレスまたはパスワードが正しくありません',
+    'auth/too-many-requests': 'リクエストが多すぎます。しばらくしてからお試しください',
+    'auth/popup-closed-by-user': 'ログインがキャンセルされました'
+  };
+  return messages[errorCode] || 'エラーが発生しました。もう一度お試しください';
+}
+
+// 応募ボタンのクリックイベントを設定
 function setupApplyButtonTracking() {
   document.querySelectorAll('[data-apply-btn]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+
       const data = {
         company_domain: btn.dataset.companyDomain,
         company_name: btn.dataset.companyName,
@@ -202,8 +532,8 @@ function setupApplyButtonTracking() {
       // GA4にイベント送信
       trackEvent('click_apply', data);
 
-      // Firestoreに保存
-      saveApplicationToFirestore(data);
+      // 応募モーダルを表示
+      showApplyModal(data);
     });
   });
 }
@@ -268,6 +598,9 @@ export async function initJobDetailPage() {
       job_title: job.title,
       location: job.location
     });
+
+    // 応募モーダルのイベントを設定
+    setupApplyModal();
 
     // 応募ボタンのクリックイベントを設定
     setupApplyButtonTracking();

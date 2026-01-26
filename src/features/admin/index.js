@@ -8,6 +8,8 @@ import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, i
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
 import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection } from './lp-settings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
+import * as JobsLoader from '@shared/jobs-loader.js';
+import { escapeHtml } from '@shared/utils.js';
 
 // ログイン画面表示
 function showLogin() {
@@ -78,6 +80,7 @@ function switchSection(sectionName) {
     'company-manage': '会社管理',
     'lp-settings': 'LP設定',
     applications: '応募データ',
+    'applicant-select': '応募者管理',
     settings: '設定'
   };
   const pageTitle = document.getElementById('page-title');
@@ -94,6 +97,11 @@ function switchSection(sectionName) {
   if (sectionName === 'lp-settings') {
     loadCompanyListForLP();
     renderHeroImagePresets();
+  }
+
+  // 応募者管理セクションに切り替えた場合は会社一覧を表示
+  if (sectionName === 'applicant-select') {
+    renderApplicantCompanyGrid();
   }
 }
 
@@ -364,6 +372,44 @@ function bindEvents() {
     });
   }
 
+}
+
+// 応募者管理用の会社グリッドを表示
+async function renderApplicantCompanyGrid() {
+  const grid = document.getElementById('applicant-company-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '<div class="loading-cell">会社一覧を読み込み中...</div>';
+
+  try {
+    const companies = await JobsLoader.fetchCompanies();
+    if (!companies || companies.length === 0) {
+      grid.innerHTML = '<div class="loading-cell">会社データがありません</div>';
+      return;
+    }
+
+    const visibleCompanies = companies.filter(c => JobsLoader.isCompanyVisible(c));
+
+    if (visibleCompanies.length === 0) {
+      grid.innerHTML = '<div class="loading-cell">表示可能な会社がありません</div>';
+      return;
+    }
+
+    grid.innerHTML = visibleCompanies.map(company => `
+      <a href="applicants.html?domain=${encodeURIComponent(company.companyDomain)}" class="company-select-card">
+        <div class="company-select-icon">🏢</div>
+        <div class="company-select-info">
+          <h4>${escapeHtml(company.company)}</h4>
+          <p>${escapeHtml(company.companyDomain)}</p>
+        </div>
+        <div class="company-select-arrow">→</div>
+      </a>
+    `).join('');
+
+  } catch (error) {
+    console.error('会社一覧取得エラー:', error);
+    grid.innerHTML = '<div class="loading-cell">会社一覧の取得に失敗しました</div>';
+  }
 }
 
 // 初期化

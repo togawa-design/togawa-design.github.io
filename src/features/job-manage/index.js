@@ -9,6 +9,7 @@ import {
   generateCsv,
   downloadFile
 } from '@features/admin/job-feed-generator.js';
+import { initApplicantsSection, loadApplicantsData } from '@features/applicants/index.js';
 
 // 設定
 const config = {
@@ -1280,8 +1281,19 @@ function switchSection(sectionId) {
   } else if (sectionId === 'reports') {
     if (pageTitle) pageTitle.textContent = '応募レポート';
     if (headerActions) headerActions.style.display = 'none';
+  } else if (sectionId === 'applicants') {
+    if (pageTitle) pageTitle.textContent = '応募者管理';
+    if (headerActions) headerActions.style.display = 'none';
+    // 応募者管理を初期化（初回のみ）
+    if (!applicantsInitialized) {
+      applicantsInitialized = true;
+      initApplicantsSection(companyDomain, companyName);
+    }
   }
 }
+
+// 応募者管理の初期化フラグ
+let applicantsInitialized = false;
 
 /**
  * イベントリスナーの設定
@@ -1346,6 +1358,12 @@ export async function initJobManager() {
   companyName = params.get('company') || companyDomain;
   sheetUrl = params.get('sheetUrl');
 
+  // URLパラメータでセクション指定があれば最初に切り替え（チラつき防止）
+  const initialSection = params.get('section');
+  if (initialSection && ['analytics', 'reports', 'applicants'].includes(initialSection)) {
+    switchSection(initialSection);
+  }
+
   if (!companyDomain) {
     alert('会社ドメインが指定されていません');
     window.location.href = 'admin.html';
@@ -1353,7 +1371,7 @@ export async function initJobManager() {
   }
 
   const pageTitle = document.getElementById('page-title');
-  if (pageTitle) pageTitle.textContent = `${companyName} の求人一覧`;
+  if (pageTitle && !initialSection) pageTitle.textContent = `${companyName} の求人一覧`;
 
   const companyNameEl = document.getElementById('company-name');
   if (companyNameEl) companyNameEl.textContent = companyName;

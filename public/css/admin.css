@@ -3965,3 +3965,81 @@
     font-size: 13px;
   }
 }
+
+/* ========================================
+   応募者管理 - 会社選択グリッド
+======================================== */
+.company-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.company-select-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+}
+
+.company-select-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
+}
+
+.company-select-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.company-select-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.company-select-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-select-info p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.company-select-arrow {
+  font-size: 20px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.company-select-card:hover .company-select-arrow {
+  color: #6366f1;
+}
+
+.section-description {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 8px;
+}

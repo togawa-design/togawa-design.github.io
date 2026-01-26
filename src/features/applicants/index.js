@@ -1,5 +1,5 @@
 /**
- * 応募者管理機能モジュール
+ * 応募者管理機能モジュール（サイドパネル版）
  */
 import { escapeHtml } from '@shared/utils.js';
 
@@ -199,22 +199,12 @@ async function loadAssignees() {
  * 担当者セレクトボックスを更新
  */
 function updateAssigneeSelects() {
-  // 詳細モーダルの担当者セレクト
   const detailSelect = document.getElementById('detail-assignee');
   if (detailSelect) {
     const currentValue = detailSelect.value;
     detailSelect.innerHTML = '<option value="">未割当</option>' +
       assigneesCache.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
     detailSelect.value = currentValue;
-  }
-
-  // フィルターの担当者セレクト
-  const filterSelect = document.getElementById('filter-assignee');
-  if (filterSelect) {
-    const currentValue = filterSelect.value;
-    filterSelect.innerHTML = '<option value="">すべて</option><option value="unassigned">未割当</option>' +
-      assigneesCache.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
-    filterSelect.value = currentValue;
   }
 }
 
@@ -247,11 +237,8 @@ async function addAssignee() {
     }, { merge: true });
 
     updateAssigneeSelects();
-
-    // モーダルを閉じる
     closeAssigneeModal();
 
-    // 追加した担当者を選択状態にする
     const detailSelect = document.getElementById('detail-assignee');
     if (detailSelect) {
       detailSelect.value = name;
@@ -288,15 +275,14 @@ function closeAssigneeModal() {
  * 応募者データを読み込み
  */
 async function loadApplicantsData() {
-  const tbody = document.getElementById('applicants-tbody');
-  if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  const listContainer = document.getElementById('applicants-list');
+  if (listContainer) {
+    listContainer.innerHTML = '<div class="loading-message">データを読み込み中...</div>';
   }
 
   try {
     const db = initFirebase();
 
-    // Firestoreから応募データを取得
     let query = db.collection('applications');
 
     if (companyDomain) {
@@ -315,14 +301,13 @@ async function loadApplicantsData() {
       });
     });
 
-    // フィルタリングと表示
     applyFilters();
     updateStats();
 
   } catch (error) {
     console.error('Failed to load applicants:', error);
-    if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="6" class="error-cell">データの読み込みに失敗しました: ${escapeHtml(error.message)}</td></tr>`;
+    if (listContainer) {
+      listContainer.innerHTML = `<div class="empty-message">データの読み込みに失敗しました</div>`;
     }
   }
 }
@@ -333,48 +318,20 @@ async function loadApplicantsData() {
 function applyFilters() {
   const statusFilter = document.getElementById('filter-status')?.value || '';
   const typeFilter = document.getElementById('filter-type')?.value || '';
-  const assigneeFilter = document.getElementById('filter-assignee')?.value || '';
-  const dateFrom = document.getElementById('filter-date-from')?.value || '';
-  const dateTo = document.getElementById('filter-date-to')?.value || '';
   const searchText = document.getElementById('filter-search')?.value?.toLowerCase() || '';
 
   filteredApplicants = applicantsCache.filter(app => {
-    // ステータスフィルター
     if (statusFilter && (app.status || 'new') !== statusFilter) {
       return false;
     }
 
-    // 種別フィルター
     if (typeFilter && app.type !== typeFilter) {
       return false;
     }
 
-    // 担当者フィルター
-    if (assigneeFilter) {
-      if (assigneeFilter === 'unassigned') {
-        if (app.assignee) return false;
-      } else {
-        if (app.assignee !== assigneeFilter) return false;
-      }
-    }
-
-    // 日付フィルター
-    const appDate = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.timestamp || app.createdAt);
-    if (dateFrom) {
-      const fromDate = new Date(dateFrom);
-      fromDate.setHours(0, 0, 0, 0);
-      if (appDate < fromDate) return false;
-    }
-    if (dateTo) {
-      const toDate = new Date(dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      if (appDate > toDate) return false;
-    }
-
-    // テキスト検索（求人タイトルまたは応募者名）
     if (searchText) {
       const jobTitle = (app.jobTitle || '').toLowerCase();
-      const applicantName = (app.applicant?.name || '').toLowerCase();
+      const applicantName = (app.applicantName || app.applicant?.name || '').toLowerCase();
       if (!jobTitle.includes(searchText) && !applicantName.includes(searchText)) {
         return false;
       }
@@ -384,7 +341,7 @@ function applyFilters() {
   });
 
   currentPage = 1;
-  renderApplicantsTable();
+  renderApplicantsList();
   renderPagination();
 }
 
@@ -413,50 +370,58 @@ function updateStats() {
 }
 
 /**
- * 応募者テーブルを描画
+ * 応募者リストを描画（カード形式）
  */
-function renderApplicantsTable() {
-  const tbody = document.getElementById('applicants-tbody');
-  if (!tbody) return;
+function renderApplicantsList() {
+  const listContainer = document.getElementById('applicants-list');
+  if (!listContainer) return;
 
   if (filteredApplicants.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">応募データがありません</td></tr>';
+    listContainer.innerHTML = '<div class="empty-message">応募データがありません</div>';
     return;
   }
 
-  // ページネーション
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const pageApplicants = filteredApplicants.slice(startIndex, endIndex);
 
-  tbody.innerHTML = pageApplicants.map(app => {
+  listContainer.innerHTML = pageApplicants.map(app => {
     const date = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.timestamp || app.createdAt);
     const dateStr = formatDate(date);
     const status = app.status || 'new';
     const typeLabel = typeLabels[app.type] || app.type || '-';
     const statusLabel = statusLabels[status] || status;
-    const applicantName = app.applicant?.name || '-';
-    const assignee = app.assignee || '-';
+    const applicantName = app.applicantName || app.applicant?.name || '-';
+    const isSelected = currentApplicantId === app.id;
+
+    let typeClass = 'type-apply';
+    if (app.type === 'line') typeClass = 'type-line';
+    if (app.type === 'consult') typeClass = 'type-consult';
 
     return `
-      <tr data-id="${escapeHtml(app.id)}">
-        <td>${escapeHtml(dateStr)}</td>
-        <td><span class="type-badge type-${escapeHtml(app.type || 'apply')}">${escapeHtml(typeLabel)}</span></td>
-        <td class="applicant-name-cell">${escapeHtml(applicantName)}</td>
-        <td>${escapeHtml(app.jobTitle || '-')}</td>
-        <td><span class="status-badge status-${escapeHtml(status)}">${escapeHtml(statusLabel)}</span></td>
-        <td class="assignee-cell">${escapeHtml(assignee)}</td>
-        <td>
-          <button class="btn-small btn-view" data-id="${escapeHtml(app.id)}">詳細</button>
-        </td>
-      </tr>
+      <div class="applicant-card ${isSelected ? 'selected' : ''}" data-id="${escapeHtml(app.id)}">
+        <div class="applicant-card-main">
+          <div class="applicant-card-header">
+            <span class="applicant-card-name">${escapeHtml(applicantName)}</span>
+            <span class="applicant-card-type ${typeClass}">${escapeHtml(typeLabel)}</span>
+          </div>
+          <div class="applicant-card-job">${escapeHtml(app.jobTitle || '-')}</div>
+          <div class="applicant-card-meta">
+            <span>${escapeHtml(dateStr)}</span>
+            ${app.assignee ? `<span>担当: ${escapeHtml(app.assignee)}</span>` : ''}
+          </div>
+        </div>
+        <div class="applicant-card-status">
+          <span class="status-badge status-${escapeHtml(status)}">${escapeHtml(statusLabel)}</span>
+        </div>
+      </div>
     `;
   }).join('');
 
-  // 詳細ボタンのイベント
-  tbody.querySelectorAll('.btn-view').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
+  // カードクリックイベント
+  listContainer.querySelectorAll('.applicant-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.id;
       showApplicantDetail(id);
     });
   });
@@ -477,11 +442,8 @@ function renderPagination() {
   }
 
   let html = '';
-
-  // 前へボタン
   html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">前へ</button>`;
 
-  // ページ番号
   for (let i = 1; i <= totalPages; i++) {
     if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
       html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
@@ -490,24 +452,22 @@ function renderPagination() {
     }
   }
 
-  // 次へボタン
   html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">次へ</button>`;
 
   pagination.innerHTML = html;
 
-  // イベント
   pagination.querySelectorAll('.page-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.disabled) return;
       currentPage = parseInt(btn.dataset.page);
-      renderApplicantsTable();
+      renderApplicantsList();
       renderPagination();
     });
   });
 }
 
 /**
- * 応募者詳細を表示
+ * 応募者詳細を表示（サイドパネル）
  */
 function showApplicantDetail(id) {
   const applicant = applicantsCache.find(a => a.id === id);
@@ -515,30 +475,44 @@ function showApplicantDetail(id) {
 
   currentApplicantId = id;
 
-  const modal = document.getElementById('applicant-modal');
-  if (!modal) return;
+  // 選択状態を更新
+  document.querySelectorAll('.applicant-card').forEach(card => {
+    card.classList.toggle('selected', card.dataset.id === id);
+  });
+
+  // パネル表示を切り替え
+  const emptyState = document.getElementById('detail-empty');
+  const detailContent = document.getElementById('detail-content');
+
+  if (emptyState) emptyState.style.display = 'none';
+  if (detailContent) detailContent.style.display = 'flex';
 
   // 応募者情報を設定
-  const applicantInfo = applicant.applicant || {};
-  document.getElementById('detail-name').textContent = applicantInfo.name || '-';
-  document.getElementById('detail-phone').textContent = applicantInfo.phone || '-';
-  document.getElementById('detail-email').textContent = applicantInfo.email || '-';
-  document.getElementById('detail-age').textContent = applicantInfo.age || '-';
-  document.getElementById('detail-address').textContent = applicantInfo.address || '-';
-  document.getElementById('detail-start-date').textContent = startDateLabels[applicantInfo.startDate] || applicantInfo.startDate || '-';
+  const applicantName = applicant.applicantName || applicant.applicant?.name || '-';
+  const applicantPhone = applicant.applicantPhone || applicant.applicant?.phone || '-';
+  const applicantEmail = applicant.applicantEmail || applicant.applicant?.email || '-';
+  const applicantAge = applicant.applicant?.age || '-';
+  const applicantAddress = applicant.applicant?.address || '-';
+  const startDate = applicant.applicant?.startDate || '-';
 
-  // 応募情報を設定
+  document.getElementById('detail-name').textContent = applicantName;
+  document.getElementById('detail-job-title').textContent = applicant.jobTitle || '-';
+  document.getElementById('detail-phone').textContent = applicantPhone;
+  document.getElementById('detail-email').textContent = applicantEmail;
+  document.getElementById('detail-age').textContent = applicantAge;
+  document.getElementById('detail-address').textContent = applicantAddress;
+  document.getElementById('detail-start-date').textContent = startDateLabels[startDate] || startDate;
+
+  // 応募情報
   const date = applicant.createdAt?.toDate ? applicant.createdAt.toDate() : new Date(applicant.timestamp || applicant.createdAt);
-
   document.getElementById('detail-datetime').textContent = formatDate(date, true);
   document.getElementById('detail-type').textContent = typeLabels[applicant.type] || applicant.type || '-';
-  document.getElementById('detail-job-title').textContent = applicant.jobTitle || '-';
   document.getElementById('detail-source').textContent = formatSource(applicant.source);
 
-  // ステータスを設定
+  // ステータスボタンを設定
   const status = applicant.status || 'new';
-  document.querySelectorAll('input[name="status"]').forEach(radio => {
-    radio.checked = radio.value === status;
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.status === status);
   });
 
   // 担当者を設定
@@ -548,15 +522,33 @@ function showApplicantDetail(id) {
   }
 
   // メモを設定
-  document.getElementById('detail-notes').value = applicant.notes || '';
+  const notesTextarea = document.getElementById('detail-notes');
+  if (notesTextarea) {
+    notesTextarea.value = applicant.notes || '';
+  }
 
   // 対応履歴を設定
   renderHistory(applicant.history || []);
 
   // メッセージを読み込み
   loadMessages(id);
+}
 
-  modal.style.display = 'flex';
+/**
+ * 詳細パネルを閉じる
+ */
+function closeDetailPanel() {
+  currentApplicantId = null;
+
+  document.querySelectorAll('.applicant-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+
+  const emptyState = document.getElementById('detail-empty');
+  const detailContent = document.getElementById('detail-content');
+
+  if (emptyState) emptyState.style.display = 'flex';
+  if (detailContent) detailContent.style.display = 'none';
 }
 
 /**
@@ -566,7 +558,7 @@ async function loadMessages(applicationId) {
   const container = document.getElementById('messages-container');
   if (!container) return;
 
-  container.innerHTML = '<p class="loading-messages">メッセージを読み込み中...</p>';
+  container.innerHTML = '<p class="no-data">読み込み中...</p>';
 
   try {
     const db = initFirebase();
@@ -583,7 +575,7 @@ async function loadMessages(applicationId) {
     renderMessages(messages);
   } catch (error) {
     console.error('Failed to load messages:', error);
-    container.innerHTML = '<p class="error-messages">メッセージの読み込みに失敗しました</p>';
+    container.innerHTML = '<p class="no-data">メッセージの読み込みに失敗しました</p>';
   }
 }
 
@@ -595,7 +587,7 @@ function renderMessages(messages) {
   if (!container) return;
 
   if (!messages || messages.length === 0) {
-    container.innerHTML = '<p class="no-messages">メッセージはありません</p>';
+    container.innerHTML = '<p class="no-data">メッセージはありません</p>';
     return;
   }
 
@@ -615,7 +607,6 @@ function renderMessages(messages) {
     `;
   }).join('');
 
-  // スクロールを最下部へ
   container.scrollTop = container.scrollHeight;
 }
 
@@ -628,26 +619,22 @@ function applyMessageTemplate(templateKey) {
   const template = messageTemplates[templateKey];
   if (!template) return;
 
-  // 現在の応募者情報を取得
   const applicant = applicantsCache.find(a => a.id === currentApplicantId);
   if (!applicant) return;
 
-  const applicantName = applicant.applicant?.name || 'お客様';
+  const applicantName = applicant.applicantName || applicant.applicant?.name || 'お客様';
   const jobTitle = applicant.jobTitle || '求人';
 
-  // プレースホルダーを置換
   let message = template.body
     .replace(/{applicantName}/g, applicantName)
     .replace(/{jobTitle}/g, jobTitle);
 
-  // テキストエリアに設定
   const textarea = document.getElementById('new-message-text');
   if (textarea) {
     textarea.value = message;
     textarea.focus();
   }
 
-  // セレクトボックスをリセット
   const select = document.getElementById('message-template-select');
   if (select) {
     select.value = '';
@@ -676,11 +663,8 @@ async function sendMessage() {
 
   try {
     const db = initFirebase();
-
-    // 応募者情報を取得
     const applicant = applicantsCache.find(a => a.id === currentApplicantId);
 
-    // メッセージを保存
     await db.collection('messages').add({
       applicationId: currentApplicantId,
       companyDomain: applicant?.companyDomain || companyDomain,
@@ -690,10 +674,7 @@ async function sendMessage() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // 入力をクリア
     input.value = '';
-
-    // メッセージを再読み込み
     await loadMessages(currentApplicantId);
 
   } catch (error) {
@@ -715,7 +696,7 @@ function renderHistory(history) {
   if (!container) return;
 
   if (!history || history.length === 0) {
-    container.innerHTML = '<p class="no-history">対応履歴はありません</p>';
+    container.innerHTML = '<p class="no-data">対応履歴はありません</p>';
     return;
   }
 
@@ -731,21 +712,50 @@ function renderHistory(history) {
 }
 
 /**
- * 応募者詳細モーダルを閉じる
+ * ステータスを変更
  */
-function closeApplicantModal() {
-  const modal = document.getElementById('applicant-modal');
-  if (modal) modal.style.display = 'none';
-  currentApplicantId = null;
+async function changeStatus(newStatus) {
+  if (!currentApplicantId) return;
+
+  try {
+    const db = initFirebase();
+
+    await db.collection('applications').doc(currentApplicantId).update({
+      status: newStatus,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // キャッシュを更新
+    const index = applicantsCache.findIndex(a => a.id === currentApplicantId);
+    if (index !== -1) {
+      applicantsCache[index].status = newStatus;
+    }
+
+    // ボタンの状態を更新
+    document.querySelectorAll('.status-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.status === newStatus);
+    });
+
+    // リストを更新
+    applyFilters();
+    updateStats();
+
+  } catch (error) {
+    console.error('Failed to update status:', error);
+    alert('ステータスの更新に失敗しました');
+  }
 }
 
 /**
- * 応募者データを保存
+ * メモを保存
  */
-async function saveApplicantData() {
+async function saveNotes() {
   if (!currentApplicantId) return;
 
-  const saveBtn = document.getElementById('applicant-modal-save');
+  const notes = document.getElementById('detail-notes')?.value || '';
+  const assignee = document.getElementById('detail-assignee')?.value || '';
+
+  const saveBtn = document.getElementById('btn-save-notes');
   if (saveBtn) {
     saveBtn.disabled = true;
     saveBtn.textContent = '保存中...';
@@ -754,43 +764,25 @@ async function saveApplicantData() {
   try {
     const db = initFirebase();
 
-    // ステータスを取得
-    const statusRadio = document.querySelector('input[name="status"]:checked');
-    const status = statusRadio ? statusRadio.value : 'new';
-
-    // 担当者を取得
-    const assignee = document.getElementById('detail-assignee')?.value || '';
-
-    // メモを取得
-    const notes = document.getElementById('detail-notes')?.value || '';
-
-    // 更新データ
-    const updateData = {
-      status,
-      assignee,
+    await db.collection('applications').doc(currentApplicantId).update({
       notes,
+      assignee,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // Firestoreを更新
-    await db.collection('applications').doc(currentApplicantId).update(updateData);
+    });
 
     // キャッシュを更新
     const index = applicantsCache.findIndex(a => a.id === currentApplicantId);
     if (index !== -1) {
-      applicantsCache[index] = { ...applicantsCache[index], ...updateData };
+      applicantsCache[index].notes = notes;
+      applicantsCache[index].assignee = assignee;
     }
 
-    // 表示を更新
-    applyFilters();
-    updateStats();
-
-    alert('保存しました');
-    closeApplicantModal();
+    // リストを更新
+    renderApplicantsList();
 
   } catch (error) {
-    console.error('Failed to save applicant:', error);
-    alert('保存に失敗しました: ' + error.message);
+    console.error('Failed to save notes:', error);
+    alert('保存に失敗しました');
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
@@ -816,17 +808,14 @@ async function addHistory() {
   try {
     const db = initFirebase();
 
-    // 現在の履歴を取得
     const applicant = applicantsCache.find(a => a.id === currentApplicantId);
     const history = applicant?.history || [];
 
-    // 新しい履歴を追加
     history.push({
       date: new Date(),
       text
     });
 
-    // Firestoreを更新
     await db.collection('applications').doc(currentApplicantId).update({
       history,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -838,7 +827,6 @@ async function addHistory() {
       applicantsCache[index].history = history;
     }
 
-    // 表示を更新
     renderHistory(history);
     input.value = '';
 
@@ -861,16 +849,22 @@ function exportCsv() {
 
   const rows = filteredApplicants.map(app => {
     const date = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.timestamp || app.createdAt);
-    const applicant = app.applicant || {};
+    const applicantName = app.applicantName || app.applicant?.name || '';
+    const applicantPhone = app.applicantPhone || app.applicant?.phone || '';
+    const applicantEmail = app.applicantEmail || app.applicant?.email || '';
+    const applicantAge = app.applicant?.age || '';
+    const applicantAddress = app.applicant?.address || '';
+    const startDate = app.applicant?.startDate || '';
+
     return [
       formatDate(date, true),
       typeLabels[app.type] || app.type || '',
-      applicant.name || '',
-      applicant.phone || '',
-      applicant.email || '',
-      applicant.age || '',
-      applicant.address || '',
-      startDateLabels[applicant.startDate] || applicant.startDate || '',
+      applicantName,
+      applicantPhone,
+      applicantEmail,
+      applicantAge,
+      applicantAddress,
+      startDateLabels[startDate] || startDate,
       app.jobTitle || '',
       formatSource(app.source),
       statusLabels[app.status || 'new'],
@@ -884,7 +878,6 @@ function exportCsv() {
     ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
   ].join('\n');
 
-  // BOMを追加してExcelで文字化けしないようにする
   const bom = '\uFEFF';
   const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -955,27 +948,16 @@ function formatSource(source) {
  * イベントリスナーの設定
  */
 function setupEventListeners() {
-  // 更新ボタン
+  // 更新ボタン（job-manage.html内では btn-refresh-applicants）
   document.getElementById('btn-refresh')?.addEventListener('click', loadApplicantsData);
+  document.getElementById('btn-refresh-applicants')?.addEventListener('click', loadApplicantsData);
 
   // CSVエクスポート
   document.getElementById('btn-export-csv')?.addEventListener('click', exportCsv);
 
-  // 求人一覧へのナビゲーション
-  document.getElementById('nav-jobs')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (companyDomain) params.set('domain', companyDomain);
-    if (companyName) params.set('company', companyName);
-    window.location.href = `job-manage.html?${params.toString()}`;
-  });
-
   // フィルター
   document.getElementById('filter-status')?.addEventListener('change', applyFilters);
   document.getElementById('filter-type')?.addEventListener('change', applyFilters);
-  document.getElementById('filter-assignee')?.addEventListener('change', applyFilters);
-  document.getElementById('filter-date-from')?.addEventListener('change', applyFilters);
-  document.getElementById('filter-date-to')?.addEventListener('change', applyFilters);
 
   // 検索（デバウンス付き）
   let searchTimeout;
@@ -984,20 +966,22 @@ function setupEventListeners() {
     searchTimeout = setTimeout(applyFilters, 300);
   });
 
-  // モーダル
-  document.getElementById('applicant-modal-close')?.addEventListener('click', closeApplicantModal);
-  document.getElementById('applicant-modal-cancel')?.addEventListener('click', closeApplicantModal);
-  document.getElementById('applicant-modal-save')?.addEventListener('click', saveApplicantData);
-  document.getElementById('btn-add-history')?.addEventListener('click', addHistory);
+  // 詳細パネルを閉じる
+  document.getElementById('btn-close-detail')?.addEventListener('click', closeDetailPanel);
 
-  // モーダル外クリックで閉じる
-  document.getElementById('applicant-modal')?.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal-overlay')) {
-      closeApplicantModal();
-    }
+  // ステータスボタン
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const status = btn.dataset.status;
+      if (status) changeStatus(status);
+    });
   });
 
-  // Enterキーで履歴追加
+  // メモ保存
+  document.getElementById('btn-save-notes')?.addEventListener('click', saveNotes);
+
+  // 履歴追加
+  document.getElementById('btn-add-history')?.addEventListener('click', addHistory);
   document.getElementById('new-history-text')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -1007,8 +991,6 @@ function setupEventListeners() {
 
   // メッセージ送信
   document.getElementById('btn-send-message')?.addEventListener('click', sendMessage);
-
-  // Ctrl+Enterでメッセージ送信
   document.getElementById('new-message-text')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -1027,14 +1009,12 @@ function setupEventListeners() {
   document.getElementById('assignee-modal-cancel')?.addEventListener('click', closeAssigneeModal);
   document.getElementById('assignee-modal-save')?.addEventListener('click', addAssignee);
 
-  // モーダル外クリックで閉じる
   document.getElementById('assignee-modal')?.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
       closeAssigneeModal();
     }
   });
 
-  // Enterキーで担当者追加
   document.getElementById('new-assignee-name')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -1047,27 +1027,19 @@ function setupEventListeners() {
  * 初期化
  */
 export async function initApplicantsManager() {
-  // URLパラメータから会社情報を取得
   const params = new URLSearchParams(window.location.search);
   companyDomain = params.get('domain');
   companyName = params.get('company') ? decodeURIComponent(params.get('company')) : null;
 
-  // 会社名を表示
   const companyNameEl = document.getElementById('company-name');
   if (companyNameEl) {
     companyNameEl.textContent = companyName || (companyDomain ? companyDomain : '全会社');
   }
 
-  // イベントリスナー設定
   setupEventListeners();
-
-  // 担当者リストを読み込み
   await loadAssignees();
-
-  // データ読み込み
   await loadApplicantsData();
 
-  // グローバルにエクスポート（デバッグ用）
   if (typeof window !== 'undefined') {
     window.ApplicantsManager = {
       loadApplicantsData,
@@ -1077,6 +1049,25 @@ export async function initApplicantsManager() {
   }
 }
 
+/**
+ * 外部から会社ドメインを設定して初期化（job-manage.htmlから呼び出す用）
+ */
+export async function initApplicantsSection(domain, name) {
+  companyDomain = domain;
+  companyName = name;
+
+  setupEventListeners();
+  await loadAssignees();
+  await loadApplicantsData();
+}
+
+/**
+ * 応募者データを再読み込み
+ */
+export { loadApplicantsData };
+
 export default {
-  initApplicantsManager
+  initApplicantsManager,
+  initApplicantsSection,
+  loadApplicantsData
 };
