@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/jobManage-2lGjemcn.js"></script>
+  <script type="module" crossorigin src="/dev/js/jobManage-DvcEMTvK.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/utils-C4oNoj7k.js">
   <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-CErzUEmq.js">
   <link rel="modulepreload" crossorigin href="/dev/js/job-feed-generator-BbzggbON.js">
@@ -31,6 +31,7 @@
         <ul>
           <li><a href="admin.html" data-section="back"><span class="nav-icon">←</span>管理画面に戻る</a></li>
           <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
+          <li><a href="#" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
         </ul>
       </nav>
       <div class="sidebar-footer">
@@ -105,6 +106,173 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- レポートセクション -->
+      <section id="section-reports" class="admin-section">
+        <div class="report-header">
+          <h2>応募レポート</h2>
+          <p class="section-description">期間を選択してレポートを生成・ダウンロードできます</p>
+        </div>
+
+        <!-- 期間選択 -->
+        <div class="report-controls">
+          <div class="report-period-select">
+            <label for="report-period">期間</label>
+            <select id="report-period">
+              <option value="week">今週</option>
+              <option value="last-week">先週</option>
+              <option value="month" selected>今月</option>
+              <option value="last-month">先月</option>
+              <option value="custom">カスタム</option>
+            </select>
+          </div>
+          <div id="report-custom-dates" class="report-custom-dates" style="display: none;">
+            <div class="date-input">
+              <label for="report-from">開始日</label>
+              <input type="date" id="report-from">
+            </div>
+            <span class="date-separator">〜</span>
+            <div class="date-input">
+              <label for="report-to">終了日</label>
+              <input type="date" id="report-to">
+            </div>
+          </div>
+          <button id="btn-generate-report" class="btn-primary">レポート生成</button>
+        </div>
+
+        <!-- レポートプレビュー -->
+        <div id="report-preview" class="report-preview">
+          <div class="report-loading" id="report-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>レポートを生成中...</p>
+          </div>
+
+          <div id="report-content" style="display: none;">
+            <!-- サマリーカード -->
+            <div class="report-summary">
+              <div class="summary-card">
+                <div class="summary-icon">📥</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-total">0</span>
+                  <span class="summary-label">総応募数</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon">📈</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-change">-</span>
+                  <span class="summary-label">前期比</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon">✅</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-hired">0</span>
+                  <span class="summary-label">採用数</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon">⏳</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-pending">0</span>
+                  <span class="summary-label">対応中</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ステータス別内訳 -->
+            <div class="report-section">
+              <h3>ステータス別内訳</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>ステータス</th>
+                      <th>件数</th>
+                      <th>割合</th>
+                    </tr>
+                  </thead>
+                  <tbody id="status-breakdown">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 求人別パフォーマンス -->
+            <div class="report-section">
+              <h3>求人別パフォーマンス TOP5</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>求人</th>
+                      <th>応募数</th>
+                      <th>PV</th>
+                      <th>CVR</th>
+                    </tr>
+                  </thead>
+                  <tbody id="job-performance">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 流入元分析 -->
+            <div class="report-section">
+              <h3>流入元分析</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>流入元</th>
+                      <th>応募数</th>
+                      <th>割合</th>
+                    </tr>
+                  </thead>
+                  <tbody id="source-breakdown">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 担当者別対応状況 -->
+            <div class="report-section">
+              <h3>担当者別対応状況</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>担当者</th>
+                      <th>対応済</th>
+                      <th>未対応</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assignee-breakdown">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 未生成時メッセージ -->
+          <div id="report-empty" class="report-empty">
+            <div class="empty-icon">📊</div>
+            <p>「レポート生成」ボタンをクリックしてレポートを作成してください</p>
+          </div>
+        </div>
+
+        <!-- ダウンロードボタン -->
+        <div class="report-actions" id="report-actions" style="display: none;">
+          <button id="btn-report-csv" class="btn-secondary">
+            <span class="btn-icon">📄</span>
+            CSVダウンロード
+          </button>
+          <button id="btn-report-excel" class="btn-primary">
+            <span class="btn-icon">📊</span>
+            Excelダウンロード
+          </button>
         </div>
       </section>
     </main>
@@ -204,5 +372,8 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </body>
 </html>
