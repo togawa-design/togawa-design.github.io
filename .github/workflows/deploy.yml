@@ -52,9 +52,14 @@ jobs:
           fetch-depth: 0
         continue-on-error: true
 
+      - name: Setup git config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Create gh-pages branch if not exists
         run: |
-          if ! git rev-parse --verify gh-pages >/dev/null 2>&1; then
+          if ! git rev-parse --verify origin/gh-pages >/dev/null 2>&1; then
             git checkout --orphan gh-pages
             git reset --hard
             git commit --allow-empty -m "Initial gh-pages"
@@ -69,9 +74,6 @@ jobs:
 
       - name: Deploy to subdirectory
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
           if [ "${{ github.ref_name }}" = "main" ]; then
             # main: ルートにデプロイ（devフォルダは保持）
             echo "Deploying main to root..."
