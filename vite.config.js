@@ -8,6 +8,7 @@ const __dirname = dirname(__filename);
 export default defineConfig({
   root: '.',
   publicDir: 'public',
+  base: process.env.VITE_BASE || '/',
 
   build: {
     outDir: 'dist',
