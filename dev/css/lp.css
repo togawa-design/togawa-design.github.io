@@ -1,0 +1,1536 @@
+/**
+ * 会社専用LP（ランディングページ）スタイル
+ * デザインパターン対応: standard, modern, classic, minimal, colorful
+ */
+
+/* ========================================
+   LP共通スタイル
+   ======================================== */
+
+.lp-body {
+  --lp-primary: #6366f1;
+  --lp-primary-dark: #4f46e5;
+  --lp-accent: #f59e0b;
+  --lp-text: #1f2937;
+  --lp-text-light: #6b7280;
+  --lp-bg: #ffffff;
+  --lp-bg-gray: #f9fafb;
+  --lp-border: #e5e7eb;
+  --lp-highlight: #dc2626;
+}
+
+/* ========================================
+   LP専用ヘッダー
+   ======================================== */
+
+.lp-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.lp-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+}
+
+.lp-logo .logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--lp-primary);
+  text-decoration: none;
+}
+
+.lp-header-cta {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lp-btn-apply-header,
+.lp-btn-tel-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.lp-btn-apply-header {
+  background: var(--lp-primary);
+  color: #fff;
+}
+
+.lp-btn-apply-header:hover {
+  background: var(--lp-primary-dark);
+}
+
+.lp-btn-tel-header {
+  background: var(--lp-highlight);
+  color: #fff;
+}
+
+.lp-btn-tel-header:hover {
+  background: #b91c1c;
+}
+
+.tel-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* ========================================
+   ヒーローセクション
+   ======================================== */
+
+.lp-hero {
+  position: relative;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rem 1rem 4rem;
+  overflow: hidden;
+}
+
+.lp-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-color: var(--lp-primary);
+  background-size: cover;
+  background-position: center;
+}
+
+/* デフォルトのグラデーション（背景画像がない場合） */
+.lp-hero-bg:not([style*="background-image"]),
+.lp-hero-bg[style=""],
+.lp-hero-bg[style*="background-image: url('')"] {
+  background-image: linear-gradient(135deg, var(--lp-primary) 0%, #8b5cf6 100%);
+}
+
+.lp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.lp-hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #fff;
+  max-width: 800px;
+}
+
+.lp-hero-company {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.lp-hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.lp-hero-subtitle {
+  font-size: 1.25rem;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+
+.lp-hero-highlights {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.lp-highlight-item {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  text-align: center;
+}
+
+.lp-highlight-item.bonus {
+  background: rgba(245, 158, 11, 0.3);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.lp-highlight-label {
+  display: block;
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin-bottom: 0.25rem;
+}
+
+.lp-highlight-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 900;
+}
+
+.lp-hero-cta {
+  margin-top: 2rem;
+}
+
+.lp-btn-apply-hero {
+  display: inline-block;
+  background: var(--lp-accent);
+  color: #fff;
+  padding: 1rem 3rem;
+  border-radius: 50px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  transition: all 0.3s;
+  animation: pulse 2s infinite;
+}
+
+.lp-btn-apply-hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(245, 158, 11, 0.6);
+  }
+}
+
+/* ========================================
+   セクション共通
+   ======================================== */
+
+.lp-section-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4rem 1rem;
+}
+
+.lp-section-title {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.lp-section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: var(--lp-primary);
+  margin: 0.75rem auto 0;
+  border-radius: 2px;
+}
+
+/* ========================================
+   ポイントセクション
+   ======================================== */
+
+.lp-points {
+  background: var(--lp-bg-gray);
+}
+
+.lp-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.lp-point-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.lp-point-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.lp-point-number {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  background: var(--lp-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 auto 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.lp-point-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin-bottom: 0.75rem;
+}
+
+.lp-point-desc {
+  font-size: 0.9375rem;
+  color: var(--lp-text-light);
+  line-height: 1.7;
+}
+
+/* ========================================
+   求人一覧セクション
+   ======================================== */
+
+.lp-jobs {
+  background: #fff;
+}
+
+.lp-jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.lp-job-card {
+  background: #fff;
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.lp-job-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.lp-job-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: var(--lp-bg-gray);
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.lp-job-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin: 0;
+}
+
+.lp-job-type {
+  background: var(--lp-primary);
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.lp-job-card-body {
+  padding: 1.5rem;
+}
+
+.lp-job-info {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.lp-job-info li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.9375rem;
+  color: var(--lp-text);
+}
+
+.lp-job-info li.highlight {
+  color: var(--lp-highlight);
+  font-weight: 600;
+}
+
+.lp-info-icon {
+  display: flex;
+  color: var(--lp-primary);
+}
+
+.lp-job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lp-job-tag {
+  background: var(--lp-bg-gray);
+  color: var(--lp-text-light);
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.lp-job-card-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--lp-border);
+  text-align: right;
+}
+
+.lp-btn-detail {
+  display: inline-block;
+  background: var(--lp-primary);
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.lp-btn-detail:hover {
+  background: var(--lp-primary-dark);
+}
+
+/* ========================================
+   募集要項セクション
+   ======================================== */
+
+.lp-details {
+  background: var(--lp-bg-gray);
+}
+
+.lp-details-table {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.lp-detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.lp-detail-row:last-child {
+  border-bottom: none;
+}
+
+.lp-detail-label {
+  background: var(--lp-bg-gray);
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  color: var(--lp-text);
+  border-right: 1px solid var(--lp-border);
+}
+
+.lp-detail-value {
+  padding: 1rem 1.25rem;
+  color: var(--lp-text);
+  line-height: 1.7;
+}
+
+/* ========================================
+   FAQセクション
+   ======================================== */
+
+.lp-faq {
+  background: #fff;
+}
+
+.lp-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.lp-faq-item {
+  background: var(--lp-bg-gray);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lp-faq-question,
+.lp-faq-answer {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.lp-faq-question {
+  background: var(--lp-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.lp-faq-answer {
+  background: #fff;
+  color: var(--lp-text);
+  line-height: 1.7;
+}
+
+.lp-faq-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.lp-faq-question .lp-faq-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lp-faq-answer .lp-faq-icon {
+  background: var(--lp-accent);
+  color: #fff;
+}
+
+/* ========================================
+   応募セクション
+   ======================================== */
+
+.lp-apply {
+  background: linear-gradient(135deg, var(--lp-primary) 0%, #8b5cf6 100%);
+  color: #fff;
+  text-align: center;
+}
+
+.lp-apply-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.lp-apply-text {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+
+.lp-apply-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.lp-btn-apply-main {
+  display: inline-block;
+  background: var(--lp-accent);
+  color: #fff;
+  padding: 1rem 3rem;
+  border-radius: 50px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s;
+}
+
+.lp-btn-apply-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+}
+
+.lp-btn-tel-main {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  color: var(--lp-text);
+  padding: 0.75rem 2rem;
+  border-radius: 50px;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.lp-btn-tel-main:hover {
+  transform: translateY(-2px);
+}
+
+.tel-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--lp-highlight);
+}
+
+.tel-note {
+  font-size: 0.75rem;
+  color: var(--lp-text-light);
+}
+
+.lp-apply-line {
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.lp-apply-line p {
+  margin-bottom: 0.75rem;
+  opacity: 0.9;
+}
+
+.lp-btn-line {
+  display: inline-block;
+  background: #06c755;
+  color: #fff;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.lp-btn-line:hover {
+  background: #05b14a;
+}
+
+/* ========================================
+   LPフッター
+   ======================================== */
+
+.lp-footer {
+  background: var(--lp-text);
+  color: #fff;
+}
+
+.lp-footer-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 3rem 1rem 2rem;
+}
+
+.lp-footer-cta {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lp-footer-cta-text {
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+}
+
+.lp-footer-cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lp-btn-apply-footer,
+.lp-btn-tel-footer {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.lp-btn-apply-footer {
+  background: var(--lp-accent);
+  color: #fff;
+}
+
+.lp-btn-tel-footer {
+  background: #fff;
+  color: var(--lp-text);
+}
+
+.lp-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.lp-footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.lp-footer-links a:hover {
+  color: #fff;
+}
+
+.lp-footer-copyright {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+/* ========================================
+   エラー表示
+   ======================================== */
+
+.lp-error {
+  text-align: center;
+  padding: 8rem 1rem;
+}
+
+.lp-error h2 {
+  font-size: 1.5rem;
+  color: var(--lp-text);
+  margin-bottom: 1rem;
+}
+
+.lp-error p {
+  color: var(--lp-text-light);
+  margin-bottom: 2rem;
+}
+
+.lp-btn-back {
+  display: inline-block;
+  background: var(--lp-primary);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.lp-btn-back:hover {
+  background: var(--lp-primary-dark);
+}
+
+/* ========================================
+   ローディング
+   ======================================== */
+
+.lp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 8rem 1rem;
+}
+
+/* ========================================
+   デザインパターン: Modern
+   ======================================== */
+
+.lp-pattern-modern {
+  --lp-primary: #3b82f6;
+  --lp-primary-dark: #2563eb;
+}
+
+.lp-pattern-modern .lp-hero-bg {
+  background: linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.lp-pattern-modern .lp-point-card {
+  border-radius: 20px;
+}
+
+.lp-pattern-modern .lp-point-number {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+
+/* ========================================
+   デザインパターン: Classic
+   ======================================== */
+
+.lp-pattern-classic {
+  --lp-primary: #dc2626;
+  --lp-primary-dark: #b91c1c;
+  --lp-accent: #fbbf24;
+}
+
+.lp-pattern-classic .lp-hero-bg {
+  background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+}
+
+.lp-pattern-classic .lp-section-title::after {
+  background: var(--lp-accent);
+}
+
+.lp-pattern-classic .lp-point-card {
+  border-radius: 8px;
+  border: 2px solid var(--lp-border);
+}
+
+.lp-pattern-classic .lp-apply {
+  background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+}
+
+/* ========================================
+   デザインパターン: Minimal
+   ======================================== */
+
+.lp-pattern-minimal {
+  --lp-primary: #1f2937;
+  --lp-primary-dark: #111827;
+  --lp-accent: #1f2937;
+}
+
+.lp-pattern-minimal .lp-hero {
+  min-height: 60vh;
+}
+
+.lp-pattern-minimal .lp-hero-bg {
+  background: #fff;
+}
+
+.lp-pattern-minimal .lp-hero-overlay {
+  background: none;
+}
+
+.lp-pattern-minimal .lp-hero-content {
+  color: var(--lp-text);
+}
+
+.lp-pattern-minimal .lp-hero-company,
+.lp-pattern-minimal .lp-hero-subtitle {
+  opacity: 1;
+  color: var(--lp-text-light);
+}
+
+.lp-pattern-minimal .lp-highlight-item {
+  background: var(--lp-bg-gray);
+  border-color: var(--lp-border);
+}
+
+.lp-pattern-minimal .lp-btn-apply-hero {
+  background: var(--lp-text);
+  box-shadow: none;
+  animation: none;
+}
+
+.lp-pattern-minimal .lp-point-card {
+  border-radius: 0;
+  box-shadow: none;
+  border: 1px solid var(--lp-border);
+}
+
+.lp-pattern-minimal .lp-apply {
+  background: var(--lp-text);
+}
+
+/* ========================================
+   デザインパターン: Colorful
+   ======================================== */
+
+.lp-pattern-colorful {
+  --lp-primary: #8b5cf6;
+  --lp-primary-dark: #7c3aed;
+  --lp-accent: #f59e0b;
+}
+
+.lp-pattern-colorful .lp-hero-bg {
+  background: linear-gradient(135deg, #f472b6 0%, #8b5cf6 50%, #06b6d4 100%);
+}
+
+.lp-pattern-colorful .lp-points {
+  background: linear-gradient(180deg, #fdf4ff 0%, #f0f9ff 100%);
+}
+
+.lp-pattern-colorful .lp-point-number {
+  background: linear-gradient(135deg, #f472b6, #8b5cf6);
+}
+
+.lp-pattern-colorful .lp-apply {
+  background: linear-gradient(135deg, #f472b6 0%, #8b5cf6 50%, #06b6d4 100%);
+}
+
+.lp-pattern-colorful .lp-section-title::after {
+  background: linear-gradient(90deg, #f472b6, #8b5cf6, #06b6d4);
+}
+
+/* ========================================
+   レスポンシブ
+   ======================================== */
+
+@media (max-width: 768px) {
+  .lp-header-inner {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .lp-logo .logo-text {
+    font-size: 1rem;
+  }
+
+  .lp-btn-apply-header,
+  .lp-btn-tel-header {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .lp-btn-tel-header span:last-child {
+    display: none;
+  }
+
+  .lp-hero {
+    min-height: 70vh;
+    padding: 6rem 1rem 3rem;
+  }
+
+  .lp-hero-highlights {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lp-highlight-item {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .lp-btn-apply-hero {
+    padding: 0.875rem 2rem;
+    font-size: 1.125rem;
+  }
+
+  .lp-section-inner {
+    padding: 3rem 1rem;
+  }
+
+  .lp-section-title {
+    font-size: 1.5rem;
+  }
+
+  .lp-detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-detail-label {
+    border-right: none;
+    border-bottom: 1px solid var(--lp-border);
+  }
+
+  .lp-apply-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lp-btn-apply-main {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .lp-btn-tel-main {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .lp-footer-cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .lp-btn-apply-footer,
+  .lp-btn-tel-footer {
+    width: 100%;
+    max-width: 250px;
+    text-align: center;
+  }
+
+  .lp-footer-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-hero-title {
+    font-size: 1.75rem;
+  }
+
+  .lp-highlight-value {
+    font-size: 1.5rem;
+  }
+
+  .lp-job-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* ========================================
+   編集モード
+   ======================================== */
+
+.lp-edit-mode {
+  padding-top: 60px;
+}
+
+/* 編集ツールバー */
+.lp-edit-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #1f2937;
+  color: #fff;
+  z-index: 2000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.lp-edit-toolbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+}
+
+.lp-edit-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lp-edit-mode-badge {
+  background: var(--lp-accent);
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.lp-edit-hint {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.lp-edit-toolbar-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.lp-edit-btn-cancel,
+.lp-edit-btn-save {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.lp-edit-btn-cancel {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.lp-edit-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-edit-btn-save {
+  background: var(--lp-primary);
+  color: #fff;
+}
+
+.lp-edit-btn-save:hover {
+  background: var(--lp-primary-dark);
+}
+
+.lp-edit-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 編集可能要素 */
+.lp-edit-mode .lp-editable,
+.lp-edit-mode .lp-editable-btn {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.lp-edit-mode .lp-editable::before,
+.lp-edit-mode .lp-editable-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px dashed rgba(99, 102, 241, 0.5);
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.lp-edit-mode .lp-editable:hover::before,
+.lp-edit-mode .lp-editable-btn:hover::before {
+  opacity: 1;
+}
+
+.lp-edit-mode .lp-editable:hover,
+.lp-edit-mode .lp-editable-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* 編集済みマーク */
+.lp-edit-mode .lp-edited::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+/* プレースホルダー */
+.lp-edit-mode .lp-placeholder {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+/* 編集ラベル（ツールチップ） */
+.lp-edit-label {
+  background: #1f2937;
+  color: #fff;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  z-index: 1500;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.15s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* インラインエディタ */
+.lp-inline-editor {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 1rem;
+  z-index: 2500;
+  min-width: 250px;
+  max-width: 500px;
+  animation: fadeInScale 0.15s ease;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lp-inline-editor-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--lp-text-light);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.lp-inline-editor-input,
+.lp-inline-editor-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--lp-border);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lp-inline-editor-input:focus,
+.lp-inline-editor-textarea:focus {
+  outline: none;
+  border-color: var(--lp-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.lp-inline-editor-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.lp-inline-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.lp-inline-editor-cancel,
+.lp-inline-editor-apply {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.lp-inline-editor-cancel {
+  background: var(--lp-bg-gray);
+  color: var(--lp-text);
+}
+
+.lp-inline-editor-cancel:hover {
+  background: var(--lp-border);
+}
+
+.lp-inline-editor-apply {
+  background: var(--lp-primary);
+  color: #fff;
+}
+
+.lp-inline-editor-apply:hover {
+  background: var(--lp-primary-dark);
+}
+
+.lp-inline-editor-clear {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.lp-inline-editor-clear:hover {
+  background: #fecaca;
+}
+
+/* 画像編集エディタ */
+.lp-image-editor {
+  max-width: 500px;
+}
+
+.lp-image-url-input {
+  margin-bottom: 0.75rem;
+}
+
+/* 画像タブ切り替え */
+.lp-image-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.lp-image-tab {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--lp-border);
+  border-radius: 6px;
+  background: var(--lp-bg-gray);
+  color: var(--lp-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-image-tab:hover {
+  background: var(--lp-border);
+}
+
+.lp-image-tab.active {
+  background: var(--lp-primary);
+  border-color: var(--lp-primary);
+  color: #fff;
+}
+
+/* プリセット画像グリッド */
+.lp-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem;
+}
+
+.lp-preset-image {
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.2s;
+  background: var(--lp-bg-gray);
+}
+
+.lp-preset-image:hover {
+  border-color: var(--lp-primary);
+  transform: scale(1.02);
+}
+
+.lp-preset-image.selected {
+  border-color: var(--lp-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+.lp-preset-image img {
+  width: 100%;
+  height: 70px;
+  object-fit: cover;
+  display: block;
+}
+
+.lp-preset-label {
+  display: block;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--lp-bg-gray);
+  color: var(--lp-text-light);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 画像プレビュー */
+.lp-image-preview {
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--lp-bg-gray);
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-image-preview img {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  object-fit: cover;
+}
+
+.lp-image-preview p {
+  color: var(--lp-text-light);
+  font-size: 0.875rem;
+  margin: 0;
+  padding: 1rem;
+}
+
+/* 編集可能画像のスタイル */
+.lp-edit-mode .lp-editable-image {
+  cursor: pointer;
+  z-index: 5;
+}
+
+.lp-edit-mode .lp-hero-overlay {
+  pointer-events: none;
+}
+
+.lp-edit-mode .lp-editable-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  z-index: 1;
+}
+
+.lp-edit-mode .lp-editable-image::after {
+  content: '📷 クリックして画像を変更';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.lp-edit-mode .lp-editable-image:hover::after {
+  opacity: 1;
+}
+
+.lp-editable-image.lp-edited {
+  outline: 3px solid var(--lp-accent);
+  outline-offset: -3px;
+}
+
+/* 編集モードでのヒーロー要素調整 */
+.lp-edit-mode .lp-hero-title,
+.lp-edit-mode .lp-hero-subtitle {
+  display: inline-block;
+}
+
+/* ヒーローコンテンツを表示するためにz-indexを確保 */
+.lp-edit-mode .lp-hero-content {
+  z-index: 10;
+}
+
+/* 会社名、ハイライト、ボタン等もクリック可能に */
+.lp-edit-mode .lp-hero-company,
+.lp-edit-mode .lp-hero-highlights,
+.lp-edit-mode .lp-hero-cta,
+.lp-edit-mode .lp-hero-content .lp-editable,
+.lp-edit-mode .lp-hero-content .lp-btn-apply-hero {
+  pointer-events: auto;
+}
+
+/* ========================================
+   セクション並び替え機能
+   ======================================== */
+
+.lp-edit-mode .lp-sortable-section {
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.lp-section-drag-handle {
+  display: none;
+}
+
+.lp-edit-mode .lp-section-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  background: rgba(99, 102, 241, 0.95);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  user-select: none;
+}
+
+.lp-edit-mode .lp-section-drag-handle:hover {
+  background: #6366f1;
+}
+
+.lp-section-drag-icon {
+  font-size: 16px;
+  opacity: 0.8;
+  letter-spacing: -2px;
+}
+
+.lp-edit-mode .lp-sortable-section:hover {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+}
+
+.lp-edit-mode .lp-section-dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.7);
+}
+
+.lp-edit-mode .lp-section-dragging .lp-section-drag-handle {
+  cursor: grabbing;
+  background: #4f46e5;
+}
+
+/* ヒーローセクションのドラッグハンドル位置調整 */
+.lp-edit-mode .lp-hero .lp-section-drag-handle {
+  top: auto;
+  bottom: 10px;
+  left: 10px;
+}
+
+/* レスポンシブ - 編集ツールバー */
+@media (max-width: 768px) {
+  .lp-edit-toolbar-inner {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .lp-edit-hint {
+    display: none;
+  }
+
+  .lp-inline-editor {
+    left: 10px !important;
+    right: 10px !important;
+    min-width: auto;
+  }
+
+  .lp-edit-mode .lp-section-drag-handle {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .lp-section-label {
+    display: none;
+  }
+}
