@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>応募者管理 | リクエコ求人ナビ</title>
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+  <!-- 応募者管理ダッシュボード -->
+  <div id="applicants-dashboard" class="admin-dashboard">
+    <!-- サイドバー -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>リクエコ求人ナビ</h2>
+        <p>応募者管理</p>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li><a href="admin.html"><span class="nav-icon">←</span>管理画面に戻る</a></li>
+          <li><a href="#" id="nav-jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
+          <li class="active"><a href="#"><span class="nav-icon">👥</span>応募者一覧</a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="admin.html" class="btn-logout">管理画面へ戻る</a>
+      </div>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="admin-main">
+      <!-- ヘッダー -->
+      <header class="admin-header">
+        <h1 id="page-title">応募者一覧</h1>
+        <div class="header-actions">
+          <button id="btn-export-csv" class="btn-secondary">📥 CSVエクスポート</button>
+          <button id="btn-refresh" class="btn-refresh">更新</button>
+        </div>
+      </header>
+
+      <!-- 応募者一覧セクション -->
+      <section id="section-applicants" class="admin-section active">
+        <div class="info-box">
+          <p id="company-info">会社: <strong id="company-name">-</strong></p>
+          <p>この会社への応募・問い合わせ履歴を管理できます。</p>
+        </div>
+
+        <!-- フィルター -->
+        <div class="filter-section">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="filter-status">ステータス</label>
+              <select id="filter-status">
+                <option value="">すべて</option>
+                <option value="new">新規</option>
+                <option value="contacted">連絡済み</option>
+                <option value="interviewing">面接調整中</option>
+                <option value="interviewed">面接済み</option>
+                <option value="hired">採用</option>
+                <option value="rejected">不採用</option>
+                <option value="withdrawn">辞退</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-type">種別</label>
+              <select id="filter-type">
+                <option value="">すべて</option>
+                <option value="apply">応募</option>
+                <option value="line">LINE相談</option>
+                <option value="consult">お問い合わせ</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-date-from">期間</label>
+              <div class="date-range">
+                <input type="date" id="filter-date-from">
+                <span>〜</span>
+                <input type="date" id="filter-date-to">
+              </div>
+            </div>
+            <div class="filter-group">
+              <label for="filter-assignee">担当者</label>
+              <select id="filter-assignee">
+                <option value="">すべて</option>
+                <option value="unassigned">未割当</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-search">検索</label>
+              <input type="text" id="filter-search" placeholder="求人タイトル・応募者名で検索...">
+            </div>
+          </div>
+        </div>
+
+        <!-- 統計カード -->
+        <div class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">総応募数</div>
+          </div>
+          <div class="stat-card stat-new">
+            <div class="stat-value" id="stat-new">0</div>
+            <div class="stat-label">新規</div>
+          </div>
+          <div class="stat-card stat-progress">
+            <div class="stat-value" id="stat-progress">0</div>
+            <div class="stat-label">対応中</div>
+          </div>
+          <div class="stat-card stat-complete">
+            <div class="stat-value" id="stat-complete">0</div>
+            <div class="stat-label">完了</div>
+          </div>
+        </div>
+
+        <!-- 応募者テーブル -->
+        <div class="table-container">
+          <table class="admin-table" id="applicants-table">
+            <thead>
+              <tr>
+                <th>日時</th>
+                <th>種別</th>
+                <th>応募者名</th>
+                <th>求人タイトル</th>
+                <th>ステータス</th>
+                <th>担当者</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="applicants-tbody">
+              <tr>
+                <td colspan="7" class="loading-cell">データを読み込み中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ページネーション -->
+        <div class="pagination" id="pagination">
+          <!-- JSで生成 -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 応募者詳細モーダル -->
+  <div id="applicant-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="applicant-modal-title">応募詳細</h3>
+        <button class="modal-close" id="applicant-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 応募者情報 -->
+        <div class="detail-section applicant-info-section">
+          <h4>応募者情報</h4>
+          <div class="detail-grid">
+            <div class="detail-item detail-item-full">
+              <label>お名前</label>
+              <span id="detail-name" class="detail-value-large">-</span>
+            </div>
+            <div class="detail-item">
+              <label>電話番号</label>
+              <span id="detail-phone">-</span>
+            </div>
+            <div class="detail-item">
+              <label>メールアドレス</label>
+              <span id="detail-email">-</span>
+            </div>
+            <div class="detail-item">
+              <label>年齢</label>
+              <span id="detail-age">-</span>
+            </div>
+            <div class="detail-item">
+              <label>現住所</label>
+              <span id="detail-address">-</span>
+            </div>
+            <div class="detail-item">
+              <label>希望勤務開始日</label>
+              <span id="detail-start-date">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 応募情報 -->
+        <div class="detail-section">
+          <h4>応募情報</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>応募日時</label>
+              <span id="detail-datetime">-</span>
+            </div>
+            <div class="detail-item">
+              <label>種別</label>
+              <span id="detail-type">-</span>
+            </div>
+            <div class="detail-item">
+              <label>求人タイトル</label>
+              <span id="detail-job-title">-</span>
+            </div>
+            <div class="detail-item">
+              <label>流入元</label>
+              <span id="detail-source">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ステータス・担当者管理 -->
+        <div class="detail-section">
+          <h4>ステータス・担当者</h4>
+          <div class="status-assignee-row">
+            <div class="status-selector">
+              <label class="status-option">
+                <input type="radio" name="status" value="new">
+                <span class="status-badge status-new">新規</span>
+              </label>
+              <label class="status-option">
+                <input type="radio" name="status" value="contacted">
+                <span class="status-badge status-contacted">連絡済み</span>
+              </label>
+              <label class="status-option">
+                <input type="radio" name="status" value="interviewing">
+                <span class="status-badge status-interviewing">面接調整中</span>
+              </label>
+              <label class="status-option">
+                <input type="radio" name="status" value="interviewed">
+                <span class="status-badge status-interviewed">面接済み</span>
+              </label>
+              <label class="status-option">
+                <input type="radio" name="status" value="hired">
+                <span class="status-badge status-hired">採用</span>
+              </label>
+              <label class="status-option">
+                <input type="radio" name="status" value="rejected">
+                <span class="status-badge status-rejected">不採用</span>
+              </label>
+              <label class="status-option">
+                <input type="radio" name="status" value="withdrawn">
+                <span class="status-badge status-withdrawn">辞退</span>
+              </label>
+            </div>
+            <div class="assignee-selector">
+              <label for="detail-assignee">担当者</label>
+              <div class="assignee-input-group">
+                <select id="detail-assignee">
+                  <option value="">未割当</option>
+                </select>
+                <button type="button" id="btn-add-assignee" class="btn-icon" title="担当者を追加">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- メモ -->
+        <div class="detail-section">
+          <h4>メモ・備考</h4>
+          <textarea id="detail-notes" rows="4" placeholder="メモや備考を入力..."></textarea>
+        </div>
+
+        <!-- 対応履歴 -->
+        <div class="detail-section">
+          <h4>対応履歴</h4>
+          <div id="detail-history" class="history-list">
+            <!-- JSで生成 -->
+          </div>
+          <div class="add-history">
+            <input type="text" id="new-history-text" placeholder="対応内容を入力...">
+            <button id="btn-add-history" class="btn-secondary">追加</button>
+          </div>
+        </div>
+
+        <!-- メッセージ -->
+        <div class="detail-section">
+          <h4>メッセージ（サイト内）</h4>
+          <div id="messages-container" class="messages-container">
+            <!-- JSで生成 -->
+          </div>
+          <div class="message-template-area">
+            <label for="message-template-select">テンプレート:</label>
+            <select id="message-template-select">
+              <option value="">-- テンプレートを選択 --</option>
+              <option value="first_contact">初回連絡</option>
+              <option value="schedule_interview">面接日程調整</option>
+              <option value="interview_reminder">面接リマインダー</option>
+              <option value="document_request">書類提出依頼</option>
+              <option value="result_pending">選考結果待ち</option>
+              <option value="offer">内定通知</option>
+              <option value="rejection">不採用通知</option>
+            </select>
+          </div>
+          <div class="message-input-area">
+            <textarea id="new-message-text" rows="5" placeholder="応募者へのメッセージを入力..."></textarea>
+            <button id="btn-send-message" class="btn-primary">送信</button>
+          </div>
+          <p class="message-note">※ サイト内メッセージです。応募者がマイページで確認できます。</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="applicant-modal-cancel">閉じる</button>
+        <button type="button" class="btn-primary" id="applicant-modal-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 担当者追加モーダル -->
+  <div id="assignee-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>担当者を追加</h3>
+        <button class="modal-close" id="assignee-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-assignee-name">担当者名</label>
+          <input type="text" id="new-assignee-name" placeholder="例: 山田太郎">
+        </div>
+        <p class="form-hint">追加した担当者はこの会社の全応募で選択可能になります。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="assignee-modal-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="assignee-modal-save">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script type="module" src="/src/pages/applicants.js"></script>
+</body>
+</html>
