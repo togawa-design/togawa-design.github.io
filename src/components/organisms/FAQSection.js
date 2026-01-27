@@ -1,5 +1,6 @@
 /**
  * FAQセクションコンポーネント
+ * LINE風チャットUI
  */
 import { escapeHtml } from '@shared/utils.js';
 
@@ -11,22 +12,29 @@ export function renderFAQSection(faqData) {
   if (faqs.length === 0) return '';
 
   return `
-    <section class="lp-faq">
+    <section class="lp-faq lp-faq-chat">
       <div class="lp-section-inner">
         <h2 class="lp-section-title">よくある質問</h2>
-        <div class="lp-faq-list">
+        <div class="lp-faq-chat-container">
           ${faqs.map((faq, idx) => `
-            <div class="lp-faq-item">
-              <button class="lp-faq-question" aria-expanded="false" aria-controls="faq-answer-${idx}">
-                <span class="lp-faq-q">Q</span>
-                <span class="lp-faq-q-text">${escapeHtml(faq.question)}</span>
-                <span class="lp-faq-toggle">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-                </span>
-              </button>
-              <div class="lp-faq-answer" id="faq-answer-${idx}">
-                <span class="lp-faq-a">A</span>
-                <span class="lp-faq-a-text">${escapeHtml(faq.answer)}</span>
+            <div class="lp-faq-chat-pair">
+              <!-- 質問（左側・サポート） -->
+              <div class="lp-faq-chat-row lp-faq-chat-question">
+                <div class="lp-faq-chat-avatar lp-faq-chat-avatar-support">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+                </div>
+                <div class="lp-faq-chat-bubble lp-faq-chat-bubble-support">
+                  <span class="lp-faq-chat-text">${escapeHtml(faq.question)}</span>
+                </div>
+              </div>
+              <!-- 回答（右側・ユーザー） -->
+              <div class="lp-faq-chat-row lp-faq-chat-answer">
+                <div class="lp-faq-chat-bubble lp-faq-chat-bubble-user">
+                  <span class="lp-faq-chat-text">${escapeHtml(faq.answer)}</span>
+                </div>
+                <div class="lp-faq-chat-avatar lp-faq-chat-avatar-user">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -40,8 +48,10 @@ function parseFAQData(faqData) {
   const faqs = [];
 
   if (typeof faqData === 'string') {
-    // 改行で分割して各QAペアを処理
-    const lines = faqData.split('\n').filter(line => line.trim());
+    // リテラルな\nを実際の改行に変換してから分割
+    const normalizedString = faqData.replace(/\\n/g, '\n');
+    // || または改行で分割して各QAペアを処理
+    const lines = normalizedString.split(/\|\||[\n\r]+/).filter(line => line.trim());
 
     for (const line of lines) {
       // Q:質問|A:回答 形式

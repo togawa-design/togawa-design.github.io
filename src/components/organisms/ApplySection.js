@@ -19,6 +19,7 @@ export function renderApplySection(company, lpSettings) {
               <h3>WEBで応募</h3>
               <p>24時間受付中</p>
               <a href="#" class="lp-btn-apply-main lp-editable" data-field="ctaText" data-label="CTAテキスト">${escapeHtml(ctaText)}</a>
+              <span class="lp-cta-microcopy">1分で入力完了 / まずは話を聞くだけでもOK</span>
             </div>
 
             <div class="lp-apply-divider">

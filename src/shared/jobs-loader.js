@@ -47,7 +47,7 @@ export function parseCSVLine(line) {
 // ヘッダー名を正規化
 export function normalizeHeader(header) {
   const mapping = {
-    'id': 'id', 'ID': 'id',
+    'id': 'id', 'ID': 'id', '求人ID': 'jobId', 'jobId': 'jobId', 'job_id': 'jobId',
     '会社名': 'company', 'company': 'company',
     'タイトル': 'title', 'title': 'title',
     '勤務地': 'location', 'location': 'companyAddress',
@@ -72,6 +72,7 @@ export function normalizeHeader(header) {
     'デザインパターン': 'designPattern', 'designPattern': 'designPattern', 'design_pattern': 'designPattern',
     'パターン': 'designPattern', 'pattern': 'designPattern',
     '管理シート': 'jobsSheet', 'jobsSheet': 'jobsSheet', 'jobs_sheet': 'jobsSheet',
+    '管理シートURL': 'manageSheetUrl', 'manageSheetUrl': 'manageSheetUrl', '求人管理シートURL': 'manageSheetUrl',
     '掲載開始日': 'publishStartDate', 'publishStartDate': 'publishStartDate', 'publish_start_date': 'publishStartDate',
     '掲載終了日': 'publishEndDate', 'publishEndDate': 'publishEndDate', 'publish_end_date': 'publishEndDate',
     '職種名': 'jobType', 'jobType': 'jobType', 'job_type': 'jobType',
@@ -161,7 +162,7 @@ export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
     const response = await fetch(csvUrl);
     if (!response.ok) throw new Error('求人データの取得に失敗しました');
     const csvText = await response.text();
-    return parseCSV(csvText, 0, 2);
+    return parseCSV(csvText, 0, 1);
   } catch (error) {
     console.error('求人データの取得エラー:', error);
     return null;
@@ -170,6 +171,7 @@ export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
 
 // 会社が表示対象か判定
 export function isCompanyVisible(company) {
+  // jobsSheetが設定されている必要がある（'管理シート'カラムからマッピング）
   if (!company.jobsSheet || !company.jobsSheet.trim()) return false;
   if (company.showCompany !== '○' && company.showCompany !== '◯') return false;
   return true;
@@ -261,7 +263,11 @@ export async function fetchAllJobs() {
   for (const company of companies) {
     if (!isCompanyVisible(company)) continue;
 
-    const jobs = await fetchCompanyJobs(company.jobsSheet);
+    // jobsSheetから求人データソースを取得（'管理シート'カラムからマッピング）
+    const jobsSource = company.jobsSheet?.trim();
+    if (!jobsSource) continue;
+
+    const jobs = await fetchCompanyJobs(jobsSource);
     if (jobs) {
       jobs.forEach(job => {
         job.company = company.company;
