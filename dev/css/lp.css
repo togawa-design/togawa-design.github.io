@@ -528,6 +528,122 @@
 }
 
 /* ========================================
+   FAQ チャットUI（LINE風）
+   ======================================== */
+
+.lp-faq-chat {
+  background: #e8e8e8;
+}
+
+.lp-faq-chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lp-faq-chat-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lp-faq-chat-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+/* 質問（左側） */
+.lp-faq-chat-question {
+  flex-direction: row;
+}
+
+/* 回答（右側） */
+.lp-faq-chat-answer {
+  flex-direction: row-reverse;
+}
+
+/* アバター */
+.lp-faq-chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lp-faq-chat-avatar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lp-faq-chat-avatar-user {
+  background: #a8d8ea;
+  color: #2d6a7e;
+}
+
+.lp-faq-chat-avatar-support {
+  background: var(--lp-primary, #667eea);
+  color: #fff;
+}
+
+/* 吹き出し */
+.lp-faq-chat-bubble {
+  max-width: 80%;
+  padding: 0.875rem 1rem;
+  border-radius: 18px;
+  line-height: 1.6;
+  font-size: 0.9375rem;
+  position: relative;
+}
+
+/* ユーザーの吹き出し（質問） */
+.lp-faq-chat-bubble-user {
+  background: #a8d8ea;
+  color: #1a3c48;
+  border-bottom-right-radius: 4px;
+}
+
+/* サポートの吹き出し（回答） */
+.lp-faq-chat-bubble-support {
+  background: #fff;
+  color: #333;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.lp-faq-chat-text {
+  display: block;
+}
+
+/* モバイル対応 */
+@media (max-width: 640px) {
+  .lp-faq-chat-container {
+    gap: 1.25rem;
+  }
+
+  .lp-faq-chat-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .lp-faq-chat-avatar svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .lp-faq-chat-bubble {
+    max-width: 85%;
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* ========================================
    応募セクション
    ======================================== */
 
@@ -753,12 +869,93 @@
 }
 
 /* ========================================
+   デザインパターン: Standard（紫・デフォルト）
+   ======================================== */
+
+.lp-pattern-standard {
+  --lp-primary: #667eea;
+  --lp-primary-dark: #5a67d8;
+  --lp-accent: #764ba2;
+}
+
+.lp-pattern-standard .lp-hero-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.lp-pattern-standard .lp-point-number {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.lp-pattern-standard .lp-apply {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.lp-pattern-standard .lp-section-title::after {
+  background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.lp-pattern-standard .lp-faq-q {
+  background: #667eea;
+}
+
+.lp-pattern-standard .lp-btn-apply-hero,
+.lp-pattern-standard .lp-btn-apply-main,
+.lp-pattern-standard .lp-btn-apply-footer {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.lp-pattern-standard .lp-btn-apply-hero:hover,
+.lp-pattern-standard .lp-btn-apply-main:hover,
+.lp-pattern-standard .lp-btn-apply-footer:hover {
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
+/* Standard: FAQ Chat */
+.lp-pattern-standard .lp-faq-chat {
+  background: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%);
+}
+
+.lp-pattern-standard .lp-faq-chat-avatar-support {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.lp-pattern-standard .lp-faq-chat-bubble-user {
+  background: #ddd6fe;
+  color: #4c1d95;
+}
+
+/* Standard: Footer */
+.lp-pattern-standard .lp-footer {
+  background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+}
+
+/* Standard: Details */
+.lp-pattern-standard .lp-details {
+  background: #f5f3ff;
+}
+
+.lp-pattern-standard .lp-details-table th {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+}
+
+/* Standard: Jobs */
+.lp-pattern-standard .lp-job-card {
+  border-left: 4px solid #667eea;
+}
+
+.lp-pattern-standard .lp-job-card:hover {
+  border-left-color: #764ba2;
+}
+
+/* ========================================
    デザインパターン: Modern
    ======================================== */
 
 .lp-pattern-modern {
   --lp-primary: #1e40af;
   --lp-primary-dark: #1e3a8a;
+  --lp-accent: #3b82f6;
 }
 
 .lp-pattern-modern .lp-hero-bg {
@@ -771,6 +968,72 @@
 
 .lp-pattern-modern .lp-point-number {
   background: linear-gradient(135deg, #1e40af, #3b82f6);
+}
+
+.lp-pattern-modern .lp-apply {
+  background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%);
+}
+
+.lp-pattern-modern .lp-btn-apply-hero,
+.lp-pattern-modern .lp-btn-apply-main,
+.lp-pattern-modern .lp-btn-apply-footer {
+  background: #3b82f6;
+}
+
+.lp-pattern-modern .lp-btn-apply-hero:hover,
+.lp-pattern-modern .lp-btn-apply-main:hover,
+.lp-pattern-modern .lp-btn-apply-footer:hover {
+  background: #1e40af;
+}
+
+.lp-pattern-modern .lp-faq-q {
+  background: #1e40af;
+}
+
+.lp-pattern-modern .lp-section-title::after {
+  background: linear-gradient(90deg, #1e40af, #3b82f6);
+}
+
+/* Modern: FAQ Chat */
+.lp-pattern-modern .lp-faq-chat {
+  background: linear-gradient(180deg, #f0f4ff 0%, #e0e7ff 100%);
+}
+
+.lp-pattern-modern .lp-faq-chat-avatar-support {
+  background: #1e40af;
+}
+
+.lp-pattern-modern .lp-faq-chat-bubble-user {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+/* Modern: Footer */
+.lp-pattern-modern .lp-footer {
+  background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%);
+}
+
+.lp-pattern-modern .lp-btn-apply-footer {
+  background: #3b82f6;
+}
+
+/* Modern: Details */
+.lp-pattern-modern .lp-details {
+  background: #f0f4ff;
+}
+
+.lp-pattern-modern .lp-details-table th {
+  background: #1e40af;
+  color: #fff;
+}
+
+/* Modern: Jobs */
+.lp-pattern-modern .lp-job-card {
+  border-left: 4px solid #3b82f6;
+}
+
+.lp-pattern-modern .lp-job-card:hover {
+  border-left-color: #1e40af;
 }
 
 /* ========================================
@@ -798,6 +1061,56 @@
 
 .lp-pattern-classic .lp-apply {
   background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+}
+
+.lp-pattern-classic .lp-btn-apply-hero,
+.lp-pattern-classic .lp-btn-apply-main,
+.lp-pattern-classic .lp-btn-apply-footer {
+  background: #dc2626;
+}
+
+.lp-pattern-classic .lp-btn-apply-hero:hover,
+.lp-pattern-classic .lp-btn-apply-main:hover,
+.lp-pattern-classic .lp-btn-apply-footer:hover {
+  background: #b91c1c;
+}
+
+.lp-pattern-classic .lp-faq-q {
+  background: #dc2626;
+}
+
+/* Classic: FAQ Chat */
+.lp-pattern-classic .lp-faq-chat {
+  background: linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.lp-pattern-classic .lp-faq-chat-avatar-support {
+  background: #dc2626;
+}
+
+.lp-pattern-classic .lp-faq-chat-bubble-user {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+
+/* Classic: Footer */
+.lp-pattern-classic .lp-footer {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+}
+
+/* Classic: Details */
+.lp-pattern-classic .lp-details {
+  background: #fef2f2;
+}
+
+.lp-pattern-classic .lp-details-table th {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* Classic: Jobs */
+.lp-pattern-classic .lp-job-card {
+  border-left: 4px solid #dc2626;
 }
 
 /* ========================================
@@ -837,10 +1150,22 @@
   border-color: var(--lp-border);
 }
 
-.lp-pattern-minimal .lp-btn-apply-hero {
+.lp-pattern-minimal .lp-btn-apply-hero,
+.lp-pattern-minimal .lp-btn-apply-main,
+.lp-pattern-minimal .lp-btn-apply-footer {
   background: var(--lp-text);
   box-shadow: none;
   animation: none;
+}
+
+.lp-pattern-minimal .lp-btn-apply-hero:hover,
+.lp-pattern-minimal .lp-btn-apply-main:hover,
+.lp-pattern-minimal .lp-btn-apply-footer:hover {
+  background: #374151;
+}
+
+.lp-pattern-minimal .lp-faq-q {
+  background: var(--lp-text);
 }
 
 .lp-pattern-minimal .lp-point-card {
@@ -851,6 +1176,41 @@
 
 .lp-pattern-minimal .lp-apply {
   background: var(--lp-text);
+}
+
+/* Minimal: FAQ Chat */
+.lp-pattern-minimal .lp-faq-chat {
+  background: #f9fafb;
+}
+
+.lp-pattern-minimal .lp-faq-chat-avatar-support {
+  background: #1f2937;
+}
+
+.lp-pattern-minimal .lp-faq-chat-bubble-user {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+/* Minimal: Footer */
+.lp-pattern-minimal .lp-footer {
+  background: #1f2937;
+}
+
+/* Minimal: Details */
+.lp-pattern-minimal .lp-details {
+  background: #f9fafb;
+}
+
+.lp-pattern-minimal .lp-details-table th {
+  background: #1f2937;
+  color: #fff;
+}
+
+/* Minimal: Jobs */
+.lp-pattern-minimal .lp-job-card {
+  border-left: 4px solid #1f2937;
+  border-radius: 0;
 }
 
 /* ========================================
@@ -881,6 +1241,1666 @@
 
 .lp-pattern-colorful .lp-section-title::after {
   background: linear-gradient(90deg, #f472b6, #8b5cf6, #06b6d4);
+}
+
+.lp-pattern-colorful .lp-btn-apply-hero,
+.lp-pattern-colorful .lp-btn-apply-main,
+.lp-pattern-colorful .lp-btn-apply-footer {
+  background: linear-gradient(135deg, #f472b6, #8b5cf6);
+}
+
+.lp-pattern-colorful .lp-btn-apply-hero:hover,
+.lp-pattern-colorful .lp-btn-apply-main:hover,
+.lp-pattern-colorful .lp-btn-apply-footer:hover {
+  background: linear-gradient(135deg, #ec4899, #7c3aed);
+}
+
+.lp-pattern-colorful .lp-faq-q {
+  background: #8b5cf6;
+}
+
+/* Colorful: FAQ Chat */
+.lp-pattern-colorful .lp-faq-chat {
+  background: linear-gradient(180deg, #fdf4ff 0%, #f0f9ff 100%);
+}
+
+.lp-pattern-colorful .lp-faq-chat-avatar-support {
+  background: linear-gradient(135deg, #f472b6, #8b5cf6);
+}
+
+.lp-pattern-colorful .lp-faq-chat-bubble-user {
+  background: linear-gradient(135deg, #fce7f3, #e9d5ff);
+  color: #581c87;
+}
+
+/* Colorful: Footer */
+.lp-pattern-colorful .lp-footer {
+  background: linear-gradient(135deg, #581c87 0%, #1e3a8a 100%);
+}
+
+/* Colorful: Details */
+.lp-pattern-colorful .lp-details {
+  background: linear-gradient(180deg, #fdf4ff 0%, #f0f9ff 100%);
+}
+
+.lp-pattern-colorful .lp-details-table th {
+  background: linear-gradient(135deg, #f472b6, #8b5cf6);
+  color: #fff;
+}
+
+/* Colorful: Jobs */
+.lp-pattern-colorful .lp-job-card {
+  border-left: 4px solid #8b5cf6;
+  background: linear-gradient(90deg, #fdf4ff 0%, #fff 20%);
+}
+
+.lp-pattern-colorful .lp-job-card:hover {
+  border-left-color: #f472b6;
+}
+
+/* ========================================
+   デザインパターン: Blue
+   ======================================== */
+
+.lp-pattern-blue {
+  --lp-primary: #3b82f6;
+  --lp-primary-dark: #1d4ed8;
+  --lp-accent: #0ea5e9;
+}
+
+.lp-pattern-blue .lp-hero-bg {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.lp-pattern-blue .lp-point-number {
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+}
+
+.lp-pattern-blue .lp-apply {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.lp-pattern-blue .lp-section-title::after {
+  background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+}
+
+.lp-pattern-blue .lp-faq-q {
+  background: #3b82f6;
+}
+
+.lp-pattern-blue .lp-btn-apply-hero,
+.lp-pattern-blue .lp-btn-apply-main,
+.lp-pattern-blue .lp-btn-apply-footer {
+  background: #0ea5e9;
+}
+
+.lp-pattern-blue .lp-btn-apply-hero:hover,
+.lp-pattern-blue .lp-btn-apply-main:hover,
+.lp-pattern-blue .lp-btn-apply-footer:hover {
+  background: #06b6d4;
+}
+
+/* Blue: FAQ Chat */
+.lp-pattern-blue .lp-faq-chat {
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.lp-pattern-blue .lp-faq-chat-avatar-support {
+  background: #3b82f6;
+}
+
+.lp-pattern-blue .lp-faq-chat-bubble-user {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+/* Blue: Footer */
+.lp-pattern-blue .lp-footer {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+}
+
+/* Blue: Details */
+.lp-pattern-blue .lp-details {
+  background: #eff6ff;
+}
+
+.lp-pattern-blue .lp-details-table th {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* Blue: Jobs */
+.lp-pattern-blue .lp-job-card {
+  border-left: 4px solid #3b82f6;
+}
+
+.lp-pattern-blue .lp-job-card:hover {
+  border-left-color: #0ea5e9;
+}
+
+/* ========================================
+   デザインパターン: Orange
+   ======================================== */
+
+.lp-pattern-orange {
+  --lp-primary: #f97316;
+  --lp-primary-dark: #ea580c;
+  --lp-accent: #fb923c;
+}
+
+.lp-pattern-orange .lp-hero-bg {
+  background: linear-gradient(135deg, #9a3412 0%, #f97316 100%);
+}
+
+.lp-pattern-orange .lp-point-number {
+  background: linear-gradient(135deg, #f97316, #fb923c);
+}
+
+.lp-pattern-orange .lp-apply {
+  background: linear-gradient(135deg, #9a3412 0%, #f97316 100%);
+}
+
+.lp-pattern-orange .lp-section-title::after {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.lp-pattern-orange .lp-faq-q {
+  background: #f97316;
+}
+
+.lp-pattern-orange .lp-btn-apply-hero,
+.lp-pattern-orange .lp-btn-apply-main,
+.lp-pattern-orange .lp-btn-apply-footer {
+  background: #ea580c;
+}
+
+.lp-pattern-orange .lp-btn-apply-hero:hover,
+.lp-pattern-orange .lp-btn-apply-main:hover,
+.lp-pattern-orange .lp-btn-apply-footer:hover {
+  background: #c2410c;
+}
+
+/* Orange: FAQ Chat */
+.lp-pattern-orange .lp-faq-chat {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+}
+
+.lp-pattern-orange .lp-faq-chat-avatar-support {
+  background: #f97316;
+}
+
+.lp-pattern-orange .lp-faq-chat-bubble-user {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+/* Orange: Footer */
+.lp-pattern-orange .lp-footer {
+  background: linear-gradient(135deg, #9a3412 0%, #c2410c 100%);
+}
+
+/* Orange: Details */
+.lp-pattern-orange .lp-details {
+  background: #fff7ed;
+}
+
+.lp-pattern-orange .lp-details-table th {
+  background: #f97316;
+  color: #fff;
+}
+
+/* Orange: Jobs */
+.lp-pattern-orange .lp-job-card {
+  border-left: 4px solid #f97316;
+}
+
+.lp-pattern-orange .lp-job-card:hover {
+  border-left-color: #ea580c;
+}
+
+/* ========================================
+   テンプレートデザイン: Yellow（イエロー）
+   親しみやすい明るいデザイン（構造のみ）
+   ======================================== */
+
+/* Yellow: Hero - 背景オーバーレイ濃く(0.4)、テキストシャドウ強化 */
+.lp-layout-yellow .lp-hero-bg {
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+}
+
+.lp-layout-yellow .lp-hero-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.lp-layout-yellow .lp-hero-content {
+  color: #fff;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.lp-layout-yellow .lp-hero-title {
+  text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.4);
+  font-size: clamp(2.5rem, 6vw, 4rem);
+}
+
+.lp-layout-yellow .lp-hero-subtitle {
+  font-size: 1.25rem;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Yellow: ハイライト（メリット表示）- 大きく目立たせる */
+.lp-layout-yellow .lp-hero-highlights {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+}
+
+.lp-layout-yellow .lp-highlight-item {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.25rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.lp-layout-yellow .lp-highlight-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #78350f;
+  margin-bottom: 0.25rem;
+  text-shadow: none;
+}
+
+.lp-layout-yellow .lp-highlight-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #d97706;
+  text-shadow: none;
+}
+
+/* Yellow: セクション間の余白を2倍に拡大（高級感） */
+.lp-layout-yellow section {
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.lp-layout-yellow .lp-hero {
+  padding-top: 10rem;
+  padding-bottom: 8rem;
+}
+
+/* Yellow: ポイントカード - 余白1.5倍、ドロップシャドウ強化 */
+.lp-layout-yellow .lp-point-card {
+  background: #fff;
+  border-radius: 24px;
+  border: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s, transform 0.3s;
+  padding: 2.5rem 2rem;
+}
+
+.lp-layout-yellow .lp-point-title {
+  margin-bottom: 1rem;
+}
+
+.lp-layout-yellow .lp-point-desc {
+  line-height: 1.8;
+}
+
+.lp-layout-yellow .lp-point-card:hover {
+  box-shadow: 0 12px 40px rgba(245, 158, 11, 0.15), 0 6px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+.lp-layout-yellow .lp-point-number {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.lp-layout-yellow .lp-section-title {
+  color: #92400e;
+}
+
+.lp-layout-yellow .lp-section-title::after {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+/* Yellow: 応募セクション - 余白2倍 */
+.lp-layout-yellow .lp-apply {
+  background: linear-gradient(180deg, #fefce8 0%, #fef3c7 100%);
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.lp-layout-yellow .lp-apply-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lp-layout-yellow .lp-apply-lead {
+  font-size: 1.125rem;
+  margin-bottom: 2.5rem;
+}
+
+.lp-layout-yellow .lp-apply-method {
+  padding: 2rem;
+}
+
+.lp-layout-yellow .lp-apply .lp-section-title,
+.lp-layout-yellow .lp-apply-lead,
+.lp-layout-yellow .lp-apply-method h3,
+.lp-layout-yellow .lp-apply-method p,
+.lp-layout-yellow .lp-apply-divider,
+.lp-layout-yellow .lp-apply-note {
+  color: #78350f;
+}
+
+.lp-layout-yellow .lp-apply .lp-section-title::after {
+  background: #f59e0b;
+}
+
+/* Yellow: 応募セクション - 要素の余白を大幅に改善 */
+.lp-layout-yellow .lp-apply-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  margin-top: 3rem;
+}
+
+.lp-layout-yellow .lp-apply-method {
+  padding: 3rem 2.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.lp-layout-yellow .lp-apply-method h3 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.lp-layout-yellow .lp-apply-method p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.lp-layout-yellow .lp-apply-divider {
+  padding: 1.5rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  position: relative;
+}
+
+.lp-layout-yellow .lp-apply-divider span {
+  background: #fef3c7;
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+}
+
+/* 電話ボタン - より大きく、余白追加 */
+.lp-layout-yellow .lp-btn-tel-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fff;
+  color: #78350f;
+  padding: 1.25rem 2.5rem;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.lp-layout-yellow .lp-btn-tel-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.lp-layout-yellow .lp-btn-tel-main svg {
+  width: 28px;
+  height: 28px;
+  color: #f59e0b;
+}
+
+/* 注記テキスト - 余白追加 */
+.lp-layout-yellow .lp-apply-note {
+  margin-top: 3rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.lp-layout-yellow .lp-faq-q {
+  background: #f9f9f9;
+  color: #374151;
+}
+
+/* Yellow: CTAボタン - サイズ拡大、インパクト強化 */
+.lp-layout-yellow .lp-btn-apply-hero,
+.lp-layout-yellow .lp-btn-apply-main,
+.lp-layout-yellow .lp-btn-apply-footer,
+.lp-layout-yellow .lp-apply .lp-btn-apply-main {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.35) !important;
+  color: #fff !important;
+  font-size: 1.25rem !important;
+  padding: 1.25rem 3rem !important;
+  border-radius: 50px !important;
+}
+
+.lp-layout-yellow .lp-btn-apply-hero:hover,
+.lp-layout-yellow .lp-btn-apply-main:hover,
+.lp-layout-yellow .lp-btn-apply-footer:hover {
+  filter: brightness(0.95);
+  transform: scale(1.05);
+  box-shadow: 0 16px 32px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Yellow: マイクロコピー用スタイル */
+.lp-layout-yellow .lp-cta-microcopy {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #78350f;
+  opacity: 0.9;
+}
+
+.lp-layout-yellow .lp-apply .lp-cta-microcopy {
+  color: #92400e;
+}
+
+/* Yellow: FAQ Chat - 余白2倍、吹き出し改善 */
+.lp-layout-yellow .lp-faq-chat {
+  background: linear-gradient(180deg, #fefce8 0%, #fef9c3 100%);
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.lp-layout-yellow .lp-faq-chat-container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.lp-layout-yellow .lp-faq-chat-pair {
+  margin-bottom: 2.5rem;
+}
+
+/* アイコンを円形に、サイズ拡大 */
+.lp-layout-yellow .lp-faq-chat-avatar-support,
+.lp-layout-yellow .lp-faq-chat-avatar-user {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-layout-yellow .lp-faq-chat-avatar-support {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.lp-layout-yellow .lp-faq-chat-avatar-user {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.lp-layout-yellow .lp-faq-chat-avatar-support svg,
+.lp-layout-yellow .lp-faq-chat-avatar-user svg {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}
+
+/* 質問（サポート側）- 薄いグレー背景 */
+.lp-layout-yellow .lp-faq-chat-bubble-support {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 24px 24px 24px 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  color: #374151;
+  padding: 1.25rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* 回答（ユーザー側）- ブランドカラー、大きめ・太字で解決感 */
+.lp-layout-yellow .lp-faq-chat-bubble-user {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 24px 24px 4px 24px;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.15);
+  color: #713f12;
+  padding: 1.5rem 1.75rem;
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+/* Yellow: Footer - チャコールグレー背景、オレンジボタンが映える */
+.lp-layout-yellow .lp-footer {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  padding: 5rem 2rem 3rem;
+}
+
+.lp-layout-yellow .lp-footer-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.lp-layout-yellow .lp-footer-content {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.lp-layout-yellow .lp-footer-logo {
+  margin-bottom: 2rem;
+}
+
+.lp-layout-yellow .lp-footer-logo img {
+  max-height: 50px;
+  filter: brightness(0) invert(1);
+}
+
+.lp-layout-yellow .lp-footer p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+  line-height: 1.9;
+  margin-bottom: 1rem;
+}
+
+.lp-layout-yellow .lp-footer a {
+  color: #fbbf24;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.lp-layout-yellow .lp-footer a:hover {
+  color: #fef08a;
+}
+
+/* フッターリンク一覧 */
+.lp-layout-yellow .lp-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+  padding: 1.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lp-layout-yellow .lp-footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.lp-layout-yellow .lp-footer-links a:hover {
+  color: #fff;
+}
+
+/* フッターCTAボタン - オレンジが映える */
+.lp-layout-yellow .lp-footer .lp-btn-apply-footer {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #fff !important;
+  border: none;
+  font-weight: 600;
+  font-size: 1.125rem;
+  padding: 1rem 2.5rem;
+  border-radius: 50px;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  margin-bottom: 1.5rem;
+}
+
+.lp-layout-yellow .lp-footer .lp-btn-apply-footer:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 35px rgba(245, 158, 11, 0.5);
+}
+
+.lp-layout-yellow .lp-footer .lp-btn-secondary {
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+}
+
+.lp-layout-yellow .lp-footer .lp-btn-secondary:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-layout-yellow .lp-footer .lp-btn-secondary:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-layout-yellow .lp-footer-copyright {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Yellow: フッター内の要素間隔を改善 */
+.lp-layout-yellow .lp-footer-cta {
+  margin-bottom: 3rem;
+}
+
+.lp-layout-yellow .lp-footer-info {
+  margin-bottom: 2rem;
+}
+
+.lp-layout-yellow .lp-footer-tel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+}
+
+.lp-layout-yellow .lp-footer-tel-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.lp-layout-yellow .lp-footer-tel-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 0.05em;
+}
+
+/* Yellow: Details - 余白2倍、クリーンなデザイン */
+.lp-layout-yellow .lp-details {
+  background: #fffbeb;
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.lp-layout-yellow .lp-details-table th {
+  background: #f59e0b;
+  color: #fff;
+  padding: 1.25rem 1.5rem;
+  font-size: 1rem;
+}
+
+.lp-layout-yellow .lp-details-table td {
+  padding: 1.25rem 1.5rem;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.lp-layout-yellow .lp-details-table {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Yellow: Jobs - カードデザイン改善、アイコン付き */
+.lp-layout-yellow .lp-jobs {
+  background: #fefce8;
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.lp-layout-yellow .lp-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.lp-layout-yellow .lp-job-card {
+  background: #fff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s, transform 0.3s;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-layout-yellow .lp-job-card:hover {
+  box-shadow: 0 12px 40px rgba(245, 158, 11, 0.12), 0 6px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-4px);
+}
+
+.lp-layout-yellow .lp-job-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #78350f;
+  margin-bottom: 1.25rem;
+}
+
+/* 求人メタ情報 - アイコン付き */
+.lp-layout-yellow .lp-job-meta {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lp-layout-yellow .lp-job-salary::before {
+  content: '💰 ';
+}
+
+.lp-layout-yellow .lp-job-location::before {
+  content: '📍 ';
+}
+
+.lp-layout-yellow .lp-job-type::before {
+  content: '🏢 ';
+}
+
+.lp-layout-yellow .lp-job-salary,
+.lp-layout-yellow .lp-job-location,
+.lp-layout-yellow .lp-job-type {
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.lp-layout-yellow .lp-job-salary {
+  font-weight: 600;
+  color: #d97706;
+  font-size: 1.1rem;
+}
+
+/* 「詳細を見る」ボタン - 落ち着いた色で差別化 */
+.lp-layout-yellow .lp-job-btn,
+.lp-layout-yellow .lp-job-card .lp-btn-details {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 500;
+  margin-top: auto;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.lp-layout-yellow .lp-job-btn:hover,
+.lp-layout-yellow .lp-job-card .lp-btn-details:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Yellow: ポイントセクション - 余白2倍 */
+.lp-layout-yellow .lp-points {
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.lp-layout-yellow .lp-points-grid {
+  gap: 2rem;
+}
+
+/* ========================================
+   テンプレートデザイン: Impact（インパクト）
+   黒背景の強烈なデザイン（構造のみ）
+   ======================================== */
+
+.lp-layout-impact {
+  background: #000;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-hero {
+  min-height: 90vh;
+}
+
+.lp-layout-impact .lp-hero-bg {
+  background: #000;
+}
+
+.lp-layout-impact .lp-hero-overlay {
+  background: none;
+}
+
+.lp-layout-impact .lp-hero-content {
+  color: #fff;
+}
+
+.lp-layout-impact .lp-hero-title {
+  font-size: clamp(3rem, 12vw, 6rem);
+  font-weight: 900;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--lp-primary);
+  letter-spacing: -0.02em;
+}
+
+.lp-layout-impact .lp-hero-subtitle {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.lp-layout-impact .lp-points,
+.lp-layout-impact .lp-detail,
+.lp-layout-impact .lp-faq,
+.lp-layout-impact .lp-jobs,
+.lp-layout-impact .lp-apply,
+.lp-layout-impact .lp-footer {
+  background: #000;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-section-title {
+  color: var(--lp-primary);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.lp-layout-impact .lp-section-title::after {
+  background: var(--lp-primary);
+}
+
+.lp-layout-impact .lp-point-card {
+  background: #111;
+  border-left: 5px solid var(--lp-primary);
+  border-radius: 0;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-point-title {
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.5rem;
+}
+
+.lp-layout-impact .lp-point-number {
+  background: var(--lp-primary);
+  color: #000;
+}
+
+.lp-layout-impact .lp-detail-table th {
+  background: #111;
+  color: #666;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.lp-layout-impact .lp-detail-table td {
+  background: #000;
+  color: #fff;
+  border-color: #333;
+}
+
+.lp-layout-impact .lp-faq-q {
+  background: #111;
+  color: var(--lp-primary);
+}
+
+.lp-layout-impact .lp-faq-a {
+  background: #000;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-btn-apply-hero,
+.lp-layout-impact .lp-btn-apply-main,
+.lp-layout-impact .lp-btn-apply-footer {
+  background: var(--lp-accent, var(--lp-primary));
+  color: #000;
+  font-weight: 900;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  transform: skewX(-10deg);
+  border-radius: 0;
+  padding: 1.5rem 3rem;
+}
+
+.lp-layout-impact .lp-btn-apply-hero:hover,
+.lp-layout-impact .lp-btn-apply-main:hover,
+.lp-layout-impact .lp-btn-apply-footer:hover {
+  background: #fff;
+  transform: skewX(-10deg) scale(1.1);
+}
+
+.lp-layout-impact .lp-footer {
+  background: #000;
+  color: #666;
+}
+
+/* Impact: FAQ Chat */
+.lp-layout-impact .lp-faq-chat {
+  background: #111;
+}
+
+.lp-layout-impact .lp-faq-chat-avatar-support {
+  background: var(--lp-primary, #f00);
+}
+
+.lp-layout-impact .lp-faq-chat-avatar-user {
+  background: #333;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-faq-chat-bubble-user {
+  background: #333;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-faq-chat-bubble-support {
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+}
+
+/* Impact: Details */
+.lp-layout-impact .lp-details {
+  background: #0a0a0a;
+}
+
+.lp-layout-impact .lp-details-table {
+  background: #111;
+}
+
+.lp-layout-impact .lp-details-table th {
+  background: var(--lp-primary, #f00);
+  color: #fff;
+}
+
+.lp-layout-impact .lp-details-table td {
+  color: #ccc;
+  border-bottom: 1px solid #333;
+}
+
+/* Impact: Jobs */
+.lp-layout-impact .lp-job-card {
+  background: #111;
+  border-left: 4px solid var(--lp-primary, #f00);
+  color: #fff;
+}
+
+.lp-layout-impact .lp-job-card:hover {
+  background: #1a1a1a;
+}
+
+/* ========================================
+   テンプレートデザイン: Trust（信頼）
+   ビジネス向けの信頼感あるデザイン（構造のみ）
+   ======================================== */
+
+.lp-layout-trust .lp-hero {
+  min-height: 70vh;
+  border-left: 20px solid var(--lp-primary);
+}
+
+.lp-layout-trust .lp-hero-bg {
+  background: var(--lp-bg-gray, #f4f7f9);
+}
+
+.lp-layout-trust .lp-hero-overlay {
+  background: none;
+}
+
+.lp-layout-trust .lp-hero-content {
+  color: var(--lp-primary);
+}
+
+.lp-layout-trust .lp-hero-title {
+  color: var(--lp-primary);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+}
+
+.lp-layout-trust .lp-hero-subtitle,
+.lp-layout-trust .lp-hero-company {
+  color: var(--lp-text);
+  opacity: 1;
+}
+
+.lp-layout-trust .lp-section-title {
+  color: var(--lp-primary);
+  letter-spacing: 0.05em;
+}
+
+.lp-layout-trust .lp-section-title::after {
+  background: var(--lp-primary);
+}
+
+.lp-layout-trust .lp-point-card {
+  border-top: 1px solid var(--lp-primary);
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: 20px;
+}
+
+.lp-layout-trust .lp-point-number {
+  background: none;
+  color: var(--lp-primary);
+  font-size: 0.8rem;
+  font-weight: bold;
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+
+.lp-layout-trust .lp-detail-table {
+  border-top: 2px solid var(--lp-primary);
+}
+
+.lp-layout-trust .lp-detail-table th {
+  color: var(--lp-primary);
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.lp-layout-trust .lp-faq-q {
+  background: var(--lp-primary);
+}
+
+.lp-layout-trust .lp-apply {
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+.lp-layout-trust .lp-btn-apply-hero,
+.lp-layout-trust .lp-btn-apply-main,
+.lp-layout-trust .lp-btn-apply-footer {
+  background: var(--lp-primary);
+  border-radius: 0;
+  letter-spacing: 0.2em;
+  font-weight: bold;
+  padding: 1rem 4rem;
+}
+
+.lp-layout-trust .lp-btn-apply-hero:hover,
+.lp-layout-trust .lp-btn-apply-main:hover,
+.lp-layout-trust .lp-btn-apply-footer:hover {
+  filter: brightness(0.85);
+}
+
+.lp-layout-trust .lp-highlight-item {
+  background: var(--lp-bg-gray, #f4f7f9);
+  border-color: var(--lp-primary);
+}
+
+/* Trust: FAQ Chat */
+.lp-layout-trust .lp-faq-chat {
+  background: #f8fafc;
+}
+
+.lp-layout-trust .lp-faq-chat-avatar-support {
+  background: var(--lp-primary);
+}
+
+.lp-layout-trust .lp-faq-chat-bubble-user {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.lp-layout-trust .lp-faq-chat-bubble-support {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+/* Trust: Footer */
+.lp-layout-trust .lp-footer {
+  background: #1e293b;
+}
+
+/* Trust: Details */
+.lp-layout-trust .lp-details {
+  background: #f8fafc;
+}
+
+/* Trust: Jobs */
+.lp-layout-trust .lp-jobs {
+  background: #fff;
+}
+
+.lp-layout-trust .lp-job-card {
+  border-left: 4px solid #1e40af;
+  border-radius: 0;
+}
+
+/* ========================================
+   テンプレートデザイン: Athome（アットホーム）
+   丸みのあるフレンドリーなデザイン
+   ======================================== */
+
+.lp-layout-athome .lp-hero {
+  border-radius: 0 0 100px 100px;
+  overflow: hidden;
+}
+
+.lp-layout-athome .lp-hero-bg {
+  background: linear-gradient(135deg, #ccfbf1 0%, #fff 100%);
+}
+
+.lp-layout-athome .lp-hero-overlay {
+  background: none;
+}
+
+.lp-layout-athome .lp-hero-content {
+  color: #0d9488;
+}
+
+.lp-layout-athome .lp-hero-title {
+  color: #0d9488;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+}
+
+.lp-layout-athome .lp-hero-subtitle,
+.lp-layout-athome .lp-hero-company {
+  color: #374151;
+  opacity: 1;
+}
+
+.lp-layout-athome .lp-section-title {
+  color: #0d9488;
+  text-align: center;
+}
+
+.lp-layout-athome .lp-section-title::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.lp-layout-athome .lp-point-card {
+  border-radius: 30px;
+  border: 3px solid #ccfbf1;
+  position: relative;
+  padding-top: 40px;
+}
+
+.lp-layout-athome .lp-point-card::before {
+  content: '★';
+  position: absolute;
+  top: -15px;
+  left: 20px;
+  background: #14b8a6;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.lp-layout-athome .lp-point-number {
+  display: none;
+}
+
+.lp-layout-athome .lp-detail {
+  background: #f0fdfa;
+  border-radius: 40px;
+}
+
+.lp-layout-athome .lp-detail-table th {
+  background: #0d9488;
+  color: #fff;
+  border-radius: 8px 0 0 8px;
+}
+
+.lp-layout-athome .lp-faq-item {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.lp-layout-athome .lp-btn-apply-hero,
+.lp-layout-athome .lp-btn-apply-main,
+.lp-layout-athome .lp-btn-apply-footer {
+  border-radius: 50px;
+  padding: 1rem 2.5rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.lp-layout-athome .lp-btn-apply-hero:hover,
+.lp-layout-athome .lp-btn-apply-main:hover,
+.lp-layout-athome .lp-btn-apply-footer:hover {
+  transform: scale(1.05);
+}
+
+/* Athome: FAQ Chat */
+.lp-layout-athome .lp-faq-chat {
+  background: linear-gradient(180deg, #f0fdfa 0%, #ccfbf1 100%);
+  border-radius: 40px;
+  margin: 0 1rem;
+  padding: 2rem;
+}
+
+.lp-layout-athome .lp-faq-chat-avatar-support {
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+}
+
+.lp-layout-athome .lp-faq-chat-avatar-user {
+  background: #99f6e4;
+}
+
+.lp-layout-athome .lp-faq-chat-bubble-user {
+  background: #99f6e4;
+  color: #134e4a;
+  border-radius: 20px 20px 5px 20px;
+}
+
+.lp-layout-athome .lp-faq-chat-bubble-support {
+  background: #fff;
+  border-radius: 20px 20px 20px 5px;
+}
+
+/* Athome: Footer */
+.lp-layout-athome .lp-footer {
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  border-radius: 50px 50px 0 0;
+}
+
+/* Athome: Details */
+.lp-layout-athome .lp-details {
+  background: #f0fdfa;
+  border-radius: 40px;
+  margin: 1rem;
+}
+
+/* Athome: Jobs */
+.lp-layout-athome .lp-jobs {
+  background: #ecfdf5;
+}
+
+.lp-layout-athome .lp-job-card {
+  border-radius: 20px;
+  border-left: none;
+  border-bottom: 4px solid #14b8a6;
+}
+
+/* ========================================
+   テンプレートデザイン: Local（地域密着）
+   和風モダンの落ち着いたデザイン
+   ======================================== */
+
+.lp-layout-local .lp-hero {
+  min-height: 60vh;
+}
+
+.lp-layout-local .lp-hero-bg {
+  background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3));
+}
+
+.lp-layout-local .lp-hero-content {
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.lp-layout-local .lp-hero-title {
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  color: #fff;
+}
+
+.lp-layout-local .lp-section-title {
+  text-align: center;
+  color: #166534;
+}
+
+.lp-layout-local .lp-section-title span {
+  display: block;
+  font-size: 0.8rem;
+  color: #22c55e;
+  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+}
+
+.lp-layout-local .lp-section-title::after {
+  display: none;
+}
+
+.lp-layout-local .lp-points {
+  background: #f0fdf4;
+}
+
+.lp-layout-local .lp-point-card {
+  background: #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border-radius: 4px;
+}
+
+.lp-layout-local .lp-point-title {
+  color: #16a34a;
+  border-bottom: 2px solid #22c55e;
+  display: inline-block;
+  padding-bottom: 5px;
+}
+
+.lp-layout-local .lp-point-number {
+  background: #22c55e;
+}
+
+.lp-layout-local .lp-detail-table {
+  border-collapse: collapse;
+}
+
+.lp-layout-local .lp-detail-table th {
+  background: #166534;
+  color: #fff;
+  width: 30%;
+}
+
+.lp-layout-local .lp-detail-table td {
+  border-bottom: 1px solid #eee;
+}
+
+.lp-layout-local .lp-btn-apply-hero,
+.lp-layout-local .lp-btn-apply-main,
+.lp-layout-local .lp-btn-apply-footer {
+  background: #22c55e;
+  border-radius: 5px;
+  padding: 1rem 3rem;
+  transition: 0.3s;
+}
+
+.lp-layout-local .lp-btn-apply-hero:hover,
+.lp-layout-local .lp-btn-apply-main:hover,
+.lp-layout-local .lp-btn-apply-footer:hover {
+  background: #16a34a;
+}
+
+.lp-layout-local .lp-faq-q {
+  background: #166534;
+}
+
+/* Local: FAQ Chat */
+.lp-layout-local .lp-faq-chat {
+  background: #f0fdf4;
+}
+
+.lp-layout-local .lp-faq-chat-avatar-support {
+  background: #22c55e;
+}
+
+.lp-layout-local .lp-faq-chat-bubble-user {
+  background: #bbf7d0;
+  color: #14532d;
+}
+
+.lp-layout-local .lp-faq-chat-bubble-support {
+  background: #fff;
+  border: 1px solid #86efac;
+}
+
+/* Local: Footer */
+.lp-layout-local .lp-footer {
+  background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+}
+
+.lp-layout-local .lp-btn-apply-footer {
+  background: #22c55e;
+}
+
+.lp-layout-local .lp-btn-apply-footer:hover {
+  background: #16a34a;
+}
+
+/* Local: Details */
+.lp-layout-local .lp-details {
+  background: #f0fdf4;
+}
+
+.lp-layout-local .lp-details-table th {
+  background: #166534;
+  color: #fff;
+}
+
+/* Local: Jobs */
+.lp-layout-local .lp-jobs {
+  background: #ecfdf5;
+}
+
+.lp-layout-local .lp-job-card {
+  border-left: 4px solid #22c55e;
+  background: #fff;
+}
+
+.lp-layout-local .lp-job-card:hover {
+  border-left-color: #16a34a;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+/* Local: Apply section */
+.lp-layout-local .lp-apply {
+  background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+}
+
+/* ========================================
+   レイアウトスタイル
+   ======================================== */
+
+/* --- デフォルト (default) --- */
+.lp-layout-default .lp-section-title {
+  text-align: center;
+}
+
+.lp-layout-default .lp-section-title::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* --- ボールド (bold) --- */
+.lp-layout-bold .lp-hero-title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.lp-layout-bold .lp-hero-subtitle {
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  font-weight: 600;
+}
+
+.lp-layout-bold .lp-hero-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.lp-layout-bold .lp-section-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.lp-layout-bold .lp-point-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+/* --- エレガント (elegant) --- */
+.lp-layout-elegant .lp-section-title {
+  text-align: left;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.lp-layout-elegant .lp-section-title::after {
+  left: 0;
+  transform: none;
+  width: 60px;
+  height: 2px;
+}
+
+.lp-layout-elegant .lp-section-inner {
+  padding: 4rem 2rem;
+}
+
+.lp-layout-elegant .lp-point-card {
+  border-radius: 4px;
+  border: 1px solid var(--lp-border, #e5e7eb);
+  box-shadow: none;
+}
+
+.lp-layout-elegant .lp-hero-content {
+  text-align: left;
+  align-items: flex-start;
+}
+
+.lp-layout-elegant .lp-hero-title {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.lp-layout-elegant .lp-btn-apply-hero {
+  border-radius: 4px;
+}
+
+/* --- ポップ (playful) --- */
+.lp-layout-playful .lp-section-title {
+  text-align: center;
+}
+
+.lp-layout-playful .lp-section-title::after {
+  display: none;
+}
+
+.lp-layout-playful .lp-point-card {
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.lp-layout-playful .lp-point-number {
+  border-radius: 12px;
+  transform: rotate(-3deg);
+}
+
+.lp-layout-playful .lp-btn-apply-hero,
+.lp-layout-playful .lp-btn-apply-main {
+  border-radius: 50px;
+  padding: 1rem 2.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.lp-layout-playful .lp-faq-item {
+  border-radius: 16px;
+}
+
+.lp-layout-playful section {
+  position: relative;
+}
+
+.lp-layout-playful .lp-points::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60'%3E%3Cpath fill='%23f8f9fa' d='M0,60 C300,0 900,0 1200,60 L1200,60 L0,60 Z'/%3E%3C/svg%3E") no-repeat;
+  background-size: 100% 100%;
+}
+
+/* --- コーポレート (corporate) --- */
+.lp-layout-corporate .lp-section-title {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lp-layout-corporate .lp-section-title::before {
+  content: '';
+  width: 4px;
+  height: 1.5em;
+  background: var(--lp-primary, #667eea);
+  border-radius: 2px;
+}
+
+.lp-layout-corporate .lp-section-title::after {
+  display: none;
+}
+
+.lp-layout-corporate .lp-point-card {
+  border-radius: 0;
+  box-shadow: none;
+  border-left: 3px solid var(--lp-primary, #667eea);
+  background: #fff;
+}
+
+.lp-layout-corporate .lp-point-number {
+  border-radius: 4px;
+}
+
+.lp-layout-corporate .lp-btn-apply-hero,
+.lp-layout-corporate .lp-btn-apply-main {
+  border-radius: 4px;
+}
+
+.lp-layout-corporate .lp-points {
+  background: #fff;
+}
+
+.lp-layout-corporate .lp-points:nth-child(even) {
+  background: #f8f9fa;
+}
+
+/* --- マガジン (magazine) --- */
+.lp-layout-magazine .lp-hero {
+  min-height: 100vh;
+}
+
+.lp-layout-magazine .lp-hero-content {
+  max-width: 800px;
+}
+
+.lp-layout-magazine .lp-hero-title {
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  line-height: 1.15;
+}
+
+.lp-layout-magazine .lp-section-title {
+  font-size: 2.5rem;
+  text-align: left;
+  margin-bottom: 2.5rem;
+}
+
+.lp-layout-magazine .lp-section-title::after {
+  display: none;
+}
+
+.lp-layout-magazine .lp-section-inner {
+  max-width: 1000px;
+  padding: 5rem 2rem;
+}
+
+.lp-layout-magazine .lp-point-card {
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--lp-border, #e5e7eb);
+  padding: 2rem 0;
+  background: transparent;
+}
+
+.lp-layout-magazine .lp-point-card:last-child {
+  border-bottom: none;
+}
+
+.lp-layout-magazine .lp-points-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.lp-layout-magazine .lp-gallery-grid {
+  gap: 4px;
+}
+
+.lp-layout-magazine .lp-gallery-item {
+  border-radius: 0;
 }
 
 /* ========================================
@@ -1042,13 +3062,14 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
-.lp-edit-toolbar-right {
+.lp-edit-toolbar-actions {
   display: flex;
   gap: 0.75rem;
 }
 
 .lp-edit-btn-cancel,
-.lp-edit-btn-save {
+.lp-edit-btn-save,
+.lp-edit-btn-preview {
   padding: 0.5rem 1.25rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -1068,13 +3089,23 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.lp-edit-btn-preview {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.lp-edit-btn-preview:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .lp-edit-btn-save {
-  background: var(--lp-primary);
+  background: #667eea;
   color: #fff;
 }
 
 .lp-edit-btn-save:hover {
-  background: var(--lp-primary-dark);
+  background: #5a6fd6;
 }
 
 .lp-edit-btn-save:disabled {
@@ -1532,5 +3563,3476 @@
 
   .lp-section-label {
     display: none;
+  }
+}
+
+/* ========================================
+   カスタムセクション
+   ======================================== */
+
+.lp-custom {
+  padding: 4rem 0;
+}
+
+.lp-custom:nth-child(even) {
+  background: var(--lp-bg-gray);
+}
+
+.lp-custom-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--lp-text);
+}
+
+.lp-custom-content strong {
+  font-weight: 700;
+}
+
+.lp-custom-content em {
+  font-style: italic;
+}
+
+/* テキストのみバリエーション */
+.lp-custom-text-only .lp-custom-content {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* 画像のみバリエーション */
+.lp-custom-image-only .lp-custom-image-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.lp-custom-image-only .lp-custom-image-container img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 分割レイアウト（テキスト左/右） */
+.lp-split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.lp-split-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lp-custom-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin: 0;
+}
+
+.lp-split-image img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.lp-image-placeholder {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--lp-bg-gray);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 中央揃えバリエーション */
+.lp-custom-centered {
+  text-align: center;
+}
+
+.lp-custom-centered .lp-custom-content {
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+.lp-custom-image-centered {
+  max-width: 500px;
+  margin: 0 auto 2rem;
+}
+
+.lp-custom-image-centered img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+/* フルワイドバナーバリエーション */
+.lp-custom-banner {
+  position: relative;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+}
+
+.lp-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.lp-custom-banner .lp-section-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.lp-banner-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.lp-banner-content {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.5rem;
+}
+
+/* ボタン共通スタイル */
+.lp-custom-button-wrapper {
+  margin-top: 1.5rem;
+}
+
+.lp-custom-button-wrapper.centered,
+.lp-custom-button-wrapper.banner {
+  text-align: center;
+}
+
+.lp-btn {
+  display: inline-block;
+  padding: 0.875rem 2rem;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+}
+
+.lp-btn-primary {
+  background: var(--lp-primary);
+  color: #fff;
+}
+
+.lp-btn-primary:hover {
+  background: var(--lp-primary-dark);
+  transform: translateY(-2px);
+}
+
+.lp-btn-secondary {
+  background: #fff;
+  color: var(--lp-primary);
+  border: 2px solid var(--lp-primary);
+}
+
+.lp-btn-secondary:hover {
+  background: var(--lp-primary);
+  color: #fff;
+}
+
+.lp-btn-accent {
+  background: var(--lp-accent);
+  color: #fff;
+}
+
+.lp-btn-accent:hover {
+  filter: brightness(1.1);
+}
+
+/* ========================================
+   ギャラリーセクション
+   ======================================== */
+
+.lp-gallery {
+  background: #fff;
+}
+
+.lp-gallery:nth-child(even) {
+  background: var(--lp-bg-gray);
+}
+
+/* グリッドギャラリー */
+.lp-gallery-items {
+  display: grid;
+  gap: 1rem;
+}
+
+.lp-gallery-items.cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.lp-gallery-items.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.lp-gallery-items.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.lp-gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 4/3;
+}
+
+.lp-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.lp-gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+.lp-gallery-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  color: #fff;
+  padding: 2rem 1rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* メイソンリーギャラリー */
+.lp-gallery-masonry-grid {
+  column-gap: 1rem;
+}
+
+.lp-gallery-masonry-grid.cols-2 {
+  column-count: 2;
+}
+
+.lp-gallery-masonry-grid.cols-3 {
+  column-count: 3;
+}
+
+.lp-gallery-masonry-grid.cols-4 {
+  column-count: 4;
+}
+
+.lp-gallery-masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.lp-gallery-masonry-item img {
+  width: 100%;
+  display: block;
+  transition: transform 0.3s;
+}
+
+.lp-gallery-masonry-item:hover img {
+  transform: scale(1.02);
+}
+
+/* スライダーギャラリー */
+.lp-gallery-slider-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.lp-gallery-slider-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.lp-gallery-slide {
+  flex: 0 0 100%;
+  display: none;
+}
+
+.lp-gallery-slide.active {
+  display: block;
+}
+
+.lp-gallery-slide img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.lp-gallery-slide-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  color: #fff;
+  padding: 2rem 1.5rem 1.5rem;
+}
+
+.lp-gallery-slider-prev,
+.lp-gallery-slider-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--lp-text);
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.lp-gallery-slider-prev {
+  left: 1rem;
+}
+
+.lp-gallery-slider-next {
+  right: 1rem;
+}
+
+.lp-gallery-slider-prev:hover,
+.lp-gallery-slider-next:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.lp-gallery-slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.lp-gallery-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lp-border);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-gallery-dot.active {
+  background: var(--lp-primary);
+  transform: scale(1.2);
+}
+
+/* ========================================
+   社員の声セクション
+   ======================================== */
+
+.lp-testimonial {
+  background: var(--lp-bg-gray);
+}
+
+.lp-testimonial:nth-child(even) {
+  background: #fff;
+}
+
+/* カードスタイル */
+.lp-testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.lp-testimonial-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.lp-testimonial-quote-mark {
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--lp-primary);
+  opacity: 0.2;
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+  font-family: Georgia, serif;
+}
+
+.lp-testimonial-quote {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--lp-text);
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lp-testimonial-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lp-testimonial-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-testimonial-avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--lp-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.lp-testimonial-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lp-testimonial-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin: 0;
+}
+
+.lp-testimonial-role {
+  font-size: 0.875rem;
+  color: var(--lp-text-light);
+  margin: 0;
+}
+
+.lp-testimonial-years {
+  font-size: 0.75rem;
+  color: var(--lp-primary);
+  margin: 0;
+}
+
+/* リストスタイル */
+.lp-testimonial-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.lp-testimonial-list-item {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.lp-testimonial-list-item.lp-testimonial-reverse {
+  flex-direction: row-reverse;
+}
+
+.lp-testimonial-list-avatar {
+  flex-shrink: 0;
+}
+
+.lp-testimonial-list-avatar img,
+.lp-testimonial-list-avatar .lp-testimonial-avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.lp-testimonial-list-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  flex: 1;
+}
+
+.lp-testimonial-list-header {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--lp-border);
+}
+
+/* スライダースタイル */
+.lp-testimonial-slider-container {
+  position: relative;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.lp-testimonial-slider-track {
+  position: relative;
+}
+
+.lp-testimonial-slide {
+  display: none;
+}
+
+.lp-testimonial-slide.active {
+  display: block;
+}
+
+.lp-testimonial-slide-inner {
+  background: #fff;
+  border-radius: 16px;
+  padding: 3rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.lp-testimonial-slide .lp-testimonial-quote-mark {
+  position: static;
+  margin-bottom: -1.5rem;
+}
+
+.lp-testimonial-slide .lp-testimonial-author {
+  justify-content: center;
+}
+
+.lp-testimonial-slider-prev,
+.lp-testimonial-slider-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: var(--lp-text);
+  transition: all 0.2s;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.lp-testimonial-slider-prev {
+  left: -60px;
+}
+
+.lp-testimonial-slider-next {
+  right: -60px;
+}
+
+.lp-testimonial-slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.lp-testimonial-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lp-border);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-testimonial-dot.active {
+  background: var(--lp-primary);
+  transform: scale(1.2);
+}
+
+/* ========================================
+   新セクション レスポンシブ
+   ======================================== */
+
+@media (max-width: 768px) {
+  .lp-split-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .lp-custom-text-right .lp-split-layout {
+    direction: ltr;
+  }
+
+  .lp-custom-text-right .lp-split-layout > * {
+    direction: ltr;
+  }
+
+  .lp-gallery-items.cols-3,
+  .lp-gallery-items.cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lp-gallery-masonry-grid.cols-3,
+  .lp-gallery-masonry-grid.cols-4 {
+    column-count: 2;
+  }
+
+  .lp-testimonial-list-item,
+  .lp-testimonial-list-item.lp-testimonial-reverse {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .lp-testimonial-slider-prev {
+    left: 0.5rem;
+  }
+
+  .lp-testimonial-slider-next {
+    right: 0.5rem;
+  }
+
+  .lp-banner-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-gallery-items.cols-2,
+  .lp-gallery-items.cols-3,
+  .lp-gallery-items.cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-gallery-masonry-grid.cols-2,
+  .lp-gallery-masonry-grid.cols-3,
+  .lp-gallery-masonry-grid.cols-4 {
+    column-count: 1;
+  }
+
+  .lp-testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   エディタサイドバー
+   ============================================ */
+
+.lp-editor-sidebar {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 280px;
+  height: calc(100vh - 60px);
+  background: #1a1a2e;
+  color: #fff;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.lp-editor-sidebar.collapsed {
+  transform: translateX(-240px);
+}
+
+.lp-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: #16213e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lp-sidebar-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.lp-sidebar-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.lp-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.lp-sidebar-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.lp-sidebar-section-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.lp-sidebar-section-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-sidebar-section-item.selected {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+}
+
+.lp-sidebar-section-handle {
+  color: rgba(255, 255, 255, 0.4);
+  cursor: grab;
+  font-size: 1rem;
+}
+
+.lp-sidebar-section-icon {
+  font-size: 1.25rem;
+}
+
+.lp-sidebar-section-name {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.lp-sidebar-section-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.lp-sidebar-section-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.lp-sidebar-section-btn:hover {
+  opacity: 1;
+}
+
+.lp-sidebar-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2rem;
+  font-size: 0.875rem;
+}
+
+.lp-btn-add-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-btn-add-section:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.lp-btn-add-icon {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.lp-sidebar-footer {
+  padding: 1rem;
+  background: #16213e;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lp-sidebar-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-sidebar-btn-preview {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.lp-sidebar-btn-preview:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lp-sidebar-btn-save {
+  background: #10b981;
+  color: #fff;
+}
+
+.lp-sidebar-btn-save:hover {
+  background: #059669;
+}
+
+/* サイドバーセクション */
+.lp-sidebar-section {
+  margin-bottom: 1.5rem;
+}
+
+.lp-sidebar-section-header {
+  margin-bottom: 0.75rem;
+}
+
+.lp-sidebar-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* デザインパターンセレクター */
+.lp-design-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.lp-design-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.lp-design-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-design-option.selected {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+}
+
+.lp-design-option-colors {
+  display: flex;
+  gap: 3px;
+}
+
+.lp-design-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.lp-design-option-name {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+/* レイアウトスタイルセレクター */
+.lp-layout-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lp-layout-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.lp-layout-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-layout-option.selected {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+}
+
+.lp-layout-option-preview {
+  width: 50px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lp-layout-preview-text {
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  line-height: 1.2;
+  padding: 2px;
+}
+
+.lp-layout-option-name {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.lp-layout-option-check {
+  color: #8b5cf6;
+  font-size: 0.75rem;
+}
+
+.lp-design-option-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.625rem;
+  color: #8b5cf6;
+}
+
+/* コンテンツエリアの調整 */
+.lp-content-with-sidebar {
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+.lp-content-sidebar-collapsed {
+  margin-left: 40px;
+}
+
+/* セクション追加パネル */
+.lp-add-section-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  z-index: 1100;
+  overflow: hidden;
+}
+
+.lp-add-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: #16213e;
+  color: #fff;
+  font-weight: 600;
+}
+
+.lp-add-section-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.lp-add-section-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-add-section-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  padding: 1.25rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.lp-add-section-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-add-section-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #8b5cf6;
+}
+
+.lp-add-section-icon {
+  font-size: 2rem;
+}
+
+.lp-add-section-name {
+  font-size: 0.75rem;
+  color: #fff;
+  text-align: center;
+}
+
+/* セクション選択状態 */
+.lp-section-selected {
+  outline: 3px solid #8b5cf6;
+  outline-offset: -3px;
+  position: relative;
+}
+
+/* フローティングアクションメニュー */
+.lp-section-action-menu {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 0.25rem;
+  background: #1a1a2e;
+  padding: 0.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.lp-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.lp-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.lp-action-delete:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .lp-editor-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    top: auto;
+    bottom: 0;
+    transform: translateY(0);
+    border-radius: 20px 20px 0 0;
+  }
+
+  .lp-editor-sidebar.collapsed {
+    transform: translateY(calc(100% - 50px));
+  }
+
+  .lp-content-with-sidebar {
+    margin-left: 0;
+    margin-bottom: 50vh;
+  }
+
+  .lp-content-sidebar-collapsed {
+    margin-left: 0;
+    margin-bottom: 50px;
+  }
+
+  .lp-sidebar-toggle-icon {
+    transform: rotate(90deg);
+  }
+
+  .lp-editor-sidebar.collapsed .lp-sidebar-toggle-icon {
+    transform: rotate(-90deg);
+  }
+
+  .lp-add-section-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lp-section-action-menu {
+    top: 5px;
+    right: 5px;
+    padding: 0.35rem;
+  }
+
+  .lp-action-btn {
+    padding: 0.35rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* ============================================
+   保存モーダル
+   ============================================ */
+
+.lp-save-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.lp-save-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.lp-save-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.lp-save-modal-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.lp-save-modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.lp-save-modal-close:hover {
+  opacity: 1;
+}
+
+.lp-save-modal-body {
+  padding: 1.5rem;
+}
+
+.lp-save-modal-message {
+  margin: 0 0 1rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.lp-save-modal-changes {
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.lp-save-modal-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.lp-save-modal-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.lp-save-modal-list li {
+  margin-bottom: 0.25rem;
+}
+
+.lp-save-modal-list li:last-child {
+  margin-bottom: 0;
+}
+
+.lp-save-modal-empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.lp-save-modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.lp-save-modal-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.lp-save-modal-btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.lp-save-modal-btn-secondary:hover {
+  background: #d1d5db;
+}
+
+.lp-save-modal-btn-primary {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.lp-save-modal-btn-primary:hover {
+  background: #7c3aed;
+}
+
+.lp-save-modal-btn-primary:disabled {
+  background: #c4b5fd;
+  cursor: not-allowed;
+}
+
+/* 保存成功トースト */
+.lp-save-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #10b981;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+  z-index: 100000;
+  animation: lp-toast-slide-in 0.3s ease;
+}
+
+.lp-save-toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 14px;
+}
+
+.lp-save-toast-message {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.lp-save-toast-hide {
+  animation: lp-toast-slide-out 0.3s ease forwards;
+}
+
+@keyframes lp-toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes lp-toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+}
+
+/* ============================================
+   レイアウト固有のセクションスタイル（BEM修飾子）
+   ============================================ */
+
+/* イエローレイアウト - ヒーロー */
+.lp-hero--yellow {
+  background: linear-gradient(180deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
+  text-align: center;
+  padding: 6rem 1.5rem 4rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 80vh;
+}
+
+.lp-hero--yellow .lp-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+/* 背景画像がある場合のみオーバーレイを表示 */
+.lp-hero--yellow .lp-hero-bg[style*="background-image"]:not([style*="url('')"]) + .lp-hero-overlay {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.lp-hero--yellow .lp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.lp-hero--yellow::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #fff;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  z-index: 2;
+}
+
+.lp-hero--yellow .lp-hero-content {
+  position: relative;
+  z-index: 3;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lp-hero--yellow .lp-hero-pretitle {
+  font-size: 1.125rem;
+  color: #fff;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.lp-hero--yellow .lp-hero-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.lp-hero--yellow .lp-hero-company {
+  font-size: 1.25rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ハイライト（特典情報） */
+.lp-hero--yellow .lp-hero-highlights {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.lp-hero--yellow .lp-highlight-item {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.lp-hero--yellow .lp-highlight-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #92400e;
+  margin-bottom: 0.25rem;
+}
+
+.lp-hero--yellow .lp-highlight-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #d97706;
+}
+
+/* CTAボタン */
+.lp-hero--yellow .lp-hero-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lp-hero--yellow .lp-btn-apply-hero {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #fff !important;
+  font-size: 1.25rem;
+  padding: 1.25rem 3rem;
+  border-radius: 50px;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.4);
+  transition: all 0.3s;
+}
+
+.lp-hero--yellow .lp-btn-apply-hero:hover {
+  transform: scale(1.05);
+  box-shadow: 0 16px 40px rgba(245, 158, 11, 0.5);
+}
+
+.lp-hero--yellow .lp-cta-microcopy {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #fff;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.lp-hero--yellow .lp-hero-image-container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.lp-hero--yellow .lp-hero-image {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(120, 53, 15, 0.2);
+}
+
+/* インパクトレイアウト - ヒーロー */
+.lp-hero--impact {
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), #0f172a;
+  background-size: cover;
+  background-position: center;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.lp-hero--impact .lp-hero-content {
+  max-width: 900px;
+}
+
+.lp-hero--impact .lp-hero-title {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+  margin-bottom: 1rem;
+}
+
+.lp-hero--impact .lp-hero-subtitle {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 600px;
+  margin: 0 auto;
+  font-style: italic;
+}
+
+/* 信頼レイアウト - ヒーロー */
+.lp-hero--trust {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  padding: 3rem 2rem;
+  text-align: left;
+  min-height: auto;
+}
+
+.lp-hero--trust .lp-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-left: 2rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.lp-hero--trust .lp-hero-pretitle {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.lp-hero--trust .lp-hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  text-shadow: none;
+}
+
+.lp-hero--trust .lp-hero-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+}
+
+/* アットホームレイアウト - ヒーロー */
+.lp-hero--athome {
+  background: linear-gradient(180deg, #fef3c7 0%, #fff7ed 50%, #fff 100%);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  min-height: auto;
+}
+
+.lp-hero--athome .lp-hero-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lp-hero--athome .lp-hero-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ea580c;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+  text-shadow: none;
+}
+
+.lp-hero--athome .lp-hero-subtitle {
+  font-size: 1rem;
+  color: #78350f;
+  background: #fef3c7;
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.lp-hero--athome .lp-hero-image-container {
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.lp-hero--athome .lp-hero-image {
+  width: 100%;
+  height: auto;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  box-shadow: 0 10px 30px rgba(234, 88, 12, 0.2);
+}
+
+/* 地域密着レイアウト - ヒーロー */
+.lp-hero--local {
+  background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), #4ade80;
+  background-size: cover;
+  background-position: center;
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.lp-hero--local .lp-hero-content {
+  max-width: 700px;
+}
+
+.lp-hero--local .lp-hero-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.3;
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1rem;
+}
+
+.lp-hero--local .lp-hero-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* イエローレイアウト - ポイントセクション */
+.lp-points--yellow {
+  background: #fff;
+  padding: 3rem 1.5rem;
+}
+
+.lp-points--yellow .lp-section-title {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #78350f;
+  margin-bottom: 2rem;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.lp-points--yellow .lp-section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: #fbbf24;
+  margin: 0.75rem auto 0;
+  border-radius: 2px;
+}
+
+.lp-points--yellow .lp-points-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lp-points--yellow .lp-point-card {
+  background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  border: none;
+  box-shadow: 0 2px 8px rgba(120, 53, 15, 0.08);
+}
+
+.lp-points--yellow .lp-point-number {
+  background: #fbbf24;
+  color: #78350f;
+  font-weight: 900;
+  font-size: 1.25rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lp-points--yellow .lp-point-content {
+  flex: 1;
+}
+
+.lp-points--yellow .lp-point-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #78350f;
+  margin-bottom: 0.25rem;
+}
+
+.lp-points--yellow .lp-point-description {
+  font-size: 0.875rem;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+/* インパクトレイアウト - ポイントセクション */
+.lp-points--impact {
+  background: #0f172a;
+  padding: 4rem 2rem;
+}
+
+.lp-points--impact .lp-section-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lp-points--impact .lp-section-title::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  margin: 1rem auto 0;
+  border-radius: 2px;
+}
+
+.lp-points--impact .lp-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.lp-points--impact .lp-point-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.lp-points--impact .lp-point-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 40px rgba(139, 92, 246, 0.2);
+}
+
+.lp-points--impact .lp-point-number {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.5rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+}
+
+.lp-points--impact .lp-point-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.75rem;
+}
+
+.lp-points--impact .lp-point-description {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+}
+
+/* 信頼レイアウト - ポイントセクション */
+.lp-points--trust {
+  background: #fff;
+  padding: 3rem 2rem;
+}
+
+.lp-points--trust .lp-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2rem;
+  padding-left: 1rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.lp-points--trust .lp-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.lp-points--trust .lp-point-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.lp-points--trust .lp-point-number {
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lp-points--trust .lp-point-content {
+  flex: 1;
+}
+
+.lp-points--trust .lp-point-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.lp-points--trust .lp-point-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* アットホームレイアウト - ポイントセクション */
+.lp-points--athome {
+  background: linear-gradient(180deg, #fff 0%, #fff7ed 100%);
+  padding: 3rem 1.5rem;
+}
+
+.lp-points--athome .lp-section-title {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #ea580c;
+  margin-bottom: 2rem;
+}
+
+.lp-points--athome .lp-section-title::after {
+  content: '♪';
+  display: block;
+  font-size: 1.25rem;
+  margin-top: 0.5rem;
+  color: #fb923c;
+}
+
+.lp-points--athome .lp-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.lp-points--athome .lp-point-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(234, 88, 12, 0.1);
+  border: 2px solid #fed7aa;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-points--athome .lp-point-card::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #fed7aa 0%, transparent 50%);
+  border-radius: 50%;
+}
+
+.lp-points--athome .lp-point-number {
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.25rem;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-points--athome .lp-point-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ea580c;
+  margin-bottom: 0.5rem;
+}
+
+.lp-points--athome .lp-point-description {
+  font-size: 0.875rem;
+  color: #78350f;
+  line-height: 1.6;
+}
+
+/* 地域密着レイアウト - ポイントセクション */
+.lp-points--local {
+  background: #f0fdf4;
+  padding: 3rem 1.5rem;
+}
+
+.lp-points--local .lp-section-title {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #166534;
+  margin-bottom: 2rem;
+}
+
+.lp-points--local .lp-section-title span {
+  background: linear-gradient(transparent 60%, #bbf7d0 60%);
+  padding: 0 0.5rem;
+}
+
+.lp-points--local .lp-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.lp-points--local .lp-point-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  border-left: 4px solid #22c55e;
+  box-shadow: 0 2px 8px rgba(22, 101, 52, 0.08);
+}
+
+.lp-points--local .lp-point-number {
+  background: #22c55e;
+  color: #fff;
+  font-weight: 900;
+  font-size: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lp-points--local .lp-point-content {
+  flex: 1;
+}
+
+.lp-points--local .lp-point-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 0.25rem;
+}
+
+.lp-points--local .lp-point-description {
+  font-size: 0.875rem;
+  color: #15803d;
+  line-height: 1.5;
+}
+
+/* 地域密着レイアウト - FAQチャット */
+.lp-faq-chat--local {
+  background: #f0fdf4;
+  padding: 2rem 1.5rem;
+}
+
+.lp-faq-chat--local .lp-faq-chat-avatar-support {
+  background: #22c55e;
+}
+
+.lp-faq-chat--local .lp-faq-chat-bubble-user {
+  background: #bbf7d0;
+  color: #14532d;
+}
+
+.lp-faq-chat--local .lp-faq-chat-bubble-support {
+  background: #fff;
+  border: 1px solid #86efac;
+}
+
+/* 地域密着レイアウト - 募集要項 */
+.lp-details--local {
+  background: #f0fdf4;
+  padding: 2rem 1.5rem;
+}
+
+.lp-details--local .lp-details-table th {
+  background: #16a34a;
+  color: #fff;
+}
+
+.lp-details--local .lp-details-table td {
+  border-bottom: 1px solid #bbf7d0;
+}
+
+/* 地域密着レイアウト - 求人一覧 */
+.lp-jobs--local {
+  background: #ecfdf5;
+  padding: 2rem 1.5rem;
+}
+
+.lp-jobs--local .lp-job-card {
+  border-left: 4px solid #22c55e;
+  background: #fff;
+}
+
+.lp-jobs--local .lp-job-card:hover {
+  border-left-color: #16a34a;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+/* 地域密着レイアウト - フッター */
+.lp-footer--local {
+  background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+}
+
+.lp-footer--local .lp-btn-apply-footer {
+  background: #22c55e;
+}
+
+.lp-footer--local .lp-btn-apply-footer:hover {
+  background: #16a34a;
+}
+
+/* 地域密着レイアウト - 応募セクション */
+.lp-apply--local {
+  background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+}
+
+.lp-apply--local .lp-btn-apply-main {
+  background: #22c55e;
+  color: #fff;
+}
+
+.lp-apply--local .lp-btn-apply-main:hover {
+  background: #16a34a;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .lp-hero--yellow .lp-hero-title,
+  .lp-hero--athome .lp-hero-title {
+    font-size: 1.5rem;
+  }
+  
+  .lp-hero--impact .lp-hero-title {
+    font-size: 2rem;
+  }
+  
+  .lp-hero--trust .lp-hero-content {
+    padding-left: 1rem;
+  }
+  
+  .lp-hero--local .lp-hero-title {
+    font-size: 1.5rem;
+  }
+  
+  .lp-points--impact .lp-points-grid,
+  .lp-points--trust .lp-points-grid,
+  .lp-points--athome .lp-points-grid,
+  .lp-points--local .lp-points-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Yellow: モバイル応募セクション - 余白調整 */
+  .lp-layout-yellow .lp-apply {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+
+  .lp-layout-yellow .lp-apply-methods {
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .lp-layout-yellow .lp-apply-method {
+    padding: 2rem 1.5rem;
+  }
+
+  .lp-layout-yellow .lp-apply-method h3 {
+    font-size: 1.25rem;
+  }
+
+  .lp-layout-yellow .lp-btn-tel-main {
+    padding: 1rem 2rem;
+    font-size: 1.25rem;
+  }
+
+  .lp-layout-yellow .lp-btn-tel-main svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .lp-layout-yellow .lp-apply-note {
+    margin-top: 2rem;
+    padding: 0 1rem;
+  }
+
+  /* Yellow: モバイルフッター - 余白調整 */
+  .lp-layout-yellow .lp-footer {
+    padding: 4rem 1.5rem 3rem;
+  }
+
+  .lp-layout-yellow .lp-footer-tel {
+    padding: 1.5rem;
+  }
+
+  .lp-layout-yellow .lp-footer-tel-number {
+    font-size: 1.5rem;
+  }
+
+  .lp-layout-yellow .lp-footer-copyright {
+    margin-top: 2rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* ============================================
+   ポイントセクション編集エディタ
+   ============================================ */
+
+.lp-points-editor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.lp-points-editor {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.lp-points-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.lp-points-editor-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.lp-points-editor-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.lp-points-editor-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.lp-points-editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.lp-points-editor-hint {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border-left: 3px solid #6366f1;
+}
+
+.lp-points-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lp-point-editor-item {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.lp-point-editor-item.has-content {
+  border-color: #6366f1;
+  background: #faf5ff;
+}
+
+.lp-point-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.lp-point-editor-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.lp-point-editor-clear {
+  background: none;
+  border: 1px solid #e2e8f0;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-point-editor-clear:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.lp-point-editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lp-point-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lp-point-editor-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lp-point-editor-title,
+.lp-point-editor-desc {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.lp-point-editor-title:focus,
+.lp-point-editor-desc:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.lp-point-editor-desc {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.lp-points-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.lp-points-editor-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.lp-points-editor-btn-secondary {
+  background: #fff;
+  color: #475569;
+  border: 1px solid #d1d5db;
+}
+
+.lp-points-editor-btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+.lp-points-editor-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.lp-points-editor-btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* モバイル対応 */
+@media (max-width: 640px) {
+  .lp-points-editor {
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+    margin-top: auto;
+  }
+
+  .lp-points-editor-body {
+    padding: 1rem;
+  }
+
+  .lp-point-editor-item {
+    padding: 0.75rem;
+  }
+}
+
+/* FAQエディタ */
+.lp-faq-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.lp-faq-editor {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.lp-faq-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lp-faq-editor-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.lp-faq-editor-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.lp-faq-editor-close:hover {
+  color: #111;
+}
+
+.lp-faq-editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.lp-faq-editor-hint {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #0369a1;
+}
+
+.lp-faq-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lp-faq-editor-item {
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.lp-faq-editor-item.has-content {
+  background: #fff;
+  border-color: #c7d2fe;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.lp-faq-editor-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.lp-faq-editor-number {
+  font-weight: 600;
+  color: #6366f1;
+  font-size: 0.875rem;
+}
+
+.lp-faq-editor-delete {
+  background: none;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.lp-faq-editor-delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.lp-faq-editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lp-faq-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.lp-faq-editor-field label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.lp-faq-editor-question,
+.lp-faq-editor-answer {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.lp-faq-editor-question:focus,
+.lp-faq-editor-answer:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.lp-faq-editor-add-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-faq-editor-add-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.lp-faq-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.lp-faq-editor-btn {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lp-faq-editor-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.lp-faq-editor-btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.lp-faq-editor-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.lp-faq-editor-btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* モバイル対応 */
+@media (max-width: 640px) {
+  .lp-faq-editor {
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+    margin-top: auto;
+  }
+
+  .lp-faq-editor-body {
+    padding: 1rem;
+  }
+
+  .lp-faq-editor-item {
+    padding: 0.75rem;
+  }
+}
+
+/* セクションクイック編集ボタン */
+.lp-section-quick-edit-btn {
+  display: none;
+  margin: 1.5rem auto 0;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.lp-edit-mode .lp-section-quick-edit-btn {
+  display: block;
+}
+
+.lp-section-quick-edit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.lp-section-quick-edit-btn:active {
+  transform: translateY(0);
+}
+
+/* プレビューモードバナー */
+.lp-preview-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 10000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.lp-preview-banner button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.lp-preview-banner button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* プレビューモード時のbodyにpadding-topを追加 */
+body:has(.lp-preview-banner) {
+  padding-top: 50px;
+}
+
+body:has(.lp-preview-banner) .lp-header {
+  top: 50px;
+}
+
+/* ============================================
+   2025年版 テンプレートデザイン改善
+   ガイドラインに基づく大幅アップデート
+   ============================================ */
+
+/* ----------------------------------------
+   1. 信頼・ビジネス系 (Trust / Corporate / Default)
+   ターゲット: 正社員、エンジニア、営業職
+   配色: ネイビー/ブルー + グリーンorオレンジアクセント
+   ---------------------------------------- */
+
+/* Trust: カラーパレット改善 */
+.lp-layout-trust {
+  --trust-primary: #1e3a8a;
+  --trust-secondary: #3b82f6;
+  --trust-accent: #059669;
+  --trust-bg: #f8fafc;
+  --trust-text: #1e293b;
+}
+
+.lp-layout-trust .lp-hero {
+  background: linear-gradient(135deg, var(--trust-bg) 0%, #e0f2fe 100%);
+  border-left: 6px solid var(--trust-primary);
+}
+
+.lp-layout-trust .lp-hero-title {
+  color: var(--trust-primary);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Trust: 数字を大きく太字に（給与、時間） */
+.lp-layout-trust .lp-highlight-value,
+.lp-layout-trust .lp-job-salary {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--trust-primary);
+}
+
+.lp-layout-trust .lp-job-salary::before {
+  content: '¥ ';
+  font-size: 1rem;
+  color: var(--trust-accent);
+}
+
+/* Trust: 福利厚生アイコン */
+.lp-layout-trust .lp-point-card {
+  border: none;
+  border-left: 4px solid var(--trust-accent);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 1.5rem 1.5rem 1.5rem 2rem;
+}
+
+.lp-layout-trust .lp-point-number {
+  background: var(--trust-primary);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* Trust: CTAボタン - アクセントカラー */
+.lp-layout-trust .lp-btn-apply-hero,
+.lp-layout-trust .lp-btn-apply-main {
+  background: var(--trust-accent);
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.lp-layout-trust .lp-btn-apply-hero:hover,
+.lp-layout-trust .lp-btn-apply-main:hover {
+  background: #047857;
+}
+
+/* Corporate: より厳格なビジネス感 */
+.lp-layout-corporate {
+  --corp-primary: #0f172a;
+  --corp-secondary: #334155;
+  --corp-accent: #ea580c;
+  --corp-bg: #fff;
+}
+
+.lp-layout-corporate .lp-hero {
+  background: var(--corp-bg);
+  min-height: 60vh;
+}
+
+.lp-layout-corporate .lp-hero-bg {
+  opacity: 0.1;
+}
+
+.lp-layout-corporate .lp-hero-title {
+  color: var(--corp-primary);
+  font-weight: 800;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.lp-layout-corporate .lp-section-title {
+  color: var(--corp-primary);
+  font-weight: 700;
+  text-align: left;
+  padding-left: 1rem;
+  border-left: 4px solid var(--corp-accent);
+}
+
+.lp-layout-corporate .lp-section-title::after {
+  display: none;
+}
+
+/* Corporate: 数字強調 */
+.lp-layout-corporate .lp-highlight-value,
+.lp-layout-corporate .lp-job-salary {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--corp-primary);
+}
+
+.lp-layout-corporate .lp-btn-apply-hero,
+.lp-layout-corporate .lp-btn-apply-main {
+  background: var(--corp-accent);
+  border-radius: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ----------------------------------------
+   2. 親しみ・地域密着系 (Athome / Local)
+   ターゲット: パート、主婦、介護、地域店舗
+   配色: 暖色系、パステル、紙テクスチャ感
+   ---------------------------------------- */
+
+/* Athome: 暖かみのある配色 */
+.lp-layout-athome {
+  --athome-primary: #0d9488;
+  --athome-secondary: #14b8a6;
+  --athome-warm: #fef3c7;
+  --athome-text: #374151;
+}
+
+.lp-layout-athome .lp-hero {
+  background: linear-gradient(180deg, #ecfdf5 0%, #fff 100%);
+  border-radius: 0 0 60px 60px;
+}
+
+.lp-layout-athome .lp-hero-title {
+  color: var(--athome-primary);
+  font-weight: 700;
+}
+
+/* Athome: 手書き風あしらい、丸み */
+.lp-layout-athome .lp-point-card {
+  background: #fff;
+  border: 2px dashed #99f6e4;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+}
+
+.lp-layout-athome .lp-section-title::after {
+  background: linear-gradient(90deg, var(--athome-primary), var(--athome-secondary));
+  border-radius: 2px;
+}
+
+/* Athome: 生活に寄り添うコピー用 */
+.lp-layout-athome .lp-hero-pretitle {
+  background: var(--athome-warm);
+  color: #92400e;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.lp-layout-athome .lp-cta-microcopy {
+  color: var(--athome-primary);
+  font-weight: 500;
+}
+
+/* Local: 和風モダン、落ち着き */
+.lp-layout-local {
+  --local-primary: #166534;
+  --local-secondary: #22c55e;
+  --local-earth: #f5f5dc;
+  --local-text: #1f2937;
+}
+
+.lp-layout-local .lp-hero {
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 100%);
+}
+
+.lp-layout-local .lp-hero-title {
+  color: var(--local-primary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* Local: 創業○年バッジ風 */
+.lp-layout-local .lp-hero-company {
+  background: var(--local-primary);
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.lp-layout-local .lp-point-card {
+  background: #fff;
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.lp-layout-local .lp-section-title {
+  color: var(--local-primary);
+}
+
+.lp-layout-local .lp-btn-apply-hero,
+.lp-layout-local .lp-btn-apply-main {
+  background: var(--local-primary);
+  border-radius: 8px;
+}
+
+/* ----------------------------------------
+   3. インパクト・力強さ系 (Bold / Impact)
+   ターゲット: 高収入、ドライバー、建築現場
+   配色: 黒×黄、黒×ゴールド、高コントラスト
+   ---------------------------------------- */
+
+/* Impact: ダーク＆ネオン */
+.lp-layout-impact {
+  --impact-bg: #0a0a0a;
+  --impact-primary: #facc15;
+  --impact-secondary: #fbbf24;
+  --impact-neon: #22d3ee;
+}
+
+.lp-layout-impact body,
+.lp-layout-impact .lp-hero {
+  background: var(--impact-bg);
+}
+
+.lp-layout-impact .lp-hero-title {
+  color: #fff;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 900;
+  text-shadow: 0 0 40px rgba(250, 204, 21, 0.5);
+  letter-spacing: -0.02em;
+}
+
+/* Impact: 金額を超巨大に */
+.lp-layout-impact .lp-highlight-value,
+.lp-layout-impact .lp-job-salary {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--impact-primary);
+  text-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+}
+
+.lp-layout-impact .lp-highlight-item {
+  background: rgba(250, 204, 21, 0.1);
+  border: 2px solid var(--impact-primary);
+  border-radius: 0;
+}
+
+/* Impact: 斜めボタン */
+.lp-layout-impact .lp-btn-apply-hero,
+.lp-layout-impact .lp-btn-apply-main {
+  background: linear-gradient(135deg, var(--impact-primary), var(--impact-secondary));
+  color: #000;
+  font-weight: 900;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 0;
+  transform: skewX(-5deg);
+  box-shadow: 0 0 30px rgba(250, 204, 21, 0.5);
+}
+
+.lp-layout-impact .lp-btn-apply-hero:hover,
+.lp-layout-impact .lp-btn-apply-main:hover {
+  transform: skewX(-5deg) scale(1.05);
+}
+
+.lp-layout-impact .lp-section-title {
+  color: #fff;
+  font-weight: 800;
+}
+
+.lp-layout-impact .lp-section-title::after {
+  background: var(--impact-primary);
+}
+
+.lp-layout-impact .lp-point-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 0;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-point-title {
+  color: var(--impact-primary);
+}
+
+.lp-layout-impact .lp-footer {
+  background: #000;
+}
+
+/* Impact: 求人カード詳細テキスト */
+.lp-layout-impact .lp-jobs {
+  background: #0a0a0a;
+}
+
+.lp-layout-impact .lp-job-card {
+  background: #111;
+  border: 1px solid #333;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-job-title {
+  color: #fff;
+}
+
+.lp-layout-impact .lp-job-card-header {
+  background: #1a1a1a;
+  border-bottom: 2px solid var(--impact-primary, #facc15);
+}
+
+.lp-layout-impact .lp-job-card-body {
+  background: #111;
+}
+
+.lp-layout-impact .lp-job-card-footer {
+  background: #111;
+  border-top: 1px solid #333;
+}
+
+.lp-layout-impact .lp-job-type {
+  background: var(--impact-primary, #facc15);
+  color: #000;
+}
+
+.lp-layout-impact .lp-job-info li {
+  color: #ccc;
+}
+
+.lp-layout-impact .lp-info-icon {
+  color: var(--impact-primary, #facc15);
+}
+
+.lp-layout-impact .lp-btn-detail {
+  background: transparent;
+  border: 2px solid var(--impact-primary, #facc15);
+  color: var(--impact-primary, #facc15);
+}
+
+.lp-layout-impact .lp-btn-detail:hover {
+  background: var(--impact-primary, #facc15);
+  color: #000;
+}
+
+.lp-layout-impact .lp-job-location,
+.lp-layout-impact .lp-job-employment,
+.lp-layout-impact .lp-job-description,
+.lp-layout-impact .lp-job-card p,
+.lp-layout-impact .lp-job-card span {
+  color: #ccc;
+}
+
+.lp-layout-impact .lp-job-tags {
+  color: #fff;
+}
+
+.lp-layout-impact .lp-job-tag {
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+.lp-layout-impact .lp-job-salary {
+  color: var(--impact-primary, #facc15);
+}
+
+/* Impact: 募集要項セクション */
+.lp-layout-impact .lp-requirements,
+.lp-layout-impact .lp-detail {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-requirements-table,
+.lp-layout-impact .lp-detail-table {
+  background: #111;
+}
+
+.lp-layout-impact .lp-requirements-table th,
+.lp-layout-impact .lp-detail-table th {
+  background: #1a1a1a;
+  color: var(--impact-primary, #facc15);
+  border-bottom: 1px solid #333;
+}
+
+.lp-layout-impact .lp-requirements-table td,
+.lp-layout-impact .lp-detail-table td {
+  color: #fff;
+  background: #111;
+  border-bottom: 1px solid #333;
+}
+
+/* Impact: 募集要項 dl/dt/dd構造 */
+.lp-layout-impact .lp-details-table {
+  background: #111;
+}
+
+.lp-layout-impact .lp-detail-row {
+  border-bottom: 1px solid #333;
+}
+
+.lp-layout-impact .lp-detail-label {
+  background: #1a1a1a;
+  color: var(--impact-primary, #facc15);
+  font-weight: bold;
+}
+
+.lp-layout-impact .lp-detail-value {
+  background: #111;
+  color: #fff;
+}
+
+/* Impact: 応募セクション */
+.lp-layout-impact .lp-apply {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.lp-layout-impact .lp-apply-content,
+.lp-layout-impact .lp-apply-lead,
+.lp-layout-impact .lp-apply-method h3,
+.lp-layout-impact .lp-apply-method p,
+.lp-layout-impact .lp-apply-note {
+  color: #fff;
+}
+
+.lp-layout-impact .lp-apply-divider span {
+  color: #666;
+  background: #0a0a0a;
+}
+
+.lp-layout-impact .lp-cta-microcopy {
+  color: #999;
+}
+
+/* Bold: 赤×白のパワフルデザイン */
+.lp-layout-bold {
+  --bold-primary: #dc2626;
+  --bold-secondary: #b91c1c;
+  --bold-gold: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.lp-layout-bold .lp-hero-title {
+  font-size: clamp(2rem, 7vw, 4rem);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 3px 3px 0 var(--bold-primary);
+}
+
+.lp-layout-bold .lp-highlight-value,
+.lp-layout-bold .lp-job-salary {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--bold-primary);
+}
+
+.lp-layout-bold .lp-btn-apply-hero,
+.lp-layout-bold .lp-btn-apply-main {
+  background: var(--bold-primary);
+  font-weight: 900;
+  font-size: 1.25rem;
+  border-radius: 0;
+  box-shadow: 4px 4px 0 #7f1d1d;
+}
+
+.lp-layout-bold .lp-btn-apply-hero:hover,
+.lp-layout-bold .lp-btn-apply-main:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #7f1d1d;
+}
+
+/* ----------------------------------------
+   4. 上品・洗練系 (Elegant / Magazine)
+   ターゲット: 美容、デザイナー、ブライダル
+   配色: グレージュ、シャンパンゴールド、くすみピンク
+   ---------------------------------------- */
+
+/* Elegant: 洗練されたミニマル */
+.lp-layout-elegant {
+  --elegant-primary: #78716c;
+  --elegant-gold: #d4af37;
+  --elegant-pink: #e8cdc4;
+  --elegant-bg: #fafaf9;
+  --elegant-text: #44403c;
+}
+
+.lp-layout-elegant .lp-hero {
+  background: var(--elegant-bg);
+  min-height: 80vh;
+}
+
+.lp-layout-elegant .lp-hero-title {
+  color: var(--elegant-text);
+  font-family: "Noto Serif JP", "Yu Mincho", serif;
+  font-weight: 400;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  letter-spacing: 0.15em;
+  line-height: 1.8;
+}
+
+.lp-layout-elegant .lp-hero-subtitle {
+  color: var(--elegant-primary);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+}
+
+/* Elegant: 余白たっぷり */
+.lp-layout-elegant section {
+  padding: 6rem 2rem;
+}
+
+.lp-layout-elegant .lp-section-title {
+  color: var(--elegant-text);
+  font-family: "Noto Serif JP", "Yu Mincho", serif;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  font-size: 1.25rem;
+}
+
+.lp-layout-elegant .lp-section-title::after {
+  background: var(--elegant-gold);
+  height: 1px;
+  width: 60px;
+}
+
+.lp-layout-elegant .lp-point-card {
+  background: #fff;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid #e7e5e4;
+  padding: 2rem 0;
+}
+
+.lp-layout-elegant .lp-point-title {
+  font-family: "Noto Serif JP", "Yu Mincho", serif;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
+.lp-layout-elegant .lp-btn-apply-hero,
+.lp-layout-elegant .lp-btn-apply-main {
+  background: var(--elegant-text);
+  border-radius: 0;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  padding: 1rem 3rem;
+}
+
+.lp-layout-elegant .lp-btn-apply-hero:hover,
+.lp-layout-elegant .lp-btn-apply-main:hover {
+  background: var(--elegant-gold);
+  color: #fff;
+}
+
+/* Magazine: 雑誌風レイアウト */
+.lp-layout-magazine {
+  --mag-primary: #a8a29e;
+  --mag-accent: #c4b5a5;
+  --mag-text: #292524;
+}
+
+.lp-layout-magazine .lp-hero {
+  background: #fff;
+}
+
+.lp-layout-magazine .lp-hero-title {
+  color: var(--mag-text);
+  font-family: "Noto Serif JP", "Yu Mincho", serif;
+  font-weight: 300;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+}
+
+.lp-layout-magazine .lp-section-title {
+  color: var(--mag-text);
+  font-family: "Noto Serif JP", serif;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 0.875rem;
+}
+
+.lp-layout-magazine .lp-section-title::after {
+  background: var(--mag-accent);
+}
+
+.lp-layout-magazine section {
+  padding: 5rem 2rem;
+}
+
+.lp-layout-magazine .lp-point-card {
+  background: transparent;
+  border: none;
+  text-align: center;
+}
+
+.lp-layout-magazine .lp-btn-apply-hero,
+.lp-layout-magazine .lp-btn-apply-main {
+  background: transparent;
+  border: 1px solid var(--mag-text);
+  color: var(--mag-text);
+  border-radius: 0;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+}
+
+.lp-layout-magazine .lp-btn-apply-hero:hover,
+.lp-layout-magazine .lp-btn-apply-main:hover {
+  background: var(--mag-text);
+  color: #fff;
+}
+
+/* ----------------------------------------
+   5. ポップ・カジュアル系 (Yellow / Playful)
+   ターゲット: 学生バイト、飲食、アパレル
+   配色: ビタミンカラー、賑やか、エネルギッシュ
+   ---------------------------------------- */
+
+/* Playful: ビタミンカラー */
+.lp-layout-playful {
+  --playful-yellow: #fbbf24;
+  --playful-pink: #f472b6;
+  --playful-green: #4ade80;
+  --playful-blue: #60a5fa;
+  --playful-text: #1f2937;
+}
+
+.lp-layout-playful .lp-hero {
+  background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 50%, #dbeafe 100%);
+}
+
+.lp-layout-playful .lp-hero-title {
+  color: var(--playful-text);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 6vw, 3rem);
+}
+
+/* Playful: カラフルなアクセント */
+.lp-layout-playful .lp-hero-pretitle {
+  background: var(--playful-pink);
+  color: #fff;
+  padding: 0.5rem 1.25rem;
+  border-radius: 25px;
+  font-weight: 700;
+  display: inline-block;
+  transform: rotate(-2deg);
+}
+
+.lp-layout-playful .lp-point-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 3px solid transparent;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-layout-playful .lp-point-card:nth-child(3n+1) {
+  border-color: var(--playful-yellow);
+}
+
+.lp-layout-playful .lp-point-card:nth-child(3n+2) {
+  border-color: var(--playful-pink);
+}
+
+.lp-layout-playful .lp-point-card:nth-child(3n+3) {
+  border-color: var(--playful-green);
+}
+
+.lp-layout-playful .lp-section-title {
+  color: var(--playful-text);
+  font-weight: 800;
+}
+
+.lp-layout-playful .lp-section-title::after {
+  background: linear-gradient(90deg, var(--playful-yellow), var(--playful-pink), var(--playful-green));
+  height: 4px;
+  border-radius: 2px;
+}
+
+.lp-layout-playful .lp-btn-apply-hero,
+.lp-layout-playful .lp-btn-apply-main {
+  background: linear-gradient(135deg, var(--playful-pink), #ec4899);
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.125rem;
+  box-shadow: 0 4px 15px rgba(244, 114, 182, 0.4);
+}
+
+.lp-layout-playful .lp-btn-apply-hero:hover,
+.lp-layout-playful .lp-btn-apply-main:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
+}
+
+.lp-layout-playful .lp-cta-microcopy {
+  color: var(--playful-pink);
+  font-weight: 600;
+}
+
+.lp-layout-playful .lp-footer {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+}
+
+/* ============================================
+   レスポンシブ調整（テンプレート改善用）
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Impact: モバイルでも大きな数字 */
+  .lp-layout-impact .lp-highlight-value,
+  .lp-layout-impact .lp-job-salary {
+    font-size: 2rem;
+  }
+
+  /* Elegant: モバイルでも余白キープ */
+  .lp-layout-elegant section {
+    padding: 4rem 1.5rem;
+  }
+
+  /* Playful: モバイルでも楽しさキープ */
+  .lp-layout-playful .lp-hero-pretitle {
+    transform: rotate(-1deg);
   }
 }
