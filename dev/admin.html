@@ -13,10 +13,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/admin-CG3eWyif.js"></script>
+  <script type="module" crossorigin src="/dev/js/admin-BBsOsp8t.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-BE8OECDH.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-Czlt2EG3.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-lKPcvSRX.js">
   <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-BbO_OXWy.js">
   <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-Foiii4G8.js">
   <link rel="modulepreload" crossorigin href="/dev/js/job-feed-generator-BunZ_8BQ.js">
@@ -727,6 +727,21 @@
               </div>
               <!-- 互換性のため非表示のテキストエリアを保持 -->
               <textarea id="lp-faq" style="display: none;"></textarea>
+            </div>
+
+            <!-- カスタムセクション（動画・カルーセル等）※登録されている場合のみ表示 -->
+            <div class="form-section lp-form-section" id="custom-sections-panel" style="display: none;">
+              <div class="lp-section-header">
+                <span class="lp-section-number">✨</span>
+                <h4>追加コンテンツ</h4>
+              </div>
+              <p class="form-hint">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</p>
+              <div class="custom-sections-list" id="custom-sections-list">
+                <!-- JSで動的に生成 -->
+              </div>
+              <button type="button" id="btn-add-custom-section" class="btn-add-item">
+                <span>+</span> 動画・スライドなどを追加
+              </button>
             </div>
 
             <!-- 7. セクション管理 -->
