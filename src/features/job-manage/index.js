@@ -18,8 +18,69 @@ const config = {
     apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
     authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
     projectId: "generated-area-484613-e3-90bd4"
-  }
+  },
+  sessionKey: 'rikueco_admin_session',
+  userRoleKey: 'rikueco_user_role',
+  userCompanyKey: 'rikueco_user_company'
 };
+
+// ユーザーロール定義
+const USER_ROLES = {
+  ADMIN: 'admin',
+  COMPANY: 'company'
+};
+
+/**
+ * セッション確認
+ */
+function checkSession() {
+  return !!sessionStorage.getItem(config.sessionKey);
+}
+
+/**
+ * ユーザーロール取得
+ */
+function getUserRole() {
+  return sessionStorage.getItem(config.userRoleKey);
+}
+
+/**
+ * ユーザーの所属会社ドメイン取得
+ */
+function getUserCompanyDomain() {
+  return sessionStorage.getItem(config.userCompanyKey);
+}
+
+/**
+ * 管理者かどうか
+ */
+function isAdmin() {
+  return getUserRole() === USER_ROLES.ADMIN;
+}
+
+/**
+ * 特定の会社へのアクセス権限があるか
+ */
+function hasAccessToCompany(domain) {
+  if (isAdmin()) return true;
+  return getUserCompanyDomain() === domain;
+}
+
+/**
+ * ログアウト処理
+ */
+function handleLogout() {
+  sessionStorage.removeItem(config.sessionKey);
+  sessionStorage.removeItem(config.userRoleKey);
+  sessionStorage.removeItem(config.userCompanyKey);
+  sessionStorage.removeItem('auth_method');
+  sessionStorage.removeItem('company_user_id');
+
+  // Firebaseからもサインアウト
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().signOut();
+  }
+}
 
 /**
  * Firebase初期化
@@ -1425,11 +1486,645 @@ function switchSection(sectionId) {
       applicantsInitialized = true;
       initApplicantsSection(companyDomain, companyName);
     }
+  } else if (sectionId === 'lp-settings') {
+    if (pageTitle) pageTitle.textContent = 'LP設定';
+    if (headerActions) headerActions.style.display = 'none';
+    // LP設定を読み込み
+    loadCompanyLPSettings();
+  } else if (sectionId === 'settings') {
+    if (pageTitle) pageTitle.textContent = 'アカウント設定';
+    if (headerActions) headerActions.style.display = 'none';
   }
 }
 
 // 応募者管理の初期化フラグ
 let applicantsInitialized = false;
+
+// LP設定初期化フラグ
+let lpSettingsInitialized = false;
+
+// ヒーロー画像プリセット
+const heroImagePresets = [
+  { id: 'teamwork-1', name: 'チームミーティング', url: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&q=60' },
+  { id: 'teamwork-2', name: 'オフィスワーク', url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&q=60' },
+  { id: 'teamwork-3', name: 'コラボレーション', url: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&q=60' },
+  { id: 'work-1', name: '製造ライン', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=60' },
+  { id: 'work-2', name: '倉庫作業', url: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=400&q=60' },
+  { id: 'work-3', name: '建設現場', url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=60' },
+  { id: 'work-4', name: '工場作業', url: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=400&q=60' },
+  { id: 'work-5', name: 'チームワーク', url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&q=60' }
+];
+
+const MAX_POINTS = 6;
+const gasApiUrl = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
+const spreadsheetId = '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0';
+const lpSettingsSheetName = 'LP設定';
+
+/**
+ * 会社ユーザー用LP設定の初期化
+ */
+function initCompanyLPSettings() {
+  // URL表示
+  const urlDisplay = document.getElementById('lp-url-display');
+  if (urlDisplay) {
+    urlDisplay.textContent = `${window.location.origin}/lp.html?c=${companyDomain}`;
+  }
+
+  // プレビューボタン
+  const previewBtn = document.getElementById('lp-preview-btn-company');
+  if (previewBtn) {
+    previewBtn.href = `lp.html?c=${encodeURIComponent(companyDomain)}`;
+  }
+
+  // ヒーロー画像プリセットをレンダリング
+  renderHeroImagePresetsCompany();
+
+  // ポイント追加ボタン
+  const addPointBtn = document.getElementById('btn-add-point-company');
+  if (addPointBtn) {
+    addPointBtn.addEventListener('click', addPointCompany);
+  }
+
+  // 保存ボタン
+  const saveBtn = document.getElementById('btn-save-lp-settings-company');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveCompanyLPSettings);
+  }
+
+  // リセットボタン
+  const resetBtn = document.getElementById('btn-reset-lp-settings-company');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (confirm('LP設定をリセットしますか？')) {
+        clearCompanyLPForm();
+      }
+    });
+  }
+
+  lpSettingsInitialized = true;
+}
+
+/**
+ * 会社ユーザー用LP設定を読み込み
+ */
+async function loadCompanyLPSettings() {
+  if (!lpSettingsInitialized) {
+    initCompanyLPSettings();
+  }
+
+  try {
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(lpSettingsSheetName)}`;
+    const response = await fetch(csvUrl);
+
+    if (response.ok) {
+      const csvText = await response.text();
+      const settings = parseLPSettingsCSVCompany(csvText, companyDomain);
+
+      if (settings) {
+        setCompanyInputValue('lp-hero-title-company', settings.heroTitle);
+        setCompanyInputValue('lp-hero-subtitle-company', settings.heroSubtitle);
+        setCompanyInputValue('lp-hero-image-company', settings.heroImage);
+
+        // ポイントを動的にレンダリング
+        const points = [];
+        for (let i = 1; i <= 6; i++) {
+          const title = settings[`pointTitle${i}`] || '';
+          const desc = settings[`pointDesc${i}`] || '';
+          if (title || desc) {
+            points.push({ title, desc });
+          }
+        }
+        renderPointInputsCompany(points.length > 0 ? points : [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]);
+
+        setCompanyInputValue('lp-cta-text-company', settings.ctaText || '今すぐ応募する');
+        setCompanyInputValue('lp-faq-company', settings.faq);
+
+        if (settings.designPattern) {
+          const patternRadio = document.querySelector(`input[name="design-pattern-company"][value="${settings.designPattern}"]`);
+          if (patternRadio) patternRadio.checked = true;
+        }
+
+        // セクション表示設定
+        if (settings.sectionVisibility) {
+          try {
+            const visibility = JSON.parse(settings.sectionVisibility);
+            document.getElementById('section-points-visible-company').checked = visibility.points !== false;
+            document.getElementById('section-jobs-visible-company').checked = visibility.jobs !== false;
+            document.getElementById('section-details-visible-company').checked = visibility.details !== false;
+            document.getElementById('section-faq-visible-company').checked = visibility.faq !== false;
+          } catch (e) {
+            console.warn('セクション表示設定のパースに失敗:', e);
+          }
+        }
+
+        updateHeroImagePresetSelectionCompany(settings.heroImage || '');
+        return;
+      }
+    }
+  } catch (e) {
+    console.log('LP設定シートが見つかりません:', e);
+  }
+
+  // 設定がない場合は初期状態
+  clearCompanyLPForm();
+}
+
+function setCompanyInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value || '';
+}
+
+/**
+ * LP設定CSVをパース（会社ユーザー用）
+ */
+function parseLPSettingsCSVCompany(csvText, targetDomain) {
+  const lines = csvText.split('\n');
+  if (lines.length < 2) return null;
+
+  const headers = parseCSVLineSimple(lines[0]);
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const values = parseCSVLineSimple(lines[i]);
+    const rowData = {};
+
+    headers.forEach((header, idx) => {
+      const key = header.replace(/"/g, '').trim();
+      rowData[key] = values[idx] || '';
+    });
+
+    if (rowData.companyDomain === targetDomain || rowData['会社ドメイン'] === targetDomain) {
+      const result = {
+        heroTitle: rowData.heroTitle || rowData['ヒーロータイトル'] || '',
+        heroSubtitle: rowData.heroSubtitle || rowData['ヒーローサブタイトル'] || '',
+        heroImage: rowData.heroImage || rowData['ヒーロー画像'] || '',
+        ctaText: rowData.ctaText || rowData['CTAテキスト'] || '',
+        faq: rowData.faq || rowData['FAQ'] || '',
+        designPattern: rowData.designPattern || rowData['デザインパターン'] || '',
+        sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || ''
+      };
+
+      for (let j = 1; j <= 6; j++) {
+        result[`pointTitle${j}`] = rowData[`pointTitle${j}`] || rowData[`ポイント${j}タイトル`] || '';
+        result[`pointDesc${j}`] = rowData[`pointDesc${j}`] || rowData[`ポイント${j}説明`] || '';
+      }
+
+      return result;
+    }
+  }
+  return null;
+}
+
+/**
+ * シンプルなCSVパーサー
+ */
+function parseCSVLineSimple(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+/**
+ * ヒーロー画像プリセットをレンダリング（会社ユーザー用）
+ */
+function renderHeroImagePresetsCompany() {
+  const container = document.getElementById('hero-image-presets-company');
+  if (!container) return;
+
+  container.innerHTML = heroImagePresets.map(preset => `
+    <div class="hero-image-preset" data-url="${escapeHtml(preset.url)}" title="${escapeHtml(preset.name)}">
+      <img src="${escapeHtml(preset.thumbnail)}" alt="${escapeHtml(preset.name)}" loading="lazy">
+      <span class="preset-name">${escapeHtml(preset.name)}</span>
+      <span class="preset-check">✓</span>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.hero-image-preset').forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.dataset.url;
+      selectHeroImagePresetCompany(url);
+    });
+  });
+}
+
+function selectHeroImagePresetCompany(url) {
+  const input = document.getElementById('lp-hero-image-company');
+  if (input) {
+    input.value = url;
+  }
+  updateHeroImagePresetSelectionCompany(url);
+}
+
+function updateHeroImagePresetSelectionCompany(selectedUrl) {
+  const container = document.getElementById('hero-image-presets-company');
+  if (!container) return;
+
+  container.querySelectorAll('.hero-image-preset').forEach(item => {
+    const itemUrl = item.dataset.url;
+    const baseSelectedUrl = selectedUrl?.split('?')[0] || '';
+    const baseItemUrl = itemUrl?.split('?')[0] || '';
+    if (baseSelectedUrl && baseItemUrl && baseSelectedUrl === baseItemUrl) {
+      item.classList.add('selected');
+    } else {
+      item.classList.remove('selected');
+    }
+  });
+}
+
+/**
+ * ポイント入力フィールドをレンダリング（会社ユーザー用）
+ */
+function renderPointInputsCompany(points = [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]) {
+  const container = document.getElementById('point-inputs-container-company');
+  if (!container) return;
+
+  container.innerHTML = points.map((point, index) => `
+    <div class="point-input-group" data-point-index="${index}">
+      <label>ポイント${index + 1}</label>
+      <input type="text" class="point-title" placeholder="タイトル" value="${escapeHtml(point.title || '')}">
+      <input type="text" class="point-desc" placeholder="説明文" value="${escapeHtml(point.desc || '')}">
+      <button type="button" class="btn-remove-point" title="削除">&times;</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.btn-remove-point').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const group = e.target.closest('.point-input-group');
+      if (group && container.children.length > 1) {
+        group.remove();
+        reindexPointsCompany();
+        updateAddPointButtonStateCompany();
+      }
+    });
+  });
+
+  updateAddPointButtonStateCompany();
+}
+
+function reindexPointsCompany() {
+  const container = document.getElementById('point-inputs-container-company');
+  if (!container) return;
+
+  container.querySelectorAll('.point-input-group').forEach((group, index) => {
+    group.dataset.pointIndex = index;
+    const label = group.querySelector('label');
+    if (label) label.textContent = `ポイント${index + 1}`;
+  });
+}
+
+function updateAddPointButtonStateCompany() {
+  const container = document.getElementById('point-inputs-container-company');
+  const addBtn = document.getElementById('btn-add-point-company');
+  if (!container || !addBtn) return;
+
+  addBtn.disabled = container.children.length >= MAX_POINTS;
+}
+
+function addPointCompany() {
+  const container = document.getElementById('point-inputs-container-company');
+  if (!container || container.children.length >= MAX_POINTS) return;
+
+  const newIndex = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'point-input-group';
+  div.dataset.pointIndex = newIndex;
+  div.innerHTML = `
+    <label>ポイント${newIndex + 1}</label>
+    <input type="text" class="point-title" placeholder="タイトル" value="">
+    <input type="text" class="point-desc" placeholder="説明文" value="">
+    <button type="button" class="btn-remove-point" title="削除">&times;</button>
+  `;
+
+  div.querySelector('.btn-remove-point').addEventListener('click', () => {
+    if (container.children.length > 1) {
+      div.remove();
+      reindexPointsCompany();
+      updateAddPointButtonStateCompany();
+    }
+  });
+
+  container.appendChild(div);
+  updateAddPointButtonStateCompany();
+  div.querySelector('.point-title').focus();
+}
+
+function getPointsDataCompany() {
+  const container = document.getElementById('point-inputs-container-company');
+  if (!container) return [];
+
+  const points = [];
+  container.querySelectorAll('.point-input-group').forEach(group => {
+    const title = group.querySelector('.point-title')?.value || '';
+    const desc = group.querySelector('.point-desc')?.value || '';
+    points.push({ title, desc });
+  });
+  return points;
+}
+
+function clearCompanyLPForm() {
+  setCompanyInputValue('lp-hero-title-company', '');
+  setCompanyInputValue('lp-hero-subtitle-company', '');
+  setCompanyInputValue('lp-hero-image-company', '');
+  setCompanyInputValue('lp-cta-text-company', '今すぐ応募する');
+  setCompanyInputValue('lp-faq-company', '');
+
+  renderPointInputsCompany();
+
+  const standardRadio = document.querySelector('input[name="design-pattern-company"][value="standard"]');
+  if (standardRadio) standardRadio.checked = true;
+
+  document.getElementById('section-points-visible-company').checked = true;
+  document.getElementById('section-jobs-visible-company').checked = true;
+  document.getElementById('section-details-visible-company').checked = true;
+  document.getElementById('section-faq-visible-company').checked = true;
+
+  updateHeroImagePresetSelectionCompany('');
+}
+
+/**
+ * 会社ユーザー用LP設定を保存
+ */
+async function saveCompanyLPSettings() {
+  const points = getPointsDataCompany();
+
+  const sectionVisibility = {
+    points: document.getElementById('section-points-visible-company')?.checked !== false,
+    jobs: document.getElementById('section-jobs-visible-company')?.checked !== false,
+    details: document.getElementById('section-details-visible-company')?.checked !== false,
+    faq: document.getElementById('section-faq-visible-company')?.checked !== false
+  };
+
+  const settings = {
+    companyDomain: companyDomain,
+    designPattern: document.querySelector('input[name="design-pattern-company"]:checked')?.value || 'standard',
+    heroTitle: document.getElementById('lp-hero-title-company')?.value || '',
+    heroSubtitle: document.getElementById('lp-hero-subtitle-company')?.value || '',
+    heroImage: document.getElementById('lp-hero-image-company')?.value || '',
+    ctaText: document.getElementById('lp-cta-text-company')?.value || '',
+    faq: document.getElementById('lp-faq-company')?.value || '',
+    sectionVisibility: JSON.stringify(sectionVisibility)
+  };
+
+  // ポイント1〜6を設定
+  for (let i = 0; i < 6; i++) {
+    settings[`pointTitle${i + 1}`] = points[i]?.title || '';
+    settings[`pointDesc${i + 1}`] = points[i]?.desc || '';
+  }
+
+  const saveBtn = document.getElementById('btn-save-lp-settings-company');
+  const successMsg = document.getElementById('lp-save-message');
+  const errorMsg = document.getElementById('lp-error-message');
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
+  }
+  if (successMsg) successMsg.style.display = 'none';
+  if (errorMsg) errorMsg.style.display = 'none';
+
+  try {
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+      action: 'saveLPSettings',
+      settings: settings
+    }))));
+    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const responseText = await response.text();
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error('サーバーからの応答が不正です');
+    }
+
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'LP設定を保存';
+    }
+
+    if (result.success) {
+      if (successMsg) {
+        successMsg.textContent = 'LP設定を保存しました';
+        successMsg.style.display = 'block';
+        setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
+      }
+    } else {
+      throw new Error(result.error || '保存に失敗しました');
+    }
+  } catch (error) {
+    console.error('LP設定保存エラー:', error);
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'LP設定を保存';
+    }
+    if (errorMsg) {
+      errorMsg.textContent = 'LP設定の保存に失敗しました: ' + error.message;
+      errorMsg.style.display = 'block';
+    }
+  }
+}
+
+/**
+ * パスワード変更フォームのセットアップ
+ */
+function setupPasswordChangeForm() {
+  const form = document.getElementById('password-change-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const errorEl = document.getElementById('password-change-error');
+    const successEl = document.getElementById('password-change-success');
+
+    // エラー・成功メッセージをリセット
+    errorEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    // バリデーション
+    if (newPassword !== confirmPassword) {
+      errorEl.textContent = '新しいパスワードが一致しません';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      errorEl.textContent = 'パスワードは8文字以上で設定してください';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      // Firestoreで現在のパスワードを確認して更新
+      const result = await changeCompanyUserPassword(currentPassword, newPassword);
+
+      if (result.success) {
+        successEl.textContent = 'パスワードを変更しました';
+        successEl.style.display = 'block';
+        form.reset();
+      } else {
+        errorEl.textContent = result.error;
+        errorEl.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      errorEl.textContent = 'パスワードの変更に失敗しました';
+      errorEl.style.display = 'block';
+    }
+  });
+}
+
+/**
+ * 会社ユーザーのパスワードを変更
+ */
+async function changeCompanyUserPassword(currentPassword, newPassword) {
+  if (typeof firebase === 'undefined' || !firebase.firestore) {
+    return { success: false, error: 'データベースが初期化されていません' };
+  }
+
+  const db = firebase.firestore();
+  const username = sessionStorage.getItem('company_user_id');
+
+  if (!username) {
+    // セッションにユーザーIDがない場合、companyDomainから検索
+    try {
+      const userQuery = await db.collection('company_users')
+        .where('companyDomain', '==', companyDomain)
+        .limit(1)
+        .get();
+
+      if (userQuery.empty) {
+        return { success: false, error: 'ユーザー情報が見つかりません' };
+      }
+
+      const userDoc = userQuery.docs[0];
+      const userData = userDoc.data();
+
+      // 現在のパスワードを確認
+      if (userData.password !== currentPassword) {
+        return { success: false, error: '現在のパスワードが正しくありません' };
+      }
+
+      // パスワードを更新
+      await db.collection('company_users').doc(userDoc.id).update({
+        password: newPassword,
+        passwordChangedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Password change error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ユーザーIDがある場合
+  try {
+    const userQuery = await db.collection('company_users')
+      .where('username', '==', username)
+      .limit(1)
+      .get();
+
+    if (userQuery.empty) {
+      return { success: false, error: 'ユーザー情報が見つかりません' };
+    }
+
+    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
+
+    // 現在のパスワードを確認
+    if (userData.password !== currentPassword) {
+      return { success: false, error: '現在のパスワードが正しくありません' };
+    }
+
+    // パスワードを更新
+    await db.collection('company_users').doc(userDoc.id).update({
+      password: newPassword,
+      passwordChangedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Password change error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 会社ユーザー向けの機能制限を適用
+ */
+function applyCompanyUserRestrictions() {
+  // フィード生成セクションを非表示（管理者のみ）
+  const feedSection = document.querySelector('.feed-section');
+  if (feedSection) {
+    feedSection.style.display = 'none';
+  }
+
+  // サイドバーの「戻る」リンクを調整（admin.htmlではなく自社ページへ）
+  const backLink = document.querySelector('.sidebar-nav a[data-section="back"]');
+  if (backLink) {
+    // 戻るリンクを非表示にする（会社ユーザーは他の会社に移動できない）
+    backLink.style.display = 'none';
+  }
+
+  // 「管理画面へ戻る」を非表示にし、ログアウトボタンを表示
+  const backAdminBtn = document.getElementById('btn-back-admin');
+  if (backAdminBtn) {
+    backAdminBtn.style.display = 'none';
+  }
+
+  const logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn) {
+    logoutBtn.style.display = 'block';
+    logoutBtn.addEventListener('click', () => {
+      handleLogout();
+      window.location.href = 'admin.html';
+    });
+  }
+
+  // 設定メニューを表示（会社ユーザーのみ）
+  const settingsNavItem = document.getElementById('nav-settings-item');
+  if (settingsNavItem) {
+    settingsNavItem.style.display = 'block';
+  }
+
+  // LP設定メニューを表示（会社ユーザーのみ）
+  const lpSettingsNavItem = document.getElementById('nav-lp-settings-item');
+  if (lpSettingsNavItem) {
+    lpSettingsNavItem.style.display = 'block';
+  }
+
+  // LP設定の初期化
+  initCompanyLPSettings();
+
+  // パスワード変更フォームのイベント設定
+  setupPasswordChangeForm();
+
+  // 会社ユーザー用のバッジ表示
+  const companyNameEl = document.getElementById('company-name');
+  if (companyNameEl) {
+    companyNameEl.innerHTML = `${escapeHtml(companyName)} <span class="badge info">会社ユーザー</span>`;
+  }
+}
 
 /**
  * イベントリスナーの設定
@@ -1492,6 +2187,12 @@ export async function initJobManager() {
   // Firebase初期化
   initFirebase();
 
+  // セッション確認
+  if (!checkSession()) {
+    window.location.href = 'admin.html';
+    return;
+  }
+
   const params = new URLSearchParams(window.location.search);
   companyDomain = params.get('domain');
   companyName = params.get('company') || companyDomain;
@@ -1507,6 +2208,18 @@ export async function initJobManager() {
     alert('会社ドメインが指定されていません');
     window.location.href = 'admin.html';
     return;
+  }
+
+  // アクセス権限チェック
+  if (!hasAccessToCompany(companyDomain)) {
+    alert('この会社へのアクセス権限がありません');
+    window.location.href = 'admin.html';
+    return;
+  }
+
+  // 会社ユーザーの場合、管理者専用機能を非表示にする
+  if (!isAdmin()) {
+    applyCompanyUserRestrictions();
   }
 
   const pageTitle = document.getElementById('page-title');

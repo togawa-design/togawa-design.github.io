@@ -121,6 +121,41 @@ export const SECTION_TYPES = {
     defaultLayout: {
       style: 'cards'
     }
+  },
+  carousel: {
+    id: 'carousel',
+    name: '画像カルーセル',
+    icon: '🎠',
+    required: false,
+    maxInstances: null,
+    defaultData: {
+      sectionTitle: '',
+      images: [],
+      autoPlay: true,
+      interval: 5000
+    },
+    defaultLayout: {
+      style: 'standard',
+      showDots: true,
+      showArrows: true
+    }
+  },
+  video: {
+    id: 'video',
+    name: '動画',
+    icon: '🎬',
+    required: false,
+    maxInstances: null,
+    defaultData: {
+      sectionTitle: '',
+      videoUrl: '',
+      videoType: 'youtube',
+      description: ''
+    },
+    defaultLayout: {
+      aspectRatio: '16:9',
+      fullWidth: false
+    }
   }
 };
 

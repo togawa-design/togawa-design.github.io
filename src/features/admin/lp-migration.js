@@ -16,8 +16,10 @@ export function migrateToV2Format(legacySettings) {
 
   // 既にv2形式の場合でも、faqカラムの最新データを同期
   if (legacySettings.lpContent) {
+    console.log('[migrateToV2Format] lpContent found, length:', legacySettings.lpContent.length);
     try {
       const parsed = JSON.parse(legacySettings.lpContent);
+      console.log('[migrateToV2Format] Parsed lpContent, version:', parsed.version, 'sections:', parsed.sections?.length);
       if (parsed.version === '2.0') {
         // faqカラムがあれば、FAQセクションを最新データで更新
         if (legacySettings.faq) {
@@ -29,11 +31,16 @@ export function migrateToV2Format(legacySettings) {
             faqSection.visible = faqItems.length > 0;
           }
         }
+        console.log('[migrateToV2Format] Returning parsed v2 content with sections:', parsed.sections.map(s => s.type));
         return parsed;
       }
     } catch (e) {
       // パース失敗時は移行処理を続行
+      console.error('[migrateToV2Format] JSON parse error:', e.message);
+      console.log('[migrateToV2Format] lpContent value:', legacySettings.lpContent.substring(0, 200));
     }
+  } else {
+    console.log('[migrateToV2Format] No lpContent found, migrating from legacy format');
   }
 
   const sections = [];

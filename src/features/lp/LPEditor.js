@@ -296,6 +296,44 @@ export class LPEditor {
       const inner = faqSection.querySelector('.lp-section-inner') || faqSection;
       inner.appendChild(editBtn);
     }
+
+    // カルーセルセクションに編集ボタンを追加
+    document.querySelectorAll('.lp-carousel').forEach(carouselSection => {
+      // 既存のボタンを削除
+      const existingBtn = carouselSection.querySelector('.lp-section-quick-edit-btn');
+      if (existingBtn) existingBtn.remove();
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'lp-section-quick-edit-btn';
+      editBtn.innerHTML = '✏️ 画像を編集・追加';
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openCarouselEditor(carouselSection);
+      });
+
+      const inner = carouselSection.querySelector('.lp-section-inner') || carouselSection;
+      inner.appendChild(editBtn);
+    });
+
+    // 動画セクションに編集ボタンを追加
+    document.querySelectorAll('.lp-video').forEach(videoSection => {
+      // 既存のボタンを削除
+      const existingBtn = videoSection.querySelector('.lp-section-quick-edit-btn');
+      if (existingBtn) existingBtn.remove();
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'lp-section-quick-edit-btn';
+      editBtn.innerHTML = '✏️ 動画を編集';
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openVideoEditor(videoSection);
+      });
+
+      const inner = videoSection.querySelector('.lp-section-inner') || videoSection;
+      inner.appendChild(editBtn);
+    });
   }
 
   /**
@@ -748,9 +786,177 @@ export class LPEditor {
     const typeConfig = SECTION_TYPES[type];
     if (!typeConfig) return;
 
-    // 実際の追加処理はサーバーサイドで行う必要があるため、
-    // ここではユーザーに管理画面での追加を促す
-    alert(`「${typeConfig.name}」セクションを追加するには、管理画面のLP設定から行ってください。`);
+    // 新しいセクションデータを作成
+    const sectionId = `${type}-${Date.now()}`;
+    const newSection = {
+      id: sectionId,
+      type: type,
+      order: this.sections.length,
+      visible: true,
+      data: JSON.parse(JSON.stringify(typeConfig.defaultData)),
+      layout: JSON.parse(JSON.stringify(typeConfig.defaultLayout))
+    };
+
+    // セクション配列に追加
+    this.sections.push(newSection);
+
+    // HTMLを生成してDOMに追加
+    const html = this.renderNewSection(newSection);
+    if (html) {
+      const contentEl = document.getElementById('lp-content');
+      if (contentEl) {
+        // 応募セクションの前に挿入
+        const applySection = contentEl.querySelector('.lp-apply');
+        if (applySection) {
+          applySection.insertAdjacentHTML('beforebegin', html);
+        } else {
+          contentEl.insertAdjacentHTML('beforeend', html);
+        }
+
+        // 編集データに追加
+        this.editedData.addedSections = this.editedData.addedSections || [];
+        this.editedData.addedSections.push(newSection);
+
+        // 各種初期化
+        this.setupSectionSortable();
+        this.setupSectionSelection();
+        this.updateSidebarList();
+
+        // カルーセルの場合は初期化
+        if (type === 'carousel') {
+          import('@components/organisms/CarouselSection.js').then(module => {
+            if (module.initCarousels) module.initCarousels();
+          });
+        }
+
+        this.showSuccessMessage(`「${typeConfig.name}」セクションを追加しました`);
+      }
+    }
+  }
+
+  /**
+   * 新しいセクションのHTMLをレンダリング
+   */
+  renderNewSection(section) {
+    switch (section.type) {
+      case 'carousel':
+        return this.renderCarouselSectionHtml(section);
+      case 'video':
+        return this.renderVideoSectionHtml(section);
+      case 'gallery':
+        return this.renderGallerySectionHtml(section);
+      case 'custom':
+        return this.renderCustomSectionHtml(section);
+      default:
+        // その他のセクションは管理画面で追加
+        alert(`「${SECTION_TYPES[section.type]?.name || section.type}」セクションは管理画面から追加してください。`);
+        return null;
+    }
+  }
+
+  /**
+   * カルーセルセクションのHTMLを生成
+   */
+  renderCarouselSectionHtml(section) {
+    const sectionTitle = section.data?.sectionTitle || '';
+    return `
+      <section class="lp-carousel lp-carousel-empty lp-sortable-section" data-section-id="${section.id}" data-section="carousel">
+        <div class="lp-section-drag-handle">
+          <span class="lp-section-label">画像カルーセル</span>
+          <span class="lp-section-drag-icon">⋮⋮</span>
+        </div>
+        <div class="lp-section-inner">
+          ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+          <div class="lp-carousel-placeholder">
+            <div class="lp-carousel-placeholder-icon">🎠</div>
+            <p>画像が登録されていません</p>
+            <p class="lp-placeholder-hint">保存後、管理画面から画像を追加してください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  /**
+   * 動画セクションのHTMLを生成
+   */
+  renderVideoSectionHtml(section) {
+    const sectionTitle = section.data?.sectionTitle || '';
+    return `
+      <section class="lp-video lp-video-empty lp-sortable-section" data-section-id="${section.id}" data-section="video">
+        <div class="lp-section-drag-handle">
+          <span class="lp-section-label">動画</span>
+          <span class="lp-section-drag-icon">⋮⋮</span>
+        </div>
+        <div class="lp-section-inner">
+          ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+          <div class="lp-video-placeholder">
+            <div class="lp-video-placeholder-icon">🎬</div>
+            <p>動画URLが設定されていません</p>
+            <p class="lp-placeholder-hint">保存後、管理画面から動画URLを設定してください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  /**
+   * ギャラリーセクションのHTMLを生成
+   */
+  renderGallerySectionHtml(section) {
+    const sectionTitle = section.data?.sectionTitle || '';
+    return `
+      <section class="lp-gallery lp-gallery-empty lp-sortable-section" data-section-id="${section.id}" data-section="gallery">
+        <div class="lp-section-drag-handle">
+          <span class="lp-section-label">画像ギャラリー</span>
+          <span class="lp-section-drag-icon">⋮⋮</span>
+        </div>
+        <div class="lp-section-inner">
+          ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+          <div class="lp-gallery-placeholder">
+            <div class="lp-gallery-placeholder-icon">🖼️</div>
+            <p>画像が登録されていません</p>
+            <p class="lp-placeholder-hint">保存後、管理画面から画像を追加してください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  /**
+   * カスタムセクションのHTMLを生成
+   */
+  renderCustomSectionHtml(section) {
+    const title = section.data?.title || '';
+    return `
+      <section class="lp-custom lp-custom-empty lp-sortable-section" data-section-id="${section.id}" data-section="custom">
+        <div class="lp-section-drag-handle">
+          <span class="lp-section-label">カスタム</span>
+          <span class="lp-section-drag-icon">⋮⋮</span>
+        </div>
+        <div class="lp-section-inner">
+          ${title ? `<h2 class="lp-section-title">${this.escapeHtml(title)}</h2>` : ''}
+          <div class="lp-custom-placeholder">
+            <div class="lp-custom-placeholder-icon">🎨</div>
+            <p>カスタムセクション</p>
+            <p class="lp-placeholder-hint">保存後、管理画面から内容を編集してください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  /**
+   * HTMLエスケープ
+   */
+  escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /**
@@ -908,6 +1114,18 @@ export class LPEditor {
     // FAQセクションの場合は専用エディタを開く
     if (sectionType === 'faq') {
       this.openFAQEditor();
+      return;
+    }
+
+    // カルーセルセクションの場合は専用エディタを開く
+    if (sectionType === 'carousel') {
+      this.openCarouselEditor(section);
+      return;
+    }
+
+    // 動画セクションの場合は専用エディタを開く
+    if (sectionType === 'video') {
+      this.openVideoEditor(section);
       return;
     }
 
@@ -1176,6 +1394,660 @@ export class LPEditor {
   closeFAQEditor() {
     const editor = document.getElementById('lp-faq-editor');
     if (editor) editor.remove();
+  }
+
+  /**
+   * カルーセルエディタを開く
+   */
+  openCarouselEditor(section) {
+    this.closeCarouselEditor();
+
+    const sectionId = section?.dataset?.sectionId || '';
+
+    // 現在のカルーセルデータを取得
+    let carouselData = this.getCarouselData(sectionId);
+    if (!carouselData.images) {
+      carouselData.images = [];
+    }
+
+    const editor = document.createElement('div');
+    editor.className = 'lp-carousel-editor-overlay';
+    editor.id = 'lp-carousel-editor';
+    editor.dataset.sectionId = sectionId;
+    editor.innerHTML = `
+      <div class="lp-carousel-editor">
+        <div class="lp-carousel-editor-header">
+          <h3>画像カルーセルを編集</h3>
+          <button type="button" class="lp-carousel-editor-close">&times;</button>
+        </div>
+        <div class="lp-carousel-editor-body">
+          <div class="lp-carousel-editor-field">
+            <label>セクションタイトル（任意）</label>
+            <input type="text" class="lp-carousel-editor-title" value="${this.escapeHtml(carouselData.sectionTitle || '')}" placeholder="例: 職場の様子">
+          </div>
+          <p class="lp-carousel-editor-hint">画像をドラッグ＆ドロップで並び替えできます。</p>
+          <div class="lp-carousel-editor-list" id="lp-carousel-editor-list">
+            ${carouselData.images.map((img, idx) => this.renderCarouselEditorItem(img, idx)).join('')}
+          </div>
+          <button type="button" class="lp-carousel-editor-add-btn" id="lp-carousel-editor-add">
+            + 画像を追加
+          </button>
+        </div>
+        <div class="lp-carousel-editor-footer">
+          <button type="button" class="lp-carousel-editor-btn lp-carousel-editor-btn-secondary" id="lp-carousel-editor-cancel">キャンセル</button>
+          <button type="button" class="lp-carousel-editor-btn lp-carousel-editor-btn-primary" id="lp-carousel-editor-apply">適用</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(editor);
+
+    // イベントリスナー
+    editor.querySelector('.lp-carousel-editor-close').addEventListener('click', () => this.closeCarouselEditor());
+    editor.querySelector('#lp-carousel-editor-cancel').addEventListener('click', () => this.closeCarouselEditor());
+    editor.querySelector('#lp-carousel-editor-apply').addEventListener('click', () => this.applyCarouselChanges(section));
+    editor.querySelector('#lp-carousel-editor-add').addEventListener('click', () => this.addCarouselItem());
+
+    // オーバーレイクリックで閉じる
+    editor.addEventListener('click', (e) => {
+      if (e.target === editor) this.closeCarouselEditor();
+    });
+
+    // 削除ボタンのイベントを設定
+    this.setupCarouselItemEvents();
+  }
+
+  /**
+   * カルーセルデータを取得
+   */
+  getCarouselData(sectionId) {
+    // editedDataから取得
+    if (this.editedData.carouselData && this.editedData.carouselData[sectionId]) {
+      return this.editedData.carouselData[sectionId];
+    }
+
+    // sectionsから取得
+    const sectionData = this.sections.find(s => s.id === sectionId);
+    if (sectionData && sectionData.data) {
+      return {
+        sectionTitle: sectionData.data.sectionTitle || '',
+        images: sectionData.data.images || []
+      };
+    }
+
+    // lpSettingsから取得（v2形式）
+    if (this.lpSettings?.lpContent) {
+      try {
+        const lpContent = typeof this.lpSettings.lpContent === 'string'
+          ? JSON.parse(this.lpSettings.lpContent)
+          : this.lpSettings.lpContent;
+
+        if (lpContent.sections) {
+          const carouselSection = lpContent.sections.find(s => s.id === sectionId || s.type === 'carousel');
+          if (carouselSection && carouselSection.data) {
+            return {
+              sectionTitle: carouselSection.data.sectionTitle || '',
+              images: carouselSection.data.images || []
+            };
+          }
+        }
+      } catch (e) {
+        console.error('カルーセルデータのパースエラー:', e);
+      }
+    }
+
+    return { sectionTitle: '', images: [] };
+  }
+
+  /**
+   * カルーセルエディタアイテムをレンダリング
+   */
+  renderCarouselEditorItem(image, idx) {
+    const hasContent = image.url || image.alt;
+    return `
+      <div class="lp-carousel-editor-item ${hasContent ? 'has-content' : ''}" data-idx="${idx}" draggable="true">
+        <div class="lp-carousel-editor-item-header">
+          <span class="lp-carousel-editor-handle">⋮⋮</span>
+          <span class="lp-carousel-editor-number">画像 ${idx + 1}</span>
+          <button type="button" class="lp-carousel-editor-delete" data-idx="${idx}" title="削除">
+            🗑️
+          </button>
+        </div>
+        <div class="lp-carousel-editor-fields">
+          <div class="lp-carousel-editor-preview">
+            ${image.url ? `<img src="${this.escapeHtml(image.url)}" alt="${this.escapeHtml(image.alt || '')}">` : '<div class="lp-carousel-no-image">画像なし</div>'}
+          </div>
+          <div class="lp-carousel-editor-inputs">
+            <div class="lp-carousel-editor-field">
+              <label>画像URL</label>
+              <input type="url" class="lp-carousel-editor-url" value="${this.escapeHtml(image.url || '')}" placeholder="https://example.com/image.jpg">
+            </div>
+            <div class="lp-carousel-editor-field">
+              <label>代替テキスト（任意）</label>
+              <input type="text" class="lp-carousel-editor-alt" value="${this.escapeHtml(image.alt || '')}" placeholder="画像の説明">
+            </div>
+            <div class="lp-carousel-editor-field">
+              <label>キャプション（任意）</label>
+              <input type="text" class="lp-carousel-editor-caption" value="${this.escapeHtml(image.caption || '')}" placeholder="画像の下に表示されるテキスト">
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * カルーセルアイテムのイベントを設定
+   */
+  setupCarouselItemEvents() {
+    const editor = document.getElementById('lp-carousel-editor');
+    if (!editor) return;
+
+    // 削除ボタン
+    editor.querySelectorAll('.lp-carousel-editor-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        this.deleteCarouselItem(idx);
+      });
+    });
+
+    // URL入力時にプレビュー更新
+    editor.querySelectorAll('.lp-carousel-editor-url').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const item = e.target.closest('.lp-carousel-editor-item');
+        const preview = item.querySelector('.lp-carousel-editor-preview');
+        const url = e.target.value.trim();
+        const alt = item.querySelector('.lp-carousel-editor-alt').value || '';
+
+        if (url) {
+          preview.innerHTML = `<img src="${this.escapeHtml(url)}" alt="${this.escapeHtml(alt)}" onerror="this.parentElement.innerHTML='<div class=\\'lp-carousel-no-image\\'>読み込みエラー</div>'">`;
+        } else {
+          preview.innerHTML = '<div class="lp-carousel-no-image">画像なし</div>';
+        }
+      });
+    });
+
+    // ドラッグ＆ドロップ
+    this.setupCarouselDragDrop();
+  }
+
+  /**
+   * カルーセルのドラッグ＆ドロップを設定
+   */
+  setupCarouselDragDrop() {
+    const list = document.getElementById('lp-carousel-editor-list');
+    if (!list) return;
+
+    let draggedItem = null;
+
+    list.querySelectorAll('.lp-carousel-editor-item').forEach(item => {
+      item.addEventListener('dragstart', (e) => {
+        draggedItem = item;
+        item.classList.add('lp-carousel-item-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('lp-carousel-item-dragging');
+        draggedItem = null;
+        this.renumberCarouselItems();
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        if (draggedItem && draggedItem !== item) {
+          const allItems = [...list.querySelectorAll('.lp-carousel-editor-item')];
+          const draggedIdx = allItems.indexOf(draggedItem);
+          const targetIdx = allItems.indexOf(item);
+
+          if (draggedIdx < targetIdx) {
+            item.parentNode.insertBefore(draggedItem, item.nextSibling);
+          } else {
+            item.parentNode.insertBefore(draggedItem, item);
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * カルーセルアイテムを追加
+   */
+  addCarouselItem() {
+    const list = document.getElementById('lp-carousel-editor-list');
+    if (!list) return;
+
+    const items = list.querySelectorAll('.lp-carousel-editor-item');
+    const newIdx = items.length;
+
+    const temp = document.createElement('div');
+    temp.innerHTML = this.renderCarouselEditorItem({ url: '', alt: '', caption: '' }, newIdx);
+    const newItem = temp.firstElementChild;
+    list.appendChild(newItem);
+
+    // イベントを再設定
+    this.setupCarouselItemEvents();
+
+    // 新しいアイテムにスクロール
+    newItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // URL入力にフォーカス
+    const urlInput = newItem.querySelector('.lp-carousel-editor-url');
+    if (urlInput) urlInput.focus();
+  }
+
+  /**
+   * カルーセルアイテムを削除
+   */
+  deleteCarouselItem(idx) {
+    const list = document.getElementById('lp-carousel-editor-list');
+    if (!list) return;
+
+    const items = list.querySelectorAll('.lp-carousel-editor-item');
+    if (items.length <= 0) return;
+
+    items[idx].remove();
+    this.renumberCarouselItems();
+  }
+
+  /**
+   * カルーセル番号を振り直す
+   */
+  renumberCarouselItems() {
+    const list = document.getElementById('lp-carousel-editor-list');
+    if (!list) return;
+
+    list.querySelectorAll('.lp-carousel-editor-item').forEach((item, idx) => {
+      item.dataset.idx = idx;
+      item.querySelector('.lp-carousel-editor-number').textContent = `画像 ${idx + 1}`;
+      item.querySelector('.lp-carousel-editor-delete').dataset.idx = idx;
+    });
+
+    // イベントを再設定
+    this.setupCarouselItemEvents();
+  }
+
+  /**
+   * カルーセルエディタを閉じる
+   */
+  closeCarouselEditor() {
+    const editor = document.getElementById('lp-carousel-editor');
+    if (editor) editor.remove();
+  }
+
+  /**
+   * カルーセルの変更を適用
+   */
+  applyCarouselChanges(section) {
+    const editor = document.getElementById('lp-carousel-editor');
+    if (!editor) return;
+
+    const sectionId = editor.dataset.sectionId;
+    const sectionTitle = editor.querySelector('.lp-carousel-editor-title').value.trim();
+    const items = editor.querySelectorAll('.lp-carousel-editor-item');
+    const images = [];
+
+    items.forEach(item => {
+      const url = item.querySelector('.lp-carousel-editor-url').value.trim();
+      const alt = item.querySelector('.lp-carousel-editor-alt').value.trim();
+      const caption = item.querySelector('.lp-carousel-editor-caption').value.trim();
+
+      if (url) {
+        images.push({
+          id: `img-${Date.now()}-${images.length}`,
+          url,
+          alt,
+          caption
+        });
+      }
+    });
+
+    // editedDataに保存
+    this.editedData.carouselData = this.editedData.carouselData || {};
+    this.editedData.carouselData[sectionId] = {
+      sectionTitle,
+      images
+    };
+
+    console.log('[LPEditor] カルーセルを更新:', this.editedData.carouselData[sectionId]);
+
+    // DOM上のカルーセルも更新
+    this.updateCarouselDisplay(section, sectionTitle, images);
+
+    this.closeCarouselEditor();
+    this.showSuccessMessage('カルーセルを更新しました');
+  }
+
+  /**
+   * カルーセル表示を更新
+   */
+  updateCarouselDisplay(section, sectionTitle, images) {
+    if (!section) return;
+
+    const inner = section.querySelector('.lp-section-inner');
+    if (!inner) return;
+
+    if (images.length === 0) {
+      // 画像がない場合はプレースホルダーを表示
+      section.classList.add('lp-carousel-empty');
+      inner.innerHTML = `
+        ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+        <div class="lp-carousel-placeholder">
+          <div class="lp-carousel-placeholder-icon">🎠</div>
+          <p>画像が登録されていません</p>
+        </div>
+      `;
+    } else {
+      // 画像がある場合はカルーセルを表示
+      section.classList.remove('lp-carousel-empty');
+      inner.innerHTML = `
+        ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+        <div class="lp-carousel-container">
+          <div class="lp-carousel-track">
+            ${images.map((img, idx) => `
+              <div class="lp-carousel-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
+                <img src="${this.escapeHtml(img.url)}" alt="${this.escapeHtml(img.alt || '')}">
+                ${img.caption ? `<div class="lp-carousel-caption">${this.escapeHtml(img.caption)}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <button class="lp-carousel-btn lp-carousel-btn-prev" aria-label="前へ">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <button class="lp-carousel-btn lp-carousel-btn-next" aria-label="次へ">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg>
+          </button>
+          <div class="lp-carousel-dots">
+            ${images.map((_, idx) => `
+              <button class="lp-carousel-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="スライド ${idx + 1}"></button>
+            `).join('')}
+          </div>
+          <div class="lp-carousel-counter">
+            <span class="lp-carousel-current">1</span> / <span class="lp-carousel-total">${images.length}</span>
+          </div>
+        </div>
+      `;
+
+      // カルーセルを初期化
+      import('@components/organisms/CarouselSection.js').then(module => {
+        if (module.initCarousels) module.initCarousels();
+      });
+    }
+
+    // 編集ボタンを再追加
+    this.addSectionEditButtons();
+  }
+
+  /**
+   * 動画エディタを開く
+   */
+  openVideoEditor(section) {
+    this.closeVideoEditor();
+
+    const sectionId = section?.dataset?.sectionId || '';
+
+    // 現在の動画データを取得
+    let videoData = this.getVideoData(sectionId);
+
+    const editor = document.createElement('div');
+    editor.className = 'lp-video-editor-overlay';
+    editor.id = 'lp-video-editor';
+    editor.dataset.sectionId = sectionId;
+    editor.innerHTML = `
+      <div class="lp-video-editor">
+        <div class="lp-video-editor-header">
+          <h3>動画セクションを編集</h3>
+          <button type="button" class="lp-video-editor-close">&times;</button>
+        </div>
+        <div class="lp-video-editor-body">
+          <div class="lp-video-editor-field">
+            <label>セクションタイトル（任意）</label>
+            <input type="text" class="lp-video-editor-title" value="${this.escapeHtml(videoData.sectionTitle || '')}" placeholder="例: 会社紹介動画">
+          </div>
+          <div class="lp-video-editor-field">
+            <label>動画URL</label>
+            <input type="url" class="lp-video-editor-url" value="${this.escapeHtml(videoData.videoUrl || '')}" placeholder="YouTube、Vimeo、またはMP4のURL">
+            <p class="lp-video-editor-hint">対応: YouTube、Vimeo、TikTok、MP4/WebM直接リンク</p>
+          </div>
+          <div class="lp-video-editor-field">
+            <label>説明文（任意）</label>
+            <textarea class="lp-video-editor-description" rows="2" placeholder="動画の下に表示される説明文">${this.escapeHtml(videoData.description || '')}</textarea>
+          </div>
+          <div class="lp-video-editor-preview-container">
+            <label>プレビュー</label>
+            <div class="lp-video-editor-preview" id="lp-video-editor-preview">
+              ${this.generateVideoPreview(videoData.videoUrl)}
+            </div>
+          </div>
+        </div>
+        <div class="lp-video-editor-footer">
+          <button type="button" class="lp-video-editor-btn lp-video-editor-btn-secondary" id="lp-video-editor-cancel">キャンセル</button>
+          <button type="button" class="lp-video-editor-btn lp-video-editor-btn-primary" id="lp-video-editor-apply">適用</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(editor);
+
+    // イベントリスナー
+    editor.querySelector('.lp-video-editor-close').addEventListener('click', () => this.closeVideoEditor());
+    editor.querySelector('#lp-video-editor-cancel').addEventListener('click', () => this.closeVideoEditor());
+    editor.querySelector('#lp-video-editor-apply').addEventListener('click', () => this.applyVideoChanges(section));
+
+    // URL入力時にプレビュー更新
+    const urlInput = editor.querySelector('.lp-video-editor-url');
+    urlInput.addEventListener('input', () => {
+      const preview = document.getElementById('lp-video-editor-preview');
+      if (preview) {
+        preview.innerHTML = this.generateVideoPreview(urlInput.value.trim());
+      }
+    });
+
+    // オーバーレイクリックで閉じる
+    editor.addEventListener('click', (e) => {
+      if (e.target === editor) this.closeVideoEditor();
+    });
+  }
+
+  /**
+   * 動画データを取得
+   */
+  getVideoData(sectionId) {
+    // editedDataから取得
+    if (this.editedData.videoData && this.editedData.videoData[sectionId]) {
+      return this.editedData.videoData[sectionId];
+    }
+
+    // sectionsから取得
+    const sectionData = this.sections.find(s => s.id === sectionId);
+    if (sectionData && sectionData.data) {
+      return {
+        sectionTitle: sectionData.data.sectionTitle || '',
+        videoUrl: sectionData.data.videoUrl || '',
+        description: sectionData.data.description || ''
+      };
+    }
+
+    // lpSettingsから取得（v2形式）
+    if (this.lpSettings?.lpContent) {
+      try {
+        const lpContent = typeof this.lpSettings.lpContent === 'string'
+          ? JSON.parse(this.lpSettings.lpContent)
+          : this.lpSettings.lpContent;
+
+        if (lpContent.sections) {
+          const videoSection = lpContent.sections.find(s => s.id === sectionId || s.type === 'video');
+          if (videoSection && videoSection.data) {
+            return {
+              sectionTitle: videoSection.data.sectionTitle || '',
+              videoUrl: videoSection.data.videoUrl || '',
+              description: videoSection.data.description || ''
+            };
+          }
+        }
+      } catch (e) {
+        console.error('動画データのパースエラー:', e);
+      }
+    }
+
+    return { sectionTitle: '', videoUrl: '', description: '' };
+  }
+
+  /**
+   * 動画プレビューを生成
+   */
+  generateVideoPreview(url) {
+    if (!url) {
+      return '<div class="lp-video-no-preview">URLを入力するとプレビューが表示されます</div>';
+    }
+
+    // YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = this.extractYouTubeId(url);
+      if (videoId) {
+        return `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+      }
+    }
+
+    // Vimeo
+    if (url.includes('vimeo.com')) {
+      const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if (match) {
+        return `<iframe src="https://player.vimeo.com/video/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
+      }
+    }
+
+    // 直接動画ファイル
+    if (url.match(/\.(mp4|webm|ogg)$/i)) {
+      return `<video src="${this.escapeHtml(url)}" controls></video>`;
+    }
+
+    return '<div class="lp-video-no-preview">対応していない形式です</div>';
+  }
+
+  /**
+   * YouTubeのIDを抽出
+   */
+  extractYouTubeId(url) {
+    let match = url.match(/[?&]v=([^&]+)/);
+    if (match) return match[1];
+
+    match = url.match(/youtu\.be\/([^?&]+)/);
+    if (match) return match[1];
+
+    match = url.match(/youtube\.com\/embed\/([^?&]+)/);
+    if (match) return match[1];
+
+    match = url.match(/youtube\.com\/shorts\/([^?&]+)/);
+    if (match) return match[1];
+
+    return null;
+  }
+
+  /**
+   * 動画エディタを閉じる
+   */
+  closeVideoEditor() {
+    const editor = document.getElementById('lp-video-editor');
+    if (editor) editor.remove();
+  }
+
+  /**
+   * 動画の変更を適用
+   */
+  applyVideoChanges(section) {
+    const editor = document.getElementById('lp-video-editor');
+    if (!editor) return;
+
+    const sectionId = editor.dataset.sectionId;
+    const sectionTitle = editor.querySelector('.lp-video-editor-title').value.trim();
+    const videoUrl = editor.querySelector('.lp-video-editor-url').value.trim();
+    const description = editor.querySelector('.lp-video-editor-description').value.trim();
+
+    // editedDataに保存
+    this.editedData.videoData = this.editedData.videoData || {};
+    this.editedData.videoData[sectionId] = {
+      sectionTitle,
+      videoUrl,
+      description
+    };
+
+    console.log('[LPEditor] 動画を更新:', this.editedData.videoData[sectionId]);
+
+    // DOM上の動画も更新
+    this.updateVideoDisplay(section, sectionTitle, videoUrl, description);
+
+    this.closeVideoEditor();
+    this.showSuccessMessage('動画を更新しました');
+  }
+
+  /**
+   * 動画表示を更新
+   */
+  updateVideoDisplay(section, sectionTitle, videoUrl, description) {
+    if (!section) return;
+
+    const inner = section.querySelector('.lp-section-inner');
+    if (!inner) return;
+
+    if (!videoUrl) {
+      // URLがない場合はプレースホルダーを表示
+      section.classList.add('lp-video-empty');
+      inner.innerHTML = `
+        ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+        <div class="lp-video-placeholder">
+          <div class="lp-video-placeholder-icon">🎬</div>
+          <p>動画URLが設定されていません</p>
+        </div>
+      `;
+    } else {
+      // URLがある場合は動画を表示
+      section.classList.remove('lp-video-empty');
+      const embedHtml = this.generateVideoEmbed(videoUrl);
+      inner.innerHTML = `
+        ${sectionTitle ? `<h2 class="lp-section-title">${this.escapeHtml(sectionTitle)}</h2>` : ''}
+        <div class="lp-video-wrapper lp-video-aspect-16-9">
+          ${embedHtml}
+        </div>
+        ${description ? `<p class="lp-video-description">${this.escapeHtml(description)}</p>` : ''}
+      `;
+    }
+
+    // 編集ボタンを再追加
+    this.addSectionEditButtons();
+  }
+
+  /**
+   * 動画埋め込みHTMLを生成
+   */
+  generateVideoEmbed(url) {
+    // YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = this.extractYouTubeId(url);
+      if (videoId) {
+        return `<iframe src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1" title="YouTube動画" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+      }
+    }
+
+    // Vimeo
+    if (url.includes('vimeo.com')) {
+      const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if (match) {
+        return `<iframe src="https://player.vimeo.com/video/${match[1]}?title=0&byline=0&portrait=0" title="Vimeo動画" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+      }
+    }
+
+    // 直接動画ファイル
+    if (url.match(/\.(mp4|webm|ogg)$/i)) {
+      const ext = url.split('.').pop().toLowerCase();
+      const mimeTypes = { mp4: 'video/mp4', webm: 'video/webm', ogg: 'video/ogg' };
+      return `<video controls preload="metadata" playsinline><source src="${this.escapeHtml(url)}" type="${mimeTypes[ext] || 'video/mp4'}"></video>`;
+    }
+
+    // その他はiframe
+    return `<iframe src="${this.escapeHtml(url)}" title="埋め込み動画" frameborder="0" allowfullscreen loading="lazy"></iframe>`;
   }
 
   /**
@@ -1515,6 +2387,11 @@ export class LPEditor {
     if (section.classList.contains('lp-details')) return 'details';
     if (section.classList.contains('lp-faq')) return 'faq';
     if (section.classList.contains('lp-apply')) return 'apply';
+    if (section.classList.contains('lp-carousel')) return 'carousel';
+    if (section.classList.contains('lp-video')) return 'video';
+    if (section.classList.contains('lp-gallery')) return 'gallery';
+    if (section.classList.contains('lp-testimonial')) return 'testimonial';
+    if (section.classList.contains('lp-custom')) return 'custom';
     return 'unknown';
   }
 
@@ -1525,7 +2402,12 @@ export class LPEditor {
       jobs: '求人一覧',
       details: '募集要項',
       faq: 'FAQ',
-      apply: '応募'
+      apply: '応募',
+      carousel: '画像カルーセル',
+      video: '動画',
+      gallery: '画像ギャラリー',
+      testimonial: '社員の声',
+      custom: 'カスタム'
     };
     return labels[type] || 'セクション';
   }
@@ -1921,12 +2803,100 @@ export class LPEditor {
     settings.ogpDescription = baseSettings.ogpDescription ?? '';
     settings.ogpImage = baseSettings.ogpImage ?? '';
 
-    // LP構成データ
+    // LP構成データ（カルーセル・動画のデータをマージ）
+    let lpContent = null;
     if (baseSettings.lpContent) {
-      settings.lpContent = typeof baseSettings.lpContent === 'string'
-        ? baseSettings.lpContent
-        : JSON.stringify(baseSettings.lpContent);
+      try {
+        lpContent = typeof baseSettings.lpContent === 'string'
+          ? JSON.parse(baseSettings.lpContent)
+          : { ...baseSettings.lpContent };
+      } catch (e) {
+        lpContent = { version: '2.0', sections: [], globalSettings: {} };
+      }
+    } else {
+      lpContent = { version: '2.0', sections: [], globalSettings: {} };
     }
+
+    // カルーセルデータをマージ
+    if (this.editedData.carouselData) {
+      Object.entries(this.editedData.carouselData).forEach(([sectionId, data]) => {
+        const existingSection = lpContent.sections?.find(s => s.id === sectionId);
+        if (existingSection) {
+          existingSection.data = {
+            ...existingSection.data,
+            sectionTitle: data.sectionTitle,
+            images: data.images
+          };
+        } else {
+          // 新しいセクションを追加
+          lpContent.sections = lpContent.sections || [];
+          lpContent.sections.push({
+            id: sectionId,
+            type: 'carousel',
+            order: lpContent.sections.length,
+            visible: true,
+            data: {
+              sectionTitle: data.sectionTitle,
+              images: data.images,
+              autoPlay: true,
+              interval: 5000
+            },
+            layout: {
+              style: 'standard',
+              showDots: true,
+              showArrows: true
+            }
+          });
+        }
+      });
+    }
+
+    // 動画データをマージ
+    if (this.editedData.videoData) {
+      Object.entries(this.editedData.videoData).forEach(([sectionId, data]) => {
+        const existingSection = lpContent.sections?.find(s => s.id === sectionId);
+        if (existingSection) {
+          existingSection.data = {
+            ...existingSection.data,
+            sectionTitle: data.sectionTitle,
+            videoUrl: data.videoUrl,
+            description: data.description
+          };
+        } else {
+          // 新しいセクションを追加
+          lpContent.sections = lpContent.sections || [];
+          lpContent.sections.push({
+            id: sectionId,
+            type: 'video',
+            order: lpContent.sections.length,
+            visible: true,
+            data: {
+              sectionTitle: data.sectionTitle,
+              videoUrl: data.videoUrl,
+              videoType: 'auto',
+              description: data.description
+            },
+            layout: {
+              aspectRatio: '16:9',
+              fullWidth: false
+            }
+          });
+        }
+      });
+    }
+
+    // 追加されたセクションをマージ
+    if (this.editedData.addedSections) {
+      this.editedData.addedSections.forEach(section => {
+        const exists = lpContent.sections?.some(s => s.id === section.id);
+        if (!exists) {
+          lpContent.sections = lpContent.sections || [];
+          lpContent.sections.push(section);
+        }
+      });
+    }
+
+    settings.lpContent = JSON.stringify(lpContent);
 
     return settings;
   }

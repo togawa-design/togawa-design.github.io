@@ -12,3 +12,5 @@ export { renderApplySection } from './ApplySection.js';
 export { renderCustomSection } from './CustomSection.js';
 export { renderGallerySection } from './GallerySection.js';
 export { renderTestimonialSection } from './TestimonialSection.js';
+export { renderCarouselSection, initCarousels } from './CarouselSection.js';
+export { renderVideoSection } from './VideoSection.js';

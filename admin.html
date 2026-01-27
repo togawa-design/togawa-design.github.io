@@ -722,6 +722,21 @@
               <textarea id="lp-faq" style="display: none;"></textarea>
             </div>
 
+            <!-- カスタムセクション（動画・カルーセル等）※登録されている場合のみ表示 -->
+            <div class="form-section lp-form-section" id="custom-sections-panel" style="display: none;">
+              <div class="lp-section-header">
+                <span class="lp-section-number">✨</span>
+                <h4>追加コンテンツ</h4>
+              </div>
+              <p class="form-hint">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</p>
+              <div class="custom-sections-list" id="custom-sections-list">
+                <!-- JSで動的に生成 -->
+              </div>
+              <button type="button" id="btn-add-custom-section" class="btn-add-item">
+                <span>+</span> 動画・スライドなどを追加
+              </button>
+            </div>
+
             <!-- 7. セクション管理 -->
             <div class="form-section lp-form-section" id="section-manager">
               <div class="lp-section-header">

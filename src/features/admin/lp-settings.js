@@ -397,10 +397,12 @@ export async function loadLPSettings(jobId) {
       return;
     }
 
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}`;
+    // キャッシュを防ぐためにタイムスタンプを追加
+    const cacheKey = Date.now();
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}&_t=${cacheKey}`;
     console.log('[LP設定] LP設定シートURL:', csvUrl);
 
-    const response = await fetch(csvUrl);
+    const response = await fetch(csvUrl, { cache: 'no-store' });
 
     if (response.ok) {
       const csvText = await response.text();

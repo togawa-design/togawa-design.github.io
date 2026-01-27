@@ -11,7 +11,10 @@ import {
   renderApplySection,
   renderCustomSection,
   renderGallerySection,
-  renderTestimonialSection
+  renderTestimonialSection,
+  renderCarouselSection,
+  renderVideoSection,
+  initCarousels
 } from '@components/organisms/index.js';
 
 export class LPRenderer {
@@ -26,7 +29,9 @@ export class LPRenderer {
       apply: renderApplySection,
       custom: renderCustomSection,
       gallery: renderGallerySection,
-      testimonial: renderTestimonialSection
+      testimonial: renderTestimonialSection,
+      carousel: renderCarouselSection,
+      video: renderVideoSection
     };
 
     this.defaultOrder = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
@@ -153,6 +158,9 @@ export class LPRenderer {
     contentEl.innerHTML = visibleSections
       .map(section => this.renderV2Section(section, context))
       .join('');
+
+    // カルーセルの初期化
+    initCarousels();
   }
 
   /**
@@ -196,6 +204,8 @@ export class LPRenderer {
         case 'custom':
         case 'gallery':
         case 'testimonial':
+        case 'carousel':
+        case 'video':
           return renderer(section, context);
 
         default:

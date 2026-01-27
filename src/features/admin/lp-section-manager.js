@@ -235,14 +235,146 @@ export function updateGlobalSetting(key, value) {
  */
 export function renderSectionsList() {
   const container = document.getElementById('lp-sections-list');
-  if (!container) return;
+  if (!container) {
+    console.log('[renderSectionsList] Container not found');
+    return;
+  }
 
   const sortedSections = [...currentSections].sort((a, b) => (a.order || 0) - (b.order || 0));
+  console.log('[renderSectionsList] Rendering sections:', sortedSections.length, sortedSections.map(s => s.type));
 
   container.innerHTML = sortedSections.map(section => renderSectionItem(section)).join('');
 
   // ドラッグ&ドロップを再設定
   setupDragAndDrop();
+
+  // カスタムセクションパネルを更新
+  renderCustomSectionsPanel();
+}
+
+/**
+ * カスタムセクションパネルをレンダリング
+ * 動画、カルーセル、ギャラリー等の追加コンテンツを表示
+ */
+function renderCustomSectionsPanel() {
+  const panel = document.getElementById('custom-sections-panel');
+  const list = document.getElementById('custom-sections-list');
+  if (!panel || !list) return;
+
+  // カスタムセクションタイプ（コアセクション以外）
+  const coreTypes = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+  const customSections = currentSections
+    .filter(s => !coreTypes.includes(s.type))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // カスタムセクションがあれば表示
+  if (customSections.length > 0) {
+    panel.style.display = '';
+    list.innerHTML = customSections.map(section => renderCustomSectionItem(section)).join('');
+    setupCustomSectionsPanelEvents();
+  } else {
+    panel.style.display = 'none';
+    list.innerHTML = '';
+  }
+}
+
+/**
+ * カスタムセクションアイテムをレンダリング
+ * @param {Object} section - セクション設定
+ * @returns {string} HTML文字列
+ */
+function renderCustomSectionItem(section) {
+  const typeConfig = SECTION_TYPES[section.type];
+  const isVisible = section.visible !== false;
+  const title = section.data?.sectionTitle || section.data?.title || '';
+
+  // セクションタイプ別のメタ情報を取得
+  const meta = getCustomSectionMeta(section);
+
+  return `
+    <div class="custom-section-item ${isVisible ? '' : 'hidden'}" data-section-id="${section.id}" data-type="${section.type}">
+      <span class="custom-section-icon">${typeConfig?.icon || '📄'}</span>
+      <div class="custom-section-info">
+        <span class="custom-section-type">${typeConfig?.name || section.type}</span>
+        ${title ? `<span class="custom-section-title">${escapeHtml(title)}</span>` : ''}
+        ${meta ? `<span class="custom-section-meta">${escapeHtml(meta)}</span>` : ''}
+      </div>
+      <div class="custom-section-actions">
+        <button type="button" class="section-btn btn-edit" title="編集" data-section-id="${section.id}">✏️</button>
+        <button type="button" class="section-btn btn-visibility ${isVisible ? '' : 'hidden'}" title="${isVisible ? '非表示にする' : '表示する'}" data-section-id="${section.id}">
+          ${isVisible ? '👁️' : '👁️‍🗨️'}
+        </button>
+        <button type="button" class="section-btn btn-delete" title="削除" data-section-id="${section.id}">🗑️</button>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * セクションタイプ別のメタ情報を取得
+ * @param {Object} section - セクション設定
+ * @returns {string} メタ情報文字列
+ */
+function getCustomSectionMeta(section) {
+  switch (section.type) {
+    case 'video':
+      if (section.data?.videoUrl) {
+        const url = section.data.videoUrl;
+        if (url.includes('youtube') || url.includes('youtu.be')) {
+          return 'YouTube動画';
+        } else if (url.includes('vimeo')) {
+          return 'Vimeo動画';
+        } else if (url.includes('tiktok')) {
+          return 'TikTok動画';
+        }
+        return '動画URL設定済み';
+      }
+      return '動画未設定';
+
+    case 'carousel':
+      const carouselImages = section.data?.images?.length || 0;
+      return carouselImages > 0 ? `${carouselImages}枚の画像` : '画像未設定';
+
+    case 'gallery':
+      const galleryImages = section.data?.images?.length || 0;
+      return galleryImages > 0 ? `${galleryImages}枚の画像` : '画像未設定';
+
+    case 'testimonial':
+      const testimonials = section.data?.testimonials?.length || 0;
+      return testimonials > 0 ? `${testimonials}人の声` : '未設定';
+
+    case 'custom':
+      const variant = CUSTOM_VARIANTS[section.layout?.variant];
+      return variant?.name || 'カスタムコンテンツ';
+
+    default:
+      return '';
+  }
+}
+
+/**
+ * カスタムセクションパネルのイベントを設定
+ */
+function setupCustomSectionsPanelEvents() {
+  const list = document.getElementById('custom-sections-list');
+  if (!list) return;
+
+  // 既存のイベントを削除して再設定
+  list.onclick = (e) => {
+    const target = e.target.closest('button');
+    if (!target) return;
+
+    const sectionId = target.dataset.sectionId;
+    if (!sectionId) return;
+
+    if (target.classList.contains('btn-edit')) {
+      openSectionEditor(sectionId);
+    } else if (target.classList.contains('btn-visibility')) {
+      toggleSectionVisibility(sectionId);
+    } else if (target.classList.contains('btn-delete')) {
+      deleteSection(sectionId);
+    }
+  };
 }
 
 /**
@@ -299,6 +431,12 @@ function setupEventListeners() {
   const addBtn = document.getElementById('btn-add-section');
   if (addBtn) {
     addBtn.addEventListener('click', openAddSectionModal);
+  }
+
+  // カスタムセクション追加ボタン（FAQ下のパネル用）
+  const addCustomBtn = document.getElementById('btn-add-custom-section');
+  if (addCustomBtn) {
+    addCustomBtn.addEventListener('click', openAddCustomSectionModal);
   }
 
   // モーダル閉じるボタン
@@ -506,6 +644,40 @@ function closeAddSectionModal() {
 }
 
 /**
+ * カスタムセクション追加モーダルを開く（動画・カルーセル等のみ）
+ */
+function openAddCustomSectionModal() {
+  const modal = document.getElementById('add-section-modal');
+  const grid = document.getElementById('section-type-grid');
+
+  if (!modal || !grid) return;
+
+  // カスタムセクションタイプのみ表示
+  const coreTypes = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+  const customTypes = Object.entries(SECTION_TYPES)
+    .filter(([type]) => !coreTypes.includes(type));
+
+  grid.innerHTML = customTypes
+    .map(([type, config]) => `
+      <div class="section-type-card" data-type="${type}" ${!canAddSection(type, currentSections) ? 'disabled' : ''}>
+        <span class="type-icon">${config.icon}</span>
+        <span class="type-name">${config.name}</span>
+        ${config.maxInstances === 1 && !canAddSection(type, currentSections) ? '<span class="type-limit">追加済み</span>' : ''}
+      </div>
+    `).join('');
+
+  // クリックイベント
+  grid.querySelectorAll('.section-type-card:not([disabled])').forEach(card => {
+    card.addEventListener('click', () => {
+      addSection(card.dataset.type);
+      closeAddSectionModal();
+    });
+  });
+
+  modal.style.display = 'flex';
+}
+
+/**
  * セクションを追加
  * @param {string} type - セクションタイプ
  */
@@ -518,16 +690,41 @@ export function addSection(type) {
     return;
   }
 
+  // デフォルトのコアセクションタイプ
+  const coreTypes = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+  const isCustomType = !coreTypes.includes(type);
+
+  // カスタムセクションの場合、FAQとapplyの間に挿入
+  let insertOrder;
+  if (isCustomType) {
+    // applyセクションを探す
+    const applySection = currentSections.find(s => s.type === 'apply');
+    if (applySection) {
+      // applyの前に挿入（apply以降のorderを+1）
+      insertOrder = applySection.order;
+      currentSections.forEach(s => {
+        if (s.order >= insertOrder) {
+          s.order += 1;
+        }
+      });
+    } else {
+      insertOrder = currentSections.length;
+    }
+  } else {
+    insertOrder = currentSections.length;
+  }
+
   const newSection = {
     id: generateSectionId(type),
     type: type,
-    order: currentSections.length,
+    order: insertOrder,
     visible: true,
     data: JSON.parse(JSON.stringify(typeConfig.defaultData)),
     layout: JSON.parse(JSON.stringify(typeConfig.defaultLayout))
   };
 
   currentSections.push(newSection);
+  reorderSections();
   renderSectionsList();
   openSectionEditor(newSection.id);
   triggerPreviewUpdate();
@@ -608,14 +805,25 @@ function reorderSections() {
  */
 export function openSectionEditor(sectionId) {
   editingSection = currentSections.find(s => s.id === sectionId);
-  if (!editingSection) return;
+  if (!editingSection) {
+    console.log('[openSectionEditor] Section not found:', sectionId);
+    return;
+  }
+
+  console.log('[openSectionEditor] Opening editor for:', editingSection.type, editingSection);
 
   const modal = document.getElementById('section-editor-modal');
   const title = document.getElementById('section-editor-title');
   const content = document.getElementById('section-editor-content');
   const deleteBtn = document.getElementById('section-delete-btn');
 
+  if (!modal || !content) {
+    console.error('[openSectionEditor] Modal or content element not found');
+    return;
+  }
+
   const typeConfig = SECTION_TYPES[editingSection.type];
+  console.log('[openSectionEditor] Type config:', typeConfig);
   title.textContent = `${typeConfig?.name || editingSection.type}を編集`;
 
   // 削除ボタンの表示制御
@@ -623,7 +831,9 @@ export function openSectionEditor(sectionId) {
     deleteBtn.style.display = typeConfig?.required ? 'none' : 'inline-block';
   }
 
-  content.innerHTML = renderSectionEditorContent(editingSection);
+  const editorHtml = renderSectionEditorContent(editingSection);
+  console.log('[openSectionEditor] Editor HTML length:', editorHtml?.length);
+  content.innerHTML = editorHtml;
   setupEditorEvents();
 
   modal.style.display = 'flex';
@@ -706,6 +916,24 @@ function saveEditorData() {
       editingSection.data.sectionTitle = document.getElementById('editor-testimonial-title')?.value || '社員の声';
       editingSection.data.testimonials = collectTestimonials();
       break;
+
+    case 'carousel':
+      editingSection.data.sectionTitle = document.getElementById('editor-carousel-title')?.value || '';
+      editingSection.data.autoPlay = document.getElementById('editor-carousel-autoplay')?.checked ?? true;
+      editingSection.data.interval = parseInt(document.getElementById('editor-carousel-interval')?.value || '5000');
+      editingSection.layout.showDots = document.getElementById('editor-carousel-dots')?.checked ?? true;
+      editingSection.layout.showArrows = document.getElementById('editor-carousel-arrows')?.checked ?? true;
+      editingSection.data.images = collectCarouselImages();
+      break;
+
+    case 'video':
+      editingSection.data.sectionTitle = document.getElementById('editor-video-title')?.value || '';
+      editingSection.data.videoUrl = document.getElementById('editor-video-url')?.value || '';
+      editingSection.data.videoType = document.getElementById('editor-video-type')?.value || 'youtube';
+      editingSection.data.description = document.getElementById('editor-video-description')?.value || '';
+      editingSection.layout.aspectRatio = document.getElementById('editor-video-aspect')?.value || '16:9';
+      editingSection.layout.fullWidth = document.getElementById('editor-video-fullwidth')?.checked || false;
+      break;
   }
 }
 
@@ -715,6 +943,7 @@ function saveEditorData() {
  * @returns {string} HTML文字列
  */
 function renderSectionEditorContent(section) {
+  console.log('[renderSectionEditorContent] Rendering editor for type:', section.type);
   switch (section.type) {
     case 'hero':
       return renderHeroEditor(section);
@@ -728,11 +957,18 @@ function renderSectionEditorContent(section) {
       return renderGalleryEditor(section);
     case 'testimonial':
       return renderTestimonialEditor(section);
+    case 'carousel':
+      console.log('[renderSectionEditorContent] Rendering carousel editor');
+      return renderCarouselEditor(section);
+    case 'video':
+      console.log('[renderSectionEditorContent] Rendering video editor');
+      return renderVideoEditor(section);
     case 'jobs':
     case 'details':
     case 'apply':
       return renderStaticSectionEditor(section);
     default:
+      console.log('[renderSectionEditorContent] Unknown type, returning default');
       return '<p>このセクションは編集できません</p>';
   }
 }
@@ -1058,6 +1294,242 @@ function renderTestimonialItem(testimonial, index) {
 }
 
 /**
+ * カルーセルエディター
+ */
+function renderCarouselEditor(section) {
+  const images = section.data?.images || [];
+  const autoPlay = section.data?.autoPlay !== false;
+  const interval = section.data?.interval || 5000;
+
+  return `
+    <div class="editor-section">
+      <h4>設定</h4>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="editor-carousel-title">セクションタイトル</label>
+          <input type="text" id="editor-carousel-title" value="${escapeHtml(section.data?.sectionTitle || '')}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="editor-carousel-autoplay" ${autoPlay ? 'checked' : ''}>
+            自動再生
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="editor-carousel-interval">切替間隔（ミリ秒）</label>
+          <input type="number" id="editor-carousel-interval" value="${interval}" min="1000" step="500">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="editor-carousel-dots" ${section.layout?.showDots !== false ? 'checked' : ''}>
+            ドット表示
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="editor-carousel-arrows" ${section.layout?.showArrows !== false ? 'checked' : ''}>
+            矢印表示
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h4>画像一覧</h4>
+      <div id="editor-carousel-list" class="editor-items-list carousel-items">
+        ${images.map((img, i) => renderCarouselItem(img, i)).join('')}
+      </div>
+      <button type="button" id="editor-add-carousel-image" class="btn-add-item">
+        <span>+</span> 画像を追加
+      </button>
+    </div>
+  `;
+}
+
+/**
+ * カルーセルアイテム
+ */
+function renderCarouselItem(image, index) {
+  const url = typeof image === 'string' ? image : image.url;
+  const caption = typeof image === 'object' ? image.caption : '';
+  const alt = typeof image === 'object' ? image.alt : '';
+
+  return `
+    <div class="editor-item carousel-item" data-index="${index}">
+      <div class="editor-item-header">
+        <span class="drag-handle">⋮⋮</span>
+        <span>画像 ${index + 1}</span>
+        <button type="button" class="btn-remove-item" data-index="${index}">×</button>
+      </div>
+      <div class="form-group">
+        <label>画像</label>
+        <div class="carousel-image-uploader-container" data-current-url="${escapeHtml(url || '')}"></div>
+        <input type="hidden" class="carousel-url" value="${escapeHtml(url || '')}">
+      </div>
+      <div class="form-group">
+        <label>キャプション（任意）</label>
+        <input type="text" class="carousel-caption" value="${escapeHtml(caption || '')}" placeholder="画像の説明文">
+      </div>
+      <div class="form-group">
+        <label>代替テキスト（任意）</label>
+        <input type="text" class="carousel-alt" value="${escapeHtml(alt || '')}" placeholder="画像が表示されない場合のテキスト">
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * 動画エディター
+ */
+function renderVideoEditor(section) {
+  const videoUrl = section.data?.videoUrl || '';
+  const videoType = section.data?.videoType || 'youtube';
+  const description = section.data?.description || '';
+  const aspectRatio = section.layout?.aspectRatio || '16:9';
+  const fullWidth = section.layout?.fullWidth || false;
+
+  return `
+    <div class="editor-section">
+      <h4>動画設定</h4>
+      <div class="form-group">
+        <label for="editor-video-title">セクションタイトル</label>
+        <input type="text" id="editor-video-title" value="${escapeHtml(section.data?.sectionTitle || '')}">
+      </div>
+      <div class="form-group">
+        <label for="editor-video-url">動画URL</label>
+        <input type="url" id="editor-video-url" value="${escapeHtml(videoUrl)}" placeholder="https://www.youtube.com/watch?v=xxxxx">
+        <p class="form-hint">YouTube, Vimeo, または直接動画ファイルのURLを入力</p>
+      </div>
+      <div class="form-group">
+        <label for="editor-video-type">動画タイプ</label>
+        <select id="editor-video-type">
+          <option value="youtube" ${videoType === 'youtube' ? 'selected' : ''}>YouTube</option>
+          <option value="vimeo" ${videoType === 'vimeo' ? 'selected' : ''}>Vimeo</option>
+          <option value="tiktok" ${videoType === 'tiktok' ? 'selected' : ''}>TikTok</option>
+          <option value="direct" ${videoType === 'direct' ? 'selected' : ''}>直接ファイル（MP4等）</option>
+          <option value="iframe" ${videoType === 'iframe' ? 'selected' : ''}>その他（iframe）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editor-video-description">説明文（任意）</label>
+        <textarea id="editor-video-description" rows="2" placeholder="動画の説明文">${escapeHtml(description)}</textarea>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h4>表示設定</h4>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="editor-video-aspect">アスペクト比</label>
+          <select id="editor-video-aspect">
+            <option value="16:9" ${aspectRatio === '16:9' ? 'selected' : ''}>16:9（横長）</option>
+            <option value="4:3" ${aspectRatio === '4:3' ? 'selected' : ''}>4:3（標準）</option>
+            <option value="1:1" ${aspectRatio === '1:1' ? 'selected' : ''}>1:1（正方形）</option>
+            <option value="9:16" ${aspectRatio === '9:16' ? 'selected' : ''}>9:16（縦長）</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="editor-video-fullwidth" ${fullWidth ? 'checked' : ''}>
+            全幅表示
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h4>プレビュー</h4>
+      <div id="editor-video-preview" class="video-preview">
+        ${videoUrl ? generateVideoPreview(videoUrl, videoType) : '<p class="preview-empty">URLを入力するとプレビューが表示されます</p>'}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * 動画プレビューを生成
+ */
+function generateVideoPreview(url, type) {
+  if (!url) return '';
+
+  // YouTubeの場合
+  if (type === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) {
+    const videoId = extractYouTubeId(url);
+    if (videoId) {
+      return `
+        <div class="video-preview-card video-preview-youtube">
+          <div class="video-preview-icon">▶️</div>
+          <div class="video-preview-info">
+            <span class="video-preview-type">YouTube</span>
+            <span class="video-preview-id">ID: ${escapeHtml(videoId)}</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Vimeoの場合
+  if (type === 'vimeo' || url.includes('vimeo.com')) {
+    return `
+      <div class="video-preview-card video-preview-vimeo">
+        <div class="video-preview-icon">▶️</div>
+        <div class="video-preview-info">
+          <span class="video-preview-type">Vimeo</span>
+          <span class="video-preview-url">${escapeHtml(url.substring(0, 50))}...</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // TikTokの場合
+  if (type === 'tiktok' || url.includes('tiktok.com')) {
+    return `
+      <div class="video-preview-card video-preview-tiktok">
+        <div class="video-preview-icon">🎵</div>
+        <div class="video-preview-info">
+          <span class="video-preview-type">TikTok</span>
+          <span class="video-preview-url">${escapeHtml(url.substring(0, 50))}...</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // その他
+  return `
+    <div class="video-preview-card video-preview-other">
+      <div class="video-preview-icon">🎬</div>
+      <div class="video-preview-info">
+        <span class="video-preview-type">動画</span>
+        <span class="video-preview-url">${escapeHtml(url.substring(0, 50))}${url.length > 50 ? '...' : ''}</span>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * YouTubeのIDを抽出
+ */
+function extractYouTubeId(url) {
+  let match = url.match(/[?&]v=([^&]+)/);
+  if (match) return match[1];
+
+  match = url.match(/youtu\.be\/([^?&]+)/);
+  if (match) return match[1];
+
+  match = url.match(/youtube\.com\/embed\/([^?&]+)/);
+  if (match) return match[1];
+
+  match = url.match(/youtube\.com\/shorts\/([^?&]+)/);
+  if (match) return match[1];
+
+  return null;
+}
+
+/**
  * 静的セクションエディター
  */
 function renderStaticSectionEditor(section) {
@@ -1131,6 +1603,35 @@ function setupEditorEvents() {
       const index = list.querySelectorAll('.editor-item').length;
       list.insertAdjacentHTML('beforeend', renderTestimonialItem({ name: '', role: '', quote: '' }, index));
       setupRemoveButtons();
+    });
+  }
+
+  // カルーセル画像追加
+  const addCarouselBtn = document.getElementById('editor-add-carousel-image');
+  if (addCarouselBtn) {
+    addCarouselBtn.addEventListener('click', () => {
+      const list = document.getElementById('editor-carousel-list');
+      const index = list.querySelectorAll('.editor-item').length;
+      list.insertAdjacentHTML('beforeend', renderCarouselItem('', index));
+      setupRemoveButtons();
+      setupSingleCarouselUploader(index);
+    });
+  }
+
+  // カルーセル画像アップローダーの設定
+  setupCarouselImageUploaders();
+
+  // 動画URLプレビュー更新
+  const videoUrlInput = document.getElementById('editor-video-url');
+  const videoTypeSelect = document.getElementById('editor-video-type');
+  if (videoUrlInput) {
+    videoUrlInput.addEventListener('input', () => {
+      updateVideoPreview();
+    });
+  }
+  if (videoTypeSelect) {
+    videoTypeSelect.addEventListener('change', () => {
+      updateVideoPreview();
     });
   }
 
@@ -1223,6 +1724,22 @@ function collectGalleryImages() {
     const caption = item.querySelector('.gallery-caption')?.value || '';
     if (url) {
       images.push({ url, caption });
+    }
+  });
+  return images;
+}
+
+/**
+ * カルーセル画像を収集
+ */
+function collectCarouselImages() {
+  const images = [];
+  document.querySelectorAll('#editor-carousel-list .editor-item').forEach(item => {
+    const url = item.querySelector('.carousel-url')?.value || '';
+    const caption = item.querySelector('.carousel-caption')?.value || '';
+    const alt = item.querySelector('.carousel-alt')?.value || '';
+    if (url) {
+      images.push({ url, caption, alt });
     }
   });
   return images;
@@ -1376,6 +1893,94 @@ function setupSingleGalleryUploader(index) {
   container.innerHTML = '';
   container.appendChild(uploader);
   activeImageUploaders[`gallery-${index}`] = uploader;
+}
+
+/**
+ * カルーセル画像アップローダーをセットアップ
+ */
+function setupCarouselImageUploaders() {
+  const list = document.getElementById('editor-carousel-list');
+  if (!list) return;
+
+  const companyDomain = getCompanyDomain?.() || 'default';
+
+  list.querySelectorAll('.carousel-item').forEach((item, index) => {
+    const container = item.querySelector('.carousel-image-uploader-container');
+    if (!container) return;
+
+    const currentUrl = container.dataset.currentUrl || '';
+    const urlInput = item.querySelector('.carousel-url');
+
+    const uploader = createImageUploader({
+      id: `carousel-image-uploader-${index}`,
+      label: '',
+      currentUrl: currentUrl,
+      uploadFn: (file) => uploadLPImage(file, companyDomain),
+      onUpload: (url) => {
+        if (urlInput) urlInput.value = url;
+        triggerPreviewUpdate();
+      }
+    });
+
+    container.innerHTML = '';
+    container.appendChild(uploader);
+    activeImageUploaders[`carousel-${index}`] = uploader;
+  });
+}
+
+/**
+ * 単一のカルーセル画像アップローダーをセットアップ（動的追加用）
+ * @param {number} index - カルーセルアイテムのインデックス
+ */
+function setupSingleCarouselUploader(index) {
+  const list = document.getElementById('editor-carousel-list');
+  if (!list) return;
+
+  const item = list.querySelectorAll('.carousel-item')[index];
+  if (!item) return;
+
+  const container = item.querySelector('.carousel-image-uploader-container');
+  if (!container) return;
+
+  const currentUrl = container.dataset.currentUrl || '';
+  const urlInput = item.querySelector('.carousel-url');
+  const companyDomain = getCompanyDomain?.() || 'default';
+
+  const uploader = createImageUploader({
+    id: `carousel-image-uploader-${index}`,
+    label: '',
+    currentUrl: currentUrl,
+    uploadFn: (file) => uploadLPImage(file, companyDomain),
+    onUpload: (url) => {
+      if (urlInput) urlInput.value = url;
+      triggerPreviewUpdate();
+    }
+  });
+
+  container.innerHTML = '';
+  container.appendChild(uploader);
+  activeImageUploaders[`carousel-${index}`] = uploader;
+}
+
+/**
+ * 動画プレビューを更新
+ */
+function updateVideoPreview() {
+  const previewEl = document.getElementById('editor-video-preview');
+  const urlInput = document.getElementById('editor-video-url');
+  const typeSelect = document.getElementById('editor-video-type');
+
+  if (!previewEl || !urlInput) return;
+
+  const url = urlInput.value.trim();
+  const type = typeSelect?.value || 'youtube';
+
+  if (!url) {
+    previewEl.innerHTML = '<p class="preview-empty">URLを入力するとプレビューが表示されます</p>';
+    return;
+  }
+
+  previewEl.innerHTML = generateVideoPreview(url, type);
 }
 
 export default {
