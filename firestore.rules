@@ -1,6 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // admin_users コレクション - 管理者ユーザー（Google認証）
+    match /admin_users/{userId} {
+      // 認証済みユーザーは読み取り可能
+      allow read: if request.auth != null;
+      // 管理者のみ書き込み可能（本番では管理者判定を追加）
+      allow write: if true;
+    }
+
+    // company_users コレクション - 会社ユーザー（ID/PW認証）
+    match /company_users/{userId} {
+      // 認証済みユーザーまたはログイン時は読み取り可能
+      allow read: if true;
+      // 管理者のみ書き込み可能（本番では管理者判定を追加）
+      allow write: if true;
+    }
+
     // applications コレクション - 応募データ
     match /applications/{docId} {
       // 読み書き全て許可（開発用）

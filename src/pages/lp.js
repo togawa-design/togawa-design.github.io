@@ -8,21 +8,69 @@ import '@shared/jobs-loader.js';
 // UTMパラメータのキー一覧
 const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
+/**
+ * CSVテキストを正しく行に分割（ダブルクォート内の改行を考慮）
+ */
+function splitCSVToRows(csvText) {
+  const rows = [];
+  let currentRow = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+
+    if (char === '"') {
+      if (csvText[i + 1] === '"') {
+        // エスケープされたダブルクォート
+        currentRow += '""';
+        i++;
+      } else {
+        // クォートの開始/終了
+        insideQuotes = !insideQuotes;
+        currentRow += char;
+      }
+    } else if (char === '\n' && !insideQuotes) {
+      // 行の終わり（クォート外）
+      if (currentRow.trim()) {
+        rows.push(currentRow);
+      }
+      currentRow = '';
+    } else if (char === '\r') {
+      // キャリッジリターンは無視
+      continue;
+    } else {
+      currentRow += char;
+    }
+  }
+
+  // 最後の行を追加
+  if (currentRow.trim()) {
+    rows.push(currentRow);
+  }
+
+  return rows;
+}
+
 class CompanyLPPage {
   constructor() {
     this.renderer = new LPRenderer();
     this.editor = new LPEditor();
     this.isEditMode = hasUrlParam('edit');
+    this.jobId = null;
     this.companyDomain = null;
     this.utmParams = {};
     this.lpSettings = null;
+    this.company = null;
+    this.mainJob = null;
   }
 
   async init() {
+    // 求人ID（新形式）または会社ドメイン（旧形式）を取得
+    this.jobId = this.getJobId();
     this.companyDomain = this.getCompanyDomain();
 
-    if (!this.companyDomain) {
-      this.showError('会社が指定されていません。');
+    if (!this.jobId && !this.companyDomain) {
+      this.showError('求人または会社が指定されていません。');
       return;
     }
 
@@ -35,21 +83,85 @@ class CompanyLPPage {
 
       // 会社情報を取得
       const companies = await window.JobsLoader.fetchCompanies();
-      const company = companies?.find(c =>
-        c.companyDomain?.trim() === this.companyDomain &&
-        window.JobsLoader.isCompanyVisible(c)
-      );
 
-      if (!company) {
-        this.showError('指定された会社は見つかりませんでした。');
-        return;
+      if (this.jobId) {
+        // 求人ID形式（新形式）: companyDomain_jobId
+        const [companyDomain, jobIdPart] = this.jobId.split('_');
+
+        this.company = companies?.find(c =>
+          c.companyDomain?.trim() === companyDomain &&
+          window.JobsLoader.isCompanyVisible(c)
+        );
+
+        console.log('[LP] 会社データ:', this.company);
+        console.log('[LP] 会社データのキー:', this.company ? Object.keys(this.company) : []);
+
+        if (!this.company) {
+          this.showError('指定された会社は見つかりませんでした。');
+          return;
+        }
+
+        // 対象の求人を取得
+        const allJobs = await this.fetchJobs(this.company);
+
+        this.mainJob = allJobs.find(j => {
+          // jobId, 求人ID, id のいずれかでマッチング
+          const jid = j.jobId || j['求人ID'] || j.id || '';
+
+          // 完全一致チェック
+          if (jid === jobIdPart || `${companyDomain}_${jid}` === this.jobId) {
+            return true;
+          }
+
+          // job-X フォーマットの場合、数字部分でもマッチング（例: job-1 → 1）
+          if (jobIdPart.startsWith('job-')) {
+            const numPart = jobIdPart.replace('job-', '');
+            if (jid === numPart) {
+              return true;
+            }
+          }
+
+          return false;
+        });
+
+        if (!this.mainJob) {
+          this.showError('指定された求人は見つかりませんでした。');
+          return;
+        }
+
+        // LP設定を取得（求人ID単位）
+        this.lpSettings = await this.fetchLPSettings(this.jobId) || {};
+
+        // プレビューモードの場合、sessionStorageから編集中のデータを読み込む
+        this.lpSettings = this.loadPreviewSettings(this.jobId, this.lpSettings);
+
+      } else {
+        // 会社ドメイン形式（旧形式・後方互換）
+        this.company = companies?.find(c =>
+          c.companyDomain?.trim() === this.companyDomain &&
+          window.JobsLoader.isCompanyVisible(c)
+        );
+
+        if (!this.company) {
+          this.showError('指定された会社は見つかりませんでした。');
+          return;
+        }
+
+        // LP設定を取得（会社単位・旧形式）
+        this.lpSettings = await this.fetchLPSettingsLegacy(this.companyDomain) || {};
+
+        // プレビューモードの場合、sessionStorageから編集中のデータを読み込む
+        this.lpSettings = this.loadPreviewSettings(this.companyDomain, this.lpSettings);
+      }
+
+      // URLパラメータでlayoutStyleをオーバーライド（テスト/プレビュー用）
+      const urlLayoutStyle = getUrlParam('layoutStyle');
+      if (urlLayoutStyle) {
+        this.lpSettings.layoutStyle = urlLayoutStyle;
       }
 
       // 求人データを取得
-      const jobs = await this.fetchJobs(company);
-
-      // LP設定を取得
-      this.lpSettings = await this.fetchLPSettings(this.companyDomain) || {};
+      const jobs = await this.fetchJobs(this.company);
 
       // 広告タグを設置
       this.setupAdTracking(this.lpSettings);
@@ -58,27 +170,41 @@ class CompanyLPPage {
       this.hideLoading();
       const contentEl = document.getElementById('lp-content');
       if (contentEl) {
-        this.renderer.render(company, jobs, this.lpSettings, contentEl);
-        this.setupEventListeners(company);
+        // 新形式の場合はメイン求人を先頭に
+        const orderedJobs = this.mainJob
+          ? [this.mainJob, ...jobs.filter(j => j !== this.mainJob)]
+          : jobs;
+        this.renderer.render(this.company, orderedJobs, this.lpSettings, contentEl);
+        this.setupEventListeners(this.company);
       }
 
       // 編集モードの場合
       if (this.isEditMode) {
-        this.editor.enable(this.lpSettings, this.companyDomain);
+        // jobInfoを構築してエディタに渡す
+        const jobInfo = {
+          company: this.company?.company || '',
+          companyDomain: this.company?.companyDomain || '',
+          title: this.mainJob?.title || ''
+        };
+        this.editor.enable(this.lpSettings, this.jobId || this.companyDomain, jobInfo, this.company, this.mainJob);
       }
 
       // SEO/OGPを更新
-      this.updateSEO(company, jobs, this.lpSettings);
+      this.updateSEO(this.company, this.mainJob ? [this.mainJob] : jobs, this.lpSettings);
 
       // アナリティクス
       if (!this.isEditMode) {
-        this.trackPageView(company);
+        this.trackPageView(this.company);
       }
 
     } catch (error) {
       console.error('LP読み込みエラー:', error);
       this.showError('ページの読み込みに失敗しました。');
     }
+  }
+
+  getJobId() {
+    return getUrlParam('j') || getUrlParam('job') || null;
   }
 
   getCompanyDomain() {
@@ -105,9 +231,11 @@ class CompanyLPPage {
   }
 
   async fetchJobs(company) {
-    if (!company.jobsSheet?.trim()) return [];
+    // jobsSheetから求人データソースを取得（'管理シート'カラムからマッピング）
+    const jobsSource = company.jobsSheet?.trim();
+    if (!jobsSource) return [];
 
-    const companyJobs = await window.JobsLoader.fetchCompanyJobs(company.jobsSheet.trim());
+    const companyJobs = await window.JobsLoader.fetchCompanyJobs(jobsSource);
     if (!companyJobs?.length) return [];
 
     return companyJobs
@@ -121,14 +249,98 @@ class CompanyLPPage {
       }));
   }
 
-  async fetchLPSettings(companyDomain) {
+  // LP設定を取得（求人ID単位・新形式）
+  // 会社の管理シート内のLP設定シートから取得
+  async fetchLPSettings(jobId) {
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${window.JobsLoader.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=LP設定`;
+      // 会社の管理シートURLからスプレッドシートIDを抽出
+      // manageSheetUrl または jobsSheet（管理シート）を使用
+      const manageSheetUrl = this.company?.manageSheetUrl || this.company?.jobsSheet;
+      console.log('[LP] 管理シートURL:', manageSheetUrl);
+      console.log('[LP] 会社データのmanageSheetUrl:', this.company?.manageSheetUrl);
+      console.log('[LP] 会社データのjobsSheet:', this.company?.jobsSheet);
+      if (!manageSheetUrl) {
+        console.log('[LP] 管理シートURLが見つかりません');
+        return null;
+      }
+
+      // extractSpreadsheetIdはURLまたはIDの両方に対応
+      const companySheetId = window.JobsLoader.extractSpreadsheetId(manageSheetUrl);
+      if (!companySheetId) {
+        console.log('[LP] 管理シートIDを抽出できません');
+        return null;
+      }
+      console.log('[LP] 管理シートID:', companySheetId);
+
+      // シート名は日本語なのでURLエンコードが必要
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}`;
+      console.log('[LP] LP設定シートURL:', sheetUrl);
+
       const response = await fetch(sheetUrl);
-      if (!response.ok) return null;
+      console.log('[LP] レスポンスステータス:', response.status);
+      if (!response.ok) {
+        console.log('[LP] LP設定シートが見つかりません（デフォルト設定を使用）');
+        return null;
+      }
 
       const csvText = await response.text();
-      const lines = csvText.split('\n');
+      const lines = splitCSVToRows(csvText);
+      console.log('[LP] CSV取得成功, 行数:', lines.length);
+      const headers = window.JobsLoader.parseCSVLine(lines[0] || '');
+      console.log('[LP] ヘッダー:', headers);
+
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const values = window.JobsLoader.parseCSVLine(lines[i]);
+        const rowData = {};
+        headers.forEach((header, idx) => {
+          rowData[header.replace(/"/g, '').trim()] = values[idx] || '';
+        });
+
+        // 求人IDで検索
+        const rowJobId = rowData.jobId || rowData['求人ID'] || '';
+        console.log('[LP] 行', i, 'のjobId:', rowJobId, '検索中:', jobId);
+        if (rowJobId === jobId) {
+          console.log('[LP] LP設定を発見:', rowData);
+          return this.parseLPSettingsRow(rowData);
+        }
+      }
+      console.log('[LP] 該当するjobIdが見つかりませんでした');
+    } catch (e) {
+      console.log('[LP] LP設定取得エラー:', e.message);
+    }
+    return null;
+  }
+
+  // LP設定を取得（会社ドメイン単位・旧形式・後方互換）
+  // 会社の管理シート内のLP設定シートから取得
+  async fetchLPSettingsLegacy(companyDomain) {
+    try {
+      // 会社の管理シートURLからスプレッドシートIDを抽出
+      // manageSheetUrl または jobsSheet（管理シート）を使用
+      const manageSheetUrl = this.company?.manageSheetUrl || this.company?.jobsSheet;
+      console.log('[LP Legacy] 管理シートURL:', manageSheetUrl);
+      if (!manageSheetUrl) {
+        console.log('[LP Legacy] 管理シートURLが見つかりません');
+        return null;
+      }
+
+      // extractSpreadsheetIdはURLまたはIDの両方に対応
+      const companySheetId = window.JobsLoader.extractSpreadsheetId(manageSheetUrl);
+      if (!companySheetId) {
+        console.log('[LP Legacy] 管理シートIDを抽出できません');
+        return null;
+      }
+      // シート名は日本語なのでURLエンコードが必要
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}`;
+      const response = await fetch(sheetUrl);
+      if (!response.ok) {
+        console.log('[LP Legacy] LP設定シートが見つかりません（デフォルト設定を使用）');
+        return null;
+      }
+
+      const csvText = await response.text();
+      const lines = splitCSVToRows(csvText);
       const headers = window.JobsLoader.parseCSVLine(lines[0] || '');
 
       for (let i = 1; i < lines.length; i++) {
@@ -139,43 +351,106 @@ class CompanyLPPage {
           rowData[header.replace(/"/g, '').trim()] = values[idx] || '';
         });
 
+        // 会社ドメインで検索（旧形式）
         if (rowData.companyDomain === companyDomain || rowData['会社ドメイン'] === companyDomain) {
-          return {
-            heroTitle: rowData.heroTitle || rowData['ヒーロータイトル'] || '',
-            heroSubtitle: rowData.heroSubtitle || rowData['ヒーローサブタイトル'] || '',
-            heroImage: rowData.heroImage || rowData['ヒーロー画像'] || '',
-            ctaText: rowData.ctaText || rowData['CTAテキスト'] || 'この求人に応募する',
-            pointTitle1: rowData.pointTitle1 || rowData['ポイント1タイトル'] || '',
-            pointDesc1: rowData.pointDesc1 || rowData['ポイント1説明'] || '',
-            pointTitle2: rowData.pointTitle2 || rowData['ポイント2タイトル'] || '',
-            pointDesc2: rowData.pointDesc2 || rowData['ポイント2説明'] || '',
-            pointTitle3: rowData.pointTitle3 || rowData['ポイント3タイトル'] || '',
-            pointDesc3: rowData.pointDesc3 || rowData['ポイント3説明'] || '',
-            pointTitle4: rowData.pointTitle4 || rowData['ポイント4タイトル'] || '',
-            pointDesc4: rowData.pointDesc4 || rowData['ポイント4説明'] || '',
-            pointTitle5: rowData.pointTitle5 || rowData['ポイント5タイトル'] || '',
-            pointDesc5: rowData.pointDesc5 || rowData['ポイント5説明'] || '',
-            pointTitle6: rowData.pointTitle6 || rowData['ポイント6タイトル'] || '',
-            pointDesc6: rowData.pointDesc6 || rowData['ポイント6説明'] || '',
-            faq: rowData.faq || rowData['FAQ'] || '',
-            designPattern: rowData.designPattern || rowData['デザインパターン'] || 'standard',
-            sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
-            sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
-            // 広告トラッキング設定
-            tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
-            googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
-            googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
-            // OGP設定
-            ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
-            ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
-            ogpImage: rowData.ogpImage || rowData['OGP画像'] || ''
-          };
+          return this.parseLPSettingsRow(rowData);
         }
       }
     } catch (e) {
-      console.log('LP設定シートが見つかりません（デフォルト設定を使用）');
+      console.log('LP設定取得エラー:', e.message);
     }
     return null;
+  }
+
+  // LP設定行をパース
+  parseLPSettingsRow(rowData) {
+    return {
+      heroTitle: rowData.heroTitle || rowData['ヒーロータイトル'] || '',
+      heroSubtitle: rowData.heroSubtitle || rowData['ヒーローサブタイトル'] || '',
+      heroImage: rowData.heroImage || rowData['ヒーロー画像'] || '',
+      ctaText: rowData.ctaText || rowData['CTAテキスト'] || 'この求人に応募する',
+      pointTitle1: rowData.pointTitle1 || rowData['ポイント1タイトル'] || '',
+      pointDesc1: rowData.pointDesc1 || rowData['ポイント1説明'] || '',
+      pointTitle2: rowData.pointTitle2 || rowData['ポイント2タイトル'] || '',
+      pointDesc2: rowData.pointDesc2 || rowData['ポイント2説明'] || '',
+      pointTitle3: rowData.pointTitle3 || rowData['ポイント3タイトル'] || '',
+      pointDesc3: rowData.pointDesc3 || rowData['ポイント3説明'] || '',
+      pointTitle4: rowData.pointTitle4 || rowData['ポイント4タイトル'] || '',
+      pointDesc4: rowData.pointDesc4 || rowData['ポイント4説明'] || '',
+      pointTitle5: rowData.pointTitle5 || rowData['ポイント5タイトル'] || '',
+      pointDesc5: rowData.pointDesc5 || rowData['ポイント5説明'] || '',
+      pointTitle6: rowData.pointTitle6 || rowData['ポイント6タイトル'] || '',
+      pointDesc6: rowData.pointDesc6 || rowData['ポイント6説明'] || '',
+      faq: rowData.faq || rowData['FAQ'] || '',
+      designPattern: rowData.designPattern || rowData['デザインパターン'] || 'standard',
+      layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'default',
+      sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
+      sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
+      // 広告トラッキング設定
+      tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
+      googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
+      googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
+      // OGP設定
+      ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
+      ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
+      ogpImage: rowData.ogpImage || rowData['OGP画像'] || '',
+      // 新形式v2 LP構成データ
+      lpContent: rowData.lpContent || rowData['LP構成'] || ''
+    };
+  }
+
+  /**
+   * プレビューモード時にsessionStorageから編集中のデータを読み込む
+   */
+  loadPreviewSettings(jobId, baseSettings) {
+    // previewパラメータがない場合はそのまま返す
+    if (!hasUrlParam('preview')) {
+      return baseSettings;
+    }
+
+    const previewKey = `lp_preview_${jobId}`;
+    const previewDataStr = sessionStorage.getItem(previewKey);
+
+    if (!previewDataStr) {
+      console.log('[LP] プレビューデータが見つかりません');
+      return baseSettings;
+    }
+
+    try {
+      const previewData = JSON.parse(previewDataStr);
+
+      // 5分以上前のデータは無効とする
+      const maxAge = 5 * 60 * 1000; // 5分
+      if (Date.now() - previewData.timestamp > maxAge) {
+        console.log('[LP] プレビューデータが古いため破棄');
+        sessionStorage.removeItem(previewKey);
+        return baseSettings;
+      }
+
+      console.log('[LP] プレビューモード: 編集中のデータを使用', previewData.lpSettings);
+
+      // プレビューバナーを表示
+      this.showPreviewBanner();
+
+      // 使用後は削除しない（同じタブでリロードしても表示できるように）
+      return previewData.lpSettings;
+    } catch (e) {
+      console.error('[LP] プレビューデータの読み込みエラー:', e);
+      return baseSettings;
+    }
+  }
+
+  /**
+   * プレビューモードのバナーを表示
+   */
+  showPreviewBanner() {
+    const banner = document.createElement('div');
+    banner.className = 'lp-preview-banner';
+    banner.innerHTML = `
+      <span>プレビューモード - 保存されていない変更を表示中</span>
+      <button type="button" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.body.insertBefore(banner, document.body.firstChild);
   }
 
   hideLoading() {
@@ -350,13 +625,16 @@ class CompanyLPPage {
       }
     });
 
+    // セッションストレージのキー（jobId優先、なければcompanyDomain）
+    const storageKey = this.jobId ? `utm_params_job_${this.jobId}` : `utm_params_${this.companyDomain}`;
+
     // セッションストレージに保存（応募時に参照するため）
     if (Object.keys(this.utmParams).length > 0) {
-      sessionStorage.setItem(`utm_params_${this.companyDomain}`, JSON.stringify(this.utmParams));
+      sessionStorage.setItem(storageKey, JSON.stringify(this.utmParams));
       console.log('[LP] UTM params captured:', this.utmParams);
     } else {
       // 保存済みのUTMパラメータがあれば復元
-      const saved = sessionStorage.getItem(`utm_params_${this.companyDomain}`);
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) {
         try {
           this.utmParams = JSON.parse(saved);

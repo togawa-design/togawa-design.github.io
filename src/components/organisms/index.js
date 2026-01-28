@@ -7,3 +7,10 @@ export { renderJobsSection } from './JobsSection.js';
 export { renderDetailsSection } from './DetailsSection.js';
 export { renderFAQSection } from './FAQSection.js';
 export { renderApplySection } from './ApplySection.js';
+
+// 新セクションコンポーネント
+export { renderCustomSection } from './CustomSection.js';
+export { renderGallerySection } from './GallerySection.js';
+export { renderTestimonialSection } from './TestimonialSection.js';
+export { renderCarouselSection, initCarousels } from './CarouselSection.js';
+export { renderVideoSection } from './VideoSection.js';

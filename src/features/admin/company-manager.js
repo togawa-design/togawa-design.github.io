@@ -18,9 +18,10 @@ export function getCompaniesCache() {
 // 会社一覧データを読み込み
 export async function loadCompanyManageData() {
   const tbody = document.getElementById('company-manage-tbody');
-  if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  }
 
   try {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetConfig.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(spreadsheetConfig.companySheetName)}`;
@@ -46,17 +47,21 @@ export async function loadCompanyManageData() {
       return company;
     });
 
-    if (companies.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">会社データがありません</td></tr>';
-      return;
-    }
-
     companiesCache = companies;
-    renderCompanyTable();
+
+    if (tbody) {
+      if (companies.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">会社データがありません</td></tr>';
+        return;
+      }
+      renderCompanyTable();
+    }
 
   } catch (error) {
     console.error('会社データの読み込みエラー:', error);
-    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データの読み込みに失敗しました</td></tr>';
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データの読み込みに失敗しました</td></tr>';
+    }
   }
 }
 

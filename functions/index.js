@@ -376,7 +376,8 @@ async function getApplicationData(client, days) {
         { name: 'dateHourMinute' },
         { name: 'customEvent:company_name' },
         { name: 'customEvent:button_type' },
-        { name: 'sessionDefaultChannelGroup' }
+        { name: 'sessionDefaultChannelGroup' },
+        { name: 'pagePath' }
       ],
       metrics: [{ name: 'eventCount' }],
       dimensionFilter: {
@@ -399,11 +400,30 @@ async function getApplicationData(client, days) {
       const hour = dateHourMinute.substring(8, 10);
       const minute = dateHourMinute.substring(10, 12);
 
+      const buttonType = row.dimensionValues[2].value;
+      const pagePath = row.dimensionValues[4].value || '';
+
+      // ページパスから画面種別を判定
+      let pageType = '不明';
+      if (pagePath.includes('/lp.html') || pagePath.includes('/lp?')) {
+        pageType = 'LP';
+      } else if (pagePath.includes('/job-detail.html') || pagePath.includes('/job/')) {
+        pageType = '求人詳細';
+      } else if (pagePath.includes('/company.html') || pagePath.includes('/company/')) {
+        pageType = '企業ページ';
+      } else if (pagePath === '/' || pagePath.includes('/index.html')) {
+        pageType = 'トップページ';
+      } else if (pagePath) {
+        pageType = pagePath;
+      }
+
       return {
         date: `${year}/${month}/${day} ${hour}:${minute}`,
         company: row.dimensionValues[1].value || '不明',
-        type: row.dimensionValues[2].value || 'apply',
-        source: row.dimensionValues[3].value || '不明'
+        type: (buttonType && buttonType !== '(not set)') ? buttonType : 'apply',
+        source: row.dimensionValues[3].value || '不明',
+        pagePath,
+        pageType
       };
     }) || [];
   } catch (error) {
@@ -416,7 +436,8 @@ async function getApplicationData(client, days) {
         dateRanges: [{ startDate, endDate }],
         dimensions: [
           { name: 'dateHourMinute' },
-          { name: 'sessionDefaultChannelGroup' }
+          { name: 'sessionDefaultChannelGroup' },
+          { name: 'pagePath' }
         ],
         metrics: [{ name: 'eventCount' }],
         dimensionFilter: {
@@ -439,11 +460,29 @@ async function getApplicationData(client, days) {
         const hour = dateHourMinute.substring(8, 10);
         const minute = dateHourMinute.substring(10, 12);
 
+        const pagePath = row.dimensionValues[2].value || '';
+
+        // ページパスから画面種別を判定
+        let pageType = '不明';
+        if (pagePath.includes('/lp.html') || pagePath.includes('/lp?')) {
+          pageType = 'LP';
+        } else if (pagePath.includes('/job-detail.html') || pagePath.includes('/job/')) {
+          pageType = '求人詳細';
+        } else if (pagePath.includes('/company.html') || pagePath.includes('/company/')) {
+          pageType = '企業ページ';
+        } else if (pagePath === '/' || pagePath.includes('/index.html')) {
+          pageType = 'トップページ';
+        } else if (pagePath) {
+          pageType = pagePath;
+        }
+
         return {
           date: `${year}/${month}/${day} ${hour}:${minute}`,
           company: '不明',
           type: 'apply',
-          source: row.dimensionValues[1].value || '不明'
+          source: row.dimensionValues[1].value || '不明',
+          pagePath,
+          pageType
         };
       }) || [];
     } catch (simpleError) {
@@ -1058,25 +1097,119 @@ async function getCompanyDetailData(client, days, domain) {
       console.warn('Age data not available (Google Signals may not be enabled):', ageError.message);
     }
 
+    // デバイス別データを取得
+    let devices = [];
+    try {
+      const [deviceResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'deviceCategory' }],
+        metrics: [{ name: 'totalUsers' }],
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              {
+                filter: {
+                  fieldName: 'eventName',
+                  stringFilter: { value: 'view_company_page' }
+                }
+              },
+              {
+                filter: {
+                  fieldName: 'customEvent:company_domain',
+                  stringFilter: { value: domain }
+                }
+              }
+            ]
+          }
+        },
+        orderBys: [
+          { metric: { metricName: 'totalUsers' }, desc: true }
+        ]
+      });
+
+      devices = deviceResponse.rows?.map(row => {
+        const count = parseInt(row.metricValues[0].value) || 0;
+        return {
+          device: row.dimensionValues[0].value,
+          users: count,
+          sessions: count  // フロントエンド互換性のため
+        };
+      }) || [];
+    } catch (deviceError) {
+      console.warn('Device data failed:', deviceError.message);
+    }
+
     // サマリー計算
     const totalViews = daily.reduce((sum, d) => sum + d.views, 0);
     const avgDailyViews = daily.length > 0 ? (totalViews / daily.length).toFixed(1) : 0;
+
+    // ユニークユーザー数と平均滞在時間を取得
+    let totalUsers = 0;
+    let avgSessionDuration = 0;
+    try {
+      const [userMetricsResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        metrics: [
+          { name: 'totalUsers' },
+          { name: 'userEngagementDuration' }
+        ],
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              {
+                filter: {
+                  fieldName: 'eventName',
+                  stringFilter: { value: 'view_company_page' }
+                }
+              },
+              {
+                filter: {
+                  fieldName: 'customEvent:company_domain',
+                  stringFilter: { value: domain }
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      const userMetrics = userMetricsResponse.rows?.[0]?.metricValues || [];
+      totalUsers = parseInt(userMetrics[0]?.value) || 0;
+      const totalEngagementTime = parseFloat(userMetrics[1]?.value) || 0;
+      avgSessionDuration = totalUsers > 0 ? totalEngagementTime / totalUsers : 0;
+    } catch (userMetricsError) {
+      console.warn('User metrics data failed:', userMetricsError.message);
+    }
+
+    // 求人別パフォーマンスデータを取得
+    const jobPerformance = await getJobPerformanceData(client, days, domain);
+
+    // 平均閲覧求人数を計算（求人閲覧数 / ユニークユーザー数）
+    const totalJobViews = jobPerformance.jobs?.reduce((sum, j) => sum + j.views, 0) || 0;
+    const avgJobsViewed = totalUsers > 0 ? (totalJobViews / totalUsers).toFixed(1) : 0;
 
     return {
       domain,
       daily,
       traffic,
+      devices,
       gender,
       age,
+      jobs: jobPerformance.jobs || [],
       summary: {
         totalViews,
+        totalUsers,
         avgDailyViews: parseFloat(avgDailyViews),
+        avgSessionDuration: parseFloat(avgSessionDuration.toFixed(1)),
+        avgJobsViewed: parseFloat(avgJobsViewed),
         topChannel: traffic[0]?.channel || 'データなし'
       }
     };
   } catch (error) {
     console.error('Company detail data error:', error.message);
-    return { domain, daily: [], traffic: [], gender: {}, age: {}, summary: {} };
+    return { domain, daily: [], traffic: [], devices: [], gender: {}, age: {}, jobs: [], summary: {} };
   }
 }
 
@@ -1189,7 +1322,7 @@ async function getJobPerformanceData(client, days, companyDomain = null) {
         jobId,
         jobTitle,
         views,
-        clicks,
+        applications: clicks,
         cvr: parseFloat(cvr)
       };
     }) || [];
@@ -1217,8 +1350,8 @@ async function getJobPerformanceData(client, days, companyDomain = null) {
 
     // サマリー
     const totalViews = jobs.reduce((sum, j) => sum + j.views, 0);
-    const totalClicks = jobs.reduce((sum, j) => sum + j.clicks, 0);
-    const overallCvr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : '0.0';
+    const totalApplications = jobs.reduce((sum, j) => sum + j.applications, 0);
+    const overallCvr = totalViews > 0 ? ((totalApplications / totalViews) * 100).toFixed(1) : '0.0';
 
     return {
       jobs,
@@ -1226,7 +1359,7 @@ async function getJobPerformanceData(client, days, companyDomain = null) {
       summary: {
         totalJobs: jobs.length,
         totalViews,
-        totalClicks,
+        totalApplications,
         overallCvr: parseFloat(overallCvr),
         topJob: jobs[0] || null
       }
@@ -1243,22 +1376,44 @@ async function getJobPerformanceData(client, days, companyDomain = null) {
 async function getRecentApplications(companyDomain = null, limit = 20) {
   try {
     const db = admin.firestore();
-    let query = db.collection('applications')
-      .orderBy('createdAt', 'desc')
-      .limit(limit);
+    let snapshot;
 
-    // 企業ドメイン指定がある場合はフィルター
+    console.log('[getRecentApplications] Query params:', { companyDomain, limit });
+
+    // 企業ドメイン指定がある場合
     if (companyDomain) {
-      query = db.collection('applications')
-        .where('companyDomain', '==', companyDomain)
+      try {
+        // まずフィルタなしで全件取得してみる（デバッグ用）
+        const allDocsSnapshot = await db.collection('applications').limit(5).get();
+        console.log('[getRecentApplications] All docs count (without filter):', allDocsSnapshot.docs.length);
+        allDocsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          console.log('[getRecentApplications] Sample doc:', { id: doc.id, companyDomain: data.companyDomain, type: typeof data.companyDomain });
+        });
+
+        // フィルター付きクエリ（インデックス不要版）
+        const query = db.collection('applications')
+          .where('companyDomain', '==', companyDomain)
+          .limit(limit);
+        snapshot = await query.get();
+        console.log('[getRecentApplications] Filtered query result:', snapshot.docs.length);
+      } catch (queryError) {
+        console.error('[getRecentApplications] Query error:', queryError.message);
+        console.error('[getRecentApplications] Full query error:', JSON.stringify(queryError, null, 2));
+        snapshot = { docs: [] };
+      }
+    } else {
+      const query = db.collection('applications')
         .orderBy('createdAt', 'desc')
         .limit(limit);
+      snapshot = await query.get();
     }
 
-    const snapshot = await query.get();
+    console.log('[getRecentApplications] Found docs:', snapshot.docs.length);
 
-    const applications = snapshot.docs.map(doc => {
+    let applications = snapshot.docs.map(doc => {
       const data = doc.data();
+      console.log('[getRecentApplications] Doc data:', { id: doc.id, companyDomain: data.companyDomain, jobTitle: data.jobTitle });
       const timestamp = data.createdAt?.toDate() || data.timestamp || new Date();
 
       return {
@@ -1270,9 +1425,17 @@ async function getRecentApplications(companyDomain = null, limit = 20) {
         type: data.type || 'apply',
         source: parseSource(data.source),
         date: formatApplicationDate(timestamp),
-        timestamp: timestamp.toISOString()
+        timestamp: timestamp.toISOString(),
+        _sortTime: timestamp.getTime()
       };
     });
+
+    // 手動ソート（フォールバック時用）
+    applications.sort((a, b) => b._sortTime - a._sortTime);
+    applications = applications.slice(0, limit);
+
+    // _sortTimeを削除
+    applications.forEach(app => delete app._sortTime);
 
     return {
       applications,
@@ -1280,6 +1443,7 @@ async function getRecentApplications(companyDomain = null, limit = 20) {
     };
   } catch (error) {
     console.error('Recent applications error:', error.message);
+    console.error('Full error:', JSON.stringify(error, null, 2));
     return { applications: [], total: 0 };
   }
 }

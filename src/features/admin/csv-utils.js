@@ -51,7 +51,12 @@ export function normalizeHeader(header) {
     'order': 'order',
     '管理シート': 'manageSheetUrl',
     '管理シートURL': 'manageSheetUrl',
-    'manageSheetUrl': 'manageSheetUrl'
+    'manageSheetUrl': 'manageSheetUrl',
+    '求人シート': 'jobsSheet',
+    '求人管理シート': 'jobsSheet',
+    '求人一覧シート': 'jobsSheet',
+    'jobs_sheet': 'jobsSheet',
+    'jobsSheet': 'jobsSheet'
   };
   const cleanHeader = header.replace(/"/g, '').trim();
   return mapping[cleanHeader] || cleanHeader;

@@ -19,9 +19,9 @@
  * ※HTML対応フィールドは<b>、<i>、<u>、<ul>、<ol>、<li>タグを許可
  */
 
-const SPREADSHEET_ID = '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0';
-const COMPANY_SHEET_NAME = '会社一覧';
-const LP_SETTINGS_SHEET_NAME = 'LP設定';
+const SPREADSHEET_ID = "1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0";
+const COMPANY_SHEET_NAME = "会社一覧";
+const LP_SETTINGS_SHEET_NAME = "LP設定";
 
 // --- API エントリポイント (doGet/doPost) ---
 
@@ -29,26 +29,39 @@ function doGet(e) {
   const action = e.parameter.action;
   let result;
   try {
-    if (action === 'post' && e.parameter.data) {
-      const decodedData = Utilities.newBlob(Utilities.base64Decode(e.parameter.data)).getDataAsString('UTF-8');
+    if (action === "post" && e.parameter.data) {
+      const decodedData = Utilities.newBlob(
+        Utilities.base64Decode(e.parameter.data),
+      ).getDataAsString("UTF-8");
       const data = JSON.parse(decodedData);
       result = handlePostAction(data);
     } else {
       switch (action) {
-        case 'getCompanies': result = getCompanies(); break;
-        case 'getLPSettings': result = getLPSettings(e.parameter.domain); break;
-        case 'getJobs': result = getJobs(e.parameter.domain); break;
-        default: result = { error: 'Unknown action' };
+        case "getCompanies":
+          result = getCompanies();
+          break;
+        case "getLPSettings":
+          result = getLPSettings(e.parameter.domain);
+          break;
+        case "getJobs":
+          result = getJobs(e.parameter.domain);
+          break;
+        default:
+          result = { error: "Unknown action" };
       }
     }
   } catch (error) {
     result = { success: false, error: error.message };
   }
-  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(
+    ContentService.MimeType.JSON,
+  );
 }
 
 function doPost(e) {
-  const output = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
+  const output = ContentService.createTextOutput().setMimeType(
+    ContentService.MimeType.JSON,
+  );
   try {
     const data = JSON.parse(e.postData.contents);
     const result = handlePostAction(data);
@@ -61,13 +74,20 @@ function doPost(e) {
 
 function handlePostAction(data) {
   switch (data.action) {
-    case 'saveCompany': return saveCompany(data.company);
-    case 'saveLPSettings': return saveLPSettings(data.settings);
-    case 'deleteCompany': return deleteCompany(data.domain);
-    case 'getJobs': return getJobs(data.companyDomain);
-    case 'saveJob': return saveJob(data.companyDomain, data.job, data.rowIndex);
-    case 'deleteJob': return deleteJob(data.companyDomain, data.rowIndex);
-    default: return { success: false, error: 'Unknown action' };
+    case "saveCompany":
+      return saveCompany(data.company);
+    case "saveLPSettings":
+      return saveLPSettings(data.settings);
+    case "deleteCompany":
+      return deleteCompany(data.domain);
+    case "getJobs":
+      return getJobs(data.companyDomain);
+    case "saveJob":
+      return saveJob(data.companyDomain, data.job, data.rowIndex);
+    case "deleteJob":
+      return deleteJob(data.companyDomain, data.rowIndex);
+    default:
+      return { success: false, error: "Unknown action" };
   }
 }
 
@@ -80,20 +100,21 @@ function saveCompany(companyData) {
   if (!sheet) {
     sheet = ss.insertSheet(COMPANY_SHEET_NAME);
     const headers = [
-      "ID",              // A列 (1)
-      "会社名",          // B列 (2)
-      "説明",            // C列 (3) - HTML対応
-      "お仕事内容",      // D列 (4) - HTML対応
-      "勤務時間",        // E列 (5) - HTML対応
-      "会社住所",        // F列 (6)
+      "ID", // A列 (1)
+      "会社名", // B列 (2)
+      "説明", // C列 (3) - HTML対応
+      "お仕事内容", // D列 (4) - HTML対応
+      "勤務時間", // E列 (5) - HTML対応
+      "会社住所", // F列 (6)
       "デザインパターン", // G列 (7)
-      "画像URL",         // H列 (8)
-      "並び順",          // I列 (9)
-      "表示する",        // J列 (10)
-      "", "",            // K, L列 (予備)
-      "company_domain",  // M列 (13)
-      "",                // N列 (予備)
-      "管理シートURL"    // O列 (15)
+      "画像URL", // H列 (8)
+      "並び順", // I列 (9)
+      "表示する", // J列 (10)
+      "",
+      "", // K, L列 (予備)
+      "company_domain", // M列 (13)
+      "", // N列 (予備)
+      "管理シートURL", // O列 (15)
     ];
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -104,19 +125,30 @@ function saveCompany(companyData) {
 
   // 列番号マッピング（ヘッダーから動的に取得）
   const COL = {
-    ID: getColIndex(headers, ['ID', 'id']) + 1,
-    NAME: getColIndex(headers, ['会社名', 'company']) + 1,
-    DESC: getColIndex(headers, ['説明', 'description']) + 1,
-    JOB_CONTENT: getColIndex(headers, ['お仕事内容', '仕事内容', 'jobContent', 'jobDescription']) + 1,
-    WORKING_HOURS: getColIndex(headers, ['勤務時間', 'workingHours']) + 1,
-    COMPANY_ADDRESS: getColIndex(headers, ['会社住所', 'companyAddress']) + 1,
-    WORK_LOCATION: getColIndex(headers, ['勤務地', 'workLocation']) + 1,
-    DESIGN: getColIndex(headers, ['デザインパターン', 'designPattern']) + 1,
-    IMAGE: getColIndex(headers, ['画像URL', 'imageUrl']) + 1,
-    ORDER: getColIndex(headers, ['並び順', 'order']) + 1,
-    VISIBLE: getColIndex(headers, ['表示する', 'showCompany', 'visible']) + 1,
-    DOMAIN: getColIndex(headers, ['company_domain', 'companyDomain', '会社ドメイン']) + 1,
-    SHEET_URL: getColIndex(headers, ['管理シートURL', 'manageSheetUrl']) + 1
+    ID: getColIndex(headers, ["ID", "id"]) + 1,
+    NAME: getColIndex(headers, ["会社名", "company"]) + 1,
+    DESC: getColIndex(headers, ["説明", "description"]) + 1,
+    JOB_CONTENT:
+      getColIndex(headers, [
+        "お仕事内容",
+        "仕事内容",
+        "jobContent",
+        "jobDescription",
+      ]) + 1,
+    WORKING_HOURS: getColIndex(headers, ["勤務時間", "workingHours"]) + 1,
+    COMPANY_ADDRESS: getColIndex(headers, ["会社住所", "companyAddress"]) + 1,
+    WORK_LOCATION: getColIndex(headers, ["勤務地", "workLocation"]) + 1,
+    DESIGN: getColIndex(headers, ["デザインパターン", "designPattern"]) + 1,
+    IMAGE: getColIndex(headers, ["画像URL", "imageUrl"]) + 1,
+    ORDER: getColIndex(headers, ["並び順", "order"]) + 1,
+    VISIBLE: getColIndex(headers, ["表示する", "showCompany", "visible"]) + 1,
+    DOMAIN:
+      getColIndex(headers, [
+        "company_domain",
+        "companyDomain",
+        "会社ドメイン",
+      ]) + 1,
+    SHEET_URL: getColIndex(headers, ["管理シートURL", "manageSheetUrl"]) + 1,
   };
 
   // ドメインで既存行を検索
@@ -136,20 +168,51 @@ function saveCompany(companyData) {
     // 新規行を追加
     finalRow = sheet.getLastRow() + 1;
     if (COL.ID > 0) sheet.getRange(finalRow, COL.ID).setValue(finalRow - 1);
-    if (COL.DOMAIN > 0) sheet.getRange(finalRow, COL.DOMAIN).setValue(companyData.companyDomain || "");
+    if (COL.DOMAIN > 0)
+      sheet
+        .getRange(finalRow, COL.DOMAIN)
+        .setValue(companyData.companyDomain || "");
   }
 
   // 各フィールドを更新（列が存在する場合のみ）
-  if (COL.NAME > 0) sheet.getRange(finalRow, COL.NAME).setValue(companyData.company || "");
-  if (COL.DESC > 0) sheet.getRange(finalRow, COL.DESC).setValue(sanitizeHtml(companyData.description || ""));
-  if (COL.JOB_CONTENT > 0) sheet.getRange(finalRow, COL.JOB_CONTENT).setValue(sanitizeHtml(companyData.jobDescription || companyData.jobContent || ""));
-  if (COL.WORKING_HOURS > 0) sheet.getRange(finalRow, COL.WORKING_HOURS).setValue(sanitizeHtml(companyData.workingHours || ""));
-  if (COL.COMPANY_ADDRESS > 0) sheet.getRange(finalRow, COL.COMPANY_ADDRESS).setValue(companyData.companyAddress || "");
-  if (COL.WORK_LOCATION > 0) sheet.getRange(finalRow, COL.WORK_LOCATION).setValue(sanitizeHtml(companyData.workLocation || ""));
-  if (COL.DESIGN > 0) sheet.getRange(finalRow, COL.DESIGN).setValue(companyData.designPattern || "standard");
-  if (COL.IMAGE > 0) sheet.getRange(finalRow, COL.IMAGE).setValue(companyData.imageUrl || "");
-  if (COL.ORDER > 0) sheet.getRange(finalRow, COL.ORDER).setValue(companyData.order || "");
-  if (COL.VISIBLE > 0) sheet.getRange(finalRow, COL.VISIBLE).setValue(companyData.showCompany || companyData.visible || "");
+  if (COL.NAME > 0)
+    sheet.getRange(finalRow, COL.NAME).setValue(companyData.company || "");
+  if (COL.DESC > 0)
+    sheet
+      .getRange(finalRow, COL.DESC)
+      .setValue(sanitizeHtml(companyData.description || ""));
+  if (COL.JOB_CONTENT > 0)
+    sheet
+      .getRange(finalRow, COL.JOB_CONTENT)
+      .setValue(
+        sanitizeHtml(
+          companyData.jobDescription || companyData.jobContent || "",
+        ),
+      );
+  if (COL.WORKING_HOURS > 0)
+    sheet
+      .getRange(finalRow, COL.WORKING_HOURS)
+      .setValue(sanitizeHtml(companyData.workingHours || ""));
+  if (COL.COMPANY_ADDRESS > 0)
+    sheet
+      .getRange(finalRow, COL.COMPANY_ADDRESS)
+      .setValue(companyData.companyAddress || "");
+  if (COL.WORK_LOCATION > 0)
+    sheet
+      .getRange(finalRow, COL.WORK_LOCATION)
+      .setValue(sanitizeHtml(companyData.workLocation || ""));
+  if (COL.DESIGN > 0)
+    sheet
+      .getRange(finalRow, COL.DESIGN)
+      .setValue(companyData.designPattern || "standard");
+  if (COL.IMAGE > 0)
+    sheet.getRange(finalRow, COL.IMAGE).setValue(companyData.imageUrl || "");
+  if (COL.ORDER > 0)
+    sheet.getRange(finalRow, COL.ORDER).setValue(companyData.order || "");
+  if (COL.VISIBLE > 0)
+    sheet
+      .getRange(finalRow, COL.VISIBLE)
+      .setValue(companyData.showCompany || companyData.visible || "");
 
   // フォルダ・管理シート作成（管理シートURL列が空の場合のみ）
   const domain = companyData.companyDomain;
@@ -160,13 +223,13 @@ function saveCompany(companyData) {
     }
   }
 
-  return { success: true, id: (finalRow - 1), rowIndex: finalRow };
+  return { success: true, id: finalRow - 1, rowIndex: finalRow };
 }
 
 // ヘッダー配列から列インデックスを取得（0ベース、見つからない場合は-1）
 function getColIndex(headers, names) {
   for (const name of names) {
-    const idx = headers.findIndex(h => String(h).trim() === name);
+    const idx = headers.findIndex((h) => String(h).trim() === name);
     if (idx >= 0) return idx;
   }
   return -1;
@@ -174,36 +237,51 @@ function getColIndex(headers, names) {
 
 // HTMLサニタイズ（許可タグのみ残す）
 function sanitizeHtml(html) {
-  if (!html) return '';
+  if (!html) return "";
 
   // 許可するタグ
-  const allowedTags = ['b', 'strong', 'i', 'em', 'u', 'ul', 'ol', 'li', 'br', 'div', 'p'];
+  const allowedTags = [
+    "b",
+    "strong",
+    "i",
+    "em",
+    "u",
+    "ul",
+    "ol",
+    "li",
+    "br",
+    "div",
+    "p",
+  ];
 
   // 許可されていないタグを削除（内容は残す）
   let sanitized = html;
 
   // script, styleタグは完全削除
-  sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
 
   // on*イベントハンドラを削除
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]*/gi, '');
+  sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "");
+  sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]*/gi, "");
 
   // javascript:リンクを削除
-  sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
+  sanitized = sanitized.replace(
+    /href\s*=\s*["']javascript:[^"']*["']/gi,
+    'href="#"',
+  );
 
   // 許可されたタグ以外のタグを削除（開始タグと終了タグ）
   const tagPattern = /<\/?([a-z][a-z0-9]*)[^>]*>/gi;
   sanitized = sanitized.replace(tagPattern, (match, tagName) => {
     if (allowedTags.includes(tagName.toLowerCase())) {
       // 許可タグの属性を全て削除
-      if (match.startsWith('</')) {
+      if (match.startsWith("</")) {
         return `</${tagName.toLowerCase()}>`;
       }
       return `<${tagName.toLowerCase()}>`;
     }
-    return ''; // 許可されていないタグは削除
+    return ""; // 許可されていないタグは削除
   });
 
   return sanitized;
@@ -240,7 +318,9 @@ function onEdit(e) {
 
 function createCompanyAssets(domainName, sheet, row) {
   try {
-    const parentFolder = DriveApp.getFileById(sheet.getParent().getId()).getParents().next();
+    const parentFolder = DriveApp.getFileById(sheet.getParent().getId())
+      .getParents()
+      .next();
     const existingFolders = parentFolder.getFoldersByName(domainName);
     if (existingFolders.hasNext()) return;
 
@@ -249,11 +329,52 @@ function createCompanyAssets(domainName, sheet, row) {
     const newSs = SpreadsheetApp.create(fileName);
     const newFile = DriveApp.getFileById(newSs.getId());
 
-    newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    newFile.setSharing(
+      DriveApp.Access.ANYONE_WITH_LINK,
+      DriveApp.Permission.VIEW,
+    );
 
     const targetSheet = newSs.getSheets()[0];
-    const h1 = [["id", "title", "location", "totalBonus", "monthlySalary", "features", "badges", "jobDescription", "requirements", "benefits", "workingHours", "holidays", "visible", "order", "publishStartDate", "publishEndDate"]];
-    const h2 = [["管理ID", "募集タイトル", "勤務地", "賞与合計", "月収", "特徴", "バッジ", "仕事内容", "応募資格", "福利厚生", "勤務時間", "休日", "表示(true/false)", "表示順", "掲載開始日(YYYY/MM/DD)", "掲載終了日(YYYY/MM/DD)"]];
+    const h1 = [
+      [
+        "id",
+        "title",
+        "location",
+        "totalBonus",
+        "monthlySalary",
+        "features",
+        "badges",
+        "jobDescription",
+        "requirements",
+        "benefits",
+        "workingHours",
+        "holidays",
+        "visible",
+        "order",
+        "publishStartDate",
+        "publishEndDate",
+      ],
+    ];
+    const h2 = [
+      [
+        "管理ID",
+        "募集タイトル",
+        "勤務地",
+        "賞与合計",
+        "月収",
+        "特徴",
+        "バッジ",
+        "仕事内容",
+        "応募資格",
+        "福利厚生",
+        "勤務時間",
+        "休日",
+        "表示(true/false)",
+        "表示順",
+        "掲載開始日(YYYY/MM/DD)",
+        "掲載終了日(YYYY/MM/DD)",
+      ],
+    ];
 
     targetSheet.getRange("A1:P1").setValues(h1);
     targetSheet.getRange("A2:P2").setValues(h2);
@@ -270,7 +391,6 @@ function createCompanyAssets(domainName, sheet, row) {
     // ついでにB列の会社名が空ならドメイン名を入れておく
     const nameCell = sheet.getRange(row, 2);
     if (nameCell.getValue() === "") nameCell.setValue(domainName);
-
   } catch (err) {
     console.error(`Assets Error: ${err.message}`);
   }
@@ -281,17 +401,20 @@ function createCompanyAssets(domainName, sheet, row) {
 function getCompanies() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(COMPANY_SHEET_NAME);
-  if (!sheet) return { success: false, error: 'シートが見つかりません' };
+  if (!sheet) return { success: false, error: "シートが見つかりません" };
 
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
-  const companies = data.slice(1).filter(r => r[0] || r[1]).map(row => {
-    const obj = {};
-    headers.forEach((h, idx) => {
-      obj[normalizeHeader(h)] = row[idx] || '';
+  const companies = data
+    .slice(1)
+    .filter((r) => r[0] || r[1])
+    .map((row) => {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[normalizeHeader(h)] = row[idx] || "";
+      });
+      return obj;
     });
-    return obj;
-  });
   return { success: true, companies };
 }
 
@@ -302,7 +425,7 @@ function deleteCompany(domain) {
   const sheet = ss.getSheetByName(COMPANY_SHEET_NAME);
 
   if (!sheet) {
-    return { success: false, error: 'シートが見つかりません' };
+    return { success: false, error: "シートが見つかりません" };
   }
 
   const data = sheet.getDataRange().getValues();
@@ -311,139 +434,221 @@ function deleteCompany(domain) {
   for (let i = 1; i < data.length; i++) {
     if (data[i][DOMAIN_COL - 1] === domain) {
       sheet.deleteRow(i + 1);
-      return { success: true, message: '会社情報を削除しました' };
+      return { success: true, message: "会社情報を削除しました" };
     }
   }
 
-  return { success: false, error: '該当する会社が見つかりません' };
+  return { success: false, error: "該当する会社が見つかりません" };
 }
 
 // --- LP設定取得 ---
 
 function getLPSettings(domain) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName(LP_SETTINGS_SHEET_NAME);
+  // domainはjobId形式（companyDomain_jobId）または companyDomain
+  const parts = domain.split("_");
+  const companyDomain = parts[0];
+  const jobId = domain; // 元のdomainをjobIdとして使用
 
-  if (!sheet) {
-    return { success: true, settings: null };
-  }
+  try {
+    // 会社の管理シートを開く
+    const companySs = openCompanySheet(companyDomain);
+    let sheet = companySs.getSheetByName(LP_SETTINGS_SHEET_NAME);
 
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-
-  const domainColIndex = headers.findIndex(h =>
-    h === 'companyDomain' || h === '会社ドメイン'
-  );
-
-  if (domainColIndex < 0) {
-    return { success: true, settings: null };
-  }
-
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][domainColIndex] === domain) {
-      const settings = {};
-      headers.forEach((header, idx) => {
-        settings[header] = data[i][idx] || '';
-      });
-      return { success: true, settings };
+    if (!sheet) {
+      return { success: true, settings: null };
     }
-  }
 
-  return { success: true, settings: null };
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    // jobId列を優先的に検索（求人単位LP対応）
+    const jobIdColIndex = headers.findIndex(
+      (h) => h === "jobId" || h === "求人ID",
+    );
+
+    // jobId列が存在する場合、jobIdで検索
+    if (jobIdColIndex >= 0) {
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][jobIdColIndex] === jobId) {
+          const settings = {};
+          headers.forEach((header, idx) => {
+            settings[header] = data[i][idx] || "";
+          });
+          return { success: true, settings };
+        }
+      }
+    }
+
+    return { success: true, settings: null };
+  } catch (error) {
+    console.error("getLPSettings error:", error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 // --- LP設定保存 ---
 
 function saveLPSettings(settingsData) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let sheet = ss.getSheetByName(LP_SETTINGS_SHEET_NAME);
-
-  // シートが存在しない場合は作成
-  if (!sheet) {
-    sheet = ss.insertSheet(LP_SETTINGS_SHEET_NAME);
-    sheet.appendRow([
-      'companyDomain',
-      'designPattern',
-      'heroTitle',
-      'heroSubtitle',
-      'heroImage',
-      'pointTitle1',
-      'pointDesc1',
-      'pointTitle2',
-      'pointDesc2',
-      'pointTitle3',
-      'pointDesc3',
-      'ctaText',
-      'faq',
-      'sectionOrder',
-      'sectionVisibility'
-    ]);
+  // companyDomainを取得（jobIdから抽出または直接指定）
+  let companyDomain = settingsData.companyDomain;
+  if (!companyDomain && settingsData.jobId) {
+    const parts = settingsData.jobId.split("_");
+    companyDomain = parts[0];
   }
 
-  // 既存シートにsectionOrder/sectionVisibility列がなければ追加
-  const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  if (!existingHeaders.includes('sectionOrder')) {
-    const newCol = sheet.getLastColumn() + 1;
-    sheet.getRange(1, newCol).setValue('sectionOrder');
-  }
-  if (!existingHeaders.includes('sectionVisibility')) {
-    const newCol = sheet.getLastColumn() + 1;
-    sheet.getRange(1, newCol).setValue('sectionVisibility');
+  if (!companyDomain) {
+    return { success: false, error: "companyDomainが指定されていません" };
   }
 
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  try {
+    // 会社の管理シートを開く
+    const companySs = openCompanySheet(companyDomain);
+    let sheet = companySs.getSheetByName(LP_SETTINGS_SHEET_NAME);
 
-  // 既存行を検索
-  let rowIndex = -1;
-  const domainColIndex = headers.findIndex(h =>
-    h === 'companyDomain' || h === '会社ドメイン'
-  );
+    // シートが存在しない場合は作成
+    if (!sheet) {
+      sheet = companySs.insertSheet(LP_SETTINGS_SHEET_NAME);
+      sheet.appendRow([
+        "jobId", // 求人ID（求人単位LP対応）
+        "companyDomain",
+        "designPattern",
+        "layoutStyle",
+        "heroTitle",
+        "heroSubtitle",
+        "heroImage",
+        "pointTitle1",
+        "pointDesc1",
+        "pointTitle2",
+        "pointDesc2",
+        "pointTitle3",
+        "pointDesc3",
+        "pointTitle4",
+        "pointDesc4",
+        "pointTitle5",
+        "pointDesc5",
+        "pointTitle6",
+        "pointDesc6",
+        "ctaText",
+        "faq",
+        "lpContent", // v2形式のLP構成データ（JSON）
+        "sectionOrder",
+        "sectionVisibility",
+        "tiktokPixelId",
+        "googleAdsId",
+        "googleAdsLabel",
+        "ogpTitle",
+        "ogpDescription",
+        "ogpImage",
+      ]);
+      sheet.getRange(1, 1, 1, sheet.getLastColumn()).setFontWeight("bold");
+      sheet.getRange(1, 1, 1, sheet.getLastColumn()).setBackground("#f3f3f3");
+      sheet.setFrozenRows(1);
+    }
 
-  if (domainColIndex >= 0) {
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][domainColIndex] === settingsData.companyDomain) {
-        rowIndex = i + 1;
-        break;
+    // 既存シートに必要な列がなければ追加
+    let existingHeaders = sheet
+      .getRange(1, 1, 1, sheet.getLastColumn())
+      .getValues()[0];
+    const requiredCols = [
+      "jobId",
+      "layoutStyle",
+      "sectionOrder",
+      "sectionVisibility",
+      "pointTitle4",
+      "pointDesc4",
+      "pointTitle5",
+      "pointDesc5",
+      "pointTitle6",
+      "pointDesc6",
+      "ctaText",
+      "faq",
+      "lpContent",
+      "tiktokPixelId",
+      "googleAdsId",
+      "googleAdsLabel",
+      "ogpTitle",
+      "ogpDescription",
+      "ogpImage",
+    ];
+
+    for (const col of requiredCols) {
+      if (!existingHeaders.includes(col)) {
+        const newCol = sheet.getLastColumn() + 1;
+        sheet.getRange(1, newCol).setValue(col);
+        existingHeaders = sheet
+          .getRange(1, 1, 1, sheet.getLastColumn())
+          .getValues()[0];
       }
     }
-  }
 
-  // 行データを作成
-  const rowData = headers.map(header => {
-    if (settingsData[header] !== undefined) {
-      return settingsData[header];
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    // 既存行を検索 - jobIdで検索
+    let rowIndex = -1;
+
+    const jobIdColIndex = headers.findIndex(
+      (h) => h === "jobId" || h === "求人ID",
+    );
+
+    // jobIdが提供されている場合、jobIdで検索
+    if (settingsData.jobId && jobIdColIndex >= 0) {
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][jobIdColIndex] === settingsData.jobId) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
     }
-    // 日本語ヘッダーの場合の対応
-    const mapping = {
-      '会社ドメイン': 'companyDomain',
-      'デザインパターン': 'designPattern',
-      'ヒーロータイトル': 'heroTitle',
-      'ヒーローサブタイトル': 'heroSubtitle',
-      'ヒーロー画像': 'heroImage',
-      'ポイント1タイトル': 'pointTitle1',
-      'ポイント1説明': 'pointDesc1',
-      'ポイント2タイトル': 'pointTitle2',
-      'ポイント2説明': 'pointDesc2',
-      'ポイント3タイトル': 'pointTitle3',
-      'ポイント3説明': 'pointDesc3',
-      'CTAテキスト': 'ctaText',
-      'FAQ': 'faq',
-      'セクション順序': 'sectionOrder',
-      'セクション表示': 'sectionVisibility'
-    };
-    const key = mapping[header];
-    return key ? (settingsData[key] || '') : '';
-  });
 
-  if (rowIndex > 0) {
-    // 既存行を更新
-    sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
-    return { success: true, message: 'LP設定を更新しました', isNew: false };
-  } else {
-    // 新規行を追加
-    sheet.appendRow(rowData);
-    return { success: true, message: 'LP設定を登録しました', isNew: true };
+    // 行データを作成
+    const rowData = headers.map((header) => {
+      if (settingsData[header] !== undefined) {
+        return settingsData[header];
+      }
+      // 日本語ヘッダーの場合の対応
+      const mapping = {
+        求人ID: "jobId",
+        会社ドメイン: "companyDomain",
+        デザインパターン: "designPattern",
+        レイアウトスタイル: "layoutStyle",
+        ヒーロータイトル: "heroTitle",
+        ヒーローサブタイトル: "heroSubtitle",
+        ヒーロー画像: "heroImage",
+        ポイント1タイトル: "pointTitle1",
+        ポイント1説明: "pointDesc1",
+        ポイント2タイトル: "pointTitle2",
+        ポイント2説明: "pointDesc2",
+        ポイント3タイトル: "pointTitle3",
+        ポイント3説明: "pointDesc3",
+        ポイント4タイトル: "pointTitle4",
+        ポイント4説明: "pointDesc4",
+        ポイント5タイトル: "pointTitle5",
+        ポイント5説明: "pointDesc5",
+        ポイント6タイトル: "pointTitle6",
+        ポイント6説明: "pointDesc6",
+        CTAテキスト: "ctaText",
+        FAQ: "faq",
+        LP構成: "lpContent",
+        セクション順序: "sectionOrder",
+        セクション表示: "sectionVisibility",
+      };
+      const key = mapping[header];
+      return key ? settingsData[key] || "" : "";
+    });
+
+    if (rowIndex > 0) {
+      // 既存行を更新
+      sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+      return { success: true, message: "LP設定を更新しました", isNew: false };
+    } else {
+      // 新規行を追加
+      sheet.appendRow(rowData);
+      return { success: true, message: "LP設定を登録しました", isNew: true };
+    }
+  } catch (error) {
+    console.error("saveLPSettings error:", error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -451,37 +656,37 @@ function saveLPSettings(settingsData) {
 
 function normalizeHeader(header) {
   const mapping = {
-    'ID': 'id',
-    '会社名': 'company',
-    'company': 'company',
-    '会社ドメイン': 'companyDomain',
-    'companyDomain': 'companyDomain',
-    'company_domain': 'companyDomain',
-    '管理シートURL': 'manageSheetUrl',
-    'manageSheetUrl': 'manageSheetUrl',
-    'デザインパターン': 'designPattern',
-    'designPattern': 'designPattern',
-    '表示する': 'showCompany',
-    'showCompany': 'showCompany',
-    'visible': 'showCompany',
-    '画像URL': 'imageUrl',
-    'imageUrl': 'imageUrl',
-    '説明': 'description',
-    'description': 'description',
-    '並び順': 'order',
-    'order': 'order',
+    ID: "id",
+    会社名: "company",
+    company: "company",
+    会社ドメイン: "companyDomain",
+    companyDomain: "companyDomain",
+    company_domain: "companyDomain",
+    管理シートURL: "manageSheetUrl",
+    manageSheetUrl: "manageSheetUrl",
+    デザインパターン: "designPattern",
+    designPattern: "designPattern",
+    表示する: "showCompany",
+    showCompany: "showCompany",
+    visible: "showCompany",
+    画像URL: "imageUrl",
+    imageUrl: "imageUrl",
+    説明: "description",
+    description: "description",
+    並び順: "order",
+    order: "order",
     // 新規追加フィールド
-    'お仕事内容': 'jobDescription',
-    '仕事内容': 'jobDescription',
-    'jobContent': 'jobDescription',
-    'jobDescription': 'jobDescription',
-    '勤務時間': 'workingHours',
-    'workingHours': 'workingHours',
-    '会社住所': 'companyAddress',
-    'companyAddress': 'companyAddress',
+    お仕事内容: "jobDescription",
+    仕事内容: "jobDescription",
+    jobContent: "jobDescription",
+    jobDescription: "jobDescription",
+    勤務時間: "workingHours",
+    workingHours: "workingHours",
+    会社住所: "companyAddress",
+    companyAddress: "companyAddress",
     // 勤務地（実際に働く場所）
-    '勤務地': 'workLocation',
-    'workLocation': 'workLocation'
+    勤務地: "workLocation",
+    workLocation: "workLocation",
   };
   const cleanHeader = String(header).trim();
   return mapping[cleanHeader] || cleanHeader;
@@ -491,19 +696,19 @@ function normalizeHeader(header) {
 
 function testSaveLPSettings() {
   const result = saveLPSettings({
-    companyDomain: 'test-company',
-    designPattern: 'modern',
-    heroTitle: 'テストタイトル',
-    heroSubtitle: 'テストサブタイトル',
-    heroImage: '',
-    pointTitle1: 'ポイント1',
-    pointDesc1: '説明1',
-    pointTitle2: '',
-    pointDesc2: '',
-    pointTitle3: '',
-    pointDesc3: '',
-    ctaText: '応募する',
-    faq: ''
+    companyDomain: "test-company",
+    designPattern: "modern",
+    heroTitle: "テストタイトル",
+    heroSubtitle: "テストサブタイトル",
+    heroImage: "",
+    pointTitle1: "ポイント1",
+    pointDesc1: "説明1",
+    pointTitle2: "",
+    pointDesc2: "",
+    pointTitle3: "",
+    pointDesc3: "",
+    ctaText: "応募する",
+    faq: "",
   });
   Logger.log(result);
 }
@@ -527,7 +732,7 @@ function getCompanySheetUrl(companyDomain) {
 
   const data = sheet.getDataRange().getValues();
   const DOMAIN_COL = 13; // M列
-  const URL_COL = 15;    // O列
+  const URL_COL = 15; // O列
 
   for (let i = 1; i < data.length; i++) {
     if (data[i][DOMAIN_COL - 1] === companyDomain) {
@@ -543,12 +748,12 @@ function getCompanySheetUrl(companyDomain) {
 function openCompanySheet(companyDomain) {
   const sheetUrl = getCompanySheetUrl(companyDomain);
   if (!sheetUrl) {
-    throw new Error('管理シートが見つかりません');
+    throw new Error("管理シートが見つかりません");
   }
 
   const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
   if (!sheetIdMatch) {
-    throw new Error('シートIDを取得できません');
+    throw new Error("シートIDを取得できません");
   }
 
   return SpreadsheetApp.openById(sheetIdMatch[1]);
@@ -576,7 +781,7 @@ function getJobs(companyDomain) {
 
       const job = { _rowIndex: i + 1 };
       headers.forEach((header, idx) => {
-        job[header] = row[idx] || '';
+        job[header] = row[idx] || "";
       });
       jobs.push(job);
     }
@@ -597,32 +802,36 @@ function saveJob(companyDomain, jobData, rowIndex) {
     const headers = sheet.getRange(1, 1, 1, 16).getValues()[0];
 
     // 行データを作成
-    const rowData = headers.map(header => {
+    const rowData = headers.map((header) => {
       const mapping = {
-        'id': jobData.id || '',
-        'title': jobData.title || '',
-        'location': jobData.location || '',
-        'totalBonus': jobData.totalBonus || '',
-        'monthlySalary': jobData.monthlySalary || '',
-        'features': jobData.features || '',
-        'badges': jobData.badges || '',
-        'jobDescription': jobData.jobDescription || '',
-        'requirements': jobData.requirements || '',
-        'benefits': jobData.benefits || '',
-        'workingHours': jobData.workingHours || '',
-        'holidays': jobData.holidays || '',
-        'visible': jobData.visible || 'true',
-        'order': jobData.order || '',
-        'publishStartDate': jobData.publishStartDate || '',
-        'publishEndDate': jobData.publishEndDate || ''
+        id: jobData.id || "",
+        title: jobData.title || "",
+        location: jobData.location || "",
+        totalBonus: jobData.totalBonus || "",
+        monthlySalary: jobData.monthlySalary || "",
+        features: jobData.features || "",
+        badges: jobData.badges || "",
+        jobDescription: jobData.jobDescription || "",
+        requirements: jobData.requirements || "",
+        benefits: jobData.benefits || "",
+        workingHours: jobData.workingHours || "",
+        holidays: jobData.holidays || "",
+        visible: jobData.visible || "true",
+        order: jobData.order || "",
+        publishStartDate: jobData.publishStartDate || "",
+        publishEndDate: jobData.publishEndDate || "",
       };
-      return mapping[header] !== undefined ? mapping[header] : '';
+      return mapping[header] !== undefined ? mapping[header] : "";
     });
 
     if (rowIndex) {
       // 既存行を更新
       sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
-      return { success: true, message: '求人情報を更新しました', rowIndex: rowIndex };
+      return {
+        success: true,
+        message: "求人情報を更新しました",
+        rowIndex: rowIndex,
+      };
     } else {
       // 新規行を追加
       // 新しいIDを生成
@@ -631,7 +840,11 @@ function saveJob(companyDomain, jobData, rowIndex) {
       rowData[0] = newId; // A列にID
 
       sheet.appendRow(rowData);
-      return { success: true, message: '求人を作成しました', rowIndex: sheet.getLastRow() };
+      return {
+        success: true,
+        message: "求人を作成しました",
+        rowIndex: sheet.getLastRow(),
+      };
     }
   } catch (error) {
     return { success: false, error: error.message };
@@ -644,7 +857,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
 function deleteJob(companyDomain, rowIndex) {
   try {
     if (!rowIndex || rowIndex <= 2) {
-      return { success: false, error: '無効な行番号です' };
+      return { success: false, error: "無効な行番号です" };
     }
 
     const ss = openCompanySheet(companyDomain);
@@ -653,11 +866,11 @@ function deleteJob(companyDomain, rowIndex) {
     // 行が存在するか確認
     const lastRow = sheet.getLastRow();
     if (rowIndex > lastRow) {
-      return { success: false, error: '指定された行が存在しません' };
+      return { success: false, error: "指定された行が存在しません" };
     }
 
     sheet.deleteRow(rowIndex);
-    return { success: true, message: '求人を削除しました' };
+    return { success: true, message: "求人を削除しました" };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -665,6 +878,6 @@ function deleteJob(companyDomain, rowIndex) {
 
 // テスト用
 function testGetJobs() {
-  const result = getJobs('toyota');
+  const result = getJobs("toyota");
   Logger.log(result);
 }

@@ -20,9 +20,31 @@
     <div class="login-card">
       <div class="login-header">
         <h1>リクエコ求人ナビ</h1>
-        <p>管理者ダッシュボード</p>
+        <p>管理画面</p>
       </div>
-      <form id="login-form" class="login-form">
+
+      <!-- ログインタブ -->
+      <div class="login-tabs">
+        <button type="button" class="login-tab active" data-tab="company">会社ユーザー</button>
+        <button type="button" class="login-tab" data-tab="admin">管理者</button>
+      </div>
+
+      <!-- 会社ユーザーログインフォーム -->
+      <form id="company-login-form" class="login-form">
+        <div class="form-group">
+          <label for="company-username">ユーザーID</label>
+          <input type="text" id="company-username" name="username" required autocomplete="username" placeholder="例: toyota_user_xxxx">
+        </div>
+        <div class="form-group">
+          <label for="company-password">パスワード</label>
+          <input type="password" id="company-password" name="password" required autocomplete="current-password">
+        </div>
+        <div id="company-login-error" class="login-error" style="display: none;"></div>
+        <button type="submit" class="btn-login-submit">ログイン</button>
+      </form>
+
+      <!-- 管理者ログインフォーム -->
+      <form id="login-form" class="login-form" style="display: none;">
         <div class="form-group">
           <label for="username">ユーザー名</label>
           <input type="text" id="username" name="username" required autocomplete="username">
@@ -74,6 +96,12 @@
           <h3 class="nav-section-title">応募者対応</h3>
           <ul>
             <li><a href="#" data-section="applicant-select"><span class="nav-icon">💬</span>応募者管理</a></li>
+          </ul>
+        </div>
+        <div class="nav-section" id="nav-section-user-manage">
+          <h3 class="nav-section-title">ユーザー管理</h3>
+          <ul>
+            <li><a href="#" data-section="company-users"><span class="nav-icon">👥</span>会社ユーザー</a></li>
           </ul>
         </div>
         <div class="nav-section">
@@ -184,6 +212,37 @@
 
         <!-- 概要タブ -->
         <div id="overview-tab" class="analytics-tab-content active">
+          <!-- ユーザー属性（男女比・年齢分布） -->
+          <div class="analytics-demographics admin-demographics" id="admin-demographics">
+            <h3>ユーザー属性</h3>
+            <p class="demographics-note">※ Google Signalsが有効な場合のみデータが表示されます</p>
+            <div class="demographics-grid">
+              <!-- 男女比 -->
+              <div class="demographics-card">
+                <h4>男女比</h4>
+                <div class="gender-chart" id="admin-gender-chart">
+                  <div class="gender-bar-container">
+                    <div class="gender-bar male" id="admin-gender-bar-male" style="width: 0%"></div>
+                    <div class="gender-bar female" id="admin-gender-bar-female" style="width: 0%"></div>
+                  </div>
+                  <div class="gender-labels">
+                    <span class="gender-label male"><span class="gender-icon">♂</span> 男性 <span id="admin-gender-male-percent">-</span></span>
+                    <span class="gender-label female"><span class="gender-icon">♀</span> 女性 <span id="admin-gender-female-percent">-</span></span>
+                  </div>
+                </div>
+              </div>
+              <!-- 年齢分布 -->
+              <div class="demographics-card">
+                <h4>年齢分布</h4>
+                <div class="age-chart" id="admin-age-chart">
+                  <div class="age-bars" id="admin-age-bars">
+                    <!-- JSで動的に生成 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="filter-bar">
             <input type="text" id="company-search" placeholder="企業名で検索..." class="search-input">
             <select id="sort-by">
@@ -366,12 +425,13 @@
                 <th>日時</th>
                 <th>企業名</th>
                 <th>ボタン種別</th>
+                <th>画面</th>
                 <th>参照元</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                <td colspan="5" class="loading-cell">データを読み込み中...</td>
               </tr>
             </tbody>
           </table>
@@ -466,18 +526,61 @@
         </div>
 
         <div class="info-box">
-          <p>会社専用のランディングページの設定を行います。URLは <code>/lp.html?c=会社ドメイン</code> でアクセスできます。</p>
+          <p>求人専用のランディングページの設定を行います。URLは <code>/lp.html?j=求人ID</code> でアクセスできます。</p>
         </div>
 
         <div class="lp-settings-form" id="lp-settings-form">
-          <div class="form-group">
-            <label for="lp-company-select">会社を選択</label>
-            <select id="lp-company-select">
-              <option value="">-- 会社を選択 --</option>
-            </select>
+          <!-- ステップインジケーター -->
+          <div class="lp-selection-steps" id="lp-selection-steps">
+            <div class="lp-step active" data-step="company">
+              <span class="lp-step-number">1</span>
+              <span class="lp-step-label">会社を選択</span>
+            </div>
+            <div class="lp-step-arrow">→</div>
+            <div class="lp-step" data-step="job">
+              <span class="lp-step-number">2</span>
+              <span class="lp-step-label">求人を選択</span>
+            </div>
+            <div class="lp-step-arrow">→</div>
+            <div class="lp-step" data-step="edit">
+              <span class="lp-step-number">3</span>
+              <span class="lp-step-label">LP編集</span>
+            </div>
           </div>
 
+          <!-- 会社選択（admin専用） -->
+          <div class="lp-selection-panel" id="lp-company-select-group">
+            <div class="lp-selection-header">
+              <h4>会社を選択</h4>
+              <div class="lp-search-box">
+                <input type="text" id="lp-company-search" placeholder="会社名で検索...">
+              </div>
+            </div>
+            <div class="lp-company-grid" id="lp-company-grid">
+              <div class="lp-loading-placeholder">読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 求人選択 -->
+          <div class="lp-selection-panel" id="lp-job-select-group" style="display: none;">
+            <div class="lp-selection-header">
+              <button type="button" class="lp-back-btn" id="lp-back-to-companies">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                会社一覧に戻る
+              </button>
+              <h4 id="lp-selected-company-name">求人を選択</h4>
+            </div>
+            <div class="lp-job-grid" id="lp-job-grid">
+              <div class="lp-loading-placeholder">読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 非表示のselect（互換性のため） -->
+          <select id="lp-company-select" style="display: none;"></select>
+          <select id="lp-job-select" style="display: none;"></select>
+
           <div id="lp-editor" style="display: none;">
+            <!-- プレビューアクション -->
             <div class="lp-preview-actions">
               <a href="#" id="lp-preview-btn" target="_blank" class="btn btn-secondary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -489,44 +592,100 @@
               </a>
             </div>
 
-            <div class="form-section">
-              <h4>デザインパターン</h4>
+            <!-- 1. テンプレート -->
+            <div class="form-section lp-form-section" id="template-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">1</span>
+                <h4>テンプレート</h4>
+              </div>
+              <p class="form-hint">LPのレイアウトスタイルを選択してください。未選択の場合はデフォルトが適用されます。</p>
+              <div id="template-selector-container">
+                <!-- テンプレートセレクターはJSで動的に生成 -->
+              </div>
+            </div>
+
+            <!-- 2. カラー選択 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">2</span>
+                <h4>カラー選択</h4>
+              </div>
+              <p class="form-hint">LPのカラーテーマを選択してください</p>
               <div class="design-pattern-grid" id="design-pattern-grid">
                 <label class="pattern-option">
                   <input type="radio" name="design-pattern" value="standard" checked>
                   <div class="pattern-preview standard">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
                     <span class="pattern-name">スタンダード</span>
+                    <span class="pattern-desc">シンプルで使いやすい</span>
                   </div>
                 </label>
                 <label class="pattern-option">
                   <input type="radio" name="design-pattern" value="modern">
                   <div class="pattern-preview modern">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
                     <span class="pattern-name">モダン</span>
+                    <span class="pattern-desc">洗練されたデザイン</span>
                   </div>
                 </label>
                 <label class="pattern-option">
                   <input type="radio" name="design-pattern" value="classic">
                   <div class="pattern-preview classic">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
                     <span class="pattern-name">クラシック</span>
+                    <span class="pattern-desc">信頼感のある重厚感</span>
                   </div>
                 </label>
                 <label class="pattern-option">
                   <input type="radio" name="design-pattern" value="minimal">
                   <div class="pattern-preview minimal">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
                     <span class="pattern-name">ミニマル</span>
+                    <span class="pattern-desc">シックでモノトーン</span>
                   </div>
                 </label>
                 <label class="pattern-option">
                   <input type="radio" name="design-pattern" value="colorful">
                   <div class="pattern-preview colorful">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
                     <span class="pattern-name">カラフル</span>
+                    <span class="pattern-desc">華やかで目を引く</span>
                   </div>
                 </label>
               </div>
             </div>
 
-            <div class="form-section">
-              <h4>ヒーローセクション</h4>
+            <!-- 3. ヒーローセクション -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">3</span>
+                <h4>ヒーローセクション</h4>
+              </div>
               <div class="form-group">
                 <label for="lp-hero-title">ヒーロータイトル</label>
                 <input type="text" id="lp-hero-title" placeholder="例: 月収32万円以上可！入社特典あり">
@@ -548,8 +707,12 @@
               </div>
             </div>
 
-            <div class="form-section">
-              <h4>ポイント（特徴）</h4>
+            <!-- 4. ポイント（特徴） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">4</span>
+                <h4>ポイント（特徴）</h4>
+              </div>
               <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
               <div class="point-inputs" id="point-inputs-container">
                 <!-- JavaScriptで動的に生成 -->
@@ -559,93 +722,125 @@
               </button>
             </div>
 
-            <div class="form-section">
-              <h4>CTA（応募ボタン）</h4>
+            <!-- 5. CTA（応募ボタン） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">5</span>
+                <h4>CTA（応募ボタン）</h4>
+              </div>
               <div class="form-group">
                 <label for="lp-cta-text">ボタンテキスト</label>
                 <input type="text" id="lp-cta-text" placeholder="例: 今すぐ応募する" value="今すぐ応募する">
               </div>
             </div>
 
-            <div class="form-section">
-              <h4>FAQ（よくある質問）</h4>
-              <div class="form-group">
-                <label for="lp-faq">FAQ（形式: Q:質問|A:回答||Q:質問2|A:回答2）</label>
-                <textarea id="lp-faq" rows="4" placeholder="Q:未経験でも応募できますか？|A:はい、未経験の方も大歓迎です。||Q:寮はありますか？|A:はい、完全個室の寮を完備しています。"></textarea>
+            <!-- 6. FAQ（よくある質問） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">6</span>
+                <h4>FAQ（よくある質問）</h4>
               </div>
+              <p class="form-hint">質問と回答を入力してください。LPではLINE風のチャット形式で表示されます。</p>
+              <div class="faq-editor" id="faq-editor">
+                <div class="faq-list" id="faq-list">
+                  <!-- FAQアイテムはJSで動的に生成 -->
+                </div>
+                <button type="button" class="faq-add-btn" id="btn-add-faq">
+                  <span class="faq-add-icon">+</span>
+                  質問を追加
+                </button>
+              </div>
+              <!-- 互換性のため非表示のテキストエリアを保持 -->
+              <textarea id="lp-faq" style="display: none;"></textarea>
             </div>
 
-            <div class="form-section">
-              <h4>広告トラッキング設定</h4>
-              <p class="form-hint">TikTok広告やGoogle広告のコンバージョン計測に使用します。</p>
-              <div class="form-group">
-                <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
-                <input type="text" id="lp-tiktok-pixel" placeholder="例: CXXXXXXXXXXXXXX">
-                <p class="form-hint">TikTok Ads ManagerのPixel IDを入力してください</p>
+            <!-- カスタムセクション（動画・カルーセル等）※登録されている場合のみ表示 -->
+            <div class="form-section lp-form-section" id="custom-sections-panel" style="display: none;">
+              <div class="lp-section-header">
+                <span class="lp-section-number">✨</span>
+                <h4>追加コンテンツ</h4>
               </div>
-              <div class="form-group">
-                <label for="lp-google-ads-id">Google Ads コンバージョンID</label>
-                <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789">
-                <p class="form-hint">Google Adsのコンバージョン追跡タグIDを入力してください</p>
+              <p class="form-hint">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</p>
+              <div class="custom-sections-list" id="custom-sections-list">
+                <!-- JSで動的に生成 -->
               </div>
-              <div class="form-group">
-                <label for="lp-google-ads-label">Google Ads コンバージョンラベル</label>
-                <input type="text" id="lp-google-ads-label" placeholder="例: AbCdEfGhIjKlMn">
-                <p class="form-hint">コンバージョンアクション作成時に発行されるラベルを入力してください</p>
-              </div>
+              <button type="button" id="btn-add-custom-section" class="btn-add-item">
+                <span>+</span> 動画・スライドなどを追加
+              </button>
             </div>
 
-            <div class="form-section">
-              <h4>OGP設定（広告プレビュー用）</h4>
-              <p class="form-hint">広告やSNSでシェアされた時に表示される情報です。</p>
-              <div class="form-group">
-                <label for="lp-ogp-title">OGPタイトル</label>
-                <input type="text" id="lp-ogp-title" placeholder="例: 月収32万円以上可！製造スタッフ募集">
-                <p class="form-hint">空欄の場合はヒーロータイトルが使用されます</p>
+            <!-- 7. セクション管理 -->
+            <div class="form-section lp-form-section" id="section-manager">
+              <div class="lp-section-header">
+                <span class="lp-section-number">7</span>
+                <h4>セクション管理</h4>
               </div>
-              <div class="form-group">
-                <label for="lp-ogp-description">OGP説明文</label>
-                <input type="text" id="lp-ogp-description" placeholder="例: 未経験歓迎・寮完備の高待遇求人！今すぐチェック">
-                <p class="form-hint">空欄の場合は自動生成されます</p>
+              <p class="form-hint">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</p>
+              <div class="section-manager-toolbar">
+                <button type="button" id="btn-add-section" class="btn-primary">
+                  <span>+</span> セクションを追加
+                </button>
               </div>
-              <div class="form-group">
-                <label for="lp-ogp-image">OGP画像URL</label>
-                <input type="text" id="lp-ogp-image" placeholder="https://example.com/ogp-image.jpg">
-                <p class="form-hint">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</p>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h4>セクションの並び順</h4>
-              <p class="form-hint">ドラッグ＆ドロップで並び替えできます。チェックを外すと非表示になります。</p>
-              <ul id="lp-section-order" class="section-order-list">
-                <li data-section="hero" class="section-order-item">
-                  <span class="drag-handle">⋮⋮</span>
-                  <label><input type="checkbox" checked disabled> ヒーローセクション</label>
-                </li>
-                <li data-section="points" class="section-order-item">
-                  <span class="drag-handle">⋮⋮</span>
-                  <label><input type="checkbox" id="section-points-visible" checked> ポイント（特徴）</label>
-                </li>
-                <li data-section="jobs" class="section-order-item">
-                  <span class="drag-handle">⋮⋮</span>
-                  <label><input type="checkbox" id="section-jobs-visible" checked> 求人一覧</label>
-                </li>
-                <li data-section="details" class="section-order-item">
-                  <span class="drag-handle">⋮⋮</span>
-                  <label><input type="checkbox" id="section-details-visible" checked> 募集要項</label>
-                </li>
-                <li data-section="faq" class="section-order-item">
-                  <span class="drag-handle">⋮⋮</span>
-                  <label><input type="checkbox" id="section-faq-visible" checked> FAQ</label>
-                </li>
-                <li data-section="apply" class="section-order-item">
-                  <span class="drag-handle">⋮⋮</span>
-                  <label><input type="checkbox" checked disabled> 応募セクション</label>
-                </li>
+              <ul id="lp-sections-list" class="sections-list">
+                <!-- セクションリストはJSで動的に生成 -->
               </ul>
             </div>
 
+            <!-- 8. 広告トラッキング設定 -->
+            <div class="form-section lp-form-section collapsible" id="ad-tracking-section">
+              <div class="lp-section-header collapsible-header" data-target="ad-tracking-content">
+                <span class="lp-section-number">8</span>
+                <h4>広告トラッキング設定</h4>
+                <span class="collapse-icon">▼</span>
+              </div>
+              <div class="collapsible-content" id="ad-tracking-content">
+                <p class="form-hint">TikTok広告やGoogle広告のコンバージョン計測に使用します。</p>
+                <div class="form-group">
+                  <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
+                  <input type="text" id="lp-tiktok-pixel" placeholder="例: CXXXXXXXXXXXXXX">
+                  <p class="form-hint">TikTok Ads ManagerのPixel IDを入力してください</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-google-ads-id">Google Ads コンバージョンID</label>
+                  <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789">
+                  <p class="form-hint">Google Adsのコンバージョン追跡タグIDを入力してください</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-google-ads-label">Google Ads コンバージョンラベル</label>
+                  <input type="text" id="lp-google-ads-label" placeholder="例: AbCdEfGhIjKlMn">
+                  <p class="form-hint">コンバージョンアクション作成時に発行されるラベルを入力してください</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. OGP設定（広告プレビュー用） -->
+            <div class="form-section lp-form-section collapsible" id="ogp-section">
+              <div class="lp-section-header collapsible-header" data-target="ogp-content">
+                <span class="lp-section-number">9</span>
+                <h4>OGP設定（広告プレビュー用）</h4>
+                <span class="collapse-icon">▼</span>
+              </div>
+              <div class="collapsible-content" id="ogp-content">
+                <p class="form-hint">広告やSNSでシェアされた時に表示される情報です。</p>
+                <div class="form-group">
+                  <label for="lp-ogp-title">OGPタイトル</label>
+                  <input type="text" id="lp-ogp-title" placeholder="例: 月収32万円以上可！製造スタッフ募集">
+                  <p class="form-hint">空欄の場合はヒーロータイトルが使用されます</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-ogp-description">OGP説明文</label>
+                  <input type="text" id="lp-ogp-description" placeholder="例: 未経験歓迎・寮完備の高待遇求人！今すぐチェック">
+                  <p class="form-hint">空欄の場合は自動生成されます</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-ogp-image">OGP画像URL</label>
+                  <input type="text" id="lp-ogp-image" placeholder="https://example.com/ogp-image.jpg">
+                  <p class="form-hint">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 保存ボタン -->
             <div class="form-actions">
               <button id="btn-save-lp-settings" class="btn-primary">LP設定を保存</button>
               <button id="btn-reset-lp-settings" class="btn-secondary">リセット</button>
@@ -672,6 +867,43 @@
               <iframe id="lp-preview-frame" class="lp-preview-frame"></iframe>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- 会社ユーザー管理セクション -->
+      <section id="section-company-users" class="admin-section">
+        <div class="section-header">
+          <h3>会社ユーザー管理</h3>
+          <button id="btn-add-company-user" class="btn-primary">+ 新規ユーザー追加</button>
+        </div>
+
+        <div class="info-box">
+          <p><strong>会社ユーザーについて:</strong> 各会社に専用のID/パスワードを発行できます。会社ユーザーは自社のデータのみアクセス可能です。</p>
+        </div>
+
+        <!-- 一括発行ボタン -->
+        <div class="bulk-actions" style="margin-bottom: 1rem;">
+          <button id="btn-bulk-generate" class="btn-secondary">未発行の会社に一括発行</button>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table" id="company-users-table">
+            <thead>
+              <tr>
+                <th>会社名</th>
+                <th>ユーザーID</th>
+                <th>ステータス</th>
+                <th>作成日</th>
+                <th>最終ログイン</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="company-users-tbody">
+              <tr>
+                <td colspan="6" class="loading-cell">データを読み込み中...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -1067,9 +1299,99 @@
     </div>
   </div>
 
+  <!-- 会社ユーザー追加/編集モーダル -->
+  <div id="company-user-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="company-user-modal-title">会社ユーザーの追加</h3>
+        <button class="modal-close" id="company-user-modal-close">&times;</button>
+      </div>
+      <form id="company-user-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="cu-company-select">会社 <span class="required">*</span></label>
+            <select id="cu-company-select" required>
+              <option value="">-- 会社を選択 --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cu-username">ユーザーID <span class="required">*</span></label>
+            <input type="text" id="cu-username" required placeholder="例: toyota_user" pattern="[a-z0-9_-]+" title="半角英数字、アンダースコア、ハイフンのみ">
+            <p class="form-hint">半角英数字・アンダースコア・ハイフンのみ</p>
+          </div>
+          <div class="form-group">
+            <label for="cu-password">パスワード <span class="required">*</span></label>
+            <div class="password-input-group">
+              <input type="text" id="cu-password" required placeholder="パスワード" minlength="8">
+              <button type="button" id="cu-generate-password" class="btn-small btn-secondary">自動生成</button>
+            </div>
+            <p class="form-hint">8文字以上推奨</p>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="cu-is-active" checked>
+              <span>有効</span>
+            </label>
+          </div>
+
+          <!-- 発行情報表示エリア（新規作成後） -->
+          <div id="cu-credentials-display" class="credentials-display" style="display: none;">
+            <h4>発行されたログイン情報</h4>
+            <div class="credentials-box">
+              <p><strong>ユーザーID:</strong> <code id="cu-issued-username"></code></p>
+              <p><strong>パスワード:</strong> <code id="cu-issued-password"></code></p>
+            </div>
+            <button type="button" id="cu-copy-credentials" class="btn-secondary">クリップボードにコピー</button>
+            <p class="form-hint warning">⚠️ パスワードは再表示できません。必ず控えてください。</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-danger" id="company-user-delete" style="margin-right: auto; display: none;">削除</button>
+          <button type="button" class="btn-secondary" id="company-user-modal-cancel">キャンセル</button>
+          <button type="submit" class="btn-primary" id="company-user-modal-save">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- セクション追加モーダル -->
+  <div id="add-section-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>セクションを追加</h3>
+        <button class="modal-close" id="add-section-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="form-hint">追加したいセクションタイプを選択してください</p>
+        <div class="section-type-grid" id="section-type-grid">
+          <!-- JSで動的に生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- セクションエディターモーダル -->
+  <div id="section-editor-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="section-editor-title">セクションを編集</h3>
+        <button class="modal-close" id="section-editor-close">&times;</button>
+      </div>
+      <div class="modal-body" id="section-editor-content">
+        <!-- JSで動的に生成 -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-danger" id="section-delete-btn">削除</button>
+        <button type="button" class="btn-secondary" id="section-editor-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="section-editor-save">適用</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script type="module" src="/src/pages/admin.js"></script>
 </body>

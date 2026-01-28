@@ -2,12 +2,20 @@
  * Admin Dashboard - 設定
  */
 
+// ユーザーロール定義
+export const USER_ROLES = {
+  ADMIN: 'admin',       // 全機能アクセス可能
+  COMPANY: 'company'    // 自社のみアクセス可能
+};
+
 export const config = {
   credentials: {
     username: 'admin',
     password: 'receco2025'
   },
   sessionKey: 'rikueco_admin_session',
+  userRoleKey: 'rikueco_user_role',
+  userCompanyKey: 'rikueco_user_company',
   gaPropertyId: 'G-E1XC94EG05',
   gaApiKey: 'AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo',
   apiEndpoint: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData',

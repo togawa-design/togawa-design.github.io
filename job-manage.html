@@ -31,11 +31,14 @@
           <li><a href="#" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
           <li><a href="#" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
           <li><a href="#" id="nav-applicants" data-section="applicants"><span class="nav-icon">👥</span>応募者管理</a></li>
+          <li id="nav-lp-settings-item" style="display: none;"><a href="#" data-section="lp-settings"><span class="nav-icon">🎨</span>LP設定</a></li>
+          <li id="nav-settings-item" style="display: none;"><a href="#" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
         </ul>
       </nav>
       <div class="sidebar-footer">
         <a href="#" id="btn-open-sheet" target="_blank" class="btn-back-top">管理シートを開く</a>
-        <a href="admin.html" class="btn-logout">管理画面へ戻る</a>
+        <a href="admin.html" id="btn-back-admin" class="btn-back-admin">管理画面へ戻る</a>
+        <button id="btn-logout" class="btn-logout" style="display: none;">ログアウト</button>
       </div>
     </aside>
 
@@ -591,6 +594,163 @@
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- 設定セクション（会社ユーザー用） -->
+      <section id="section-settings" class="admin-section">
+        <div class="section-header">
+          <h2>アカウント設定</h2>
+        </div>
+
+        <div class="settings-card">
+          <h3>パスワード変更</h3>
+          <form id="password-change-form">
+            <div class="form-group">
+              <label for="current-password">現在のパスワード</label>
+              <input type="password" id="current-password" required autocomplete="current-password">
+            </div>
+            <div class="form-group">
+              <label for="new-password">新しいパスワード</label>
+              <input type="password" id="new-password" required minlength="8" autocomplete="new-password">
+              <p class="form-hint">8文字以上で設定してください</p>
+            </div>
+            <div class="form-group">
+              <label for="confirm-password">新しいパスワード（確認）</label>
+              <input type="password" id="confirm-password" required minlength="8" autocomplete="new-password">
+            </div>
+            <div id="password-change-error" class="form-error" style="display: none;"></div>
+            <div id="password-change-success" class="form-success" style="display: none;"></div>
+            <button type="submit" class="btn-primary">パスワードを変更</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- LP設定セクション（会社ユーザー用） -->
+      <section id="section-lp-settings" class="admin-section">
+        <div class="section-header">
+          <h2>LP（ランディングページ）設定</h2>
+        </div>
+
+        <div class="info-box">
+          <p>会社専用のランディングページの設定を行います。</p>
+          <p>URL: <code id="lp-url-display"></code></p>
+        </div>
+
+        <div id="lp-editor-company">
+          <div class="lp-preview-actions">
+            <a href="#" id="lp-preview-btn-company" target="_blank" class="btn btn-secondary">プレビュー</a>
+          </div>
+
+          <div class="form-section">
+            <h4>デザインパターン</h4>
+            <div class="design-pattern-grid" id="design-pattern-grid-company">
+              <label class="pattern-option">
+                <input type="radio" name="design-pattern-company" value="standard" checked>
+                <div class="pattern-preview standard">
+                  <span class="pattern-name">スタンダード</span>
+                </div>
+              </label>
+              <label class="pattern-option">
+                <input type="radio" name="design-pattern-company" value="modern">
+                <div class="pattern-preview modern">
+                  <span class="pattern-name">モダン</span>
+                </div>
+              </label>
+              <label class="pattern-option">
+                <input type="radio" name="design-pattern-company" value="classic">
+                <div class="pattern-preview classic">
+                  <span class="pattern-name">クラシック</span>
+                </div>
+              </label>
+              <label class="pattern-option">
+                <input type="radio" name="design-pattern-company" value="minimal">
+                <div class="pattern-preview minimal">
+                  <span class="pattern-name">ミニマル</span>
+                </div>
+              </label>
+              <label class="pattern-option">
+                <input type="radio" name="design-pattern-company" value="colorful">
+                <div class="pattern-preview colorful">
+                  <span class="pattern-name">カラフル</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>ヒーローセクション</h4>
+            <div class="form-group">
+              <label for="lp-hero-title-company">ヒーロータイトル</label>
+              <input type="text" id="lp-hero-title-company" placeholder="例: 月収32万円以上可！入社特典あり">
+            </div>
+            <div class="form-group">
+              <label for="lp-hero-subtitle-company">サブタイトル</label>
+              <input type="text" id="lp-hero-subtitle-company" placeholder="例: 未経験歓迎・寮完備">
+            </div>
+            <div class="form-group">
+              <label for="lp-hero-image-company">ヒーロー画像URL</label>
+              <input type="text" id="lp-hero-image-company" placeholder="https://example.com/image.jpg">
+              <p class="form-hint">下のプリセットから選択するか、直接URLを入力してください</p>
+            </div>
+            <div class="form-group">
+              <label>プリセット画像を選択</label>
+              <div class="hero-image-presets" id="hero-image-presets-company">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>ポイント（特徴）</h4>
+            <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
+            <div class="point-inputs" id="point-inputs-container-company">
+              <!-- JavaScriptで動的に生成 -->
+            </div>
+            <button type="button" id="btn-add-point-company" class="btn-add-item">
+              <span>+</span> ポイントを追加
+            </button>
+          </div>
+
+          <div class="form-section">
+            <h4>CTA（応募ボタン）</h4>
+            <div class="form-group">
+              <label for="lp-cta-text-company">ボタンテキスト</label>
+              <input type="text" id="lp-cta-text-company" placeholder="例: 今すぐ応募する" value="今すぐ応募する">
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>FAQ（よくある質問）</h4>
+            <div class="form-group">
+              <label for="lp-faq-company">FAQ（形式: Q:質問|A:回答||Q:質問2|A:回答2）</label>
+              <textarea id="lp-faq-company" rows="4" placeholder="Q:未経験でも応募できますか？|A:はい、未経験の方も大歓迎です。||Q:寮はありますか？|A:はい、完全個室の寮を完備しています。"></textarea>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>セクションの表示/非表示</h4>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="section-points-visible-company" checked> ポイント（特徴）を表示</label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="section-jobs-visible-company" checked> 求人一覧を表示</label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="section-details-visible-company" checked> 募集要項を表示</label>
+            </div>
+            <div class="form-group">
+              <label class="checkbox-label"><input type="checkbox" id="section-faq-visible-company" checked> FAQを表示</label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="btn-save-lp-settings-company" class="btn-primary">LP設定を保存</button>
+            <button id="btn-reset-lp-settings-company" class="btn-secondary">リセット</button>
+          </div>
+
+          <div id="lp-save-message" class="form-success" style="display: none;">LP設定を保存しました</div>
+          <div id="lp-error-message" class="form-error" style="display: none;"></div>
         </div>
       </section>
     </main>
