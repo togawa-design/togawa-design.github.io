@@ -4119,6 +4119,145 @@
   color: #64748b;
 }
 
+/* ユーザー属性（男女比・年齢分布） */
+.analytics-demographics {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.analytics-demographics h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.demographics-note {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.demographics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.demographics-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.demographics-card h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* 男女比チャート */
+.gender-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gender-bar-container {
+  display: flex;
+  height: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.gender-bar {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.gender-bar.male {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+
+.gender-bar.female {
+  background: linear-gradient(135deg, #ec4899, #f472b6);
+}
+
+.gender-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.gender-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+}
+
+.gender-label.male .gender-icon {
+  color: #3b82f6;
+}
+
+.gender-label.female .gender-icon {
+  color: #ec4899;
+}
+
+/* 年齢分布チャート */
+.age-chart {
+  min-height: 120px;
+}
+
+.age-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 100px;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.age-bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.age-bar {
+  width: 100%;
+  max-width: 40px;
+  background: linear-gradient(180deg, #8b5cf6, #a78bfa);
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: height 0.5s ease;
+}
+
+.age-bar-label {
+  font-size: 10px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.age-bar-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
+@media (max-width: 767px) {
+  .demographics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* レスポンシブ */
 @media (max-width: 1200px) {
   .analytics-summary {

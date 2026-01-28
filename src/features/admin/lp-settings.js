@@ -448,6 +448,9 @@ export async function loadLPSettings(jobId) {
         setInputValue('lp-tiktok-pixel', settings.tiktokPixelId);
         setInputValue('lp-google-ads-id', settings.googleAdsId);
         setInputValue('lp-google-ads-label', settings.googleAdsLabel);
+        setInputValue('lp-meta-pixel', settings.metaPixelId);
+        setInputValue('lp-line-tag', settings.lineTagId);
+        setInputValue('lp-clarity', settings.clarityProjectId);
 
         // OGP設定
         setInputValue('lp-ogp-title', settings.ogpTitle);
@@ -831,6 +834,9 @@ function parseLPSettingsCSV(csvText, jobId) {
         tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
         googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
         googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
+        metaPixelId: rowData.metaPixelId || rowData['Meta Pixel ID'] || '',
+        lineTagId: rowData.lineTagId || rowData['LINE Tag ID'] || '',
+        clarityProjectId: rowData.clarityProjectId || rowData['Clarity Project ID'] || '',
         // OGP設定
         ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
         ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
@@ -983,6 +989,9 @@ export async function saveLPSettings() {
   settings.tiktokPixelId = document.getElementById('lp-tiktok-pixel')?.value || '';
   settings.googleAdsId = document.getElementById('lp-google-ads-id')?.value || '';
   settings.googleAdsLabel = document.getElementById('lp-google-ads-label')?.value || '';
+  settings.metaPixelId = document.getElementById('lp-meta-pixel')?.value || '';
+  settings.lineTagId = document.getElementById('lp-line-tag')?.value || '';
+  settings.clarityProjectId = document.getElementById('lp-clarity')?.value || '';
 
   // OGP設定
   settings.ogpTitle = document.getElementById('lp-ogp-title')?.value || '';

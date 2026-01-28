@@ -390,6 +390,9 @@ class CompanyLPPage {
       tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
       googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
       googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
+      metaPixelId: rowData.metaPixelId || rowData['Meta Pixel ID'] || '',
+      lineTagId: rowData.lineTagId || rowData['LINE Tag ID'] || '',
+      clarityProjectId: rowData.clarityProjectId || rowData['Clarity Project ID'] || '',
       // OGP設定
       ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
       ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
@@ -656,6 +659,21 @@ class CompanyLPPage {
     if (lpSettings.googleAdsId) {
       this.initGoogleAds(lpSettings.googleAdsId);
     }
+
+    // Meta Pixel (Facebook/Instagram)
+    if (lpSettings.metaPixelId) {
+      this.initMetaPixel(lpSettings.metaPixelId);
+    }
+
+    // LINE Tag
+    if (lpSettings.lineTagId) {
+      this.initLineTag(lpSettings.lineTagId);
+    }
+
+    // Microsoft Clarity
+    if (lpSettings.clarityProjectId) {
+      this.initClarity(lpSettings.clarityProjectId);
+    }
   }
 
   // TikTok Pixelを初期化
@@ -699,6 +717,60 @@ class CompanyLPPage {
     };
   }
 
+  // Meta Pixel (Facebook/Instagram)を初期化
+  initMetaPixel(pixelId) {
+    if (!pixelId || window.fbq) return;
+
+    // Meta Pixel Base Code
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+
+    window.fbq('init', pixelId);
+    window.fbq('track', 'PageView');
+
+    console.log('[LP] Meta Pixel initialized:', pixelId);
+  }
+
+  // LINE Tagを初期化
+  initLineTag(tagId) {
+    if (!tagId || window._lt) return;
+
+    // LINE Tag Base Code
+    !function(g,d,o){
+      g._ltq=g._ltq||[];g._lt=g._lt||function(){g._ltq.push(arguments)};
+      var h=d.getElementsByTagName("head")[0],s=d.createElement("script");
+      s.async=1;s.src=o;h.appendChild(s);
+    }(window,document,"https://s.yjtag.jp/tag.js");
+
+    window._lt('init', {
+      customerType: 'lap',
+      tagId: tagId
+    });
+    window._lt('send', 'pv', [tagId]);
+
+    console.log('[LP] LINE Tag initialized:', tagId);
+  }
+
+  // Microsoft Clarityを初期化
+  initClarity(projectId) {
+    if (!projectId || window.clarity) return;
+
+    // Microsoft Clarity Base Code
+    !function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    }(window,document,"clarity","script",projectId);
+
+    console.log('[LP] Microsoft Clarity initialized:', projectId);
+  }
+
   // コンバージョンをトラッキング
   trackConversion(eventType, eventData = {}) {
     // TikTok Pixel
@@ -715,6 +787,26 @@ class CompanyLPPage {
       });
       console.log('[LP] Google Ads conversion tracked:', this.lpSettings.googleAdsId);
     }
+
+    // Meta Pixel コンバージョン
+    if (window.fbq) {
+      // eventTypeに応じてMeta Pixelの標準イベントにマッピング
+      const metaEventMap = {
+        'SubmitForm': 'Lead',
+        'Contact': 'Contact'
+      };
+      const metaEvent = metaEventMap[eventType] || eventType;
+      window.fbq('track', metaEvent, eventData);
+      console.log('[LP] Meta Pixel event tracked:', metaEvent, eventData);
+    }
+
+    // LINE Tag コンバージョン
+    if (window._lt && this.lpSettings?.lineTagId) {
+      window._lt('send', 'cv', {
+        type: eventType === 'SubmitForm' ? 'Conversion' : eventType
+      }, [this.lpSettings.lineTagId]);
+      console.log('[LP] LINE Tag conversion tracked:', eventType);
+    }
   }
 
   trackPageView(company) {
@@ -727,6 +819,14 @@ class CompanyLPPage {
     // TikTok Pixel PageView（初期化時に既にpage()が呼ばれているが、追加情報付きで再送信）
     if (window.ttq) {
       window.ttq.track('ViewContent', {
+        content_name: company.company,
+        content_category: 'company_lp'
+      });
+    }
+
+    // Meta Pixel ViewContent（初期化時にPageViewは送信済み、追加情報付きで再送信）
+    if (window.fbq) {
+      window.fbq('track', 'ViewContent', {
         content_name: company.company,
         content_category: 'company_lp'
       });
