@@ -14,11 +14,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/js/jobManage-DIdIFq4h.js"></script>
+  <script type="module" crossorigin src="/js/jobManage-BGNLLQEL.js"></script>
   <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/js/utils-BE8OECDH.js">
-  <link rel="modulepreload" crossorigin href="/js/jobs-loader-Foiii4G8.js">
-  <link rel="modulepreload" crossorigin href="/js/job-feed-generator-BunZ_8BQ.js">
+  <link rel="modulepreload" crossorigin href="/js/LPEditor-Cg7IJGVU.js">
+  <link rel="modulepreload" crossorigin href="/js/image-uploader-CwR9OqLI.js">
+  <link rel="modulepreload" crossorigin href="/js/jobs-loader-CIZMoLrM.js">
+  <link rel="modulepreload" crossorigin href="/js/job-feed-generator-BBEmU1ix.js">
 </head>
 <body class="admin-body">
   <!-- 求人管理ダッシュボード -->
@@ -157,7 +159,7 @@
             <div class="analytics-icon">📄</div>
             <div class="analytics-content">
               <span class="analytics-value" id="analytics-pages-per-session">-</span>
-              <span class="analytics-label">平均閲覧ページ</span>
+              <span class="analytics-label">平均閲覧求人数</span>
             </div>
           </div>
           <div class="analytics-card">
@@ -231,6 +233,37 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- ユーザー属性（会社アカウント用） -->
+        <div class="analytics-demographics company-only-section" id="analytics-demographics" style="display: none;">
+          <h3>ユーザー属性</h3>
+          <p class="demographics-note">※ Google Signalsが有効な場合のみデータが表示されます</p>
+          <div class="demographics-grid">
+            <!-- 男女比 -->
+            <div class="demographics-card">
+              <h4>男女比</h4>
+              <div class="gender-chart" id="gender-chart">
+                <div class="gender-bar-container">
+                  <div class="gender-bar male" id="gender-bar-male" style="width: 0%"></div>
+                  <div class="gender-bar female" id="gender-bar-female" style="width: 0%"></div>
+                </div>
+                <div class="gender-labels">
+                  <span class="gender-label male"><span class="gender-icon">♂</span> 男性 <span id="gender-male-percent">-</span></span>
+                  <span class="gender-label female"><span class="gender-icon">♀</span> 女性 <span id="gender-female-percent">-</span></span>
+                </div>
+              </div>
+            </div>
+            <!-- 年齢分布 -->
+            <div class="demographics-card">
+              <h4>年齢分布</h4>
+              <div class="age-chart" id="age-chart">
+                <div class="age-bars" id="age-bars">
+                  <!-- JSで動的に生成 -->
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -631,131 +664,353 @@
         </div>
       </section>
 
-      <!-- LP設定セクション（会社ユーザー用） -->
+      <!-- LP設定セクション（会社ユーザー用 - admin同等のUI） -->
       <section id="section-lp-settings" class="admin-section">
         <div class="section-header">
-          <h2>LP（ランディングページ）設定</h2>
+          <h3>LP（ランディングページ）設定</h3>
         </div>
 
         <div class="info-box">
-          <p>会社専用のランディングページの設定を行います。</p>
-          <p>URL: <code id="lp-url-display"></code></p>
+          <p>求人専用のランディングページの設定を行います。URLは <code>/lp.html?j=求人ID</code> でアクセスできます。</p>
         </div>
 
-        <div id="lp-editor-company">
-          <div class="lp-preview-actions">
-            <a href="#" id="lp-preview-btn-company" target="_blank" class="btn btn-secondary">プレビュー</a>
-          </div>
-
-          <div class="form-section">
-            <h4>デザインパターン</h4>
-            <div class="design-pattern-grid" id="design-pattern-grid-company">
-              <label class="pattern-option">
-                <input type="radio" name="design-pattern-company" value="standard" checked>
-                <div class="pattern-preview standard">
-                  <span class="pattern-name">スタンダード</span>
-                </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="design-pattern-company" value="modern">
-                <div class="pattern-preview modern">
-                  <span class="pattern-name">モダン</span>
-                </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="design-pattern-company" value="classic">
-                <div class="pattern-preview classic">
-                  <span class="pattern-name">クラシック</span>
-                </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="design-pattern-company" value="minimal">
-                <div class="pattern-preview minimal">
-                  <span class="pattern-name">ミニマル</span>
-                </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="design-pattern-company" value="colorful">
-                <div class="pattern-preview colorful">
-                  <span class="pattern-name">カラフル</span>
-                </div>
-              </label>
+        <div class="lp-settings-form" id="lp-settings-form">
+          <!-- ステップインジケーター -->
+          <div class="lp-selection-steps" id="lp-selection-steps">
+            <div class="lp-step active" data-step="job">
+              <span class="lp-step-number">1</span>
+              <span class="lp-step-label">求人を選択</span>
+            </div>
+            <div class="lp-step-arrow">→</div>
+            <div class="lp-step" data-step="edit">
+              <span class="lp-step-number">2</span>
+              <span class="lp-step-label">LP編集</span>
             </div>
           </div>
 
-          <div class="form-section">
-            <h4>ヒーローセクション</h4>
-            <div class="form-group">
-              <label for="lp-hero-title-company">ヒーロータイトル</label>
-              <input type="text" id="lp-hero-title-company" placeholder="例: 月収32万円以上可！入社特典あり">
+          <!-- 求人選択 -->
+          <div class="lp-selection-panel" id="lp-job-select-group">
+            <div class="lp-selection-header">
+              <h4>LP設定する求人を選択</h4>
             </div>
-            <div class="form-group">
-              <label for="lp-hero-subtitle-company">サブタイトル</label>
-              <input type="text" id="lp-hero-subtitle-company" placeholder="例: 未経験歓迎・寮完備">
+            <div class="lp-job-grid" id="lp-job-grid">
+              <div class="lp-loading-placeholder">読み込み中...</div>
             </div>
-            <div class="form-group">
-              <label for="lp-hero-image-company">ヒーロー画像URL</label>
-              <input type="text" id="lp-hero-image-company" placeholder="https://example.com/image.jpg">
-              <p class="form-hint">下のプリセットから選択するか、直接URLを入力してください</p>
+          </div>
+
+          <!-- 非表示のselect（互換性のため） -->
+          <select id="lp-job-select" style="display: none;"></select>
+
+          <div id="lp-editor" style="display: none;">
+            <!-- プレビューアクション -->
+            <div class="lp-preview-actions">
+              <button type="button" class="lp-back-btn" id="lp-back-to-jobs">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                求人一覧に戻る
+              </button>
+              <a href="#" id="lp-preview-btn" target="_blank" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                プレビュー
+              </a>
+              <a href="#" id="lp-edit-mode-btn" target="_blank" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                編集モードで開く
+              </a>
             </div>
-            <div class="form-group">
-              <label>プリセット画像を選択</label>
-              <div class="hero-image-presets" id="hero-image-presets-company">
-                <!-- JavaScriptで動的に生成 -->
+
+            <!-- 1. テンプレート -->
+            <div class="form-section lp-form-section" id="template-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">1</span>
+                <h4>テンプレート</h4>
+              </div>
+              <p class="form-hint">LPのレイアウトスタイルを選択してください。未選択の場合はデフォルトが適用されます。</p>
+              <div id="template-selector-container">
+                <!-- テンプレートセレクターはJSで動的に生成 -->
               </div>
             </div>
+
+            <!-- 2. カラー選択 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">2</span>
+                <h4>カラー選択</h4>
+              </div>
+              <p class="form-hint">LPのカラーテーマを選択してください</p>
+              <div class="design-pattern-grid" id="design-pattern-grid">
+                <label class="pattern-option">
+                  <input type="radio" name="design-pattern" value="standard" checked>
+                  <div class="pattern-preview standard">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
+                    <span class="pattern-name">スタンダード</span>
+                    <span class="pattern-desc">シンプルで使いやすい</span>
+                  </div>
+                </label>
+                <label class="pattern-option">
+                  <input type="radio" name="design-pattern" value="modern">
+                  <div class="pattern-preview modern">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
+                    <span class="pattern-name">モダン</span>
+                    <span class="pattern-desc">洗練されたデザイン</span>
+                  </div>
+                </label>
+                <label class="pattern-option">
+                  <input type="radio" name="design-pattern" value="classic">
+                  <div class="pattern-preview classic">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
+                    <span class="pattern-name">クラシック</span>
+                    <span class="pattern-desc">信頼感のある重厚感</span>
+                  </div>
+                </label>
+                <label class="pattern-option">
+                  <input type="radio" name="design-pattern" value="minimal">
+                  <div class="pattern-preview minimal">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
+                    <span class="pattern-name">ミニマル</span>
+                    <span class="pattern-desc">シックでモノトーン</span>
+                  </div>
+                </label>
+                <label class="pattern-option">
+                  <input type="radio" name="design-pattern" value="colorful">
+                  <div class="pattern-preview colorful">
+                    <div class="pattern-mini-lp">
+                      <div class="mini-hero"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-section"></div>
+                      <div class="mini-cta"></div>
+                    </div>
+                    <span class="pattern-name">カラフル</span>
+                    <span class="pattern-desc">華やかで目を引く</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3. ヒーローセクション -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">3</span>
+                <h4>ヒーローセクション</h4>
+              </div>
+              <div class="form-group">
+                <label for="lp-hero-title">ヒーロータイトル</label>
+                <input type="text" id="lp-hero-title" placeholder="例: 月収32万円以上可！入社特典あり">
+              </div>
+              <div class="form-group">
+                <label for="lp-hero-subtitle">サブタイトル</label>
+                <input type="text" id="lp-hero-subtitle" placeholder="例: 未経験歓迎・寮完備">
+              </div>
+              <div class="form-group">
+                <label for="lp-hero-image">ヒーロー画像URL</label>
+                <input type="text" id="lp-hero-image" placeholder="https://example.com/image.jpg">
+                <p class="form-hint">下のプリセットから選択するか、直接URLを入力してください</p>
+              </div>
+              <div class="form-group">
+                <label>プリセット画像を選択</label>
+                <div class="hero-image-presets" id="hero-image-presets">
+                  <!-- JavaScriptで動的に生成 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. ポイント（特徴） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">4</span>
+                <h4>ポイント（特徴）</h4>
+              </div>
+              <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
+              <div class="point-inputs" id="point-inputs-container">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+              <button type="button" id="btn-add-point" class="btn-add-item">
+                <span>+</span> ポイントを追加
+              </button>
+            </div>
+
+            <!-- 5. CTA（応募ボタン） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">5</span>
+                <h4>CTA（応募ボタン）</h4>
+              </div>
+              <div class="form-group">
+                <label for="lp-cta-text">ボタンテキスト</label>
+                <input type="text" id="lp-cta-text" placeholder="例: 今すぐ応募する" value="今すぐ応募する">
+              </div>
+            </div>
+
+            <!-- 6. FAQ（よくある質問） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">6</span>
+                <h4>FAQ（よくある質問）</h4>
+              </div>
+              <p class="form-hint">質問と回答を入力してください。LPではLINE風のチャット形式で表示されます。</p>
+              <div class="faq-editor" id="faq-editor">
+                <div class="faq-list" id="faq-list">
+                  <!-- FAQアイテムはJSで動的に生成 -->
+                </div>
+                <button type="button" class="faq-add-btn" id="btn-add-faq">
+                  <span class="faq-add-icon">+</span>
+                  質問を追加
+                </button>
+              </div>
+              <!-- 互換性のため非表示のテキストエリアを保持 -->
+              <textarea id="lp-faq" style="display: none;"></textarea>
+            </div>
+
+            <!-- カスタムセクション（動画・カルーセル等） -->
+            <div class="form-section lp-form-section" id="custom-sections-panel" style="display: none;">
+              <div class="lp-section-header">
+                <span class="lp-section-number">✨</span>
+                <h4>追加コンテンツ</h4>
+              </div>
+              <p class="form-hint">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</p>
+              <div class="custom-sections-list" id="custom-sections-list">
+                <!-- JSで動的に生成 -->
+              </div>
+              <button type="button" id="btn-add-custom-section" class="btn-add-item">
+                <span>+</span> 動画・スライドなどを追加
+              </button>
+            </div>
+
+            <!-- 7. セクション管理 -->
+            <div class="form-section lp-form-section" id="section-manager">
+              <div class="lp-section-header">
+                <span class="lp-section-number">7</span>
+                <h4>セクション管理</h4>
+              </div>
+              <p class="form-hint">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</p>
+              <div class="section-manager-toolbar">
+                <button type="button" id="btn-add-section" class="btn-primary">
+                  <span>+</span> セクションを追加
+                </button>
+              </div>
+              <ul id="lp-sections-list" class="sections-list">
+                <!-- セクションリストはJSで動的に生成 -->
+              </ul>
+            </div>
+
+            <!-- 8. 広告トラッキング設定 -->
+            <div class="form-section lp-form-section collapsible" id="ad-tracking-section">
+              <div class="lp-section-header collapsible-header" data-target="ad-tracking-content">
+                <span class="lp-section-number">8</span>
+                <h4>広告トラッキング設定</h4>
+                <span class="collapse-icon">▼</span>
+              </div>
+              <div class="collapsible-content" id="ad-tracking-content">
+                <p class="form-hint">TikTok広告やGoogle広告のコンバージョン計測に使用します。</p>
+                <div class="form-group">
+                  <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
+                  <input type="text" id="lp-tiktok-pixel" placeholder="例: CXXXXXXXXXXXXXX">
+                  <p class="form-hint">TikTok Ads ManagerのPixel IDを入力してください</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-google-ads-id">Google Ads コンバージョンID</label>
+                  <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789">
+                  <p class="form-hint">Google Adsのコンバージョン追跡タグIDを入力してください</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-google-ads-label">Google Ads コンバージョンラベル</label>
+                  <input type="text" id="lp-google-ads-label" placeholder="例: AbCdEfGhIjKlMn">
+                  <p class="form-hint">コンバージョンアクション作成時に発行されるラベルを入力してください</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-meta-pixel">Meta Pixel ID</label>
+                  <input type="text" id="lp-meta-pixel" placeholder="例: 1234567890123456">
+                  <p class="form-hint">Meta Business SuiteのPixel IDを入力してください（Facebook/Instagram広告用）</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-line-tag">LINE Tag ID</label>
+                  <input type="text" id="lp-line-tag" placeholder="例: 12345678-abcd-efgh-ijkl-1234567890ab">
+                  <p class="form-hint">LINE広告マネージャーのベースタグIDを入力してください</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-clarity">Microsoft Clarity Project ID</label>
+                  <input type="text" id="lp-clarity" placeholder="例: abcdefghij">
+                  <p class="form-hint">Clarityのプロジェクト設定で確認できるIDを入力してください（ヒートマップ・レコーディング用）</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. OGP設定（広告プレビュー用） -->
+            <div class="form-section lp-form-section collapsible" id="ogp-section">
+              <div class="lp-section-header collapsible-header" data-target="ogp-content">
+                <span class="lp-section-number">9</span>
+                <h4>OGP設定（広告プレビュー用）</h4>
+                <span class="collapse-icon">▼</span>
+              </div>
+              <div class="collapsible-content" id="ogp-content">
+                <p class="form-hint">広告やSNSでシェアされた時に表示される情報です。</p>
+                <div class="form-group">
+                  <label for="lp-ogp-title">OGPタイトル</label>
+                  <input type="text" id="lp-ogp-title" placeholder="例: 月収32万円以上可！製造スタッフ募集">
+                  <p class="form-hint">空欄の場合はヒーロータイトルが使用されます</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-ogp-description">OGP説明文</label>
+                  <input type="text" id="lp-ogp-description" placeholder="例: 未経験歓迎・寮完備の高待遇求人！今すぐチェック">
+                  <p class="form-hint">空欄の場合は自動生成されます</p>
+                </div>
+                <div class="form-group">
+                  <label for="lp-ogp-image">OGP画像URL</label>
+                  <input type="text" id="lp-ogp-image" placeholder="https://example.com/ogp-image.jpg">
+                  <p class="form-hint">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 保存ボタン -->
+            <div class="form-actions">
+              <button id="btn-save-lp-settings" class="btn-primary">LP設定を保存</button>
+              <button id="btn-reset-lp-settings" class="btn-secondary">リセット</button>
+              <button id="btn-toggle-preview" class="btn-secondary">プレビュー表示</button>
+            </div>
+
+            <div id="lp-save-message" class="form-success" style="display: none;">LP設定を保存しました</div>
+            <div id="lp-error-message" class="form-error" style="display: none;"></div>
           </div>
 
-          <div class="form-section">
-            <h4>ポイント（特徴）</h4>
-            <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
-            <div class="point-inputs" id="point-inputs-container-company">
-              <!-- JavaScriptで動的に生成 -->
+          <!-- リアルタイムプレビュー -->
+          <div id="lp-preview-container" class="lp-preview-container" style="display: none;">
+            <div class="lp-preview-header">
+              <h4>プレビュー</h4>
+              <div class="lp-preview-controls">
+                <label class="edit-mode-toggle">
+                  <input type="checkbox" id="preview-edit-mode">
+                  <span>編集モード</span>
+                </label>
+                <button class="preview-device-btn active" data-device="desktop" title="デスクトップ">🖥️</button>
+                <button class="preview-device-btn" data-device="tablet" title="タブレット">📱</button>
+                <button class="preview-device-btn" data-device="mobile" title="スマートフォン">📲</button>
+              </div>
+              <button id="btn-close-preview" class="btn-close-preview">&times;</button>
             </div>
-            <button type="button" id="btn-add-point-company" class="btn-add-item">
-              <span>+</span> ポイントを追加
-            </button>
-          </div>
-
-          <div class="form-section">
-            <h4>CTA（応募ボタン）</h4>
-            <div class="form-group">
-              <label for="lp-cta-text-company">ボタンテキスト</label>
-              <input type="text" id="lp-cta-text-company" placeholder="例: 今すぐ応募する" value="今すぐ応募する">
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h4>FAQ（よくある質問）</h4>
-            <div class="form-group">
-              <label for="lp-faq-company">FAQ（形式: Q:質問|A:回答||Q:質問2|A:回答2）</label>
-              <textarea id="lp-faq-company" rows="4" placeholder="Q:未経験でも応募できますか？|A:はい、未経験の方も大歓迎です。||Q:寮はありますか？|A:はい、完全個室の寮を完備しています。"></textarea>
+            <div class="lp-preview-frame-wrapper" data-device="desktop">
+              <iframe id="lp-preview-frame" class="lp-preview-frame"></iframe>
             </div>
           </div>
-
-          <div class="form-section">
-            <h4>セクションの表示/非表示</h4>
-            <div class="form-group">
-              <label class="checkbox-label"><input type="checkbox" id="section-points-visible-company" checked> ポイント（特徴）を表示</label>
-            </div>
-            <div class="form-group">
-              <label class="checkbox-label"><input type="checkbox" id="section-jobs-visible-company" checked> 求人一覧を表示</label>
-            </div>
-            <div class="form-group">
-              <label class="checkbox-label"><input type="checkbox" id="section-details-visible-company" checked> 募集要項を表示</label>
-            </div>
-            <div class="form-group">
-              <label class="checkbox-label"><input type="checkbox" id="section-faq-visible-company" checked> FAQを表示</label>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button id="btn-save-lp-settings-company" class="btn-primary">LP設定を保存</button>
-            <button id="btn-reset-lp-settings-company" class="btn-secondary">リセット</button>
-          </div>
-
-          <div id="lp-save-message" class="form-success" style="display: none;">LP設定を保存しました</div>
-          <div id="lp-error-message" class="form-error" style="display: none;"></div>
         </div>
       </section>
     </main>
@@ -817,6 +1072,19 @@
             </div>
           </div>
           <div class="form-group">
+            <label for="edit-job-type">職種</label>
+            <select id="edit-job-type">
+              <option value="">選択してください</option>
+              <option value="事務・管理・企画">事務・管理・企画</option>
+              <option value="営業・販売・サービス">営業・販売・サービス</option>
+              <option value="IT・クリエイティブ">IT・クリエイティブ</option>
+              <option value="製造・エンジニアリング">製造・エンジニアリング</option>
+              <option value="医療・福祉・教育">医療・福祉・教育</option>
+              <option value="物流・運輸">物流・運輸</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="edit-job-features">特徴（カンマ区切り）</label>
             <input type="text" id="edit-job-features" placeholder="例: 未経験歓迎, 寮完備, 交通費支給">
           </div>
@@ -872,10 +1140,45 @@
     </div>
   </div>
 
+  <!-- セクション追加モーダル -->
+  <div id="add-section-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>セクションを追加</h3>
+        <button class="modal-close" id="add-section-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="form-hint">追加したいセクションタイプを選択してください</p>
+        <div class="section-type-grid" id="section-type-grid">
+          <!-- JSで動的に生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- セクションエディターモーダル -->
+  <div id="section-editor-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="section-editor-title">セクションを編集</h3>
+        <button class="modal-close" id="section-editor-close">&times;</button>
+      </div>
+      <div class="modal-body" id="section-editor-content">
+        <!-- JSで動的に生成 -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-danger" id="section-delete-btn">削除</button>
+        <button type="button" class="btn-secondary" id="section-editor-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="section-editor-save">適用</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <!-- SheetJS for Excel export -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </body>

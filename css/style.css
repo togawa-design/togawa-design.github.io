@@ -1834,6 +1834,182 @@ img {
 }
 
 /* ========================================
+   職種検索モーダル
+======================================== */
+.occupation-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition);
+}
+
+.occupation-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.occupation-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.occupation-modal-content {
+  position: relative;
+  background: #fff;
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: translateY(24px) scale(0.95);
+  transition: var(--transition);
+  box-shadow: var(--shadow-xl);
+}
+
+.occupation-modal.active .occupation-modal-content {
+  transform: translateY(0) scale(1);
+}
+
+.occupation-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  background: var(--gray-100);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.occupation-modal-close:hover {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.occupation-modal-content h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--gray-900);
+}
+
+.occupation-modal-content > p {
+  color: var(--gray-500);
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.occupation-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.occupation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.occupation-item:hover {
+  background: var(--primary);
+  transform: translateY(-2px);
+}
+
+.occupation-icon {
+  font-size: 24px;
+}
+
+.occupation-name {
+  font-weight: 600;
+  color: var(--gray-800);
+  font-size: 14px;
+}
+
+.occupation-item:hover .occupation-name {
+  color: #fff;
+}
+
+/* ========================================
+   キーワード検索パネル
+======================================== */
+.keyword-search-form {
+  display: flex;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.keyword-input {
+  flex: 1;
+  padding: 16px 20px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.keyword-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.keyword-search-btn {
+  padding: 16px 32px;
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.keyword-search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 480px) {
+  .keyword-search-form {
+    flex-direction: column;
+  }
+
+  .occupation-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
    パンくずリスト
 ======================================== */
 .breadcrumb {
