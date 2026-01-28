@@ -253,6 +253,7 @@ function showJobModal() {
   setVal('edit-job-salary', '');
   setVal('edit-job-bonus', '');
   setVal('edit-job-order', '');
+  setVal('edit-job-type', '');
   setVal('edit-job-features', '');
   setVal('edit-job-badges', '');
   setVal('edit-job-description', '');
@@ -297,6 +298,7 @@ function editJob(rowIndex) {
   setVal('edit-job-salary', job.monthlySalary);
   setVal('edit-job-bonus', job.totalBonus);
   setVal('edit-job-order', job.order);
+  setVal('edit-job-type', job.jobType);
   setVal('edit-job-features', job.features);
   setVal('edit-job-badges', job.badges);
   setVal('edit-job-description', job.jobDescription);
@@ -350,11 +352,13 @@ async function saveJobData() {
   const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
 
   const jobData = {
+    id: isNewJob ? '' : (currentEditingJob?.id || ''),
     title: getVal('edit-job-title'),
     location: getVal('edit-job-location'),
     monthlySalary: getVal('edit-job-salary'),
     totalBonus: getVal('edit-job-bonus'),
     order: getVal('edit-job-order'),
+    jobType: getVal('edit-job-type'),
     features: getVal('edit-job-features'),
     badges: getVal('edit-job-badges'),
     jobDescription: getVal('edit-job-description'),

@@ -342,6 +342,7 @@ function createCompanyAssets(domainName, sheet, row) {
         "location",
         "totalBonus",
         "monthlySalary",
+        "jobType",
         "features",
         "badges",
         "jobDescription",
@@ -362,6 +363,7 @@ function createCompanyAssets(domainName, sheet, row) {
         "勤務地",
         "賞与合計",
         "月収",
+        "職種",
         "特徴",
         "バッジ",
         "仕事内容",
@@ -376,11 +378,11 @@ function createCompanyAssets(domainName, sheet, row) {
       ],
     ];
 
-    targetSheet.getRange("A1:P1").setValues(h1);
-    targetSheet.getRange("A2:P2").setValues(h2);
-    targetSheet.getRange("A1:P2").setFontWeight("bold");
-    targetSheet.getRange("A1:P1").setBackground("#d9d9d9");
-    targetSheet.getRange("A2:P2").setBackground("#f3f3f3");
+    targetSheet.getRange("A1:Q1").setValues(h1);
+    targetSheet.getRange("A2:Q2").setValues(h2);
+    targetSheet.getRange("A1:Q2").setFontWeight("bold");
+    targetSheet.getRange("A1:Q1").setBackground("#d9d9d9");
+    targetSheet.getRange("A2:Q2").setBackground("#f3f3f3");
     targetSheet.setFrozenRows(2);
     targetSheet.getRange("D3:E1000").setNumberFormat("¥#,##0");
     targetSheet.getRange("O3:P1000").setNumberFormat("yyyy/MM/dd");
@@ -799,7 +801,25 @@ function saveJob(companyDomain, jobData, rowIndex) {
   try {
     const ss = openCompanySheet(companyDomain);
     const sheet = ss.getSheets()[0];
-    const headers = sheet.getRange(1, 1, 1, 16).getValues()[0];
+
+    // 現在のヘッダーを取得
+    const lastCol = sheet.getLastColumn();
+    let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+
+    // 必要な列が存在しなければ追加
+    const requiredCols = ["jobType"];
+    for (const col of requiredCols) {
+      if (!headers.includes(col)) {
+        const newColIndex = lastCol + 1;
+        sheet.getRange(1, newColIndex).setValue(col);
+        // 2行目に日本語ヘッダーを追加
+        const japaneseHeaders = { jobType: "職種" };
+        if (japaneseHeaders[col]) {
+          sheet.getRange(2, newColIndex).setValue(japaneseHeaders[col]);
+        }
+        headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      }
+    }
 
     // 行データを作成
     const rowData = headers.map((header) => {
@@ -809,6 +829,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
         location: jobData.location || "",
         totalBonus: jobData.totalBonus || "",
         monthlySalary: jobData.monthlySalary || "",
+        jobType: jobData.jobType || "",
         features: jobData.features || "",
         badges: jobData.badges || "",
         jobDescription: jobData.jobDescription || "",
@@ -826,6 +847,11 @@ function saveJob(companyDomain, jobData, rowIndex) {
 
     if (rowIndex) {
       // 既存行を更新
+      // 既存のIDを保持（空の場合は既存値を維持）
+      if (!rowData[0]) {
+        const existingId = sheet.getRange(rowIndex, 1).getValue();
+        rowData[0] = existingId || rowIndex - 2; // IDがなければ行番号から生成
+      }
       sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
       return {
         success: true,

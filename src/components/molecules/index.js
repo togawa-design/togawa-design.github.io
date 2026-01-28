@@ -24,9 +24,15 @@ export function JobCard({ job, showCompanyName = false }) {
     badgesHtml += Badge({ text: '急募', type: 'urgent' });
   }
 
-  const detailUrl = job.companyDomain?.trim()
-    ? `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`
-    : (job.detailUrl || '#');
+  // 求人IDがある場合は求人詳細ページ、なければ会社ページ
+  let detailUrl = '#';
+  if (job.companyDomain?.trim() && job.id) {
+    detailUrl = `job-detail.html?company=${encodeURIComponent(job.companyDomain.trim())}&job=${encodeURIComponent(job.id)}`;
+  } else if (job.companyDomain?.trim()) {
+    detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
+  } else if (job.detailUrl) {
+    detailUrl = job.detailUrl;
+  }
 
   return `
     <article class="job-card" data-job-id="${escapeHtml(job.id || '')}">
