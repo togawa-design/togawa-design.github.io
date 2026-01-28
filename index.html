@@ -147,71 +147,25 @@
           <h3>勤務地から探す</h3>
           <p>働きたいエリアから求人を検索</p>
         </div>
-        <div class="search-card" data-method="maker">
-          <div class="search-card-icon">🏭</div>
-          <h3>メーカー名で探す</h3>
-          <p>希望のメーカーから求人を検索</p>
+        <div class="search-card" data-method="occupation">
+          <div class="search-card-icon">🔧</div>
+          <h3>職種から探す</h3>
+          <p>希望の職種から求人を検索</p>
         </div>
-        <div class="search-card" data-method="date">
-          <div class="search-card-icon">📅</div>
-          <h3>入社日から探す</h3>
-          <p>入社可能日から求人を検索</p>
-        </div>
-        <div class="search-card" data-method="consult">
-          <div class="search-card-icon">💬</div>
-          <h3>相談からはじめる</h3>
-          <p>専門スタッフに相談して探す</p>
+        <div class="search-card" data-method="keyword">
+          <div class="search-card-icon">🔍</div>
+          <h3>フリーキーワード</h3>
+          <p>キーワードで求人を検索</p>
         </div>
       </div>
 
-      <!-- メーカー検索パネル -->
-      <div class="search-panel" id="panel-maker">
-        <h3>メーカーを選択してください</h3>
-        <div class="maker-grid">
-          <a href="#" class="maker-item">トヨタ自動車</a>
-          <a href="#" class="maker-item">日産自動車</a>
-          <a href="#" class="maker-item">ホンダ</a>
-          <a href="#" class="maker-item">スバル</a>
-          <a href="#" class="maker-item">マツダ</a>
-          <a href="#" class="maker-item">三菱自動車</a>
-          <a href="#" class="maker-item">ダイハツ</a>
-          <a href="#" class="maker-item">スズキ</a>
-          <a href="#" class="maker-item">いすゞ</a>
-          <a href="#" class="maker-item">日野自動車</a>
-          <a href="#" class="maker-item">アイシン</a>
-          <a href="#" class="maker-item">デンソー</a>
-        </div>
-      </div>
-
-      <!-- 入社日検索パネル -->
-      <div class="search-panel" id="panel-date">
-        <h3>入社希望月を選択してください</h3>
-        <div class="date-grid">
-          <a href="#" class="date-item">
-            <span class="date-month">1月</span>
-            <span class="date-count">12件</span>
-          </a>
-          <a href="#" class="date-item">
-            <span class="date-month">2月</span>
-            <span class="date-count">15件</span>
-          </a>
-          <a href="#" class="date-item">
-            <span class="date-month">3月</span>
-            <span class="date-count">20件</span>
-          </a>
-          <a href="#" class="date-item">
-            <span class="date-month">4月</span>
-            <span class="date-count">25件</span>
-          </a>
-          <a href="#" class="date-item">
-            <span class="date-month">5月</span>
-            <span class="date-count">18件</span>
-          </a>
-          <a href="#" class="date-item">
-            <span class="date-month">6月</span>
-            <span class="date-count">22件</span>
-          </a>
-        </div>
+      <!-- キーワード検索パネル -->
+      <div class="search-panel" id="panel-keyword">
+        <h3>キーワードで検索</h3>
+        <form class="keyword-search-form" id="keyword-search-form">
+          <input type="text" id="keyword-input" placeholder="例: 寮完備、高収入、未経験" class="keyword-input">
+          <button type="submit" class="keyword-search-btn">検索</button>
+        </form>
       </div>
     </div>
   </section>

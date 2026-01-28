@@ -140,12 +140,87 @@ function trackJobsPageView(jobCount) {
   });
 }
 
+// キーワード・職種検索結果を表示
+export async function renderFilteredJobs(container, filterType, filterValue) {
+  try {
+    let jobs = [];
+    let titleText = '';
+
+    if (filterType === 'keyword') {
+      jobs = await JobsLoader.getJobsByKeyword(filterValue);
+      titleText = `「${filterValue}」の検索結果`;
+    } else if (filterType === 'occupation') {
+      jobs = await JobsLoader.getJobsByOccupation(filterValue);
+      titleText = `職種「${filterValue}」の検索結果`;
+    }
+
+    // 掲載期間内のみ表示
+    jobs = jobs.filter(job =>
+      job.visible !== 'false' &&
+      job.visible !== 'FALSE' &&
+      JobsLoader.isJobInPublishPeriod(job)
+    );
+
+    if (jobs.length === 0) {
+      container.innerHTML = `
+        <div class="jobs-page-header">
+          <h1 class="jobs-page-title">${escapeHtml(titleText)}</h1>
+          <p class="jobs-page-description">該当する求人が見つかりませんでした</p>
+        </div>
+        <div class="jobs-error">
+          <p>条件に一致する求人はありません。</p>
+          <a href="jobs.html" class="btn-more">すべての求人を見る</a>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="jobs-page-header">
+        <h1 class="jobs-page-title">${escapeHtml(titleText)}</h1>
+        <p class="jobs-page-description">${jobs.length}件の求人が見つかりました</p>
+        <a href="jobs.html" class="filter-clear-link">フィルターを解除</a>
+      </div>
+      <div class="jobs-grid jobs-page-grid">
+        ${jobs.map(job => JobCard({ job, showCompanyName: true })).join('')}
+      </div>
+    `;
+
+    trackEvent('view_filtered_jobs', {
+      filter_type: filterType,
+      filter_value: filterValue,
+      result_count: jobs.length
+    });
+
+  } catch (error) {
+    console.error('フィルタリング求人の取得エラー:', error);
+    container.innerHTML = `
+      <div class="jobs-error">
+        <p>データの取得に失敗しました。</p>
+        <button onclick="location.reload()">再読み込み</button>
+      </div>
+    `;
+  }
+}
+
 // ページ初期化
 export async function initJobsPage() {
   const container = document.getElementById('jobs-page-container');
   if (!container) return;
 
-  await renderAllJobs(container);
+  // URLパラメータをチェック
+  const params = new URLSearchParams(window.location.search);
+  const keyword = params.get('keyword');
+  const occupation = params.get('occupation');
+
+  if (keyword) {
+    await renderFilteredJobs(container, 'keyword', keyword);
+  } else if (occupation) {
+    await renderFilteredJobs(container, 'occupation', occupation);
+  } else {
+    await renderAllJobs(container);
+  }
+
   await renderLocationsList();
   initMobileMenu();
 }
@@ -153,5 +228,6 @@ export async function initJobsPage() {
 export default {
   initJobsPage,
   renderAllJobs,
+  renderFilteredJobs,
   renderLocationsList
 };

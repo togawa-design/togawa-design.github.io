@@ -30,11 +30,23 @@ export function initSearchTabs() {
         showLocationModal();
       }
 
-      if (method === 'consult') {
-        showConsultModal();
+      if (method === 'occupation') {
+        showOccupationModal();
       }
     });
   });
+
+  // キーワード検索フォームの処理
+  const keywordForm = document.getElementById('keyword-search-form');
+  if (keywordForm) {
+    keywordForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const keyword = document.getElementById('keyword-input')?.value?.trim();
+      if (keyword) {
+        window.location.href = `jobs.html?keyword=${encodeURIComponent(keyword)}`;
+      }
+    });
+  }
 }
 
 // 勤務地検索モーダル
@@ -96,6 +108,58 @@ export async function showLocationModal() {
     console.error('勤務地の取得エラー:', error);
     modal.querySelector('.location-list').innerHTML = '<p class="error">勤務地の取得に失敗しました</p>';
   }
+}
+
+// 職種検索モーダル
+export function showOccupationModal() {
+  const existingModal = document.querySelector('.occupation-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // 職種一覧
+  const occupations = [
+    { id: 'office', name: '事務・管理・企画', icon: '💼' },
+    { id: 'sales', name: '営業・販売・サービス', icon: '🤝' },
+    { id: 'it', name: 'IT・クリエイティブ', icon: '💻' },
+    { id: 'manufacturing', name: '製造・エンジニアリング', icon: '🔧' },
+    { id: 'medical', name: '医療・福祉・教育', icon: '🏥' },
+    { id: 'logistics', name: '物流・運輸', icon: '🚚' },
+    { id: 'other', name: 'その他', icon: '📋' }
+  ];
+
+  const modal = document.createElement('div');
+  modal.className = 'occupation-modal';
+  modal.innerHTML = `
+    <div class="occupation-modal-overlay"></div>
+    <div class="occupation-modal-content">
+      <button class="occupation-modal-close">&times;</button>
+      <h3>職種から探す</h3>
+      <p>希望の職種を選択してください</p>
+      <div class="occupation-list">
+        ${occupations.map(occ => `
+          <a href="jobs.html?occupation=${encodeURIComponent(occ.name)}" class="occupation-item" data-occupation="${occ.id}">
+            <span class="occupation-icon">${occ.icon}</span>
+            <span class="occupation-name">${occ.name}</span>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  requestAnimationFrame(() => {
+    modal.classList.add('active');
+  });
+
+  const closeModal = () => {
+    modal.classList.remove('active');
+    setTimeout(() => modal.remove(), 300);
+  };
+
+  modal.querySelector('.occupation-modal-close').addEventListener('click', closeModal);
+  modal.querySelector('.occupation-modal-overlay').addEventListener('click', closeModal);
 }
 
 // 相談モーダル
@@ -421,5 +485,6 @@ export default {
   renderStats,
   renderFooterLocations,
   showLocationModal,
+  showOccupationModal,
   showConsultModal
 };

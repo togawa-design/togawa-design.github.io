@@ -50,7 +50,7 @@ export function normalizeHeader(header) {
     'id': 'id', 'ID': 'id', '求人ID': 'jobId', 'jobId': 'jobId', 'job_id': 'jobId',
     '会社名': 'company', 'company': 'company',
     'タイトル': 'title', 'title': 'title',
-    '勤務地': 'location', 'location': 'companyAddress',
+    '勤務地': 'location', 'location': 'location',
     '特典総額': 'totalBonus', 'totalBonus': 'totalBonus',
     '月収例': 'monthlySalary', 'monthlySalary': 'monthlySalary',
     '特徴': 'features', 'features': 'features',
@@ -75,7 +75,7 @@ export function normalizeHeader(header) {
     '管理シートURL': 'manageSheetUrl', 'manageSheetUrl': 'manageSheetUrl', '求人管理シートURL': 'manageSheetUrl',
     '掲載開始日': 'publishStartDate', 'publishStartDate': 'publishStartDate', 'publish_start_date': 'publishStartDate',
     '掲載終了日': 'publishEndDate', 'publishEndDate': 'publishEndDate', 'publish_end_date': 'publishEndDate',
-    '職種名': 'jobType', 'jobType': 'jobType', 'job_type': 'jobType',
+    '職種名': 'jobType', '職種': 'jobType', 'jobType': 'jobType', 'job_type': 'jobType',
     '給与': 'salary', 'salary': 'salary',
     '雇用形態': 'employmentType', 'employmentType': 'employmentType', 'employment_type': 'employmentType',
     '資格・スキル': 'skills', 'skills': 'skills', '資格': 'skills', 'スキル': 'skills',
@@ -162,7 +162,13 @@ export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
     const response = await fetch(csvUrl);
     if (!response.ok) throw new Error('求人データの取得に失敗しました');
     const csvText = await response.text();
-    return parseCSV(csvText, 0, 1);
+    // ヘッダー行を確認して、データ開始行を判定
+    const lines = csvText.split('\n');
+    const firstHeader = lines[0]?.split(',')[0] || '';
+    // ヘッダーが「英語 日本語」形式（1行ヘッダー）か確認
+    const isCombinedHeader = firstHeader.includes(' ') && !firstHeader.startsWith('"管理');
+    const dataStartRow = isCombinedHeader ? 1 : 2;
+    return parseCSV(csvText, 0, dataStartRow);
   } catch (error) {
     console.error('求人データの取得エラー:', error);
     return null;
@@ -312,6 +318,54 @@ export async function getJobsByLocation(prefecture) {
   });
 }
 
+// キーワードで求人をフィルタリング
+export async function getJobsByKeyword(keyword) {
+  const allJobs = await fetchAllJobs();
+  const lowerKeyword = keyword.toLowerCase();
+
+  return allJobs.filter(job => {
+    const searchFields = [
+      job.title,
+      job.company,
+      job.jobContent,
+      job.jobDescription,
+      job.description,
+      job.benefits,
+      job.requirements,
+      job.companyAddress,
+      job.location,
+      job.jobType,
+      ...(job.features || []),
+      ...(job.tags || [])
+    ];
+
+    return searchFields.some(field =>
+      field && field.toLowerCase().includes(lowerKeyword)
+    );
+  });
+}
+
+// 職種で求人をフィルタリング
+export async function getJobsByOccupation(occupation) {
+  const allJobs = await fetchAllJobs();
+  const lowerOccupation = occupation.toLowerCase();
+
+  return allJobs.filter(job => {
+    const searchFields = [
+      job.title,
+      job.jobType,
+      job.jobContent,
+      job.jobDescription,
+      ...(job.features || []),
+      ...(job.tags || [])
+    ];
+
+    return searchFields.some(field =>
+      field && field.toLowerCase().includes(lowerOccupation)
+    );
+  });
+}
+
 // 実績データを取得
 export async function fetchStats() {
   try {
@@ -380,6 +434,8 @@ const JobsLoader = {
   fetchAllJobs,
   getLocationList,
   getJobsByLocation,
+  getJobsByKeyword,
+  getJobsByOccupation,
   fetchStats,
   getDesignPatternClass,
   escapeHtml(str) {

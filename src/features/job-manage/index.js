@@ -9,7 +9,26 @@ import {
   generateCsv,
   downloadFile
 } from '@features/admin/job-feed-generator.js';
-import { initApplicantsSection, loadApplicantsData } from '@features/applicants/index.js';
+import { initApplicantsSection } from '@features/applicants/index.js';
+import {
+  saveLPSettings,
+  renderHeroImagePresets,
+  updateHeroImagePresetSelection,
+  toggleLPPreview,
+  closeLPPreview,
+  updateLPPreview,
+  debouncedUpdatePreview,
+  initPointsSection,
+  initFAQSection
+} from '@features/admin/lp-settings.js';
+import {
+  initSectionManager,
+  loadSectionsFromSettings
+} from '@features/admin/lp-section-manager.js';
+import {
+  loadCompanyManageData,
+  getCompaniesCache
+} from '@features/admin/company-manager.js';
 
 // 設定
 const config = {
@@ -194,6 +213,15 @@ async function loadJobsData() {
 
     jobsCache = result.jobs || [];
 
+    // シートURLを保存（GASレスポンスから取得できる場合）
+    if (result.sheetUrl && !sheetUrl) {
+      sheetUrl = result.sheetUrl;
+    }
+    // 会社のmanageSheetUrlがレスポンスに含まれる場合
+    if (result.manageSheetUrl && !sheetUrl) {
+      sheetUrl = result.manageSheetUrl;
+    }
+
     if (jobsCache.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">求人データがありません</td></tr>';
       return;
@@ -225,6 +253,7 @@ function showJobModal() {
   setVal('edit-job-salary', '');
   setVal('edit-job-bonus', '');
   setVal('edit-job-order', '');
+  setVal('edit-job-type', '');
   setVal('edit-job-features', '');
   setVal('edit-job-badges', '');
   setVal('edit-job-description', '');
@@ -269,6 +298,7 @@ function editJob(rowIndex) {
   setVal('edit-job-salary', job.monthlySalary);
   setVal('edit-job-bonus', job.totalBonus);
   setVal('edit-job-order', job.order);
+  setVal('edit-job-type', job.jobType);
   setVal('edit-job-features', job.features);
   setVal('edit-job-badges', job.badges);
   setVal('edit-job-description', job.jobDescription);
@@ -322,11 +352,13 @@ async function saveJobData() {
   const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
 
   const jobData = {
+    id: isNewJob ? '' : (currentEditingJob?.id || ''),
     title: getVal('edit-job-title'),
     location: getVal('edit-job-location'),
     monthlySalary: getVal('edit-job-salary'),
     totalBonus: getVal('edit-job-bonus'),
     order: getVal('edit-job-order'),
+    jobType: getVal('edit-job-type'),
     features: getVal('edit-job-features'),
     badges: getVal('edit-job-badges'),
     jobDescription: getVal('edit-job-description'),
@@ -881,15 +913,24 @@ function renderAnalyticsData(pageviews) {
 function renderGA4AnalyticsData(data) {
   const { overview, traffic, companyDetail } = data;
 
-  // サマリー
-  document.getElementById('analytics-pv').textContent = (overview?.pageViews || 0).toLocaleString();
-  document.getElementById('analytics-users').textContent = (overview?.users || 0).toLocaleString();
+  // 会社アカウントの場合はcompanyDetailのデータを優先
+  if (companyDomain && companyDetail) {
+    const summary = companyDetail.summary || {};
+    document.getElementById('analytics-pv').textContent = (summary.totalViews || 0).toLocaleString();
+    document.getElementById('analytics-users').textContent = (summary.totalUsers || 0).toLocaleString();
+    document.getElementById('analytics-pages-per-session').textContent = summary.avgJobsViewed || '-';
+    document.getElementById('analytics-avg-time').textContent = formatDuration(summary.avgSessionDuration || 0);
+  } else {
+    // 管理者アカウントの場合は全体データを表示
+    document.getElementById('analytics-pv').textContent = (overview?.pageViews || 0).toLocaleString();
+    document.getElementById('analytics-users').textContent = (overview?.users || 0).toLocaleString();
 
-  const sessions = overview?.sessions || 0;
-  const pageViews = overview?.pageViews || 0;
-  const pagesPerSession = sessions > 0 ? (pageViews / sessions).toFixed(1) : '-';
-  document.getElementById('analytics-pages-per-session').textContent = pagesPerSession;
-  document.getElementById('analytics-avg-time').textContent = '-'; // GA4 APIでは取得が複雑
+    const sessions = overview?.sessions || 0;
+    const pageViews = overview?.pageViews || 0;
+    const pagesPerSession = sessions > 0 ? (pageViews / sessions).toFixed(1) : '-';
+    document.getElementById('analytics-pages-per-session').textContent = pagesPerSession;
+    document.getElementById('analytics-avg-time').textContent = '-';
+  }
 
   // 求人別アクセス
   const jobTbody = document.getElementById('job-analytics-tbody');
@@ -920,40 +961,57 @@ function renderGA4AnalyticsData(data) {
   // 流入元
   const sourceTbody = document.getElementById('source-analytics-tbody');
   if (sourceTbody) {
-    const sources = traffic?.sources || [];
-    if (sources.length > 0) {
-      const totalSessions = sources.reduce((acc, s) => acc + (s.sessions || 0), 0);
-      sourceTbody.innerHTML = sources.slice(0, 10).map(item => {
-        const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
-        return `
-          <tr>
-            <td>${escapeHtml(item.source || '(direct)')}</td>
-            <td>${item.sessions || 0}</td>
-            <td>${percentage}%</td>
-          </tr>
-        `;
-      }).join('');
-    } else if (traffic?.channels && traffic.channels.length > 0) {
-      const totalSessions = traffic.channels.reduce((acc, c) => acc + (c.sessions || 0), 0);
-      sourceTbody.innerHTML = traffic.channels.map(item => {
-        const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
+    // 会社アカウントの場合はcompanyDetailのtrafficデータを使用
+    if (companyDomain && companyDetail?.traffic && companyDetail.traffic.length > 0) {
+      const companyTraffic = companyDetail.traffic;
+      const totalCount = companyTraffic.reduce((acc, t) => acc + (t.count || 0), 0);
+      sourceTbody.innerHTML = companyTraffic.slice(0, 10).map(item => {
+        const percentage = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
         return `
           <tr>
             <td>${escapeHtml(item.channel || '不明')}</td>
-            <td>${item.sessions || 0}</td>
+            <td>${item.count || 0}</td>
             <td>${percentage}%</td>
           </tr>
         `;
       }).join('');
     } else {
-      sourceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
+      const sources = traffic?.sources || [];
+      if (sources.length > 0) {
+        const totalSessions = sources.reduce((acc, s) => acc + (s.sessions || 0), 0);
+        sourceTbody.innerHTML = sources.slice(0, 10).map(item => {
+          const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
+          return `
+            <tr>
+              <td>${escapeHtml(item.source || '(direct)')}</td>
+              <td>${item.sessions || 0}</td>
+              <td>${percentage}%</td>
+            </tr>
+          `;
+        }).join('');
+      } else if (traffic?.channels && traffic.channels.length > 0) {
+        const totalSessions = traffic.channels.reduce((acc, c) => acc + (c.sessions || 0), 0);
+        sourceTbody.innerHTML = traffic.channels.map(item => {
+          const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
+          return `
+            <tr>
+              <td>${escapeHtml(item.channel || '不明')}</td>
+              <td>${item.sessions || 0}</td>
+              <td>${percentage}%</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        sourceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
+      }
     }
   }
 
   // デバイス別
   const deviceTbody = document.getElementById('device-analytics-tbody');
   if (deviceTbody) {
-    const devices = traffic?.devices || [];
+    // 会社アカウントの場合はcompanyDetailのdevicesを使用
+    const devices = (companyDomain && companyDetail?.devices) ? companyDetail.devices : (traffic?.devices || []);
     if (devices.length > 0) {
       const totalSessions = devices.reduce((acc, d) => acc + (d.sessions || 0), 0);
       deviceTbody.innerHTML = devices.map(item => {
@@ -971,6 +1029,62 @@ function renderGA4AnalyticsData(data) {
       }).join('');
     } else {
       deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">データがありません</td></tr>';
+    }
+  }
+
+  // ユーザー属性（会社アカウントのみ）
+  const demographicsSection = document.getElementById('analytics-demographics');
+  if (demographicsSection) {
+    if (companyDomain && companyDetail) {
+      demographicsSection.style.display = 'block';
+
+      // 男女比
+      const gender = companyDetail.gender || {};
+      const maleCount = gender.male || 0;
+      const femaleCount = gender.female || 0;
+      const totalGender = maleCount + femaleCount;
+
+      if (totalGender > 0) {
+        const malePercent = Math.round((maleCount / totalGender) * 100);
+        const femalePercent = 100 - malePercent;
+
+        const maleBar = document.getElementById('gender-bar-male');
+        const femaleBar = document.getElementById('gender-bar-female');
+        if (maleBar) maleBar.style.width = `${malePercent}%`;
+        if (femaleBar) femaleBar.style.width = `${femalePercent}%`;
+
+        const malePercentEl = document.getElementById('gender-male-percent');
+        const femalePercentEl = document.getElementById('gender-female-percent');
+        if (malePercentEl) malePercentEl.textContent = `${malePercent}%`;
+        if (femalePercentEl) femalePercentEl.textContent = `${femalePercent}%`;
+      } else {
+        document.getElementById('gender-male-percent').textContent = '-';
+        document.getElementById('gender-female-percent').textContent = '-';
+      }
+
+      // 年齢分布
+      const age = companyDetail.age || {};
+      const ageBarsContainer = document.getElementById('age-bars');
+      if (ageBarsContainer) {
+        const ageGroups = Object.entries(age);
+        if (ageGroups.length > 0) {
+          const maxAge = Math.max(...ageGroups.map(([, count]) => count));
+          ageBarsContainer.innerHTML = ageGroups.map(([group, count]) => {
+            const height = maxAge > 0 ? Math.max(10, (count / maxAge) * 80) : 10;
+            return `
+              <div class="age-bar-wrapper">
+                <span class="age-bar-value">${count}</span>
+                <div class="age-bar" style="height: ${height}px;"></div>
+                <span class="age-bar-label">${group}</span>
+              </div>
+            `;
+          }).join('');
+        } else {
+          ageBarsContainer.innerHTML = '<p style="color: #94a3b8; font-size: 13px; text-align: center;">データがありません</p>';
+        }
+      }
+    } else {
+      demographicsSection.style.display = 'none';
     }
   }
 }
@@ -1516,136 +1630,417 @@ const heroImagePresets = [
 ];
 
 const MAX_POINTS = 6;
-const gasApiUrl = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
 const spreadsheetId = '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0';
 const lpSettingsSheetName = 'LP設定';
 
+// LP設定用のキャッシュ
+let allJobsCacheForLP = [];
+let currentJobDataForLP = null;
+
 /**
- * 会社ユーザー用LP設定の初期化
+ * 会社のシートURLを取得（admin同様にcompany-managerを使用）
+ */
+async function ensureSheetUrl() {
+  if (sheetUrl) return sheetUrl;
+
+  try {
+    // admin同様にcompany-managerの関数を使用（カラム名正規化含む）
+    let companiesCache = getCompaniesCache();
+    if (!companiesCache || companiesCache.length === 0) {
+      await loadCompanyManageData();
+      companiesCache = getCompaniesCache();
+    }
+
+    const company = companiesCache.find(c => c.companyDomain === companyDomain);
+    if (company) {
+      // manageSheetUrl または jobsSheet を使用（csv-utils.jsで正規化済み）
+      sheetUrl = company.manageSheetUrl || company.jobsSheet || null;
+      console.log('[LP設定] company-managerから取得したsheetUrl:', sheetUrl);
+      console.log('[LP設定] company:', company);
+    } else {
+      console.warn('[LP設定] 会社が見つかりません:', companyDomain);
+    }
+  } catch (e) {
+    console.warn('[LP設定] 会社情報の取得に失敗:', e);
+  }
+
+  return sheetUrl;
+}
+
+/**
+ * 会社ユーザー用LP設定の初期化（admin同等のUI）
  */
 function initCompanyLPSettings() {
-  // URL表示
-  const urlDisplay = document.getElementById('lp-url-display');
-  if (urlDisplay) {
-    urlDisplay.textContent = `${window.location.origin}/lp.html?c=${companyDomain}`;
-  }
+  console.log('[LP設定] initCompanyLPSettings 開始');
 
-  // プレビューボタン
-  const previewBtn = document.getElementById('lp-preview-btn-company');
-  if (previewBtn) {
-    previewBtn.href = `lp.html?c=${encodeURIComponent(companyDomain)}`;
-  }
+  // セクションマネージャーを初期化
+  initSectionManager(updateLPPreview, {
+    getCompanyDomain: () => companyDomain
+  });
 
-  // ヒーロー画像プリセットをレンダリング
-  renderHeroImagePresetsCompany();
+  // ポイントセクションを初期化
+  initPointsSection();
 
-  // ポイント追加ボタン
-  const addPointBtn = document.getElementById('btn-add-point-company');
-  if (addPointBtn) {
-    addPointBtn.addEventListener('click', addPointCompany);
-  }
+  // FAQセクションを初期化
+  initFAQSection();
 
   // 保存ボタン
-  const saveBtn = document.getElementById('btn-save-lp-settings-company');
+  const saveBtn = document.getElementById('btn-save-lp-settings');
   if (saveBtn) {
-    saveBtn.addEventListener('click', saveCompanyLPSettings);
+    saveBtn.addEventListener('click', () => {
+      saveLPSettings();
+    });
   }
 
   // リセットボタン
-  const resetBtn = document.getElementById('btn-reset-lp-settings-company');
+  const resetBtn = document.getElementById('btn-reset-lp-settings');
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       if (confirm('LP設定をリセットしますか？')) {
-        clearCompanyLPForm();
+        clearLPForm();
       }
     });
   }
+
+  // プレビュー表示/非表示ボタン
+  const togglePreviewBtn = document.getElementById('btn-toggle-preview');
+  if (togglePreviewBtn) {
+    togglePreviewBtn.addEventListener('click', toggleLPPreview);
+  }
+
+  // プレビュー閉じるボタン
+  const closePreviewBtn = document.getElementById('btn-close-preview');
+  if (closePreviewBtn) {
+    closePreviewBtn.addEventListener('click', closeLPPreview);
+  }
+
+  // 戻るボタン
+  const backToJobsBtn = document.getElementById('lp-back-to-jobs');
+  if (backToJobsBtn) {
+    backToJobsBtn.addEventListener('click', () => {
+      const jobSelectGroup = document.getElementById('lp-job-select-group');
+      const editor = document.getElementById('lp-editor');
+      if (jobSelectGroup) jobSelectGroup.style.display = 'block';
+      if (editor) editor.style.display = 'none';
+      updateStepIndicatorForCompany('job');
+    });
+  }
+
+  // デバイス切り替えボタン
+  document.querySelectorAll('.preview-device-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.preview-device-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const device = btn.dataset.device;
+      const wrapper = document.querySelector('.lp-preview-frame-wrapper');
+      if (wrapper) wrapper.setAttribute('data-device', device);
+    });
+  });
+
+  // フォーム入力時にプレビュー更新
+  setupLPFormListeners();
+
+  // 折りたたみセクションの初期化
+  setupCollapsibleSections();
 
   lpSettingsInitialized = true;
 }
 
 /**
- * 会社ユーザー用LP設定を読み込み
+ * LP設定フォームのイベントリスナーをセットアップ
+ */
+function setupLPFormListeners() {
+  const inputIds = [
+    'lp-hero-title', 'lp-hero-subtitle', 'lp-hero-image',
+    'lp-cta-text', 'lp-faq',
+    'lp-tiktok-pixel', 'lp-google-ads-id', 'lp-google-ads-label',
+    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image'
+  ];
+
+  inputIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => debouncedUpdatePreview());
+    }
+  });
+
+  // デザインパターン変更
+  document.querySelectorAll('input[name="design-pattern"]').forEach(radio => {
+    radio.addEventListener('change', () => debouncedUpdatePreview());
+  });
+}
+
+/**
+ * 折りたたみセクションの初期化
+ */
+function setupCollapsibleSections() {
+  document.querySelectorAll('.collapsible-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const targetId = header.dataset.target;
+      const content = document.getElementById(targetId);
+      const icon = header.querySelector('.collapse-icon');
+
+      if (content) {
+        const isVisible = content.style.display !== 'none';
+        content.style.display = isVisible ? 'none' : 'block';
+        if (icon) icon.textContent = isVisible ? '▶' : '▼';
+      }
+    });
+  });
+}
+
+/**
+ * ステップインジケーターを更新（会社ユーザー用）
+ */
+function updateStepIndicatorForCompany(currentStep) {
+  const steps = document.querySelectorAll('.lp-step');
+  const stepOrder = ['job', 'edit'];
+  const currentIndex = stepOrder.indexOf(currentStep);
+
+  steps.forEach(step => {
+    const stepName = step.dataset.step;
+    const stepIndex = stepOrder.indexOf(stepName);
+
+    step.classList.remove('active', 'completed');
+    if (stepIndex < currentIndex) {
+      step.classList.add('completed');
+    } else if (stepIndex === currentIndex) {
+      step.classList.add('active');
+    }
+  });
+}
+
+/**
+ * 会社ユーザー用LP設定を読み込み（求人一覧を表示）
  */
 async function loadCompanyLPSettings() {
   if (!lpSettingsInitialized) {
     initCompanyLPSettings();
   }
 
+  console.log('[LP設定] loadCompanyLPSettings 開始, companyDomain:', companyDomain);
+
+  // 求人一覧を読み込んで表示
+  await loadJobsForLPSettings();
+}
+
+/**
+ * LP設定用の求人一覧を読み込み
+ */
+async function loadJobsForLPSettings() {
+  const jobGrid = document.getElementById('lp-job-grid');
+  const jobSelect = document.getElementById('lp-job-select');
+
+  if (jobGrid) {
+    jobGrid.innerHTML = '<div class="lp-loading-placeholder">求人を読み込み中...</div>';
+  }
+
   try {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(lpSettingsSheetName)}`;
-    const response = await fetch(csvUrl);
+    // 既に読み込まれている求人データを使用
+    if (jobsCache.length > 0) {
+      allJobsCacheForLP = jobsCache.map(job => ({
+        id: `${companyDomain}_${job.jobId || job.id}`,
+        jobId: job.jobId || job.id,
+        title: job.title || job.募集タイトル || '(タイトルなし)',
+        company: companyName,
+        companyDomain: companyDomain,
+        sheetUrl: sheetUrl,
+        rawData: job
+      }));
+
+      renderJobCardsForLP(allJobsCacheForLP);
+
+      // 互換性のため非表示のselectも更新
+      if (jobSelect) {
+        let html = '<option value="">-- 求人を選択 --</option>';
+        for (const job of allJobsCacheForLP) {
+          html += `<option value="${escapeHtml(job.id)}">${escapeHtml(job.title)}</option>`;
+        }
+        jobSelect.innerHTML = html;
+      }
+    } else {
+      if (jobGrid) {
+        jobGrid.innerHTML = '<div class="lp-no-results"><p>求人が見つかりません。まず求人を登録してください。</p></div>';
+      }
+    }
+  } catch (e) {
+    console.error('[LP設定] 求人読み込みエラー:', e);
+    if (jobGrid) {
+      jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込み中にエラーが発生しました</p></div>';
+    }
+  }
+}
+
+/**
+ * LP設定用の求人カードをレンダリング
+ */
+function renderJobCardsForLP(jobs) {
+  const grid = document.getElementById('lp-job-grid');
+  if (!grid) return;
+
+  if (jobs.length === 0) {
+    grid.innerHTML = '<div class="lp-no-results"><p>求人がありません</p></div>';
+    return;
+  }
+
+  grid.innerHTML = jobs.map(job => `
+    <div class="lp-job-card" data-job-id="${escapeHtml(job.id)}">
+      <div class="lp-job-title">${escapeHtml(job.title)}</div>
+      <div class="lp-job-id">ID: ${escapeHtml(job.jobId)}</div>
+      <div class="lp-job-actions">
+        <button type="button" class="lp-job-action-btn primary lp-select-job-btn">LP設定を編集</button>
+        <a href="lp.html?j=${encodeURIComponent(job.id)}" target="_blank" class="lp-job-action-btn secondary">プレビュー</a>
+      </div>
+    </div>
+  `).join('');
+
+  // カードクリックイベント
+  grid.querySelectorAll('.lp-select-job-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.lp-job-card');
+      const jobId = card.dataset.jobId;
+
+      // 選択状態を更新
+      grid.querySelectorAll('.lp-job-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+
+      // 非表示のselectも更新
+      const jobSelect = document.getElementById('lp-job-select');
+      if (jobSelect) {
+        jobSelect.value = jobId;
+      }
+
+      // 現在の求人データを設定
+      currentJobDataForLP = allJobsCacheForLP.find(j => j.id === jobId);
+
+      // LP設定を読み込み
+      await loadLPSettingsForJob(jobId);
+
+      // エディターを表示
+      const jobSelectGroup = document.getElementById('lp-job-select-group');
+      const editor = document.getElementById('lp-editor');
+      if (jobSelectGroup) jobSelectGroup.style.display = 'none';
+      if (editor) editor.style.display = 'block';
+
+      // ステップインジケーターを更新
+      updateStepIndicatorForCompany('edit');
+    });
+  });
+}
+
+/**
+ * 特定の求人のLP設定を読み込み
+ */
+async function loadLPSettingsForJob(jobId) {
+  console.log('[LP設定] loadLPSettingsForJob:', jobId);
+
+  const previewBtn = document.getElementById('lp-preview-btn');
+  const editModeBtn = document.getElementById('lp-edit-mode-btn');
+
+  if (!jobId) {
+    return;
+  }
+
+  // プレビューリンクを更新
+  if (previewBtn) previewBtn.href = `lp.html?j=${encodeURIComponent(jobId)}`;
+  if (editModeBtn) editModeBtn.href = `lp.html?j=${encodeURIComponent(jobId)}&edit`;
+
+  // ヒーロー画像プリセットをレンダリング
+  renderHeroImagePresets();
+
+  // デフォルトのデザインパターンを設定
+  const patternRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
+  if (patternRadio) patternRadio.checked = true;
+
+  try {
+    // シートURLを確保（未取得の場合は会社マスターから取得）
+    await ensureSheetUrl();
+
+    // 管理シートからLP設定を読み込む
+    if (!sheetUrl) {
+      console.log('[LP設定] 管理シートURLが見つかりません');
+      clearLPFormForJob();
+      return;
+    }
+
+    // スプレッドシートIDを抽出
+    let companySheetId = null;
+    const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (sheetIdMatch) {
+      companySheetId = sheetIdMatch[1];
+    } else if (/^[a-zA-Z0-9_-]+$/.test(sheetUrl)) {
+      companySheetId = sheetUrl;
+    }
+
+    if (!companySheetId) {
+      console.log('[LP設定] 管理シートIDを抽出できません');
+      clearLPFormForJob();
+      return;
+    }
+
+    const cacheKey = Date.now();
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}&_t=${cacheKey}`;
+
+    const response = await fetch(csvUrl, { cache: 'no-store' });
 
     if (response.ok) {
       const csvText = await response.text();
-      const settings = parseLPSettingsCSVCompany(csvText, companyDomain);
+      const settings = parseLPSettingsCSVForJob(csvText, jobId);
 
       if (settings) {
-        setCompanyInputValue('lp-hero-title-company', settings.heroTitle);
-        setCompanyInputValue('lp-hero-subtitle-company', settings.heroSubtitle);
-        setCompanyInputValue('lp-hero-image-company', settings.heroImage);
+        // フォームに値を設定
+        setInputValue('lp-hero-title', settings.heroTitle);
+        setInputValue('lp-hero-subtitle', settings.heroSubtitle);
+        setInputValue('lp-hero-image', settings.heroImage);
+        setInputValue('lp-cta-text', settings.ctaText || '今すぐ応募する');
+        setInputValue('lp-faq', settings.faq);
 
-        // ポイントを動的にレンダリング
-        const points = [];
-        for (let i = 1; i <= 6; i++) {
-          const title = settings[`pointTitle${i}`] || '';
-          const desc = settings[`pointDesc${i}`] || '';
-          if (title || desc) {
-            points.push({ title, desc });
-          }
-        }
-        renderPointInputsCompany(points.length > 0 ? points : [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]);
+        // 広告トラッキング設定
+        setInputValue('lp-tiktok-pixel', settings.tiktokPixelId);
+        setInputValue('lp-google-ads-id', settings.googleAdsId);
+        setInputValue('lp-google-ads-label', settings.googleAdsLabel);
 
-        setCompanyInputValue('lp-cta-text-company', settings.ctaText || '今すぐ応募する');
-        setCompanyInputValue('lp-faq-company', settings.faq);
+        // OGP設定
+        setInputValue('lp-ogp-title', settings.ogpTitle);
+        setInputValue('lp-ogp-description', settings.ogpDescription);
+        setInputValue('lp-ogp-image', settings.ogpImage);
 
         if (settings.designPattern) {
-          const patternRadio = document.querySelector(`input[name="design-pattern-company"][value="${settings.designPattern}"]`);
-          if (patternRadio) patternRadio.checked = true;
+          const radio = document.querySelector(`input[name="design-pattern"][value="${settings.designPattern}"]`);
+          if (radio) radio.checked = true;
         }
 
-        // セクション表示設定
-        if (settings.sectionVisibility) {
-          try {
-            const visibility = JSON.parse(settings.sectionVisibility);
-            document.getElementById('section-points-visible-company').checked = visibility.points !== false;
-            document.getElementById('section-jobs-visible-company').checked = visibility.jobs !== false;
-            document.getElementById('section-details-visible-company').checked = visibility.details !== false;
-            document.getElementById('section-faq-visible-company').checked = visibility.faq !== false;
-          } catch (e) {
-            console.warn('セクション表示設定のパースに失敗:', e);
-          }
-        }
+        updateHeroImagePresetSelection(settings.heroImage || '');
 
-        updateHeroImagePresetSelectionCompany(settings.heroImage || '');
+        // セクションマネージャーにデータを読み込み
+        loadSectionsFromSettings(settings);
+
         return;
       }
     }
   } catch (e) {
-    console.log('LP設定シートが見つかりません:', e);
+    console.log('[LP設定] LP設定シートが見つかりません:', e);
   }
 
-  // 設定がない場合は初期状態
-  clearCompanyLPForm();
+  clearLPFormForJob();
 }
 
-function setCompanyInputValue(id, value) {
+function setInputValue(id, value) {
   const el = document.getElementById(id);
   if (el) el.value = value || '';
 }
 
 /**
- * LP設定CSVをパース（会社ユーザー用）
+ * LP設定CSVをパース（求人ID単位）
  */
-function parseLPSettingsCSVCompany(csvText, targetDomain) {
-  const lines = csvText.split('\n');
-  if (lines.length < 2) return null;
-
-  const headers = parseCSVLineSimple(lines[0]);
+function parseLPSettingsCSVForJob(csvText, jobId) {
+  const lines = splitCSVToRows(csvText);
+  const headers = parseCSVLineLocal(lines[0] || '');
 
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
-    const values = parseCSVLineSimple(lines[i]);
+    const values = parseCSVLineLocal(lines[i]);
     const rowData = {};
 
     headers.forEach((header, idx) => {
@@ -1653,7 +2048,9 @@ function parseLPSettingsCSVCompany(csvText, targetDomain) {
       rowData[key] = values[idx] || '';
     });
 
-    if (rowData.companyDomain === targetDomain || rowData['会社ドメイン'] === targetDomain) {
+    // jobIdで検索
+    const rowJobId = rowData.jobId || rowData['求人ID'] || '';
+    if (rowJobId === jobId) {
       const result = {
         heroTitle: rowData.heroTitle || rowData['ヒーロータイトル'] || '',
         heroSubtitle: rowData.heroSubtitle || rowData['ヒーローサブタイトル'] || '',
@@ -1661,9 +2058,19 @@ function parseLPSettingsCSVCompany(csvText, targetDomain) {
         ctaText: rowData.ctaText || rowData['CTAテキスト'] || '',
         faq: rowData.faq || rowData['FAQ'] || '',
         designPattern: rowData.designPattern || rowData['デザインパターン'] || '',
-        sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || ''
+        layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'default',
+        sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
+        sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
+        tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',
+        googleAdsId: rowData.googleAdsId || rowData['Google Ads ID'] || '',
+        googleAdsLabel: rowData.googleAdsLabel || rowData['Google Ads ラベル'] || '',
+        ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
+        ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
+        ogpImage: rowData.ogpImage || rowData['OGP画像'] || '',
+        lpContent: rowData.lpContent || rowData['LP構成'] || ''
       };
 
+      // ポイント1〜6を動的に読み込み
       for (let j = 1; j <= 6; j++) {
         result[`pointTitle${j}`] = rowData[`pointTitle${j}`] || rowData[`ポイント${j}タイトル`] || '';
         result[`pointDesc${j}`] = rowData[`pointDesc${j}`] || rowData[`ポイント${j}説明`] || '';
@@ -1676,9 +2083,47 @@ function parseLPSettingsCSVCompany(csvText, targetDomain) {
 }
 
 /**
- * シンプルなCSVパーサー
+ * CSVテキストを正しく行に分割（ダブルクォート内の改行を考慮）
  */
-function parseCSVLineSimple(line) {
+function splitCSVToRows(csvText) {
+  const rows = [];
+  let currentRow = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+
+    if (char === '"') {
+      if (csvText[i + 1] === '"') {
+        currentRow += '""';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+        currentRow += char;
+      }
+    } else if (char === '\n' && !insideQuotes) {
+      if (currentRow.trim()) {
+        rows.push(currentRow);
+      }
+      currentRow = '';
+    } else if (char === '\r') {
+      continue;
+    } else {
+      currentRow += char;
+    }
+  }
+
+  if (currentRow.trim()) {
+    rows.push(currentRow);
+  }
+
+  return rows;
+}
+
+/**
+ * CSVラインをパース
+ */
+function parseCSVLineLocal(line) {
   const result = [];
   let current = '';
   let inQuotes = false;
@@ -1686,258 +2131,49 @@ function parseCSVLineSimple(line) {
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"') {
-      inQuotes = !inQuotes;
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
     } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
+      result.push(current.replace(/^"|"$/g, '').trim());
       current = '';
     } else {
       current += char;
     }
   }
-  result.push(current.trim());
+  result.push(current.replace(/^"|"$/g, '').trim());
   return result;
 }
 
 /**
- * ヒーロー画像プリセットをレンダリング（会社ユーザー用）
+ * LP設定フォームをクリア（求人単位）
  */
-function renderHeroImagePresetsCompany() {
-  const container = document.getElementById('hero-image-presets-company');
-  if (!container) return;
+function clearLPFormForJob() {
+  const fields = [
+    'lp-hero-title', 'lp-hero-subtitle', 'lp-hero-image',
+    'lp-faq',
+    'lp-tiktok-pixel', 'lp-google-ads-id', 'lp-google-ads-label',
+    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image'
+  ];
+  fields.forEach(id => setInputValue(id, ''));
+  setInputValue('lp-cta-text', '今すぐ応募する');
 
-  container.innerHTML = heroImagePresets.map(preset => `
-    <div class="hero-image-preset" data-url="${escapeHtml(preset.url)}" title="${escapeHtml(preset.name)}">
-      <img src="${escapeHtml(preset.thumbnail)}" alt="${escapeHtml(preset.name)}" loading="lazy">
-      <span class="preset-name">${escapeHtml(preset.name)}</span>
-      <span class="preset-check">✓</span>
-    </div>
-  `).join('');
-
-  container.querySelectorAll('.hero-image-preset').forEach(item => {
-    item.addEventListener('click', () => {
-      const url = item.dataset.url;
-      selectHeroImagePresetCompany(url);
-    });
-  });
-}
-
-function selectHeroImagePresetCompany(url) {
-  const input = document.getElementById('lp-hero-image-company');
-  if (input) {
-    input.value = url;
-  }
-  updateHeroImagePresetSelectionCompany(url);
-}
-
-function updateHeroImagePresetSelectionCompany(selectedUrl) {
-  const container = document.getElementById('hero-image-presets-company');
-  if (!container) return;
-
-  container.querySelectorAll('.hero-image-preset').forEach(item => {
-    const itemUrl = item.dataset.url;
-    const baseSelectedUrl = selectedUrl?.split('?')[0] || '';
-    const baseItemUrl = itemUrl?.split('?')[0] || '';
-    if (baseSelectedUrl && baseItemUrl && baseSelectedUrl === baseItemUrl) {
-      item.classList.add('selected');
-    } else {
-      item.classList.remove('selected');
-    }
-  });
-}
-
-/**
- * ポイント入力フィールドをレンダリング（会社ユーザー用）
- */
-function renderPointInputsCompany(points = [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]) {
-  const container = document.getElementById('point-inputs-container-company');
-  if (!container) return;
-
-  container.innerHTML = points.map((point, index) => `
-    <div class="point-input-group" data-point-index="${index}">
-      <label>ポイント${index + 1}</label>
-      <input type="text" class="point-title" placeholder="タイトル" value="${escapeHtml(point.title || '')}">
-      <input type="text" class="point-desc" placeholder="説明文" value="${escapeHtml(point.desc || '')}">
-      <button type="button" class="btn-remove-point" title="削除">&times;</button>
-    </div>
-  `).join('');
-
-  container.querySelectorAll('.btn-remove-point').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const group = e.target.closest('.point-input-group');
-      if (group && container.children.length > 1) {
-        group.remove();
-        reindexPointsCompany();
-        updateAddPointButtonStateCompany();
-      }
-    });
-  });
-
-  updateAddPointButtonStateCompany();
-}
-
-function reindexPointsCompany() {
-  const container = document.getElementById('point-inputs-container-company');
-  if (!container) return;
-
-  container.querySelectorAll('.point-input-group').forEach((group, index) => {
-    group.dataset.pointIndex = index;
-    const label = group.querySelector('label');
-    if (label) label.textContent = `ポイント${index + 1}`;
-  });
-}
-
-function updateAddPointButtonStateCompany() {
-  const container = document.getElementById('point-inputs-container-company');
-  const addBtn = document.getElementById('btn-add-point-company');
-  if (!container || !addBtn) return;
-
-  addBtn.disabled = container.children.length >= MAX_POINTS;
-}
-
-function addPointCompany() {
-  const container = document.getElementById('point-inputs-container-company');
-  if (!container || container.children.length >= MAX_POINTS) return;
-
-  const newIndex = container.children.length;
-  const div = document.createElement('div');
-  div.className = 'point-input-group';
-  div.dataset.pointIndex = newIndex;
-  div.innerHTML = `
-    <label>ポイント${newIndex + 1}</label>
-    <input type="text" class="point-title" placeholder="タイトル" value="">
-    <input type="text" class="point-desc" placeholder="説明文" value="">
-    <button type="button" class="btn-remove-point" title="削除">&times;</button>
-  `;
-
-  div.querySelector('.btn-remove-point').addEventListener('click', () => {
-    if (container.children.length > 1) {
-      div.remove();
-      reindexPointsCompany();
-      updateAddPointButtonStateCompany();
-    }
-  });
-
-  container.appendChild(div);
-  updateAddPointButtonStateCompany();
-  div.querySelector('.point-title').focus();
-}
-
-function getPointsDataCompany() {
-  const container = document.getElementById('point-inputs-container-company');
-  if (!container) return [];
-
-  const points = [];
-  container.querySelectorAll('.point-input-group').forEach(group => {
-    const title = group.querySelector('.point-title')?.value || '';
-    const desc = group.querySelector('.point-desc')?.value || '';
-    points.push({ title, desc });
-  });
-  return points;
-}
-
-function clearCompanyLPForm() {
-  setCompanyInputValue('lp-hero-title-company', '');
-  setCompanyInputValue('lp-hero-subtitle-company', '');
-  setCompanyInputValue('lp-hero-image-company', '');
-  setCompanyInputValue('lp-cta-text-company', '今すぐ応募する');
-  setCompanyInputValue('lp-faq-company', '');
-
-  renderPointInputsCompany();
-
-  const standardRadio = document.querySelector('input[name="design-pattern-company"][value="standard"]');
+  const standardRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (standardRadio) standardRadio.checked = true;
 
-  document.getElementById('section-points-visible-company').checked = true;
-  document.getElementById('section-jobs-visible-company').checked = true;
-  document.getElementById('section-details-visible-company').checked = true;
-  document.getElementById('section-faq-visible-company').checked = true;
-
-  updateHeroImagePresetSelectionCompany('');
+  updateHeroImagePresetSelection('');
+  loadSectionsFromSettings({});
 }
 
 /**
  * 会社ユーザー用LP設定を保存
  */
 async function saveCompanyLPSettings() {
-  const points = getPointsDataCompany();
-
-  const sectionVisibility = {
-    points: document.getElementById('section-points-visible-company')?.checked !== false,
-    jobs: document.getElementById('section-jobs-visible-company')?.checked !== false,
-    details: document.getElementById('section-details-visible-company')?.checked !== false,
-    faq: document.getElementById('section-faq-visible-company')?.checked !== false
-  };
-
-  const settings = {
-    companyDomain: companyDomain,
-    designPattern: document.querySelector('input[name="design-pattern-company"]:checked')?.value || 'standard',
-    heroTitle: document.getElementById('lp-hero-title-company')?.value || '',
-    heroSubtitle: document.getElementById('lp-hero-subtitle-company')?.value || '',
-    heroImage: document.getElementById('lp-hero-image-company')?.value || '',
-    ctaText: document.getElementById('lp-cta-text-company')?.value || '',
-    faq: document.getElementById('lp-faq-company')?.value || '',
-    sectionVisibility: JSON.stringify(sectionVisibility)
-  };
-
-  // ポイント1〜6を設定
-  for (let i = 0; i < 6; i++) {
-    settings[`pointTitle${i + 1}`] = points[i]?.title || '';
-    settings[`pointDesc${i + 1}`] = points[i]?.desc || '';
-  }
-
-  const saveBtn = document.getElementById('btn-save-lp-settings-company');
-  const successMsg = document.getElementById('lp-save-message');
-  const errorMsg = document.getElementById('lp-error-message');
-
-  if (saveBtn) {
-    saveBtn.disabled = true;
-    saveBtn.textContent = '保存中...';
-  }
-  if (successMsg) successMsg.style.display = 'none';
-  if (errorMsg) errorMsg.style.display = 'none';
-
-  try {
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-      action: 'saveLPSettings',
-      settings: settings
-    }))));
-    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-
-    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-    const responseText = await response.text();
-
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      throw new Error('サーバーからの応答が不正です');
-    }
-
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'LP設定を保存';
-    }
-
-    if (result.success) {
-      if (successMsg) {
-        successMsg.textContent = 'LP設定を保存しました';
-        successMsg.style.display = 'block';
-        setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
-      }
-    } else {
-      throw new Error(result.error || '保存に失敗しました');
-    }
-  } catch (error) {
-    console.error('LP設定保存エラー:', error);
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'LP設定を保存';
-    }
-    if (errorMsg) {
-      errorMsg.textContent = 'LP設定の保存に失敗しました: ' + error.message;
-      errorMsg.style.display = 'block';
-    }
-  }
+  // 統合されたsaveLPSettings関数を呼び出し
+  await saveLPSettings();
 }
 
 /**
