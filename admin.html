@@ -212,6 +212,37 @@
 
         <!-- 概要タブ -->
         <div id="overview-tab" class="analytics-tab-content active">
+          <!-- ユーザー属性（男女比・年齢分布） -->
+          <div class="analytics-demographics admin-demographics" id="admin-demographics">
+            <h3>ユーザー属性</h3>
+            <p class="demographics-note">※ Google Signalsが有効な場合のみデータが表示されます</p>
+            <div class="demographics-grid">
+              <!-- 男女比 -->
+              <div class="demographics-card">
+                <h4>男女比</h4>
+                <div class="gender-chart" id="admin-gender-chart">
+                  <div class="gender-bar-container">
+                    <div class="gender-bar male" id="admin-gender-bar-male" style="width: 0%"></div>
+                    <div class="gender-bar female" id="admin-gender-bar-female" style="width: 0%"></div>
+                  </div>
+                  <div class="gender-labels">
+                    <span class="gender-label male"><span class="gender-icon">♂</span> 男性 <span id="admin-gender-male-percent">-</span></span>
+                    <span class="gender-label female"><span class="gender-icon">♀</span> 女性 <span id="admin-gender-female-percent">-</span></span>
+                  </div>
+                </div>
+              </div>
+              <!-- 年齢分布 -->
+              <div class="demographics-card">
+                <h4>年齢分布</h4>
+                <div class="age-chart" id="admin-age-chart">
+                  <div class="age-bars" id="admin-age-bars">
+                    <!-- JSで動的に生成 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="filter-bar">
             <input type="text" id="company-search" placeholder="企業名で検索..." class="search-input">
             <select id="sort-by">
@@ -394,12 +425,13 @@
                 <th>日時</th>
                 <th>企業名</th>
                 <th>ボタン種別</th>
+                <th>画面</th>
                 <th>参照元</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                <td colspan="5" class="loading-cell">データを読み込み中...</td>
               </tr>
             </tbody>
           </table>
