@@ -321,6 +321,7 @@
   flex: 1;
   margin-left: 260px;
   min-height: 100vh;
+  padding-top: 73px; /* ヘッダーの高さ分 */
 }
 
 .admin-header {
@@ -330,8 +331,10 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 260px; /* サイドバーの幅分オフセット */
+  right: 0;
   z-index: 50;
 }
 
@@ -446,24 +449,42 @@
 ======================================== */
 .chart-container {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: 100%;
 }
 
 .chart-container h3 {
-  margin: 0 0 20px;
-  font-size: 18px;
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
   color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-container h3::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 2px;
 }
 
 .chart-placeholder {
-  min-height: 200px;
+  min-height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #94a3b8;
+}
+
+.chart-placeholder:has(.vertical-bar-chart) {
+  display: block;
+  min-height: auto;
 }
 
 .simple-chart {
@@ -961,96 +982,243 @@
   color: #1e293b;
 }
 
-/* 時間帯チャート */
-.hour-chart {
+/* 横棒グラフ（曜日・時間帯共通） */
+.horizontal-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.h-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.h-bar-label {
+  width: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.h-bar-label.wide {
+  width: 110px;
+  font-size: 13px;
+}
+
+.h-bar-container {
+  flex: 1;
+  height: 28px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.h-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 6px;
+  min-width: 4px;
+  transition: width 0.5s ease;
+}
+
+.h-bar.h-bar-green {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.h-bar-value {
+  width: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* 縦棒グラフ（サンプルスタイル） */
+.vertical-bar-chart {
+  display: flex;
+  gap: 12px;
+  padding: 40px 16px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.vbar-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-right: 8px;
+  height: 160px;
+}
+
+.vbar-y-label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: right;
+  min-width: 40px;
+  line-height: 1;
+}
+
+.vbar-chart-area {
+  flex: 1;
+  position: relative;
+  height: 160px;
+}
+
+.vbar-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.vbar-grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #e2e8f0;
+  height: 0;
+}
+
+.vbar-bars {
+  height: 160px;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.vbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 60px;
+}
+
+.vbar-bar-wrap {
+  height: 160px;
+  width: 100%;
   display: flex;
   align-items: flex-end;
-  gap: 2px;
-  height: 150px;
-  padding: 0 8px;
-}
-
-.hour-bar {
-  flex: 1;
-  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 2px 2px 0 0;
-  min-height: 2px;
+  justify-content: center;
   position: relative;
-  transition: height 0.3s;
 }
 
-.hour-bar:hover {
-  opacity: 0.8;
+.vbar-bar {
+  width: 100%;
+  max-width: 40px;
+  min-height: 4px;
+  max-height: 160px;
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s ease;
+  position: relative;
+  cursor: pointer;
 }
 
-.hour-bar::after {
-  content: attr(data-hour);
+.vbar-bar:hover {
+  opacity: 0.85;
+}
+
+.vbar-bar.vbar-green {
+  background: linear-gradient(180deg, #10b981 0%, #34d399 100%);
+}
+
+.vbar-tooltip {
   position: absolute;
-  bottom: -20px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 9px;
-  color: #94a3b8;
+  background: #1e293b;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 10;
+}
+
+.vbar-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: #1e293b;
+}
+
+.vbar-bar:hover .vbar-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.vbar-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
   white-space: nowrap;
 }
 
-.hour-bar:nth-child(6n)::after {
-  display: block;
-}
-
-.hour-bar:not(:nth-child(6n))::after {
-  display: none;
-}
-
-/* 曜日チャート */
+/* 旧縦棒グラフ（フォールバック用） */
 .day-chart {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: flex-end;
-  gap: 8px;
-  height: 150px;
-  padding: 0 16px;
+  gap: 12px;
+  height: 180px;
+  padding: 20px 16px 40px;
+  background: #f8fafc;
+  border-radius: 12px;
 }
 
 .day-bar {
   flex: 1;
-  max-width: 60px;
+  max-width: 50px;
   background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 4px 4px 0 0;
+  border-radius: 6px 6px 0 0;
+  min-height: 8px;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.hour-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 180px;
+  padding: 20px 12px 40px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.hour-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #10b981 0%, #34d399 100%);
+  border-radius: 3px 3px 0 0;
   min-height: 4px;
   position: relative;
-  transition: height 0.3s;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.day-bar:hover {
-  opacity: 0.8;
-}
 
-.day-bar::after {
-  content: attr(data-day);
-  position: absolute;
-  bottom: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.day-bar .day-value {
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px;
-  color: #64748b;
-  white-space: nowrap;
-  display: none;
-}
-
-.day-bar:hover .day-value {
-  display: block;
-}
 
 /* ========================================
    企業詳細分析セクション
@@ -1538,6 +1706,10 @@
   .admin-main {
     margin-left: 80px;
   }
+
+  .admin-header {
+    left: 80px;
+  }
 }
 
 /* ========================================
@@ -1674,6 +1846,7 @@
 
   .admin-main {
     margin-left: 0;
+    padding-top: 60px; /* モバイル時のヘッダー高さ */
   }
 
   .admin-header {
@@ -1682,6 +1855,7 @@
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    left: 0;
   }
 
   .admin-header h1 {
@@ -2847,7 +3021,7 @@
 }
 
 /* 編集ページヘッダー */
-.admin-header {
+.admin-container .admin-header {
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
   padding: 16px 24px;
@@ -3558,7 +3732,7 @@
 
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
-  .admin-header {
+  .admin-container .admin-header {
     padding: 12px 16px;
   }
 
@@ -4139,6 +4313,27 @@
   margin: 0 0 16px;
   font-size: 12px;
   color: #94a3b8;
+}
+
+.demographics-insufficient-notice {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.demographics-insufficient-notice p {
+  margin: 0;
+  font-size: 14px;
+  color: #92400e;
+}
+
+.demographics-insufficient-notice .notice-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #a16207;
 }
 
 .demographics-grid {
@@ -6764,5 +6959,389 @@ body.lp-settings-active #section-lp-settings {
 
   #section-lp-settings .form-actions button {
     width: 100%;
+  }
+}
+
+/* ========================================
+   求人カード一覧
+======================================== */
+
+/* 検索・絞り込みセクション */
+.job-filter-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.job-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.job-filter-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.job-filter-search .filter-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.job-filter-search .filter-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.job-filter-selects {
+  display: flex;
+  gap: 8px;
+}
+
+.job-filter-selects .filter-select {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.job-filter-selects .filter-select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.btn-small {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+#jobs-filtered-count {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 400;
+}
+
+@media (max-width: 767px) {
+  .job-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .job-filter-search {
+    width: 100%;
+  }
+
+  .job-filter-selects {
+    width: 100%;
+  }
+
+  .job-filter-selects .filter-select {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.job-cards-header {
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+}
+
+.job-cards-count {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.job-cards-count span {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.job-cards-header-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 100px 90px 50px 50px 80px 80px;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.job-cards-list {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+}
+
+.job-cards-loading {
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+}
+
+.job-card-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 100px 90px 50px 50px 80px 80px;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.job-card-row:last-child {
+  border-bottom: none;
+}
+
+.job-card-row:hover {
+  background: #f8fafc;
+}
+
+.job-card-image {
+  width: 70px;
+  height: 50px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.job-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.job-card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 20px;
+}
+
+.job-card-info {
+  min-width: 0;
+}
+
+.job-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.job-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.job-card-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.job-card-tag.urgent {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.job-card-type {
+  font-size: 13px;
+  color: #475569;
+}
+
+.job-card-area {
+  font-size: 13px;
+  color: #475569;
+}
+
+.job-card-deadline {
+  font-size: 13px;
+  color: #475569;
+}
+
+.job-card-deadline.expired {
+  color: #dc2626;
+}
+
+.job-card-deadline.soon {
+  color: #ea580c;
+}
+
+.job-card-stats {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  text-align: center;
+}
+
+.job-card-status {
+  text-align: center;
+}
+
+.job-card-status .badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.job-card-status .badge.published {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.job-card-status .badge.draft {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.job-card-status .badge.expired {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.job-card-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.job-card-actions .btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.job-card-actions .btn-icon:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.job-card-actions .btn-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: #64748b;
+}
+
+/* 求人カード - レスポンシブ */
+@media (max-width: 1200px) {
+  .job-cards-header-row,
+  .job-card-row {
+    grid-template-columns: 70px 1fr 90px 90px 80px 45px 45px 70px 70px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .job-cards-header-row {
+    display: none;
+  }
+
+  .job-card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .job-card-image {
+    width: 60px;
+    height: 45px;
+  }
+
+  .job-card-info {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .job-card-area,
+  .job-card-deadline {
+    font-size: 12px;
+  }
+
+  .job-card-stats {
+    font-size: 12px;
+    min-width: 50px;
+  }
+
+  .job-card-status {
+    min-width: 70px;
+  }
+
+  .job-card-actions {
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 767px) {
+  .job-card-row {
+    display: block;
+    padding: 12px;
+  }
+
+  .job-card-image {
+    float: left;
+    margin-right: 12px;
+    margin-bottom: 8px;
+  }
+
+  .job-card-info {
+    overflow: hidden;
+  }
+
+  .job-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+    clear: both;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .job-card-area,
+  .job-card-deadline,
+  .job-card-stats,
+  .job-card-status,
+  .job-card-actions {
+    font-size: 12px;
   }
 }
