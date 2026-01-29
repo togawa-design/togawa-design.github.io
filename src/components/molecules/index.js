@@ -24,9 +24,14 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
     badgesHtml += Badge({ text: '急募', type: 'urgent' });
   }
 
-  // linkToJobsList が true の場合は求人一覧ページへ、それ以外は求人詳細ページへ
+  // linkToJobsList が true の場合は企業の求人一覧ページへ、それ以外は求人詳細ページへ
   let detailUrl = 'jobs.html';
-  if (!linkToJobsList) {
+  if (linkToJobsList) {
+    // 企業の求人一覧ページへリンク
+    if (job.companyDomain?.trim()) {
+      detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
+    }
+  } else {
     if (job.companyDomain?.trim() && job.id) {
       detailUrl = `job-detail.html?company=${encodeURIComponent(job.companyDomain.trim())}&job=${encodeURIComponent(job.id)}`;
     } else if (job.companyDomain?.trim()) {

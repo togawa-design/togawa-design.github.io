@@ -90,24 +90,46 @@
           </div>
         </div>
 
-        <div class="table-container">
-          <table class="admin-table" id="jobs-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>募集タイトル</th>
-                <th>勤務地</th>
-                <th>月収</th>
-                <th>表示</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="jobs-tbody">
-              <tr>
-                <td colspan="6" class="loading-cell">データを読み込み中...</td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- 検索・絞り込み -->
+        <div class="job-filter-section">
+          <div class="job-filter-row">
+            <div class="job-filter-search">
+              <input type="text" id="job-search" placeholder="求人タイトルで検索..." class="filter-input">
+            </div>
+            <div class="job-filter-selects">
+              <select id="job-filter-status" class="filter-select">
+                <option value="">全ステータス</option>
+                <option value="published">公開中</option>
+                <option value="draft">非公開</option>
+                <option value="expired">掲載終了</option>
+              </select>
+              <select id="job-filter-area" class="filter-select">
+                <option value="">全エリア</option>
+              </select>
+            </div>
+            <button id="btn-clear-filters" class="btn-secondary btn-small">クリア</button>
+          </div>
+        </div>
+
+        <!-- 求人カード一覧 -->
+        <div class="job-cards-header">
+          <div class="job-cards-count">
+            <span id="jobs-count">0</span>件 <span id="jobs-filtered-count"></span>
+          </div>
+          <div class="job-cards-header-row">
+            <span class="job-col-image">画像</span>
+            <span class="job-col-info">件名/タグ</span>
+            <span class="job-col-type">職種</span>
+            <span class="job-col-area">エリア</span>
+            <span class="job-col-deadline">掲載期限</span>
+            <span class="job-col-stats">応募</span>
+            <span class="job-col-stats">PV</span>
+            <span class="job-col-status">ステータス</span>
+            <span class="job-col-actions">操作</span>
+          </div>
+        </div>
+        <div class="job-cards-list" id="jobs-list">
+          <div class="job-cards-loading">データを読み込み中...</div>
         </div>
       </section>
 
@@ -1167,6 +1189,8 @@
     </div>
   </div>
 
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>

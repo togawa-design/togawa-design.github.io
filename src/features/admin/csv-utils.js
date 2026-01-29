@@ -2,33 +2,10 @@
  * Admin Dashboard - CSV ユーティリティ
  */
 
-// CSVの1行をパース
-export function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
+// 共通のCSVパーサーをインポート
+export { parseCSVLine } from '@shared/jobs-loader.js';
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim());
-  return result;
-}
-
-// ヘッダー名を正規化
+// 会社データ用ヘッダー名を正規化
 export function normalizeHeader(header) {
   const mapping = {
     '会社名': 'company',
