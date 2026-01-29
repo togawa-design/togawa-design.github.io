@@ -4315,6 +4315,27 @@
   color: #94a3b8;
 }
 
+.demographics-insufficient-notice {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.demographics-insufficient-notice p {
+  margin: 0;
+  font-size: 14px;
+  color: #92400e;
+}
+
+.demographics-insufficient-notice .notice-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #a16207;
+}
+
 .demographics-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -135,6 +135,7 @@ export function getSourceName(source) {
  * 男女比グラフを描画
  * @param {Object} gender - { male: number, female: number }
  * @param {Object} elementIds - DOM要素ID { maleBar, femaleBar, malePercent, femalePercent }
+ * @returns {boolean} データがあればtrue
  */
 export function renderGenderChart(gender, elementIds) {
   const maleCount = gender?.male || 0;
@@ -154,9 +155,13 @@ export function renderGenderChart(gender, elementIds) {
     if (femaleBar) femaleBar.style.width = `${femalePercent}%`;
     if (malePercentEl) malePercentEl.textContent = `${malePercent}%`;
     if (femalePercentEl) femalePercentEl.textContent = `${femalePercent}%`;
+    return true;
   } else {
+    if (maleBar) maleBar.style.width = '50%';
+    if (femaleBar) femaleBar.style.width = '50%';
     if (malePercentEl) malePercentEl.textContent = '-';
     if (femalePercentEl) femalePercentEl.textContent = '-';
+    return false;
   }
 }
 
@@ -164,13 +169,16 @@ export function renderGenderChart(gender, elementIds) {
  * 年齢分布グラフを描画
  * @param {Object} age - { '18-24': number, '25-34': number, ... }
  * @param {string} containerId - コンテナのDOM要素ID
+ * @returns {boolean} データがあればtrue
  */
 export function renderAgeChart(age, containerId) {
   const container = document.getElementById(containerId);
-  if (!container) return;
+  if (!container) return false;
 
-  const ageGroups = Object.entries(age || {});
-  if (ageGroups.length > 0) {
+  const ageGroups = Object.entries(age || {}).filter(([key]) => key !== '(not set)');
+  const hasData = ageGroups.length > 0 && ageGroups.some(([, count]) => count > 0);
+
+  if (hasData) {
     const maxAge = Math.max(...ageGroups.map(([, count]) => count));
     container.innerHTML = ageGroups.map(([group, count]) => {
       const height = maxAge > 0 ? Math.max(10, (count / maxAge) * 80) : 10;
@@ -182,8 +190,10 @@ export function renderAgeChart(age, containerId) {
         </div>
       `;
     }).join('');
+    return true;
   } else {
-    container.innerHTML = '<p style="color: #94a3b8; font-size: 13px; text-align: center;">データがありません</p>';
+    container.innerHTML = '';
+    return false;
   }
 }
 
@@ -195,7 +205,7 @@ export function renderAgeChart(age, containerId) {
  */
 export function renderDemographics(gender, age, config) {
   // 男女比
-  renderGenderChart(gender, {
+  const hasGenderData = renderGenderChart(gender, {
     maleBar: config.maleBarId,
     femaleBar: config.femaleBarId,
     malePercent: config.malePercentId,
@@ -203,7 +213,33 @@ export function renderDemographics(gender, age, config) {
   });
 
   // 年齢分布
-  renderAgeChart(age, config.ageContainerId);
+  const hasAgeData = renderAgeChart(age, config.ageContainerId);
+
+  // データ不足時のメッセージを表示/非表示
+  const insufficientDataId = config.insufficientDataId || 'demographics-insufficient-data';
+  let insufficientDataEl = document.getElementById(insufficientDataId);
+
+  if (!hasGenderData && !hasAgeData) {
+    // メッセージ要素がなければ作成
+    if (!insufficientDataEl) {
+      const container = document.getElementById(config.ageContainerId)?.closest('.demographics-grid');
+      if (container) {
+        insufficientDataEl = document.createElement('div');
+        insufficientDataEl.id = insufficientDataId;
+        insufficientDataEl.className = 'demographics-insufficient-notice';
+        insufficientDataEl.innerHTML = `
+          <p>アクセス数が少ないため、ユーザー属性データを表示できません。</p>
+          <p class="notice-sub">Google Analyticsのプライバシー保護により、一定以上のアクセスが必要です。</p>
+        `;
+        container.parentElement.insertBefore(insufficientDataEl, container);
+      }
+    }
+    if (insufficientDataEl) {
+      insufficientDataEl.style.display = 'block';
+    }
+  } else if (insufficientDataEl) {
+    insufficientDataEl.style.display = 'none';
+  }
 }
 
 /**

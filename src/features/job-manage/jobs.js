@@ -1,0 +1,750 @@
+/**
+ * 求人管理 - 求人CRUD操作モジュール
+ */
+import { escapeHtml } from '@shared/utils.js';
+import { fetchCompanyDetailData } from '@shared/analytics-utils.js';
+import { config } from './auth.js';
+import {
+  companyDomain,
+  companyName,
+  sheetUrl,
+  setSheetUrl,
+  jobsCache,
+  setJobsCache,
+  currentEditingJob,
+  setCurrentEditingJob,
+  isNewJob,
+  setIsNewJob,
+  jobStatsCache,
+  setJobStatsCache,
+  jobFilters
+} from './state.js';
+
+/**
+ * 日付をinput[type="date"]用にフォーマット
+ */
+export function formatDateForInput(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * 求人のステータスを判定
+ */
+export function getJobStatus(job) {
+  const isVisible = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+  if (!isVisible) return 'draft';
+
+  if (job.publishEndDate) {
+    const endDate = new Date(job.publishEndDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (endDate < today) return 'expired';
+  }
+
+  return 'published';
+}
+
+/**
+ * フィルターを適用して求人をフィルタリング
+ */
+export function filterJobs(jobs) {
+  return jobs.filter(job => {
+    // 検索フィルター
+    if (jobFilters.search) {
+      const searchLower = jobFilters.search.toLowerCase();
+      const title = (job.title || '').toLowerCase();
+      const location = (job.location || '').toLowerCase();
+      if (!title.includes(searchLower) && !location.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    // ステータスフィルター
+    if (jobFilters.status) {
+      const status = getJobStatus(job);
+      if (status !== jobFilters.status) {
+        return false;
+      }
+    }
+
+    // エリアフィルター
+    if (jobFilters.area) {
+      const location = job.location || '';
+      if (!location.includes(jobFilters.area)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+/**
+ * エリアドロップダウンを更新
+ */
+export function updateAreaDropdown() {
+  const select = document.getElementById('job-filter-area');
+  if (!select) return;
+
+  const areas = new Set();
+  (jobsCache || []).forEach(job => {
+    if (job.location) {
+      const match = job.location.match(/^(.+?[都道府県])/);
+      if (match) {
+        areas.add(match[1]);
+      } else {
+        areas.add(job.location.split(/[市区町村]/)[0]);
+      }
+    }
+  });
+
+  const currentValue = select.value;
+
+  select.innerHTML = '<option value="">全エリア</option>';
+  Array.from(areas).sort().forEach(area => {
+    const option = document.createElement('option');
+    option.value = area;
+    option.textContent = area;
+    select.appendChild(option);
+  });
+
+  select.value = currentValue;
+}
+
+/**
+ * 求人カード一覧を描画
+ */
+export function renderJobsTable() {
+  const listContainer = document.getElementById('jobs-list');
+  const countEl = document.getElementById('jobs-count');
+  const filteredCountEl = document.getElementById('jobs-filtered-count');
+
+  const tbody = document.getElementById('jobs-tbody');
+  if (tbody && !listContainer) {
+    renderJobsTableLegacy();
+    return;
+  }
+
+  if (!listContainer) return;
+
+  const allJobs = jobsCache || [];
+  const jobs = filterJobs(allJobs);
+
+  if (countEl) {
+    countEl.textContent = allJobs.length;
+  }
+
+  if (filteredCountEl) {
+    if (jobs.length !== allJobs.length) {
+      filteredCountEl.textContent = `（${jobs.length}件表示中）`;
+    } else {
+      filteredCountEl.textContent = '';
+    }
+  }
+
+  updateAreaDropdown();
+
+  if (jobs.length === 0) {
+    const hasFilters = jobFilters.search || jobFilters.status || jobFilters.area;
+    listContainer.innerHTML = `<div class="job-cards-loading">${hasFilters ? '条件に一致する求人がありません' : '求人データがありません'}</div>`;
+    return;
+  }
+
+  listContainer.innerHTML = jobs.map(job => {
+    const isVisible = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+    const imageUrl = job.imageUrl?.trim() || '';
+
+    const badges = job.badges ? job.badges.split(',').map(b => b.trim()).filter(b => b) : [];
+    const tagsHtml = badges.map(badge => {
+      const isUrgent = badge === '急募';
+      return `<span class="job-card-tag${isUrgent ? ' urgent' : ''}">${escapeHtml(badge)}</span>`;
+    }).join('');
+
+    let deadlineHtml = '-';
+    let deadlineClass = '';
+    if (job.publishEndDate) {
+      const endDate = new Date(job.publishEndDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+
+      const formattedDate = `${String(endDate.getFullYear()).slice(2)}/${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
+      deadlineHtml = formattedDate;
+
+      if (daysLeft < 0) {
+        deadlineClass = ' expired';
+      } else if (daysLeft <= 7) {
+        deadlineClass = ' soon';
+      }
+    }
+
+    let statusBadge = '';
+    if (!isVisible) {
+      statusBadge = '<span class="badge draft">非公開</span>';
+    } else if (deadlineClass === ' expired') {
+      statusBadge = '<span class="badge expired">掲載終了</span>';
+    } else {
+      statusBadge = '<span class="badge published">公開中</span>';
+    }
+
+    const stats = jobStatsCache[job.id] || {};
+    const applications = stats.applications || 0;
+    const pv = stats.pv || 0;
+
+    return `
+      <div class="job-card-row" data-row="${job._rowIndex}">
+        <div class="job-card-image">
+          ${imageUrl
+            ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'job-card-image-placeholder\\'>📋</div>'">`
+            : '<div class="job-card-image-placeholder">📋</div>'
+          }
+        </div>
+        <div class="job-card-info">
+          <div class="job-card-title">${escapeHtml(job.title || '-')}</div>
+          <div class="job-card-tags">${tagsHtml}</div>
+        </div>
+        <div class="job-card-type">${escapeHtml(job.jobType || '-')}</div>
+        <div class="job-card-area">${escapeHtml(job.location || '-')}</div>
+        <div class="job-card-deadline${deadlineClass}">${deadlineHtml}</div>
+        <div class="job-card-stats">${applications}</div>
+        <div class="job-card-stats">${pv}</div>
+        <div class="job-card-status">${statusBadge}</div>
+        <div class="job-card-actions">
+          <button class="btn-icon btn-edit" data-row="${job._rowIndex}" title="編集">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon btn-duplicate" data-row="${job._rowIndex}" title="複製">
+            <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  listContainer.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rowIndex = parseInt(btn.dataset.row, 10);
+      editJob(rowIndex);
+    });
+  });
+
+  listContainer.querySelectorAll('.btn-duplicate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rowIndex = parseInt(btn.dataset.row, 10);
+      duplicateJob(rowIndex);
+    });
+  });
+}
+
+/**
+ * 旧テーブル形式での描画（フォールバック用）
+ */
+function renderJobsTableLegacy() {
+  const tbody = document.getElementById('jobs-tbody');
+  if (!tbody) return;
+
+  const jobs = jobsCache || [];
+
+  if (jobs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">求人データがありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = jobs.map(job => {
+    const salary = job.monthlySalary ? `¥${Number(job.monthlySalary).toLocaleString()}` : '-';
+    const isVisible = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+
+    return `
+      <tr data-row="${job._rowIndex}">
+        <td>${escapeHtml(job.id || '-')}</td>
+        <td>${escapeHtml(job.title || '-')}</td>
+        <td>${escapeHtml(job.location || '-')}</td>
+        <td>${salary}</td>
+        <td>${isVisible ? '<span class="badge success">公開</span>' : '<span class="badge">非公開</span>'}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn-small btn-edit" data-row="${job._rowIndex}">編集</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rowIndex = parseInt(btn.dataset.row, 10);
+      editJob(rowIndex);
+    });
+  });
+}
+
+/**
+ * 求人データを読み込み
+ */
+export async function loadJobsData() {
+  const listContainer = document.getElementById('jobs-list');
+  const tbody = document.getElementById('jobs-tbody');
+
+  if (!listContainer && !tbody) return;
+
+  if (listContainer) {
+    listContainer.innerHTML = '<div class="job-cards-loading">データを読み込み中...</div>';
+  }
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  }
+
+  const gasApiUrl = config.gasApiUrl;
+  if (!gasApiUrl) {
+    const errorMsg = 'GAS API URLが設定されていません。<a href="admin.html">管理画面</a>の設定から設定してください。';
+    if (listContainer) {
+      listContainer.innerHTML = `<div class="job-cards-loading">${errorMsg}</div>`;
+    }
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">${errorMsg}</td></tr>`;
+    }
+    return;
+  }
+
+  try {
+    const url = `${gasApiUrl}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('データの取得に失敗しました');
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || '求人データの取得に失敗しました');
+    }
+
+    setJobsCache(result.jobs || []);
+
+    if (result.sheetUrl && !sheetUrl) {
+      setSheetUrl(result.sheetUrl);
+    }
+    if (result.manageSheetUrl && !sheetUrl) {
+      setSheetUrl(result.manageSheetUrl);
+    }
+
+    if (jobsCache.length === 0) {
+      if (listContainer) {
+        listContainer.innerHTML = '<div class="job-cards-loading">求人データがありません</div>';
+      }
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">求人データがありません</td></tr>';
+      }
+      const countEl = document.getElementById('jobs-count');
+      if (countEl) countEl.textContent = '0';
+      return;
+    }
+
+    renderJobsTable();
+    loadJobStats();
+
+  } catch (error) {
+    console.error('求人データの読み込みエラー:', error);
+    const errorMsg = `データの読み込みに失敗しました: ${escapeHtml(error.message)}`;
+    if (listContainer) {
+      listContainer.innerHTML = `<div class="job-cards-loading">${errorMsg}</div>`;
+    }
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">${errorMsg}</td></tr>`;
+    }
+  }
+}
+
+/**
+ * 求人ごとの統計データを読み込み（応募数、PV）
+ */
+async function loadJobStats() {
+  if (!companyDomain) return;
+
+  try {
+    const db = firebase.firestore();
+    const applicationsSnapshot = await db.collection('applications')
+      .where('companyDomain', '==', companyDomain)
+      .get();
+
+    const applicationCounts = {};
+    applicationsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const jobId = data.jobId || data.job_id || '';
+      if (jobId) {
+        applicationCounts[jobId] = (applicationCounts[jobId] || 0) + 1;
+      }
+    });
+
+    let jobPVs = {};
+
+    try {
+      const pvData = await fetchCompanyDetailData(companyDomain, 30);
+
+      if (pvData?.jobs) {
+        pvData.jobs.forEach(job => {
+          const pagePath = job.pagePath || '';
+          const match = pagePath.match(/job=([^&]+)/);
+          if (match) {
+            const jobId = decodeURIComponent(match[1]);
+            jobPVs[jobId] = (jobPVs[jobId] || 0) + (job.views || 0);
+          }
+          if (job.jobId) {
+            jobPVs[job.jobId] = (jobPVs[job.jobId] || 0) + (job.views || 0);
+          }
+        });
+      } else if (pvData?.jobStats) {
+        pvData.jobStats.forEach(stat => {
+          const jobId = stat.jobId || stat.id || '';
+          if (jobId) {
+            jobPVs[jobId] = stat.pageViews || stat.views || 0;
+          }
+        });
+      } else if (pvData?.pages) {
+        pvData.pages.forEach(page => {
+          const match = page.pagePath?.match(/job=([^&]+)/);
+          if (match) {
+            const jobId = decodeURIComponent(match[1]);
+            jobPVs[jobId] = (jobPVs[jobId] || 0) + (page.views || page.pageViews || 0);
+          }
+        });
+      }
+    } catch (analyticsError) {
+      console.warn('Analytics APIからのPV取得に失敗:', analyticsError);
+    }
+
+    const newJobStatsCache = {};
+    const allJobIds = new Set([...Object.keys(applicationCounts), ...Object.keys(jobPVs)]);
+    allJobIds.forEach(jobId => {
+      newJobStatsCache[jobId] = {
+        applications: applicationCounts[jobId] || 0,
+        pv: jobPVs[jobId] || 0
+      };
+    });
+
+    setJobStatsCache(newJobStatsCache);
+    renderJobsTable();
+
+  } catch (error) {
+    console.error('求人統計データの取得エラー:', error);
+  }
+}
+
+/**
+ * 求人編集モーダルを表示（新規）
+ */
+export function showJobModal() {
+  setCurrentEditingJob(null);
+  setIsNewJob(true);
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
+
+  document.getElementById('job-modal-title').textContent = '新規求人作成';
+  setVal('edit-job-title', '');
+  setVal('edit-job-location', '');
+  setVal('edit-job-salary', '');
+  setVal('edit-job-bonus', '');
+  setVal('edit-job-order', '');
+  setVal('edit-job-type', '');
+  setVal('edit-job-features', '');
+  setVal('edit-job-badges', '');
+  setVal('edit-job-description', '');
+  setVal('edit-job-requirements', '');
+  setVal('edit-job-benefits', '');
+  setVal('edit-job-hours', '');
+  setVal('edit-job-holidays', '');
+  setVal('edit-job-start-date', '');
+  setVal('edit-job-end-date', '');
+
+  const visibleEl = document.getElementById('edit-job-visible');
+  if (visibleEl) visibleEl.checked = true;
+
+  const deleteBtn = document.getElementById('job-modal-delete');
+  if (deleteBtn) deleteBtn.style.display = 'none';
+
+  const modal = document.getElementById('job-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+/**
+ * 求人編集モーダルを表示（編集）
+ */
+export function editJob(rowIndex) {
+  const job = jobsCache?.find(j => j._rowIndex === rowIndex);
+  if (!job) {
+    alert('求人データが見つかりません');
+    return;
+  }
+
+  setCurrentEditingJob(job);
+  setIsNewJob(false);
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+  };
+
+  document.getElementById('job-modal-title').textContent = '求人情報の編集';
+  setVal('edit-job-title', job.title);
+  setVal('edit-job-location', job.location);
+  setVal('edit-job-salary', job.monthlySalary);
+  setVal('edit-job-bonus', job.totalBonus);
+  setVal('edit-job-order', job.order);
+  setVal('edit-job-type', job.jobType);
+  setVal('edit-job-features', job.features);
+  setVal('edit-job-badges', job.badges);
+  setVal('edit-job-description', job.jobDescription);
+  setVal('edit-job-requirements', job.requirements);
+  setVal('edit-job-benefits', job.benefits);
+  setVal('edit-job-hours', job.workingHours);
+  setVal('edit-job-holidays', job.holidays);
+
+  if (job.publishStartDate) {
+    setVal('edit-job-start-date', formatDateForInput(job.publishStartDate));
+  } else {
+    setVal('edit-job-start-date', '');
+  }
+  if (job.publishEndDate) {
+    setVal('edit-job-end-date', formatDateForInput(job.publishEndDate));
+  } else {
+    setVal('edit-job-end-date', '');
+  }
+
+  const visibleEl = document.getElementById('edit-job-visible');
+  if (visibleEl) {
+    visibleEl.checked = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+  }
+
+  const deleteBtn = document.getElementById('job-modal-delete');
+  if (deleteBtn) deleteBtn.style.display = '';
+
+  const modal = document.getElementById('job-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+/**
+ * 求人を複製
+ */
+export function duplicateJob(rowIndex) {
+  const job = jobsCache?.find(j => j._rowIndex === rowIndex);
+  if (!job) {
+    alert('求人データが見つかりません');
+    return;
+  }
+
+  setCurrentEditingJob(null);
+  setIsNewJob(true);
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+  };
+
+  document.getElementById('job-modal-title').textContent = '求人の複製';
+  setVal('edit-job-title', `${job.title || ''} (コピー)`);
+  setVal('edit-job-location', job.location);
+  setVal('edit-job-salary', job.monthlySalary);
+  setVal('edit-job-bonus', job.totalBonus);
+  setVal('edit-job-order', job.order);
+  setVal('edit-job-type', job.jobType);
+  setVal('edit-job-features', job.features);
+  setVal('edit-job-badges', job.badges);
+  setVal('edit-job-description', job.jobDescription);
+  setVal('edit-job-requirements', job.requirements);
+  setVal('edit-job-benefits', job.benefits);
+  setVal('edit-job-hours', job.workingHours);
+  setVal('edit-job-holidays', job.holidays);
+  setVal('edit-job-start-date', '');
+  setVal('edit-job-end-date', '');
+
+  const visibleEl = document.getElementById('edit-job-visible');
+  if (visibleEl) visibleEl.checked = false;
+
+  const deleteBtn = document.getElementById('job-modal-delete');
+  if (deleteBtn) deleteBtn.style.display = 'none';
+
+  const modal = document.getElementById('job-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+/**
+ * 求人編集モーダルを閉じる
+ */
+export function closeJobModal() {
+  const modal = document.getElementById('job-modal');
+  if (modal) modal.style.display = 'none';
+  setCurrentEditingJob(null);
+  setIsNewJob(false);
+}
+
+/**
+ * 求人データを保存
+ */
+export async function saveJobData() {
+  if (!companyDomain) {
+    alert('会社が選択されていません');
+    return;
+  }
+
+  const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
+
+  const jobData = {
+    id: isNewJob ? '' : (currentEditingJob?.id || ''),
+    title: getVal('edit-job-title'),
+    location: getVal('edit-job-location'),
+    monthlySalary: getVal('edit-job-salary'),
+    totalBonus: getVal('edit-job-bonus'),
+    order: getVal('edit-job-order'),
+    jobType: getVal('edit-job-type'),
+    features: getVal('edit-job-features'),
+    badges: getVal('edit-job-badges'),
+    jobDescription: getVal('edit-job-description'),
+    requirements: getVal('edit-job-requirements'),
+    benefits: getVal('edit-job-benefits'),
+    workingHours: getVal('edit-job-hours'),
+    holidays: getVal('edit-job-holidays'),
+    publishStartDate: getVal('edit-job-start-date'),
+    publishEndDate: getVal('edit-job-end-date'),
+    visible: document.getElementById('edit-job-visible')?.checked ? 'true' : 'false'
+  };
+
+  if (!jobData.title || !jobData.location) {
+    alert('募集タイトルと勤務地は必須です');
+    return;
+  }
+
+  const gasApiUrl = config.gasApiUrl;
+  if (!gasApiUrl) {
+    alert('GAS API URLが設定されていません。設定画面でURLを設定してください。');
+    return;
+  }
+
+  const saveBtn = document.getElementById('job-modal-save');
+
+  try {
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = '保存中...';
+    }
+
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+      action: 'saveJob',
+      companyDomain: companyDomain,
+      job: jobData,
+      rowIndex: isNewJob ? null : currentEditingJob._rowIndex
+    }))));
+    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error(`GASからの応答が不正です: ${responseText.substring(0, 200)}`);
+    }
+
+    if (!result.success) {
+      alert('保存に失敗しました: ' + (result.error || '不明なエラー'));
+      return;
+    }
+
+    closeJobModal();
+    await loadJobsData();
+
+    alert(isNewJob ? '求人を作成しました' : '求人情報を更新しました');
+
+  } catch (error) {
+    console.error('求人保存エラー:', error);
+    alert('保存中にエラーが発生しました: ' + error.message);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '保存';
+    }
+  }
+}
+
+/**
+ * 求人を削除
+ */
+export async function deleteJob() {
+  if (!currentEditingJob || !companyDomain) {
+    alert('削除対象が選択されていません');
+    return;
+  }
+
+  if (!confirm('この求人を削除してもよろしいですか？')) {
+    return;
+  }
+
+  const gasApiUrl = config.gasApiUrl;
+  if (!gasApiUrl) {
+    alert('GAS API URLが設定されていません');
+    return;
+  }
+
+  const deleteBtn = document.getElementById('job-modal-delete');
+
+  try {
+    if (deleteBtn) {
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = '削除中...';
+    }
+
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+      action: 'deleteJob',
+      companyDomain: companyDomain,
+      rowIndex: currentEditingJob._rowIndex
+    }))));
+    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error('GASからの応答が不正です');
+    }
+
+    if (!result.success) {
+      alert('削除に失敗しました: ' + (result.error || '不明なエラー'));
+      return;
+    }
+
+    closeJobModal();
+    await loadJobsData();
+
+    alert('求人を削除しました');
+
+  } catch (error) {
+    console.error('求人削除エラー:', error);
+    alert('削除中にエラーが発生しました: ' + error.message);
+  } finally {
+    if (deleteBtn) {
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = '削除';
+    }
+  }
+}
