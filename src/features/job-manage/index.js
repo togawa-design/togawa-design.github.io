@@ -125,6 +125,14 @@ let isNewJob = false;
 let applicationsCache = [];
 let reportData = null;
 let analyticsCache = null;
+let jobStatsCache = {}; // { jobId: { applications: number, pv: number } }
+
+// フィルター状態
+let jobFilters = {
+  search: '',
+  status: '',
+  area: ''
+};
 
 /**
  * 日付をinput[type="date"]用にフォーマット
@@ -140,9 +148,232 @@ function formatDateForInput(dateStr) {
 }
 
 /**
- * 求人テーブルを描画
+ * 求人のステータスを判定
+ */
+function getJobStatus(job) {
+  const isVisible = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+  if (!isVisible) return 'draft';
+
+  if (job.publishEndDate) {
+    const endDate = new Date(job.publishEndDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (endDate < today) return 'expired';
+  }
+
+  return 'published';
+}
+
+/**
+ * フィルターを適用して求人をフィルタリング
+ */
+function filterJobs(jobs) {
+  return jobs.filter(job => {
+    // 検索フィルター
+    if (jobFilters.search) {
+      const searchLower = jobFilters.search.toLowerCase();
+      const title = (job.title || '').toLowerCase();
+      const location = (job.location || '').toLowerCase();
+      if (!title.includes(searchLower) && !location.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    // ステータスフィルター
+    if (jobFilters.status) {
+      const status = getJobStatus(job);
+      if (status !== jobFilters.status) {
+        return false;
+      }
+    }
+
+    // エリアフィルター
+    if (jobFilters.area) {
+      const location = job.location || '';
+      if (!location.includes(jobFilters.area)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+/**
+ * エリアドロップダウンを更新
+ */
+function updateAreaDropdown() {
+  const select = document.getElementById('job-filter-area');
+  if (!select) return;
+
+  const areas = new Set();
+  (jobsCache || []).forEach(job => {
+    if (job.location) {
+      // 都道府県を抽出（例: "愛知県豊田市" → "愛知県"）
+      const match = job.location.match(/^(.+?[都道府県])/);
+      if (match) {
+        areas.add(match[1]);
+      } else {
+        areas.add(job.location.split(/[市区町村]/)[0]);
+      }
+    }
+  });
+
+  // 現在の選択値を保持
+  const currentValue = select.value;
+
+  // オプションを更新
+  select.innerHTML = '<option value="">全エリア</option>';
+  Array.from(areas).sort().forEach(area => {
+    const option = document.createElement('option');
+    option.value = area;
+    option.textContent = area;
+    select.appendChild(option);
+  });
+
+  // 選択値を復元
+  select.value = currentValue;
+}
+
+/**
+ * 求人カード一覧を描画
  */
 function renderJobsTable() {
+  const listContainer = document.getElementById('jobs-list');
+  const countEl = document.getElementById('jobs-count');
+  const filteredCountEl = document.getElementById('jobs-filtered-count');
+
+  // 旧テーブル形式の場合のフォールバック
+  const tbody = document.getElementById('jobs-tbody');
+  if (tbody && !listContainer) {
+    renderJobsTableLegacy();
+    return;
+  }
+
+  if (!listContainer) return;
+
+  const allJobs = jobsCache || [];
+  const jobs = filterJobs(allJobs);
+
+  // 件数を更新
+  if (countEl) {
+    countEl.textContent = allJobs.length;
+  }
+
+  // フィルター適用時の件数表示
+  if (filteredCountEl) {
+    if (jobs.length !== allJobs.length) {
+      filteredCountEl.textContent = `（${jobs.length}件表示中）`;
+    } else {
+      filteredCountEl.textContent = '';
+    }
+  }
+
+  // エリアドロップダウンを更新
+  updateAreaDropdown();
+
+  if (jobs.length === 0) {
+    const hasFilters = jobFilters.search || jobFilters.status || jobFilters.area;
+    listContainer.innerHTML = `<div class="job-cards-loading">${hasFilters ? '条件に一致する求人がありません' : '求人データがありません'}</div>`;
+    return;
+  }
+
+  listContainer.innerHTML = jobs.map(job => {
+    const isVisible = job.visible === 'true' || job.visible === 'TRUE' || job.visible === true;
+    const imageUrl = job.imageUrl?.trim() || '';
+
+    // タグ（バッジ）を生成
+    const badges = job.badges ? job.badges.split(',').map(b => b.trim()).filter(b => b) : [];
+    const tagsHtml = badges.map(badge => {
+      const isUrgent = badge === '急募';
+      return `<span class="job-card-tag${isUrgent ? ' urgent' : ''}">${escapeHtml(badge)}</span>`;
+    }).join('');
+
+    // 掲載期限の表示と状態判定
+    let deadlineHtml = '-';
+    let deadlineClass = '';
+    if (job.publishEndDate) {
+      const endDate = new Date(job.publishEndDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+
+      const formattedDate = `${String(endDate.getFullYear()).slice(2)}/${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
+      deadlineHtml = formattedDate;
+
+      if (daysLeft < 0) {
+        deadlineClass = ' expired';
+      } else if (daysLeft <= 7) {
+        deadlineClass = ' soon';
+      }
+    }
+
+    // ステータスバッジ
+    let statusBadge = '';
+    if (!isVisible) {
+      statusBadge = '<span class="badge draft">非公開</span>';
+    } else if (deadlineClass === ' expired') {
+      statusBadge = '<span class="badge expired">掲載終了</span>';
+    } else {
+      statusBadge = '<span class="badge published">公開中</span>';
+    }
+
+    // 応募数とPV（キャッシュから取得）
+    const stats = jobStatsCache[job.id] || {};
+    const applications = stats.applications || 0;
+    const pv = stats.pv || 0;
+
+    return `
+      <div class="job-card-row" data-row="${job._rowIndex}">
+        <div class="job-card-image">
+          ${imageUrl
+            ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'job-card-image-placeholder\\'>📋</div>'">`
+            : '<div class="job-card-image-placeholder">📋</div>'
+          }
+        </div>
+        <div class="job-card-info">
+          <div class="job-card-title">${escapeHtml(job.title || '-')}</div>
+          <div class="job-card-tags">${tagsHtml}</div>
+        </div>
+        <div class="job-card-type">${escapeHtml(job.jobType || '-')}</div>
+        <div class="job-card-area">${escapeHtml(job.location || '-')}</div>
+        <div class="job-card-deadline${deadlineClass}">${deadlineHtml}</div>
+        <div class="job-card-stats">${applications}</div>
+        <div class="job-card-stats">${pv}</div>
+        <div class="job-card-status">${statusBadge}</div>
+        <div class="job-card-actions">
+          <button class="btn-icon btn-edit" data-row="${job._rowIndex}" title="編集">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="btn-icon btn-duplicate" data-row="${job._rowIndex}" title="複製">
+            <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 編集ボタンのイベント設定
+  listContainer.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rowIndex = parseInt(btn.dataset.row, 10);
+      editJob(rowIndex);
+    });
+  });
+
+  // 複製ボタンのイベント設定
+  listContainer.querySelectorAll('.btn-duplicate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rowIndex = parseInt(btn.dataset.row, 10);
+      duplicateJob(rowIndex);
+    });
+  });
+}
+
+/**
+ * 旧テーブル形式での描画（フォールバック用）
+ */
+function renderJobsTableLegacy() {
   const tbody = document.getElementById('jobs-tbody');
   if (!tbody) return;
 
@@ -186,14 +417,31 @@ function renderJobsTable() {
  * 求人データを読み込み
  */
 async function loadJobsData() {
+  // 新しいカード形式の要素
+  const listContainer = document.getElementById('jobs-list');
+  // 旧テーブル形式の要素
   const tbody = document.getElementById('jobs-tbody');
-  if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  // どちらの要素もない場合は終了
+  if (!listContainer && !tbody) return;
+
+  // ローディング表示
+  if (listContainer) {
+    listContainer.innerHTML = '<div class="job-cards-loading">データを読み込み中...</div>';
+  }
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  }
 
   const gasApiUrl = config.gasApiUrl;
   if (!gasApiUrl) {
-    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">GAS API URLが設定されていません。<a href="admin.html">管理画面</a>の設定から設定してください。</td></tr>';
+    const errorMsg = 'GAS API URLが設定されていません。<a href="admin.html">管理画面</a>の設定から設定してください。';
+    if (listContainer) {
+      listContainer.innerHTML = `<div class="job-cards-loading">${errorMsg}</div>`;
+    }
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">${errorMsg}</td></tr>`;
+    }
     return;
   }
 
@@ -223,15 +471,118 @@ async function loadJobsData() {
     }
 
     if (jobsCache.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">求人データがありません</td></tr>';
+      if (listContainer) {
+        listContainer.innerHTML = '<div class="job-cards-loading">求人データがありません</div>';
+      }
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">求人データがありません</td></tr>';
+      }
+      // 件数を更新
+      const countEl = document.getElementById('jobs-count');
+      if (countEl) countEl.textContent = '0';
       return;
     }
 
     renderJobsTable();
 
+    // 統計データ（応募数、PV）を非同期で取得して再描画
+    loadJobStats();
+
   } catch (error) {
     console.error('求人データの読み込みエラー:', error);
-    tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">データの読み込みに失敗しました: ${escapeHtml(error.message)}</td></tr>`;
+    const errorMsg = `データの読み込みに失敗しました: ${escapeHtml(error.message)}`;
+    if (listContainer) {
+      listContainer.innerHTML = `<div class="job-cards-loading">${errorMsg}</div>`;
+    }
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">${errorMsg}</td></tr>`;
+    }
+  }
+}
+
+/**
+ * 求人ごとの統計データを読み込み（応募数、PV）
+ */
+async function loadJobStats() {
+  if (!companyDomain) return;
+
+  try {
+    // 1. Firestoreから応募数を取得（全期間）
+    const db = firebase.firestore();
+    const applicationsSnapshot = await db.collection('applications')
+      .where('companyDomain', '==', companyDomain)
+      .get();
+
+    // 求人IDごとに応募数を集計
+    const applicationCounts = {};
+    applicationsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const jobId = data.jobId || data.job_id || '';
+      if (jobId) {
+        applicationCounts[jobId] = (applicationCounts[jobId] || 0) + 1;
+      }
+    });
+
+    // 2. Analytics APIからPVを取得（過去30日）
+    const apiEndpoint = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData';
+    let jobPVs = {};
+
+    try {
+      const pvRes = await fetch(`${apiEndpoint}?type=company-detail&days=30&domain=${encodeURIComponent(companyDomain)}`);
+      const pvData = await pvRes.json();
+
+      if (pvData.success && pvData.data?.jobs) {
+        // jobs配列が返ってくる場合（通常のレスポンス形式）
+        pvData.data.jobs.forEach(job => {
+          // pagePathからjobIdを抽出: /job-detail.html?company=xxx&job=JOB_ID
+          const pagePath = job.pagePath || '';
+          const match = pagePath.match(/job=([^&]+)/);
+          if (match) {
+            const jobId = decodeURIComponent(match[1]);
+            jobPVs[jobId] = (jobPVs[jobId] || 0) + (job.views || 0);
+          }
+          // jobIdが直接含まれている場合
+          if (job.jobId) {
+            jobPVs[job.jobId] = (jobPVs[job.jobId] || 0) + (job.views || 0);
+          }
+        });
+      } else if (pvData.success && pvData.data?.jobStats) {
+        // jobStatsが返ってくる場合
+        pvData.data.jobStats.forEach(stat => {
+          const jobId = stat.jobId || stat.id || '';
+          if (jobId) {
+            jobPVs[jobId] = stat.pageViews || stat.views || 0;
+          }
+        });
+      } else if (pvData.success && pvData.data?.pages) {
+        // pagesが返ってくる場合（job-detail.htmlのパスから抽出）
+        pvData.data.pages.forEach(page => {
+          const match = page.pagePath?.match(/job=([^&]+)/);
+          if (match) {
+            const jobId = decodeURIComponent(match[1]);
+            jobPVs[jobId] = (jobPVs[jobId] || 0) + (page.views || page.pageViews || 0);
+          }
+        });
+      }
+    } catch (analyticsError) {
+      console.warn('Analytics APIからのPV取得に失敗:', analyticsError);
+    }
+
+    // キャッシュを更新
+    jobStatsCache = {};
+    const allJobIds = new Set([...Object.keys(applicationCounts), ...Object.keys(jobPVs)]);
+    allJobIds.forEach(jobId => {
+      jobStatsCache[jobId] = {
+        applications: applicationCounts[jobId] || 0,
+        pv: jobPVs[jobId] || 0
+      };
+    });
+
+    // 求人カードを再描画
+    renderJobsTable();
+
+  } catch (error) {
+    console.error('求人統計データの取得エラー:', error);
   }
 }
 
@@ -325,6 +676,51 @@ function editJob(rowIndex) {
 
   const deleteBtn = document.getElementById('job-modal-delete');
   if (deleteBtn) deleteBtn.style.display = '';
+
+  const modal = document.getElementById('job-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+/**
+ * 求人を複製
+ */
+function duplicateJob(rowIndex) {
+  const job = jobsCache?.find(j => j._rowIndex === rowIndex);
+  if (!job) {
+    alert('求人データが見つかりません');
+    return;
+  }
+
+  currentEditingJob = null;
+  isNewJob = true;
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+  };
+
+  document.getElementById('job-modal-title').textContent = '求人の複製';
+  setVal('edit-job-title', `${job.title || ''} (コピー)`);
+  setVal('edit-job-location', job.location);
+  setVal('edit-job-salary', job.monthlySalary);
+  setVal('edit-job-bonus', job.totalBonus);
+  setVal('edit-job-order', job.order);
+  setVal('edit-job-type', job.jobType);
+  setVal('edit-job-features', job.features);
+  setVal('edit-job-badges', job.badges);
+  setVal('edit-job-description', job.jobDescription);
+  setVal('edit-job-requirements', job.requirements);
+  setVal('edit-job-benefits', job.benefits);
+  setVal('edit-job-hours', job.workingHours);
+  setVal('edit-job-holidays', job.holidays);
+  setVal('edit-job-start-date', '');
+  setVal('edit-job-end-date', '');
+
+  const visibleEl = document.getElementById('edit-job-visible');
+  if (visibleEl) visibleEl.checked = false;
+
+  const deleteBtn = document.getElementById('job-modal-delete');
+  if (deleteBtn) deleteBtn.style.display = 'none';
 
   const modal = document.getElementById('job-modal');
   if (modal) modal.style.display = 'flex';
@@ -2388,6 +2784,47 @@ function setupEventListeners() {
   document.getElementById('btn-download-google')?.addEventListener('click', downloadGoogle);
   document.getElementById('btn-download-jobbox')?.addEventListener('click', downloadJobbox);
   document.getElementById('btn-download-csv')?.addEventListener('click', downloadCsvFeed);
+
+  // 検索・絞り込みフィルター
+  const searchInput = document.getElementById('job-search');
+  const statusFilter = document.getElementById('job-filter-status');
+  const areaFilter = document.getElementById('job-filter-area');
+  const clearFiltersBtn = document.getElementById('btn-clear-filters');
+
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        jobFilters.search = searchInput.value.trim();
+        renderJobsTable();
+      }, 300);
+    });
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener('change', () => {
+      jobFilters.status = statusFilter.value;
+      renderJobsTable();
+    });
+  }
+
+  if (areaFilter) {
+    areaFilter.addEventListener('change', () => {
+      jobFilters.area = areaFilter.value;
+      renderJobsTable();
+    });
+  }
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      jobFilters = { search: '', status: '', area: '' };
+      if (searchInput) searchInput.value = '';
+      if (statusFilter) statusFilter.value = '';
+      if (areaFilter) areaFilter.value = '';
+      renderJobsTable();
+    });
+  }
 
   // サイドバーナビゲーション
   document.querySelectorAll('.sidebar-nav a[data-section]').forEach(link => {
