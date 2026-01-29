@@ -3,6 +3,16 @@
  */
 import { escapeHtml } from '@shared/utils.js';
 import {
+  formatDuration,
+  getDeviceName,
+  getSourceName,
+  renderDemographics,
+  fetchOverviewData,
+  fetchTrafficData,
+  fetchCompanyDetailData
+} from '@shared/analytics-utils.js';
+import { parseCSVLine } from '@features/admin/csv-utils.js';
+import {
   generateIndeedXml,
   generateGoogleJobsJsonLd,
   generateJobBoxXml,
@@ -524,16 +534,14 @@ async function loadJobStats() {
     });
 
     // 2. Analytics APIからPVを取得（過去30日）
-    const apiEndpoint = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData';
     let jobPVs = {};
 
     try {
-      const pvRes = await fetch(`${apiEndpoint}?type=company-detail&days=30&domain=${encodeURIComponent(companyDomain)}`);
-      const pvData = await pvRes.json();
+      const pvData = await fetchCompanyDetailData(companyDomain, 30);
 
-      if (pvData.success && pvData.data?.jobs) {
+      if (pvData?.jobs) {
         // jobs配列が返ってくる場合（通常のレスポンス形式）
-        pvData.data.jobs.forEach(job => {
+        pvData.jobs.forEach(job => {
           // pagePathからjobIdを抽出: /job-detail.html?company=xxx&job=JOB_ID
           const pagePath = job.pagePath || '';
           const match = pagePath.match(/job=([^&]+)/);
@@ -546,17 +554,17 @@ async function loadJobStats() {
             jobPVs[job.jobId] = (jobPVs[job.jobId] || 0) + (job.views || 0);
           }
         });
-      } else if (pvData.success && pvData.data?.jobStats) {
+      } else if (pvData?.jobStats) {
         // jobStatsが返ってくる場合
-        pvData.data.jobStats.forEach(stat => {
+        pvData.jobStats.forEach(stat => {
           const jobId = stat.jobId || stat.id || '';
           if (jobId) {
             jobPVs[jobId] = stat.pageViews || stat.views || 0;
           }
         });
-      } else if (pvData.success && pvData.data?.pages) {
+      } else if (pvData?.pages) {
         // pagesが返ってくる場合（job-detail.htmlのパスから抽出）
-        pvData.data.pages.forEach(page => {
+        pvData.pages.forEach(page => {
           const match = page.pagePath?.match(/job=([^&]+)/);
           if (match) {
             const jobId = decodeURIComponent(match[1]);
@@ -1058,19 +1066,6 @@ function getAnalyticsPeriod(type) {
 }
 
 /**
- * 秒数を読みやすい形式に変換
- */
-function formatDuration(seconds) {
-  if (!seconds || isNaN(seconds)) return '-';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  if (mins > 0) {
-    return `${mins}分${secs}秒`;
-  }
-  return `${secs}秒`;
-}
-
-/**
  * Cloud Functions（GA4 API）からアクセス解析データを取得
  */
 async function loadAnalyticsData() {
@@ -1100,31 +1095,22 @@ async function loadAnalyticsData() {
   if (deviceTbody) deviceTbody.innerHTML = '<tr><td colspan="3" class="loading-cell">読み込み中...</td></tr>';
 
   try {
-    const apiEndpoint = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData';
-
-    // 概要データを取得
-    const overviewRes = await fetch(`${apiEndpoint}?type=overview&days=${days}`);
-    const overviewData = await overviewRes.json();
-
-    // 流入元データを取得
-    const trafficRes = await fetch(`${apiEndpoint}?type=traffic&days=${days}`);
-    const trafficData = await trafficRes.json();
+    // 共通ユーティリティを使ってデータ取得
+    const [overview, traffic] = await Promise.all([
+      fetchOverviewData(days),
+      fetchTrafficData(days)
+    ]);
 
     // 会社別詳細データを取得（company_domainがある場合）
-    let companyDetailData = null;
+    let companyDetail = null;
     if (companyDomain) {
-      const companyRes = await fetch(`${apiEndpoint}?type=company-detail&days=${days}&domain=${encodeURIComponent(companyDomain)}`);
-      companyDetailData = await companyRes.json();
-    }
-
-    if (!overviewData.success) {
-      throw new Error(overviewData.error || 'データ取得エラー');
+      companyDetail = await fetchCompanyDetailData(companyDomain, days);
     }
 
     analyticsCache = {
-      overview: overviewData.data,
-      traffic: trafficData.data,
-      companyDetail: companyDetailData?.data
+      overview,
+      traffic,
+      companyDetail
     };
 
     renderGA4AnalyticsData(analyticsCache);
@@ -1233,14 +1219,7 @@ function renderAnalyticsData(pageviews) {
   // 流入元別集計
   const sourceStats = {};
   pageviews.forEach(pv => {
-    let source = pv.source || pv.utmSource || pv.referrer || 'direct';
-    if (source.includes('google')) source = 'Google検索';
-    else if (source.includes('indeed')) source = 'Indeed';
-    else if (source.includes('jobbox') || source.includes('stanby')) source = '求人ボックス';
-    else if (source.includes('line')) source = 'LINE';
-    else if (source === 'direct' || source === '(direct)' || !source) source = '直接流入';
-    else source = 'その他';
-
+    const source = getSourceName(pv.source || pv.utmSource || pv.referrer || 'direct');
     sourceStats[source] = (sourceStats[source] || 0) + 1;
   });
 
@@ -1270,12 +1249,7 @@ function renderAnalyticsData(pageviews) {
   // デバイス別集計
   const deviceStats = {};
   pageviews.forEach(pv => {
-    let device = pv.device || pv.deviceCategory || 'unknown';
-    if (device === 'mobile' || device.includes('mobile')) device = 'モバイル';
-    else if (device === 'desktop' || device.includes('desktop')) device = 'デスクトップ';
-    else if (device === 'tablet' || device.includes('tablet')) device = 'タブレット';
-    else device = 'その他';
-
+    const device = getDeviceName(pv.device || pv.deviceCategory || 'unknown');
     deviceStats[device] = (deviceStats[device] || 0) + 1;
   });
 
@@ -1411,13 +1385,10 @@ function renderGA4AnalyticsData(data) {
     if (devices.length > 0) {
       const totalSessions = devices.reduce((acc, d) => acc + (d.sessions || 0), 0);
       deviceTbody.innerHTML = devices.map(item => {
-        const deviceName = item.device === 'mobile' ? 'モバイル' :
-                          item.device === 'desktop' ? 'デスクトップ' :
-                          item.device === 'tablet' ? 'タブレット' : item.device;
         const percentage = totalSessions > 0 ? Math.round((item.sessions / totalSessions) * 100) : 0;
         return `
           <tr>
-            <td>${escapeHtml(deviceName)}</td>
+            <td>${escapeHtml(getDeviceName(item.device))}</td>
             <td>${item.sessions || 0}</td>
             <td>${percentage}%</td>
           </tr>
@@ -1433,52 +1404,13 @@ function renderGA4AnalyticsData(data) {
   if (demographicsSection) {
     if (companyDomain && companyDetail) {
       demographicsSection.style.display = 'block';
-
-      // 男女比
-      const gender = companyDetail.gender || {};
-      const maleCount = gender.male || 0;
-      const femaleCount = gender.female || 0;
-      const totalGender = maleCount + femaleCount;
-
-      if (totalGender > 0) {
-        const malePercent = Math.round((maleCount / totalGender) * 100);
-        const femalePercent = 100 - malePercent;
-
-        const maleBar = document.getElementById('gender-bar-male');
-        const femaleBar = document.getElementById('gender-bar-female');
-        if (maleBar) maleBar.style.width = `${malePercent}%`;
-        if (femaleBar) femaleBar.style.width = `${femalePercent}%`;
-
-        const malePercentEl = document.getElementById('gender-male-percent');
-        const femalePercentEl = document.getElementById('gender-female-percent');
-        if (malePercentEl) malePercentEl.textContent = `${malePercent}%`;
-        if (femalePercentEl) femalePercentEl.textContent = `${femalePercent}%`;
-      } else {
-        document.getElementById('gender-male-percent').textContent = '-';
-        document.getElementById('gender-female-percent').textContent = '-';
-      }
-
-      // 年齢分布
-      const age = companyDetail.age || {};
-      const ageBarsContainer = document.getElementById('age-bars');
-      if (ageBarsContainer) {
-        const ageGroups = Object.entries(age);
-        if (ageGroups.length > 0) {
-          const maxAge = Math.max(...ageGroups.map(([, count]) => count));
-          ageBarsContainer.innerHTML = ageGroups.map(([group, count]) => {
-            const height = maxAge > 0 ? Math.max(10, (count / maxAge) * 80) : 10;
-            return `
-              <div class="age-bar-wrapper">
-                <span class="age-bar-value">${count}</span>
-                <div class="age-bar" style="height: ${height}px;"></div>
-                <span class="age-bar-label">${group}</span>
-              </div>
-            `;
-          }).join('');
-        } else {
-          ageBarsContainer.innerHTML = '<p style="color: #94a3b8; font-size: 13px; text-align: center;">データがありません</p>';
-        }
-      }
+      renderDemographics(companyDetail.gender, companyDetail.age, {
+        maleBarId: 'gender-bar-male',
+        femaleBarId: 'gender-bar-female',
+        malePercentId: 'gender-male-percent',
+        femalePercentId: 'gender-female-percent',
+        ageContainerId: 'age-bars'
+      });
     } else {
       demographicsSection.style.display = 'none';
     }
@@ -2432,11 +2364,11 @@ function setInputValue(id, value) {
  */
 function parseLPSettingsCSVForJob(csvText, jobId) {
   const lines = splitCSVToRows(csvText);
-  const headers = parseCSVLineLocal(lines[0] || '');
+  const headers = parseCSVLine(lines[0] || '');
 
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
-    const values = parseCSVLineLocal(lines[i]);
+    const values = parseCSVLine(lines[i]);
     const rowData = {};
 
     headers.forEach((header, idx) => {
@@ -2514,34 +2446,6 @@ function splitCSVToRows(csvText) {
   }
 
   return rows;
-}
-
-/**
- * CSVラインをパース
- */
-function parseCSVLineLocal(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.replace(/^"|"$/g, '').trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.replace(/^"|"$/g, '').trim());
-  return result;
 }
 
 /**

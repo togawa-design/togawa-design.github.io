@@ -3,6 +3,7 @@
  */
 
 import { escapeHtml, formatNumber } from '@shared/utils.js';
+import { renderDemographics } from '@shared/analytics-utils.js';
 import { config } from './config.js';
 import { getIdToken } from './auth.js';
 import { getPatternLabel } from './config.js';
@@ -122,51 +123,13 @@ function showLoading(show) {
 
 // ユーザー属性（男女比・年齢分布）を描画
 function renderAdminDemographics(gender, age) {
-  // 男女比
-  const maleCount = gender?.male || 0;
-  const femaleCount = gender?.female || 0;
-  const totalGender = maleCount + femaleCount;
-
-  if (totalGender > 0) {
-    const malePercent = Math.round((maleCount / totalGender) * 100);
-    const femalePercent = 100 - malePercent;
-
-    const maleBar = document.getElementById('admin-gender-bar-male');
-    const femaleBar = document.getElementById('admin-gender-bar-female');
-    if (maleBar) maleBar.style.width = `${malePercent}%`;
-    if (femaleBar) femaleBar.style.width = `${femalePercent}%`;
-
-    const malePercentEl = document.getElementById('admin-gender-male-percent');
-    const femalePercentEl = document.getElementById('admin-gender-female-percent');
-    if (malePercentEl) malePercentEl.textContent = `${malePercent}%`;
-    if (femalePercentEl) femalePercentEl.textContent = `${femalePercent}%`;
-  } else {
-    const malePercentEl = document.getElementById('admin-gender-male-percent');
-    const femalePercentEl = document.getElementById('admin-gender-female-percent');
-    if (malePercentEl) malePercentEl.textContent = '-';
-    if (femalePercentEl) femalePercentEl.textContent = '-';
-  }
-
-  // 年齢分布
-  const ageBarsContainer = document.getElementById('admin-age-bars');
-  if (ageBarsContainer) {
-    const ageGroups = Object.entries(age || {});
-    if (ageGroups.length > 0) {
-      const maxAge = Math.max(...ageGroups.map(([, count]) => count));
-      ageBarsContainer.innerHTML = ageGroups.map(([group, count]) => {
-        const height = maxAge > 0 ? Math.max(10, (count / maxAge) * 80) : 10;
-        return `
-          <div class="age-bar-wrapper">
-            <span class="age-bar-value">${count}</span>
-            <div class="age-bar" style="height: ${height}px;"></div>
-            <span class="age-bar-label">${group}</span>
-          </div>
-        `;
-      }).join('');
-    } else {
-      ageBarsContainer.innerHTML = '<p style="color: #94a3b8; font-size: 13px; text-align: center;">データがありません</p>';
-    }
-  }
+  renderDemographics(gender, age, {
+    maleBarId: 'admin-gender-bar-male',
+    femaleBarId: 'admin-gender-bar-female',
+    malePercentId: 'admin-gender-male-percent',
+    femalePercentId: 'admin-gender-female-percent',
+    ageContainerId: 'admin-age-bars'
+  });
 }
 
 // 各セクションにローディング表示
