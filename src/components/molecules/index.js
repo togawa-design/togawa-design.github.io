@@ -6,7 +6,7 @@ import { escapeHtml, nl2br } from '@shared/utils.js';
 import { Badge, Button, Icons, TagList, Image } from '@components/atoms/index.js';
 
 // 求人カード
-export function JobCard({ job, showCompanyName = false }) {
+export function JobCard({ job, showCompanyName = false, linkToJobsList = false }) {
   const badges = job.badges ? job.badges.split(',').map(b => b.trim()) : [];
   const features = Array.isArray(job.features) ? job.features : [];
   const imageSrc = job.imageUrl?.trim() || 'images/default-job.svg';
@@ -24,14 +24,16 @@ export function JobCard({ job, showCompanyName = false }) {
     badgesHtml += Badge({ text: '急募', type: 'urgent' });
   }
 
-  // 求人IDがある場合は求人詳細ページ、なければ会社ページ
-  let detailUrl = '#';
-  if (job.companyDomain?.trim() && job.id) {
-    detailUrl = `job-detail.html?company=${encodeURIComponent(job.companyDomain.trim())}&job=${encodeURIComponent(job.id)}`;
-  } else if (job.companyDomain?.trim()) {
-    detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
-  } else if (job.detailUrl) {
-    detailUrl = job.detailUrl;
+  // linkToJobsList が true の場合は求人一覧ページへ、それ以外は求人詳細ページへ
+  let detailUrl = 'jobs.html';
+  if (!linkToJobsList) {
+    if (job.companyDomain?.trim() && job.id) {
+      detailUrl = `job-detail.html?company=${encodeURIComponent(job.companyDomain.trim())}&job=${encodeURIComponent(job.id)}`;
+    } else if (job.companyDomain?.trim()) {
+      detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
+    } else if (job.detailUrl) {
+      detailUrl = job.detailUrl;
+    }
   }
 
   return `

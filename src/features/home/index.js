@@ -405,7 +405,7 @@ export async function renderJobs(containerId = 'jobs-container') {
     })
   );
 
-  container.innerHTML = companiesWithJobData.map(company => JobCard({ job: company })).join('');
+  container.innerHTML = companiesWithJobData.map(company => JobCard({ job: company, linkToJobsList: true })).join('');
 }
 
 // 実績を描画
