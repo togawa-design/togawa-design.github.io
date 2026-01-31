@@ -544,6 +544,8 @@ function saveLPSettings(settingsData) {
         "ogpTitle",
         "ogpDescription",
         "ogpImage",
+        "showVideoButton",
+        "videoUrl",
       ]);
       sheet.getRange(1, 1, 1, sheet.getLastColumn()).setFontWeight("bold");
       sheet.getRange(1, 1, 1, sheet.getLastColumn()).setBackground("#f3f3f3");
@@ -574,6 +576,8 @@ function saveLPSettings(settingsData) {
       "ogpTitle",
       "ogpDescription",
       "ogpImage",
+      "showVideoButton",
+      "videoUrl",
     ];
 
     for (const col of requiredCols) {
@@ -637,6 +641,8 @@ function saveLPSettings(settingsData) {
         LP構成: "lpContent",
         セクション順序: "sectionOrder",
         セクション表示: "sectionVisibility",
+        動画ボタン表示: "showVideoButton",
+        動画URL: "videoUrl",
       };
       const key = mapping[header];
       return key ? settingsData[key] || "" : "";

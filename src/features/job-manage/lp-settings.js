@@ -12,7 +12,8 @@ import {
   updateLPPreview,
   debouncedUpdatePreview,
   initPointsSection,
-  initFAQSection
+  initFAQSection,
+  initVideoButtonSection
 } from '@features/admin/lp-settings.js';
 import {
   initSectionManager,
@@ -76,6 +77,7 @@ export function initCompanyLPSettings() {
 
   initPointsSection();
   initFAQSection();
+  initVideoButtonSection();
 
   const saveBtn = document.getElementById('btn-save-lp-settings');
   if (saveBtn) {
@@ -138,7 +140,8 @@ function setupLPFormListeners() {
     'lp-hero-title', 'lp-hero-subtitle', 'lp-hero-image',
     'lp-cta-text', 'lp-faq',
     'lp-tiktok-pixel', 'lp-google-ads-id', 'lp-google-ads-label',
-    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image'
+    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image',
+    'lp-video-url'
   ];
 
   inputIds.forEach(id => {
@@ -370,6 +373,17 @@ async function loadLPSettingsForJob(jobId) {
         setInputValue('lp-ogp-description', settings.ogpDescription);
         setInputValue('lp-ogp-image', settings.ogpImage);
 
+        // 動画ボタン設定
+        const showVideoCheckbox = document.getElementById('lp-show-video-button');
+        const videoUrlGroup = document.getElementById('video-url-group');
+        if (showVideoCheckbox) {
+          showVideoCheckbox.checked = String(settings.showVideoButton).toLowerCase() === 'true' || settings.showVideoButton === true;
+          if (videoUrlGroup) {
+            videoUrlGroup.style.display = showVideoCheckbox.checked ? 'block' : 'none';
+          }
+        }
+        setInputValue('lp-video-url', settings.videoUrl);
+
         if (settings.designPattern) {
           const radio = document.querySelector(`input[name="design-pattern"][value="${settings.designPattern}"]`);
           if (radio) radio.checked = true;
@@ -428,6 +442,8 @@ function parseLPSettingsCSVForJob(csvText, jobId) {
         ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
         ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
         ogpImage: rowData.ogpImage || rowData['OGP画像'] || '',
+        showVideoButton: rowData.showVideoButton || rowData['動画ボタン表示'] || '',
+        videoUrl: rowData.videoUrl || rowData['動画URL'] || '',
         lpContent: rowData.lpContent || rowData['LP構成'] || ''
       };
 
@@ -488,10 +504,17 @@ function clearLPFormForJob() {
     'lp-hero-title', 'lp-hero-subtitle', 'lp-hero-image',
     'lp-faq',
     'lp-tiktok-pixel', 'lp-google-ads-id', 'lp-google-ads-label',
-    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image'
+    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image',
+    'lp-video-url'
   ];
   fields.forEach(id => setInputValue(id, ''));
   setInputValue('lp-cta-text', '今すぐ応募する');
+
+  // 動画ボタン設定をリセット
+  const showVideoCheckbox = document.getElementById('lp-show-video-button');
+  const videoUrlGroup = document.getElementById('video-url-group');
+  if (showVideoCheckbox) showVideoCheckbox.checked = false;
+  if (videoUrlGroup) videoUrlGroup.style.display = 'none';
 
   const standardRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (standardRadio) standardRadio.checked = true;

@@ -457,6 +457,17 @@ export async function loadLPSettings(jobId) {
         setInputValue('lp-ogp-description', settings.ogpDescription);
         setInputValue('lp-ogp-image', settings.ogpImage);
 
+        // 動画ボタン設定
+        const showVideoCheckbox = document.getElementById('lp-show-video-button');
+        const videoUrlGroup = document.getElementById('video-url-group');
+        if (showVideoCheckbox) {
+          showVideoCheckbox.checked = String(settings.showVideoButton).toLowerCase() === 'true' || settings.showVideoButton === true;
+          if (videoUrlGroup) {
+            videoUrlGroup.style.display = showVideoCheckbox.checked ? 'block' : 'none';
+          }
+        }
+        setInputValue('lp-video-url', settings.videoUrl);
+
         updateHeroImagePresetSelection(settings.heroImage || '');
 
         // セクションマネージャーを初期化してデータを読み込み
@@ -610,6 +621,18 @@ export function initPointsSection() {
 
   // 初期状態で3つのポイントを表示
   renderPointInputs();
+}
+
+// 動画ボタン設定の初期化
+export function initVideoButtonSection() {
+  const checkbox = document.getElementById('lp-show-video-button');
+  const videoUrlGroup = document.getElementById('video-url-group');
+
+  if (checkbox && videoUrlGroup) {
+    checkbox.addEventListener('change', () => {
+      videoUrlGroup.style.display = checkbox.checked ? 'block' : 'none';
+    });
+  }
 }
 
 // ===========================================
@@ -841,6 +864,9 @@ function parseLPSettingsCSV(csvText, jobId) {
         ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
         ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
         ogpImage: rowData.ogpImage || rowData['OGP画像'] || '',
+        // 動画ボタン設定
+        showVideoButton: rowData.showVideoButton || rowData['動画ボタン表示'] || '',
+        videoUrl: rowData.videoUrl || rowData['動画URL'] || '',
         // 新形式v2 LP構成データ
         lpContent: rowData.lpContent || rowData['LP構成'] || ''
       };
@@ -863,10 +889,17 @@ export function clearLPForm() {
     'lp-hero-title', 'lp-hero-subtitle', 'lp-hero-image',
     'lp-faq',
     'lp-tiktok-pixel', 'lp-google-ads-id', 'lp-google-ads-label',
-    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image'
+    'lp-ogp-title', 'lp-ogp-description', 'lp-ogp-image',
+    'lp-video-url'
   ];
   fields.forEach(id => setInputValue(id, ''));
   setInputValue('lp-cta-text', '今すぐ応募する');
+
+  // 動画ボタン設定をリセット
+  const showVideoCheckbox = document.getElementById('lp-show-video-button');
+  const videoUrlGroup = document.getElementById('video-url-group');
+  if (showVideoCheckbox) showVideoCheckbox.checked = false;
+  if (videoUrlGroup) videoUrlGroup.style.display = 'none';
 
   // ポイントを初期状態に戻す
   renderPointInputs();
@@ -1002,6 +1035,21 @@ export async function saveLPSettings() {
   const lpContent = getCurrentLPContent();
   if (lpContent) {
     settings.lpContent = JSON.stringify(lpContent);
+
+    // lpContent内のheroCTAセクションから動画設定を同期
+    const heroCtaSection = lpContent.sections?.find(s => s.type === 'heroCta');
+    if (heroCtaSection?.data) {
+      settings.showVideoButton = heroCtaSection.data.showVideoButton ? 'true' : 'false';
+      settings.videoUrl = heroCtaSection.data.videoUrl || '';
+    } else {
+      // heroCTAセクションがない場合はフォームから取得
+      settings.showVideoButton = document.getElementById('lp-show-video-button')?.checked ? 'true' : 'false';
+      settings.videoUrl = document.getElementById('lp-video-url')?.value || '';
+    }
+  } else {
+    // lpContentがない場合（旧形式）はフォームから取得
+    settings.showVideoButton = document.getElementById('lp-show-video-button')?.checked ? 'true' : 'false';
+    settings.videoUrl = document.getElementById('lp-video-url')?.value || '';
   }
 
   // デバッグ: 送信するデータをログ
@@ -1009,6 +1057,8 @@ export async function saveLPSettings() {
   console.log('[LP保存] layoutStyle:', settings.layoutStyle);
   console.log('[LP保存] faq:', settings.faq);
   console.log('[LP保存] lpContent:', settings.lpContent ? 'あり' : 'なし');
+  console.log('[LP保存] showVideoButton:', settings.showVideoButton);
+  console.log('[LP保存] videoUrl:', settings.videoUrl);
 
   const gasApiUrl = spreadsheetConfig.gasApiUrl;
   if (gasApiUrl) {
@@ -1636,5 +1686,6 @@ export default {
   addPoint,
   getPointsData,
   initPointsSection,
+  initVideoButtonSection,
   initSectionManagerIfNeeded
 };
