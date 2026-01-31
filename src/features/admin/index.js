@@ -11,7 +11,7 @@ import {
 } from './auth.js';
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
-import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection } from './lp-settings.js';
+import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection, initVideoButtonSection } from './lp-settings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { escapeHtml } from '@shared/utils.js';
@@ -417,6 +417,9 @@ function bindEvents() {
 
   // LP設定: FAQ追加/削除
   initFAQSection();
+
+  // LP設定: 動画ボタン設定
+  initVideoButtonSection();
 
   // LP設定: セクション表示/非表示切り替え
   document.querySelectorAll('#lp-section-order input[type="checkbox"]').forEach(checkbox => {

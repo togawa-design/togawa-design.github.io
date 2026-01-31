@@ -397,6 +397,9 @@ class CompanyLPPage {
       ogpTitle: rowData.ogpTitle || rowData['OGPタイトル'] || '',
       ogpDescription: rowData.ogpDescription || rowData['OGP説明文'] || '',
       ogpImage: rowData.ogpImage || rowData['OGP画像'] || '',
+      // 動画ボタン設定
+      showVideoButton: rowData.showVideoButton || rowData['動画ボタン表示'] || '',
+      videoUrl: rowData.videoUrl || rowData['動画URL'] || '',
       // 新形式v2 LP構成データ
       lpContent: rowData.lpContent || rowData['LP構成'] || ''
     };

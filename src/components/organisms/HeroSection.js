@@ -56,10 +56,6 @@ function renderDefaultHero(company, heroTitle, heroSubtitle, heroImage, highligh
           `).join('')}
         </div>
         ` : ''}
-
-        <div class="lp-hero-cta">
-          <a href="#lp-apply" class="lp-btn-apply-hero">今すぐ応募する</a>
-        </div>
       </div>
     </section>
   `;
@@ -86,11 +82,6 @@ function renderYellowHero(company, heroTitle, heroSubtitle, heroImage, highlight
           `).join('')}
         </div>
         ` : ''}
-
-        <div class="lp-hero-cta">
-          <a href="#lp-apply" class="lp-btn-apply-hero">今すぐ応募する</a>
-          <span class="lp-cta-microcopy">1分で入力完了</span>
-        </div>
       </div>
     </section>
   `;

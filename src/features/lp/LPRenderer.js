@@ -4,6 +4,8 @@
  */
 import {
   renderHeroSection,
+  renderHeroCTASection,
+  initVideoModal,
   renderPointsSection,
   renderJobsSection,
   renderDetailsSection,
@@ -22,6 +24,7 @@ export class LPRenderer {
     // セクションレンダラーの登録
     this.sectionRenderers = {
       hero: renderHeroSection,
+      heroCta: renderHeroCTASection,
       points: renderPointsSection,
       jobs: renderJobsSection,
       details: renderDetailsSection,
@@ -34,7 +37,7 @@ export class LPRenderer {
       video: renderVideoSection
     };
 
-    this.defaultOrder = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+    this.defaultOrder = ['hero', 'heroCta', 'points', 'jobs', 'details', 'faq', 'apply'];
   }
 
   /**
@@ -64,7 +67,7 @@ export class LPRenderer {
 
     if (lpContent && lpContent.version === '2.0') {
       // 新形式（v2）で描画
-      this.renderV2Sections(lpContent, company, mainJob, jobs, contentEl);
+      this.renderV2Sections(lpContent, company, mainJob, jobs, lpSettings, contentEl);
     } else {
       // 旧形式で描画（後方互換性）
       this.renderLegacySections(company, mainJob, jobs, lpSettings, contentEl);
@@ -138,8 +141,22 @@ export class LPRenderer {
   /**
    * v2形式でセクションを描画
    */
-  renderV2Sections(lpContent, company, mainJob, jobs, contentEl) {
-    const { sections, globalSettings } = lpContent;
+  renderV2Sections(lpContent, company, mainJob, jobs, lpSettings, contentEl) {
+    let { sections, globalSettings } = lpContent;
+
+    // heroCTAセクションが存在しない場合、heroの直後に追加
+    const hasHeroCta = sections.some(s => s.type === 'heroCta');
+    if (!hasHeroCta) {
+      const heroIndex = sections.findIndex(s => s.type === 'hero');
+      const heroCtaSection = {
+        id: 'heroCta-auto',
+        type: 'heroCta',
+        order: heroIndex >= 0 ? sections[heroIndex].order + 0.5 : 0.5,
+        visible: true,
+        data: {}
+      };
+      sections = [...sections, heroCtaSection];
+    }
 
     // 表示するセクションをフィルタリング＆ソート
     const visibleSections = sections
@@ -151,7 +168,8 @@ export class LPRenderer {
       company,
       mainJob,
       jobs,
-      globalSettings: globalSettings || {}
+      globalSettings: globalSettings || {},
+      lpSettings: lpSettings || {}
     };
 
     // 各セクションを描画
@@ -161,6 +179,9 @@ export class LPRenderer {
 
     // カルーセルの初期化
     initCarousels();
+
+    // 動画モーダルの初期化
+    initVideoModal();
   }
 
   /**
@@ -183,6 +204,19 @@ export class LPRenderer {
             heroImage: section.data?.image,
             ...context.globalSettings
           });
+
+        case 'heroCta':
+          // section.dataとlpSettingsの両方から動画ボタン設定を取得
+          const showVideo = section.data?.showVideoButton ||
+            String(context.lpSettings?.showVideoButton).toLowerCase() === 'true' ||
+            context.lpSettings?.showVideoButton === true;
+          const heroCtaData = {
+            showVideoButton: showVideo,
+            videoUrl: section.data?.videoUrl || context.lpSettings?.videoUrl || '',
+            applyButtonText: section.data?.applyButtonText || context.lpSettings?.ctaText || '今すぐ応募する',
+            videoButtonText: section.data?.videoButtonText || '求人内容を動画で見る'
+          };
+          return renderer(heroCtaData, context.globalSettings?.layoutStyle || 'default');
 
         case 'points':
           const pointsLpSettings = this.convertPointsToLegacy(section.data, context.globalSettings);
@@ -255,6 +289,9 @@ export class LPRenderer {
     contentEl.innerHTML = sectionOrder
       .map(sectionName => this.renderLegacySection(sectionName, company, mainJob, jobs, lpSettings, sectionVisibility, layoutStyle))
       .join('');
+
+    // 動画モーダルの初期化
+    initVideoModal();
   }
 
   /**
@@ -264,6 +301,13 @@ export class LPRenderer {
     switch (sectionName) {
       case 'hero':
         return this.sectionRenderers.hero(company, mainJob, lpSettings, layoutStyle);
+      case 'heroCta':
+        return this.sectionRenderers.heroCta({
+          showVideoButton: String(lpSettings.showVideoButton).toLowerCase() === 'true' || lpSettings.showVideoButton === true,
+          videoUrl: lpSettings.videoUrl || '',
+          applyButtonText: lpSettings.ctaText || '今すぐ応募する',
+          videoButtonText: lpSettings.videoButtonText || '求人内容を動画で見る'
+        }, layoutStyle);
       case 'points':
         return sectionVisibility.points ? this.sectionRenderers.points(company, mainJob, lpSettings, layoutStyle) : '';
       case 'jobs':
@@ -297,6 +341,16 @@ export class LPRenderer {
 
     const customOrder = orderString.split(',').map(s => s.trim()).filter(s => s);
     if (customOrder.length === 0) return this.defaultOrder;
+
+    // heroCta が含まれていない場合、hero の直後に挿入
+    if (!customOrder.includes('heroCta')) {
+      const heroIndex = customOrder.indexOf('hero');
+      if (heroIndex !== -1) {
+        customOrder.splice(heroIndex + 1, 0, 'heroCta');
+      } else {
+        customOrder.unshift('heroCta');
+      }
+    }
 
     const missingSections = this.defaultOrder.filter(s => !customOrder.includes(s));
     return [...customOrder, ...missingSections];

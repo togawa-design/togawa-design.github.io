@@ -14,3 +14,4 @@ export { renderGallerySection } from './GallerySection.js';
 export { renderTestimonialSection } from './TestimonialSection.js';
 export { renderCarouselSection, initCarousels } from './CarouselSection.js';
 export { renderVideoSection } from './VideoSection.js';
+export { renderHeroCTASection, initVideoModal } from './HeroCTASection.js';

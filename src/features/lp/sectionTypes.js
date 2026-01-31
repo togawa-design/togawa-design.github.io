@@ -6,7 +6,7 @@
 export const SECTION_TYPES = {
   hero: {
     id: 'hero',
-    name: 'ヒーローセクション',
+    name: 'ファーストビュー',
     icon: '🎯',
     required: true,
     maxInstances: 1,
@@ -14,6 +14,20 @@ export const SECTION_TYPES = {
       title: '',
       subtitle: '',
       image: ''
+    },
+    defaultLayout: {}
+  },
+  heroCta: {
+    id: 'heroCta',
+    name: 'CTAボタン',
+    icon: '📢',
+    required: false,
+    maxInstances: 1,
+    defaultData: {
+      showVideoButton: false,
+      videoUrl: '',
+      applyButtonText: '今すぐ応募する',
+      videoButtonText: '求人内容を動画で見る'
     },
     defaultLayout: {}
   },
@@ -208,7 +222,7 @@ export const GALLERY_STYLES = {
 };
 
 // デフォルトのセクション順序
-export const DEFAULT_SECTION_ORDER = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+export const DEFAULT_SECTION_ORDER = ['hero', 'heroCta', 'points', 'jobs', 'details', 'faq', 'apply'];
 
 // ID生成ユーティリティ
 export function generateSectionId(type) {
@@ -227,9 +241,17 @@ export function getDefaultSections() {
       layout: { ...SECTION_TYPES.hero.defaultLayout }
     },
     {
+      id: 'heroCta-1',
+      type: 'heroCta',
+      order: 1,
+      visible: true,
+      data: { ...SECTION_TYPES.heroCta.defaultData },
+      layout: { ...SECTION_TYPES.heroCta.defaultLayout }
+    },
+    {
       id: 'points-1',
       type: 'points',
-      order: 1,
+      order: 2,
       visible: true,
       data: { ...SECTION_TYPES.points.defaultData },
       layout: { ...SECTION_TYPES.points.defaultLayout }
@@ -237,7 +259,7 @@ export function getDefaultSections() {
     {
       id: 'jobs-1',
       type: 'jobs',
-      order: 2,
+      order: 3,
       visible: true,
       data: { ...SECTION_TYPES.jobs.defaultData },
       layout: { ...SECTION_TYPES.jobs.defaultLayout }
@@ -245,7 +267,7 @@ export function getDefaultSections() {
     {
       id: 'details-1',
       type: 'details',
-      order: 3,
+      order: 4,
       visible: true,
       data: { ...SECTION_TYPES.details.defaultData },
       layout: { ...SECTION_TYPES.details.defaultLayout }
@@ -253,7 +275,7 @@ export function getDefaultSections() {
     {
       id: 'faq-1',
       type: 'faq',
-      order: 4,
+      order: 5,
       visible: true,
       data: { ...SECTION_TYPES.faq.defaultData },
       layout: { ...SECTION_TYPES.faq.defaultLayout }
@@ -261,7 +283,7 @@ export function getDefaultSections() {
     {
       id: 'apply-1',
       type: 'apply',
-      order: 5,
+      order: 6,
       visible: true,
       data: { ...SECTION_TYPES.apply.defaultData },
       layout: { ...SECTION_TYPES.apply.defaultLayout }
