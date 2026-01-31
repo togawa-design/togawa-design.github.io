@@ -7,6 +7,7 @@ export const SHEET_ID = '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0';
 export const SHEET_NAME = '会社一覧';
 export const STATS_SHEET_NAME = 'Stats';
 export const DEFAULT_IMAGE = 'images/default-job.svg';
+export const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
 
 // CSVを取得するURL
 export const getCsvUrl = () =>
@@ -379,6 +380,40 @@ export async function fetchStats() {
   }
 }
 
+// 求人統計を取得（掲載求人数、平均時給、平均月収）
+// localStorageでタブ間共有キャッシュ（30分）
+export async function fetchJobStats() {
+  const CACHE_KEY = 'jobStats';
+  const CACHE_DURATION = 30 * 60 * 1000; // 30分
+
+  try {
+    // localStorageキャッシュをチェック（タブ間で共有）
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        return data;
+      }
+    }
+
+    const response = await fetch(`${GAS_API_URL}?action=getJobStats`);
+    if (!response.ok) throw new Error('求人統計の取得に失敗しました');
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || '求人統計の取得に失敗しました');
+
+    // キャッシュに保存
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      data: result.stats,
+      timestamp: Date.now()
+    }));
+
+    return result.stats;
+  } catch (error) {
+    console.error('求人統計の取得エラー:', error);
+    return null;
+  }
+}
+
 // 実績CSVをパース
 function parseStatsCSV(csvText) {
   const lines = csvText.split('\n');
@@ -416,6 +451,7 @@ const JobsLoader = {
   SHEET_NAME,
   STATS_SHEET_NAME,
   DEFAULT_IMAGE,
+  GAS_API_URL,
   get csvUrl() { return getCsvUrl(); },
   get statsUrl() { return getStatsUrl(); },
   getSheetUrl,
@@ -437,6 +473,7 @@ const JobsLoader = {
   getJobsByKeyword,
   getJobsByOccupation,
   fetchStats,
+  fetchJobStats,
   getDesignPatternClass,
   escapeHtml(str) {
     if (!str) return '';

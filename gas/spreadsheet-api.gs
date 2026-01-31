@@ -46,6 +46,9 @@ function doGet(e) {
         case "getJobs":
           result = getJobs(e.parameter.domain);
           break;
+        case "getJobStats":
+          result = getJobStats();
+          break;
         default:
           result = { error: "Unknown action" };
       }
@@ -907,3 +910,7 @@ function testGetJobs() {
   const result = getJobs("toyota");
   Logger.log(result);
 }
+
+// ========================================
+// 求人統計機能は job-stats.gs に分離
+// ========================================

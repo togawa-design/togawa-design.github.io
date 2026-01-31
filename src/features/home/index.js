@@ -291,8 +291,11 @@ export function animateNumbers() {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const target = entry.target;
-        const finalNumber = parseInt(target.textContent.replace(/,/g, ''));
-        animateNumber(target, finalNumber);
+        // data-value属性から数値を取得（¥などのプレフィックスを含まない）
+        const finalNumber = parseInt(target.dataset.value) || 0;
+        if (finalNumber > 0) {
+          animateNumber(target, finalNumber);
+        }
         observer.unobserve(target);
       }
     });
@@ -305,6 +308,8 @@ function animateNumber(element, target) {
   const duration = 2000;
   const start = 0;
   const startTime = performance.now();
+  // .stat-value 要素を取得（suffix/prefixを壊さないため）
+  const valueElement = element.querySelector('.stat-value') || element;
 
   function update(currentTime) {
     const elapsed = currentTime - startTime;
@@ -312,7 +317,7 @@ function animateNumber(element, target) {
     const easeProgress = 1 - Math.pow(1 - progress, 3);
     const current = Math.floor(start + (target - start) * easeProgress);
 
-    element.textContent = current.toLocaleString();
+    valueElement.textContent = current.toLocaleString();
 
     if (progress < 1) {
       requestAnimationFrame(update);
@@ -410,23 +415,47 @@ export async function renderJobs(containerId = 'jobs-container') {
 
 // 実績を描画
 export async function renderStats() {
-  const stats = await JobsLoader.fetchStats();
-  if (!stats) return;
-
   const statsContainer = document.querySelector('.hero-stats');
   if (!statsContainer) return;
 
-  const items = Object.keys(stats).map(key => {
-    const stat = stats[key];
-    return `
-      <div class="stat-item">
-        <span class="stat-number">${escapeHtml(stat.value)}</span>
-        <span class="stat-label">${escapeHtml(stat.label)}</span>
-      </div>
-    `;
-  }).join('');
+  try {
+    const stats = await JobsLoader.fetchJobStats();
+    if (!stats) {
+      console.warn('統計情報を取得できませんでした');
+      return;
+    }
 
-  statsContainer.innerHTML = items;
+    const items = [
+      {
+        value: stats.jobCount || 0,
+        label: '掲載求人数',
+        suffix: '件'
+      },
+      {
+        value: stats.avgHourlyWage || 0,
+        label: '平均時給',
+        suffix: '円'
+      },
+      {
+        value: stats.avgMonthlySalary || 0,
+        label: '平均月収',
+        suffix: '円'
+      }
+    ];
+
+    statsContainer.innerHTML = items.map(item => `
+      <div class="stat-item">
+        <span class="stat-number" data-value="${item.value}">
+          ${item.prefix ? `<span class="stat-prefix">${item.prefix}</span>` : ''}
+          <span class="stat-value">${item.value.toLocaleString()}</span>
+          ${item.suffix ? `<span class="stat-suffix">${item.suffix}</span>` : ''}
+        </span>
+        <span class="stat-label">${escapeHtml(item.label)}</span>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('統計情報の取得エラー:', error);
+  }
 }
 
 // フッターの勤務地リンクを更新

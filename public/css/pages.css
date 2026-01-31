@@ -51,31 +51,63 @@
 .hero-stats {
   display: flex;
   justify-content: center;
-  gap: 48px;
+  gap: 20px;
   margin-top: 56px;
   flex-wrap: wrap;
 }
 
 .stat-item {
   text-align: center;
+  min-width: 180px;
+  padding: 24px 32px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .stat-number {
-  display: block;
-  font-size: 48px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  font-size: 40px;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.85) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.stat-number .stat-prefix {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.stat-number .stat-value {
+  font-size: 40px;
+}
+
+.stat-number .stat-suffix {
+  font-size: 18px;
+  font-weight: 600;
+  margin-left: 4px;
 }
 
 .stat-label {
   font-size: 14px;
   font-weight: 500;
-  opacity: 0.7;
-  margin-top: 4px;
+  opacity: 0.85;
+  margin-top: 12px;
+  letter-spacing: 0.02em;
 }
 
 /* ========================================
@@ -495,7 +527,24 @@
   }
 
   .stat-number {
-    font-size: 56px;
+    font-size: 48px;
+  }
+
+  .stat-number .stat-value {
+    font-size: 48px;
+  }
+
+  .stat-number .stat-prefix {
+    font-size: 26px;
+  }
+
+  .stat-number .stat-suffix {
+    font-size: 20px;
+  }
+
+  .stat-item {
+    min-width: 200px;
+    padding: 28px 36px;
   }
 }
 
@@ -517,23 +566,42 @@
   }
 
   .hero-stats {
-    gap: 16px;
-    justify-content: space-around;
+    gap: 10px;
+    justify-content: center;
+    padding: 0 8px;
   }
 
   .stat-item {
-    min-width: 90px;
-    flex: 0 0 auto;
+    min-width: 95px;
+    flex: 1 1 calc(33.333% - 10px);
+    max-width: 110px;
+    padding: 16px 10px;
+    border-radius: 12px;
   }
 
   .stat-number {
-    font-size: 28px;
+    font-size: 24px;
     white-space: nowrap;
+    gap: 2px;
+  }
+
+  .stat-number .stat-prefix {
+    font-size: 14px;
+  }
+
+  .stat-number .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-number .stat-suffix {
+    font-size: 12px;
+    margin-left: 2px;
   }
 
   .stat-label {
     font-size: 11px;
     white-space: nowrap;
+    margin-top: 8px;
   }
 
   .section-title {
