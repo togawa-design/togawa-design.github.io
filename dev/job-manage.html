@@ -14,13 +14,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/jobManage-DhgHRENL.js"></script>
+  <script type="module" crossorigin src="/dev/js/jobManage-ChLvZ-lj.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-BE8OECDH.js">
   <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-Perrv3gz.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-lKPcvSRX.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-k02Ksf_n.js">
   <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-CwR9OqLI.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/job-feed-generator-C3H5eIUO.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/job-feed-generator-lOM8mrWV.js">
 </head>
 <body class="admin-body">
   <!-- 求人管理ダッシュボード -->
@@ -828,14 +828,14 @@
               </div>
             </div>
 
-            <!-- 3. ヒーローセクション -->
+            <!-- 3. ファーストビュー -->
             <div class="form-section lp-form-section">
               <div class="lp-section-header">
                 <span class="lp-section-number">3</span>
-                <h4>ヒーローセクション</h4>
+                <h4>ファーストビュー</h4>
               </div>
               <div class="form-group">
-                <label for="lp-hero-title">ヒーロータイトル</label>
+                <label for="lp-hero-title">ファーストビューのタイトル</label>
                 <input type="text" id="lp-hero-title" placeholder="例: 月収32万円以上可！入社特典あり">
               </div>
               <div class="form-group">
@@ -843,7 +843,7 @@
                 <input type="text" id="lp-hero-subtitle" placeholder="例: 未経験歓迎・寮完備">
               </div>
               <div class="form-group">
-                <label for="lp-hero-image">ヒーロー画像URL</label>
+                <label for="lp-hero-image">ファーストビューの画像（TOP画像）</label>
                 <input type="text" id="lp-hero-image" placeholder="https://example.com/image.jpg">
                 <p class="form-hint">下のプリセットから選択するか、直接URLを入力してください</p>
               </div>
@@ -855,10 +855,30 @@
               </div>
             </div>
 
-            <!-- 4. ポイント（特徴） -->
+            <!-- 4. 求人動画の設定 -->
             <div class="form-section lp-form-section">
               <div class="lp-section-header">
                 <span class="lp-section-number">4</span>
+                <h4>求人動画の設定</h4>
+              </div>
+              <p class="form-hint">求人説明の動画を設定できます</p>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="lp-show-video-button">
+                  <span>動画ボタンを表示する</span>
+                </label>
+              </div>
+              <div class="form-group" id="video-url-group" style="display: none;">
+                <label for="lp-video-url">動画URL（YouTube）</label>
+                <input type="url" id="lp-video-url" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
+                <p class="form-hint">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</p>
+              </div>
+            </div>
+
+            <!-- 5. ポイント（特徴） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">5</span>
                 <h4>ポイント（特徴）</h4>
               </div>
               <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
@@ -870,10 +890,10 @@
               </button>
             </div>
 
-            <!-- 5. CTA（応募ボタン） -->
+            <!-- 6. CTA（応募ボタン） -->
             <div class="form-section lp-form-section">
               <div class="lp-section-header">
-                <span class="lp-section-number">5</span>
+                <span class="lp-section-number">6</span>
                 <h4>CTA（応募ボタン）</h4>
               </div>
               <div class="form-group">
@@ -882,10 +902,10 @@
               </div>
             </div>
 
-            <!-- 6. FAQ（よくある質問） -->
+            <!-- 7. FAQ（よくある質問） -->
             <div class="form-section lp-form-section">
               <div class="lp-section-header">
-                <span class="lp-section-number">6</span>
+                <span class="lp-section-number">7</span>
                 <h4>FAQ（よくある質問）</h4>
               </div>
               <p class="form-hint">質問と回答を入力してください。LPではLINE風のチャット形式で表示されます。</p>
@@ -917,10 +937,10 @@
               </button>
             </div>
 
-            <!-- 7. セクション管理 -->
+            <!-- 8. セクション管理 -->
             <div class="form-section lp-form-section" id="section-manager">
               <div class="lp-section-header">
-                <span class="lp-section-number">7</span>
+                <span class="lp-section-number">8</span>
                 <h4>セクション管理</h4>
               </div>
               <p class="form-hint">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</p>
@@ -934,10 +954,10 @@
               </ul>
             </div>
 
-            <!-- 8. 広告トラッキング設定 -->
+            <!-- 9. 広告トラッキング設定 -->
             <div class="form-section lp-form-section collapsible" id="ad-tracking-section">
               <div class="lp-section-header collapsible-header" data-target="ad-tracking-content">
-                <span class="lp-section-number">8</span>
+                <span class="lp-section-number">9</span>
                 <h4>広告トラッキング設定</h4>
                 <span class="collapse-icon">▼</span>
               </div>
@@ -976,10 +996,10 @@
               </div>
             </div>
 
-            <!-- 9. OGP設定（広告プレビュー用） -->
+            <!-- 10. OGP設定（広告プレビュー用） -->
             <div class="form-section lp-form-section collapsible" id="ogp-section">
               <div class="lp-section-header collapsible-header" data-target="ogp-content">
-                <span class="lp-section-number">9</span>
+                <span class="lp-section-number">10</span>
                 <h4>OGP設定（広告プレビュー用）</h4>
                 <span class="collapse-icon">▼</span>
               </div>
