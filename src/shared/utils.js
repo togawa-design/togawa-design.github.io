@@ -195,6 +195,115 @@ export function closeModal(className = 'modal') {
   }
 }
 
+// トースト通知
+export function showToast(message, type = 'info') {
+  // 既存のトーストを削除
+  const existingToast = document.querySelector('.utils-toast');
+  if (existingToast) existingToast.remove();
+
+  const toast = document.createElement('div');
+  toast.className = `utils-toast utils-toast-${type}`;
+  toast.innerHTML = `
+    <span class="utils-toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+    <span class="utils-toast-message">${escapeHtml(message)}</span>
+  `;
+
+  // スタイルを動的に追加（まだない場合）
+  if (!document.getElementById('utils-toast-style')) {
+    const style = document.createElement('style');
+    style.id = 'utils-toast-style';
+    style.textContent = `
+      .utils-toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        background: #333;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        z-index: 10000;
+        animation: utils-toast-in 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .utils-toast-success { background: #10b981; }
+      .utils-toast-error { background: #ef4444; }
+      .utils-toast-info { background: #3b82f6; }
+      .utils-toast-hide { animation: utils-toast-out 0.3s ease forwards; }
+      @keyframes utils-toast-in { from { opacity: 0; transform: translateX(-50%) translateY(1rem); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+      @keyframes utils-toast-out { from { opacity: 1; } to { opacity: 0; } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('utils-toast-hide');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// 確認ダイアログ
+export function showConfirm(title, message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'utils-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="utils-confirm-dialog">
+        <h3 class="utils-confirm-title">${escapeHtml(title)}</h3>
+        <p class="utils-confirm-message">${escapeHtml(message)}</p>
+        <div class="utils-confirm-buttons">
+          <button type="button" class="utils-confirm-cancel">キャンセル</button>
+          <button type="button" class="utils-confirm-ok">OK</button>
+        </div>
+      </div>
+    `;
+
+    // スタイルを動的に追加（まだない場合）
+    if (!document.getElementById('utils-confirm-style')) {
+      const style = document.createElement('style');
+      style.id = 'utils-confirm-style';
+      style.textContent = `
+        .utils-confirm-overlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.5); display: flex; align-items: center;
+          justify-content: center; z-index: 10001;
+        }
+        .utils-confirm-dialog {
+          background: #fff; border-radius: 0.5rem; padding: 1.5rem;
+          max-width: 400px; width: 90%;
+        }
+        .utils-confirm-title { margin: 0 0 0.5rem; font-size: 1.1rem; }
+        .utils-confirm-message { margin: 0 0 1.5rem; color: #666; }
+        .utils-confirm-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+        .utils-confirm-cancel, .utils-confirm-ok {
+          padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer;
+          border: none; font-size: 0.9rem;
+        }
+        .utils-confirm-cancel { background: #e5e7eb; color: #374151; }
+        .utils-confirm-ok { background: #6366f1; color: #fff; }
+      `;
+      document.head.appendChild(style);
+    }
+
+    overlay.querySelector('.utils-confirm-cancel').addEventListener('click', () => {
+      overlay.remove();
+      resolve(false);
+    });
+
+    overlay.querySelector('.utils-confirm-ok').addEventListener('click', () => {
+      overlay.remove();
+      resolve(true);
+    });
+
+    document.body.appendChild(overlay);
+  });
+}
+
 // 日付処理
 export function parseDate(dateStr) {
   if (!dateStr) return null;

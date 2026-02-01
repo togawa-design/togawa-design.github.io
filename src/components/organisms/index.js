@@ -15,3 +15,11 @@ export { renderTestimonialSection } from './TestimonialSection.js';
 export { renderCarouselSection, initCarousels } from './CarouselSection.js';
 export { renderVideoSection } from './VideoSection.js';
 export { renderHeroCTASection, initVideoModal } from './HeroCTASection.js';
+
+// 共通レイアウトコンポーネント
+export {
+  renderSiteHeader,
+  renderSiteFooter,
+  renderFixedCtaBar,
+  getLayoutBodyClasses
+} from './LayoutComponents.js';
