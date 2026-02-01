@@ -14,41 +14,110 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/js/jobManage-fYJhQ3f9.js"></script>
+  <script type="module" crossorigin src="/js/jobManage-BUEAMMCp.js"></script>
   <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
-  <link rel="modulepreload" crossorigin href="/js/utils-BbQaLTsI.js">
-  <link rel="modulepreload" crossorigin href="/js/jobs-loader-Perrv3gz.js">
-  <link rel="modulepreload" crossorigin href="/js/api-dYhjkYOv.js">
-  <link rel="modulepreload" crossorigin href="/js/LPEditor-sLhqqsTW.js">
+  <link rel="modulepreload" crossorigin href="/js/utils-DCR9QUau.js">
+  <link rel="modulepreload" crossorigin href="/js/jobs-loader-vTfia0vR.js">
+  <link rel="modulepreload" crossorigin href="/js/api-B1sZYcOA.js">
+  <link rel="modulepreload" crossorigin href="/js/LPEditor-DhYOL23n.js">
   <link rel="modulepreload" crossorigin href="/js/image-uploader-gAKnoYUY.js">
-  <link rel="modulepreload" crossorigin href="/js/job-feed-generator-DMJ8lrER.js">
-  <link rel="modulepreload" crossorigin href="/js/core-h1_UgwXU.js">
+  <link rel="modulepreload" crossorigin href="/js/core-BE8AvM4l.js">
+  <link rel="modulepreload" crossorigin href="/js/auth-BX5ABlML.js">
 </head>
 <body class="admin-body">
   <!-- 求人管理ダッシュボード -->
   <div id="job-manage-dashboard" class="admin-dashboard">
-    <!-- サイドバー -->
-    <aside class="admin-sidebar">
+    <!-- 会社ユーザー用サイドバー -->
+    <aside class="admin-sidebar" id="company-sidebar">
       <div class="sidebar-header">
         <h2>リクエコ求人ナビ</h2>
         <p>求人管理</p>
       </div>
       <nav class="sidebar-nav">
-        <ul>
-          <li><a href="admin.html" data-section="back"><span class="nav-icon">←</span>管理画面に戻る</a></li>
-          <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
-          <li><a href="#" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
-          <li><a href="#" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
-          <li><a href="#" id="nav-applicants" data-section="applicants"><span class="nav-icon">👥</span>応募者管理</a></li>
-          <li id="nav-lp-settings-item" style="display: none;"><a href="#" data-section="lp-settings"><span class="nav-icon">🎨</span>LP設定</a></li>
-          <li id="nav-recruit-settings-item"><a href="#" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ設定</a></li>
-          <li id="nav-settings-item" style="display: none;"><a href="#" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
-        </ul>
+        <div class="nav-section">
+          <h3 class="nav-section-title">求人関連</h3>
+          <ul>
+            <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📄</span>求人一覧</a></li>
+            <li><a href="#" id="nav-applicants" data-section="applicants"><span class="nav-icon">💬</span>応募者管理</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">採用ページ及びLP</h3>
+          <ul>
+            <li id="nav-recruit-settings-item"><a href="#" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ</a></li>
+            <li id="nav-lp-settings-item"><a href="#" data-section="lp-settings"><span class="nav-icon">🎨</span>LP</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">アナリティクス</h3>
+          <ul>
+            <li><a href="#" data-section="analytics"><span class="nav-icon">📊</span>アクセス解析</a></li>
+            <li><a href="#" data-section="reports"><span class="nav-icon">📈</span>レポート</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">設定</h3>
+          <ul>
+            <li id="nav-settings-item"><a href="#" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
+          </ul>
+        </div>
       </nav>
       <div class="sidebar-footer">
         <a href="#" id="btn-open-sheet" target="_blank" class="btn-back-top">管理シートを開く</a>
         <a href="admin.html" id="btn-back-admin" class="btn-back-admin">管理画面へ戻る</a>
         <button id="btn-logout" class="btn-logout" style="display: none;">ログアウト</button>
+      </div>
+    </aside>
+
+    <!-- 管理者用サイドバー -->
+    <aside class="admin-sidebar" id="admin-sidebar" style="display: none;">
+      <div class="sidebar-header">
+        <h2>リクエコ求人ナビ</h2>
+        <p>管理画面</p>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3 class="nav-section-title">アナリティクス</h3>
+          <ul>
+            <li><a href="admin.html" data-section="overview"><span class="nav-icon">📊</span>概要</a></li>
+            <li><a href="admin.html#analytics-detail" data-section="analytics-detail"><span class="nav-icon">📈</span>詳細分析</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">会社管理</h3>
+          <ul>
+            <li><a href="admin.html#company-manage" data-section="company-manage"><span class="nav-icon">🏭</span>会社一覧</a></li>
+            <li><a href="admin.html#job-listings" data-section="job-listings"><span class="nav-icon">📄</span>求人一覧</a></li>
+            <li><a href="admin.html#lp-settings" data-section="lp-settings"><span class="nav-icon">🎨</span>LP設定</a></li>
+            <li><a href="admin.html#recruit-settings" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ設定</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">応募者対応</h3>
+          <ul>
+            <li><a href="admin.html#applicant-select" data-section="applicant-select"><span class="nav-icon">💬</span>応募者管理</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">ユーザー管理</h3>
+          <ul>
+            <li><a href="admin.html#company-users" data-section="company-users"><span class="nav-icon">👥</span>会社ユーザー</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">現在の求人</h3>
+          <ul>
+            <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
+            <li><a href="#" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
+            <li><a href="#" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
+            <li><a href="#" data-section="applicants"><span class="nav-icon">👥</span>応募者管理</a></li>
+            <li><a href="#" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ設定</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="admin.html" class="btn-back-top">管理画面トップへ</a>
+        <button id="btn-logout-admin" class="btn-logout">ログアウト</button>
       </div>
     </aside>
 
@@ -74,7 +143,7 @@
         <div class="feed-export-section">
           <div class="feed-export-header">
             <h3>求人フィード出力</h3>
-            <p class="form-hint">各求人媒体に掲載するためのフィードをダウンロードできます</p>
+            <span class="form-description">各求人媒体に掲載するためのフィードをダウンロードできます</span>
           </div>
           <div class="feed-export-buttons">
             <button id="btn-download-indeed" class="btn-feed" title="Indeed用XMLフィード">
@@ -140,6 +209,171 @@
         </div>
         <div class="job-cards-list" id="jobs-list">
           <div class="job-cards-loading">データを読み込み中...</div>
+        </div>
+      </section>
+
+      <!-- 求人編集セクション -->
+      <section id="section-job-edit" class="admin-section">
+        <div class="job-edit-header">
+          <button type="button" id="job-edit-back-btn" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            求人一覧に戻る
+          </button>
+          <div class="job-edit-info">
+            <h2 id="job-edit-title">新規求人作成</h2>
+            <span id="job-edit-badge" class="edit-mode-badge">新規</span>
+          </div>
+        </div>
+
+        <div class="edit-page-main">
+          <form id="job-edit-form-section" class="edit-form">
+            <!-- 基本情報セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+                基本情報
+              </h2>
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label for="edit-job-title-section">募集タイトル <span class="required">*</span></label>
+                  <input type="text" id="edit-job-title-section" required placeholder="例: 製造スタッフ募集！月収32万円以上">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-location-section">勤務地 <span class="required">*</span></label>
+                  <input type="text" id="edit-job-location-section" required placeholder="例: 愛知県豊田市">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-type-section">職種</label>
+                  <select id="edit-job-type-section">
+                    <option value="">選択してください</option>
+                    <option value="事務・管理・企画">事務・管理・企画</option>
+                    <option value="営業・販売・サービス">営業・販売・サービス</option>
+                    <option value="IT・クリエイティブ">IT・クリエイティブ</option>
+                    <option value="製造・エンジニアリング">製造・エンジニアリング</option>
+                    <option value="医療・福祉・教育">医療・福祉・教育</option>
+                    <option value="物流・運輸">物流・運輸</option>
+                    <option value="その他">その他</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- 給与・条件セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                </svg>
+                給与・条件
+              </h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="edit-job-salary-section">月収（円）</label>
+                  <input type="number" id="edit-job-salary-section" placeholder="例: 320000">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-bonus-section">賞与合計（円）</label>
+                  <input type="number" id="edit-job-bonus-section" placeholder="例: 500000">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-hours-section">勤務時間</label>
+                  <input type="text" id="edit-job-hours-section" placeholder="例: 8:00〜17:00">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-holidays-section">休日</label>
+                  <input type="text" id="edit-job-holidays-section" placeholder="例: 土日祝, GW, 年末年始">
+                </div>
+              </div>
+            </section>
+
+            <!-- タグ・特徴セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+                </svg>
+                タグ・特徴
+              </h2>
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label for="edit-job-features-section">特徴（カンマ区切り）</label>
+                  <span class="form-description">求人の魅力をアピールするキーワード</span>
+                  <input type="text" id="edit-job-features-section" placeholder="例: 未経験歓迎, 寮完備, 交通費支給">
+                </div>
+                <div class="form-group full-width">
+                  <label for="edit-job-badges-section">バッジ（カンマ区切り）</label>
+                  <span class="form-description">目立たせたいキーワード（2〜3個推奨）</span>
+                  <input type="text" id="edit-job-badges-section" placeholder="例: 急募, 高収入">
+                </div>
+              </div>
+            </section>
+
+            <!-- 詳細情報セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                </svg>
+                詳細情報
+              </h2>
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label for="edit-job-description-section">仕事内容</label>
+                  <textarea id="edit-job-description-section" rows="5" placeholder="仕事内容の詳細を入力..."></textarea>
+                </div>
+                <div class="form-group full-width">
+                  <label for="edit-job-requirements-section">応募資格</label>
+                  <textarea id="edit-job-requirements-section" rows="3" placeholder="応募資格を入力..."></textarea>
+                </div>
+                <div class="form-group full-width">
+                  <label for="edit-job-benefits-section">福利厚生</label>
+                  <textarea id="edit-job-benefits-section" rows="3" placeholder="福利厚生を入力..."></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- 掲載設定セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                </svg>
+                掲載設定
+              </h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="edit-job-start-date-section">掲載開始日</label>
+                  <input type="date" id="edit-job-start-date-section">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-end-date-section">掲載終了日</label>
+                  <input type="date" id="edit-job-end-date-section">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-order-section">表示順</label>
+                  <span class="form-description">数字が小さいほど上に表示</span>
+                  <input type="number" id="edit-job-order-section" placeholder="1" min="1">
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="edit-job-visible-section" checked>
+                    <span>公開する</span>
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <!-- アクションボタン -->
+            <div class="form-actions">
+              <button type="button" class="btn btn-danger" id="job-edit-delete-btn" style="display: none;">削除</button>
+              <button type="button" class="btn btn-secondary" id="job-edit-cancel-btn">キャンセル</button>
+              <button type="submit" class="btn btn-primary" id="job-edit-save-btn">保存</button>
+            </div>
+          </form>
         </div>
       </section>
 
@@ -676,7 +910,7 @@
             <div class="form-group">
               <label for="new-password">新しいパスワード</label>
               <input type="password" id="new-password" required minlength="8" autocomplete="new-password">
-              <p class="form-hint">8文字以上で設定してください</p>
+              <span class="form-description">8文字以上で設定してください</span>
             </div>
             <div class="form-group">
               <label for="confirm-password">新しいパスワード（確認）</label>
@@ -727,9 +961,13 @@
           <select id="lp-job-select" style="display: none;"></select>
 
           <div id="lp-editor" style="display: none;">
-            <!-- プレビューアクション -->
-            <div class="lp-preview-actions">
-              <button type="button" class="lp-back-btn" id="lp-back-to-jobs">
+            <!-- 2カラムレイアウト：フォーム + プレビュー -->
+            <div class="lp-editor-layout">
+              <!-- 左カラム：フォーム -->
+              <div class="lp-editor-form">
+                <!-- プレビューアクション -->
+                <div class="lp-preview-actions">
+                  <button type="button" class="lp-back-btn" id="lp-back-to-jobs">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                 求人一覧に戻る
               </button>
@@ -749,92 +987,53 @@
                 <span class="lp-section-number">1</span>
                 <h4>テンプレート</h4>
               </div>
-              <p class="form-hint">LPのレイアウトスタイルを選択してください。未選択の場合はデフォルトが適用されます。</p>
+              <span class="form-description">LPのレイアウトスタイルを選択してください。未選択の場合はデフォルトが適用されます。</span>
               <div id="template-selector-container">
                 <!-- テンプレートセレクターはJSで動的に生成 -->
               </div>
+
+              <!-- カスタムカラー設定 -->
+              <div class="custom-color-section" id="lp-custom-color-section">
+                <h5 class="subsection-title">カスタムカラー設定</h5>
+                <span class="form-description">空欄の場合はテンプレートのデフォルトカラーが適用されます。</span>
+                <div class="color-pickers-grid">
+                  <div class="color-picker-group">
+                    <label for="lp-custom-primary">メインカラー</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-primary" value="#6366f1">
+                      <input type="text" id="lp-custom-primary-text" placeholder="#6366f1" maxlength="7">
+                    </div>
+                  </div>
+                  <div class="color-picker-group">
+                    <label for="lp-custom-accent">アクセントカラー</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-accent" value="#818cf8">
+                      <input type="text" id="lp-custom-accent-text" placeholder="#818cf8" maxlength="7">
+                    </div>
+                  </div>
+                  <div class="color-picker-group">
+                    <label for="lp-custom-bg">背景色</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-bg" value="#ffffff">
+                      <input type="text" id="lp-custom-bg-text" placeholder="#ffffff" maxlength="7">
+                    </div>
+                  </div>
+                  <div class="color-picker-group">
+                    <label for="lp-custom-text">テキストカラー</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-text" value="#1f2937">
+                      <input type="text" id="lp-custom-text-text" placeholder="#1f2937" maxlength="7">
+                    </div>
+                  </div>
+                </div>
+                <button type="button" id="lp-reset-colors" class="btn-small btn-secondary">カラーをリセット</button>
+              </div>
             </div>
 
-            <!-- 2. カラー選択 -->
+            <!-- 2. ファーストビュー -->
             <div class="form-section lp-form-section">
               <div class="lp-section-header">
                 <span class="lp-section-number">2</span>
-                <h4>カラー選択</h4>
-              </div>
-              <p class="form-hint">LPのカラーテーマを選択してください</p>
-              <div class="design-pattern-grid" id="design-pattern-grid">
-                <label class="pattern-option">
-                  <input type="radio" name="design-pattern" value="standard" checked>
-                  <div class="pattern-preview standard">
-                    <div class="pattern-mini-lp">
-                      <div class="mini-hero"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-cta"></div>
-                    </div>
-                    <span class="pattern-name">スタンダード</span>
-                    <span class="pattern-desc">シンプルで使いやすい</span>
-                  </div>
-                </label>
-                <label class="pattern-option">
-                  <input type="radio" name="design-pattern" value="modern">
-                  <div class="pattern-preview modern">
-                    <div class="pattern-mini-lp">
-                      <div class="mini-hero"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-cta"></div>
-                    </div>
-                    <span class="pattern-name">モダン</span>
-                    <span class="pattern-desc">洗練されたデザイン</span>
-                  </div>
-                </label>
-                <label class="pattern-option">
-                  <input type="radio" name="design-pattern" value="classic">
-                  <div class="pattern-preview classic">
-                    <div class="pattern-mini-lp">
-                      <div class="mini-hero"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-cta"></div>
-                    </div>
-                    <span class="pattern-name">クラシック</span>
-                    <span class="pattern-desc">信頼感のある重厚感</span>
-                  </div>
-                </label>
-                <label class="pattern-option">
-                  <input type="radio" name="design-pattern" value="minimal">
-                  <div class="pattern-preview minimal">
-                    <div class="pattern-mini-lp">
-                      <div class="mini-hero"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-cta"></div>
-                    </div>
-                    <span class="pattern-name">ミニマル</span>
-                    <span class="pattern-desc">シックでモノトーン</span>
-                  </div>
-                </label>
-                <label class="pattern-option">
-                  <input type="radio" name="design-pattern" value="colorful">
-                  <div class="pattern-preview colorful">
-                    <div class="pattern-mini-lp">
-                      <div class="mini-hero"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-section"></div>
-                      <div class="mini-cta"></div>
-                    </div>
-                    <span class="pattern-name">カラフル</span>
-                    <span class="pattern-desc">華やかで目を引く</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- 3. ファーストビュー -->
-            <div class="form-section lp-form-section">
-              <div class="lp-section-header">
-                <span class="lp-section-number">3</span>
                 <h4>ファーストビュー</h4>
               </div>
               <div class="form-group">
@@ -848,7 +1047,7 @@
               <div class="form-group">
                 <label for="lp-hero-image">ファーストビューの画像（TOP画像）</label>
                 <input type="text" id="lp-hero-image" placeholder="https://example.com/image.jpg">
-                <p class="form-hint">下のプリセットから選択するか、直接URLを入力してください</p>
+                <span class="form-description">下のプリセットから選択するか、直接URLを入力してください</span>
               </div>
               <div class="form-group">
                 <label>プリセット画像を選択</label>
@@ -864,7 +1063,7 @@
                 <span class="lp-section-number">4</span>
                 <h4>求人動画の設定</h4>
               </div>
-              <p class="form-hint">求人説明の動画を設定できます</p>
+              <span class="form-description">求人説明の動画を設定できます</span>
               <div class="form-group">
                 <label class="checkbox-label">
                   <input type="checkbox" id="lp-show-video-button">
@@ -874,7 +1073,7 @@
               <div class="form-group" id="video-url-group" style="display: none;">
                 <label for="lp-video-url">動画URL（YouTube）</label>
                 <input type="url" id="lp-video-url" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
-                <p class="form-hint">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</p>
+                <span class="form-description">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</span>
               </div>
             </div>
 
@@ -884,7 +1083,7 @@
                 <span class="lp-section-number">5</span>
                 <h4>ポイント（特徴）</h4>
               </div>
-              <p class="form-hint">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</p>
+              <span class="form-description">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</span>
               <div class="point-inputs" id="point-inputs-container">
                 <!-- JavaScriptで動的に生成 -->
               </div>
@@ -911,7 +1110,7 @@
                 <span class="lp-section-number">7</span>
                 <h4>FAQ（よくある質問）</h4>
               </div>
-              <p class="form-hint">質問と回答を入力してください。LPではLINE風のチャット形式で表示されます。</p>
+              <span class="form-description">質問と回答を入力してください。LPではLINE風のチャット形式で表示されます。</span>
               <div class="faq-editor" id="faq-editor">
                 <div class="faq-list" id="faq-list">
                   <!-- FAQアイテムはJSで動的に生成 -->
@@ -931,7 +1130,7 @@
                 <span class="lp-section-number">✨</span>
                 <h4>追加コンテンツ</h4>
               </div>
-              <p class="form-hint">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</p>
+              <span class="form-description">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</span>
               <div class="custom-sections-list" id="custom-sections-list">
                 <!-- JSで動的に生成 -->
               </div>
@@ -946,7 +1145,7 @@
                 <span class="lp-section-number">8</span>
                 <h4>セクション管理</h4>
               </div>
-              <p class="form-hint">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</p>
+              <span class="form-description">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</span>
               <div class="section-manager-toolbar">
                 <button type="button" id="btn-add-section" class="btn-primary">
                   <span>+</span> セクションを追加
@@ -965,36 +1164,36 @@
                 <span class="collapse-icon">▼</span>
               </div>
               <div class="collapsible-content" id="ad-tracking-content">
-                <p class="form-hint">TikTok広告やGoogle広告のコンバージョン計測に使用します。</p>
+                <span class="form-description">TikTok広告やGoogle広告のコンバージョン計測に使用します。</span>
                 <div class="form-group">
                   <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
                   <input type="text" id="lp-tiktok-pixel" placeholder="例: CXXXXXXXXXXXXXX">
-                  <p class="form-hint">TikTok Ads ManagerのPixel IDを入力してください</p>
+                  <span class="form-description">TikTok Ads ManagerのPixel IDを入力してください</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-google-ads-id">Google Ads コンバージョンID</label>
                   <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789">
-                  <p class="form-hint">Google Adsのコンバージョン追跡タグIDを入力してください</p>
+                  <span class="form-description">Google Adsのコンバージョン追跡タグIDを入力してください</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-google-ads-label">Google Ads コンバージョンラベル</label>
                   <input type="text" id="lp-google-ads-label" placeholder="例: AbCdEfGhIjKlMn">
-                  <p class="form-hint">コンバージョンアクション作成時に発行されるラベルを入力してください</p>
+                  <span class="form-description">コンバージョンアクション作成時に発行されるラベルを入力してください</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-meta-pixel">Meta Pixel ID</label>
                   <input type="text" id="lp-meta-pixel" placeholder="例: 1234567890123456">
-                  <p class="form-hint">Meta Business SuiteのPixel IDを入力してください（Facebook/Instagram広告用）</p>
+                  <span class="form-description">Meta Business SuiteのPixel IDを入力してください（Facebook/Instagram広告用）</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-line-tag">LINE Tag ID</label>
                   <input type="text" id="lp-line-tag" placeholder="例: 12345678-abcd-efgh-ijkl-1234567890ab">
-                  <p class="form-hint">LINE広告マネージャーのベースタグIDを入力してください</p>
+                  <span class="form-description">LINE広告マネージャーのベースタグIDを入力してください</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-clarity">Microsoft Clarity Project ID</label>
                   <input type="text" id="lp-clarity" placeholder="例: abcdefghij">
-                  <p class="form-hint">Clarityのプロジェクト設定で確認できるIDを入力してください（ヒートマップ・レコーディング用）</p>
+                  <span class="form-description">Clarityのプロジェクト設定で確認できるIDを入力してください（ヒートマップ・レコーディング用）</span>
                 </div>
               </div>
             </div>
@@ -1007,53 +1206,51 @@
                 <span class="collapse-icon">▼</span>
               </div>
               <div class="collapsible-content" id="ogp-content">
-                <p class="form-hint">広告やSNSでシェアされた時に表示される情報です。</p>
+                <span class="form-description">広告やSNSでシェアされた時に表示される情報です。</span>
                 <div class="form-group">
                   <label for="lp-ogp-title">OGPタイトル</label>
                   <input type="text" id="lp-ogp-title" placeholder="例: 月収32万円以上可！製造スタッフ募集">
-                  <p class="form-hint">空欄の場合はヒーロータイトルが使用されます</p>
+                  <span class="form-description">空欄の場合はヒーロータイトルが使用されます</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-ogp-description">OGP説明文</label>
                   <input type="text" id="lp-ogp-description" placeholder="例: 未経験歓迎・寮完備の高待遇求人！今すぐチェック">
-                  <p class="form-hint">空欄の場合は自動生成されます</p>
+                  <span class="form-description">空欄の場合は自動生成されます</span>
                 </div>
                 <div class="form-group">
                   <label for="lp-ogp-image">OGP画像URL</label>
                   <input type="text" id="lp-ogp-image" placeholder="https://example.com/ogp-image.jpg">
-                  <p class="form-hint">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</p>
+                  <span class="form-description">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</span>
                 </div>
               </div>
             </div>
 
-            <!-- 保存ボタン -->
-            <div class="form-actions">
-              <button id="btn-save-lp-settings" class="btn-primary">LP設定を保存</button>
-              <button id="btn-reset-lp-settings" class="btn-secondary">リセット</button>
-              <button id="btn-toggle-preview" class="btn-secondary">プレビュー表示</button>
-            </div>
+                <!-- 保存ボタン -->
+                <div class="form-actions">
+                  <button id="btn-save-lp-settings" class="btn-primary">LP設定を保存</button>
+                  <button id="btn-reset-lp-settings" class="btn-secondary">リセット</button>
+                </div>
 
-            <div id="lp-save-message" class="form-success" style="display: none;">LP設定を保存しました</div>
-            <div id="lp-error-message" class="form-error" style="display: none;"></div>
-          </div>
-
-          <!-- リアルタイムプレビュー -->
-          <div id="lp-preview-container" class="lp-preview-container" style="display: none;">
-            <div class="lp-preview-header">
-              <h4>プレビュー</h4>
-              <div class="lp-preview-controls">
-                <label class="edit-mode-toggle">
-                  <input type="checkbox" id="preview-edit-mode">
-                  <span>編集モード</span>
-                </label>
-                <button class="preview-device-btn active" data-device="desktop" title="デスクトップ">🖥️</button>
-                <button class="preview-device-btn" data-device="tablet" title="タブレット">📱</button>
-                <button class="preview-device-btn" data-device="mobile" title="スマートフォン">📲</button>
+                <div id="lp-save-message" class="form-success" style="display: none;">LP設定を保存しました</div>
+                <div id="lp-error-message" class="form-error" style="display: none;"></div>
               </div>
-              <button id="btn-close-preview" class="btn-close-preview">&times;</button>
-            </div>
-            <div class="lp-preview-frame-wrapper" data-device="desktop">
-              <iframe id="lp-preview-frame" class="lp-preview-frame"></iframe>
+
+              <!-- 右カラム：リアルタイムプレビュー -->
+              <div class="lp-preview-panel">
+                <div id="lp-preview-container" class="lp-preview-container">
+                  <div class="lp-preview-header">
+                    <h4>プレビュー</h4>
+                    <div class="lp-preview-controls">
+                      <button class="preview-device-btn active" data-device="desktop" title="デスクトップ">🖥️</button>
+                      <button class="preview-device-btn" data-device="tablet" title="タブレット">📱</button>
+                      <button class="preview-device-btn" data-device="mobile" title="スマートフォン">📲</button>
+                    </div>
+                  </div>
+                  <div class="lp-preview-frame-wrapper" data-device="desktop">
+                    <iframe id="lp-preview-frame" class="lp-preview-frame"></iframe>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1069,7 +1266,11 @@
           <p>会社専用の採用ページの設定を行います。URLは <code id="recruit-page-url">/company-recruit.html?id=xxx</code> でアクセスできます。</p>
         </div>
 
-        <div class="recruit-settings-form" id="recruit-settings-form">
+        <!-- 2カラムレイアウト：フォーム + プレビュー -->
+        <div class="recruit-editor-layout">
+          <!-- 左カラム：フォーム -->
+          <div class="recruit-editor-form">
+            <div class="recruit-settings-form" id="recruit-settings-form">
           <!-- プレビューアクション -->
           <div class="lp-preview-actions">
             <a href="#" id="recruit-preview-btn" target="_blank" class="btn btn-secondary">
@@ -1088,7 +1289,7 @@
               <span class="lp-section-number">1</span>
               <h4>テンプレート</h4>
             </div>
-            <p class="form-hint">採用ページと全求人LPに適用されるレイアウトスタイルを選択してください</p>
+            <span class="form-description">採用ページと全求人LPに適用されるレイアウトスタイルを選択してください</span>
             <div class="layout-style-grid" id="recruit-layout-style-grid">
               <label class="layout-option">
                 <input type="radio" name="recruit-layout-style" value="default" checked>
@@ -1170,79 +1371,45 @@
             </div>
           </div>
 
-          <!-- 2. カラー選択 -->
+          <!-- 2. カラー設定 -->
           <div class="form-section lp-form-section">
             <div class="lp-section-header">
               <span class="lp-section-number">2</span>
-              <h4>カラー選択</h4>
+              <h4>カラー設定</h4>
             </div>
-            <p class="form-hint">採用ページと全求人LPに適用されるカラーテーマを選択してください</p>
-            <div class="design-pattern-grid" id="recruit-design-pattern-grid">
-              <label class="pattern-option">
-                <input type="radio" name="recruit-design-pattern" value="standard" checked>
-                <div class="pattern-preview standard">
-                  <div class="pattern-mini-lp">
-                    <div class="mini-hero"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-cta"></div>
+            <span class="form-description">採用ページと全求人LPに適用されるカラーをカスタマイズできます（空欄の場合はレイアウトスタイルのデフォルトカラーが適用されます）</span>
+            <div class="custom-color-section">
+              <div class="custom-color-grid">
+                <div class="color-picker-item">
+                  <label for="recruit-custom-primary">メインカラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-primary" value="">
+                    <input type="text" id="recruit-custom-primary-text" placeholder="#2563eb" maxlength="7">
                   </div>
-                  <span class="pattern-name">スタンダード</span>
-                  <span class="pattern-desc">シンプルで使いやすい</span>
                 </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="recruit-design-pattern" value="modern">
-                <div class="pattern-preview modern">
-                  <div class="pattern-mini-lp">
-                    <div class="mini-hero"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-cta"></div>
+                <div class="color-picker-item">
+                  <label for="recruit-custom-accent">アクセントカラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-accent" value="">
+                    <input type="text" id="recruit-custom-accent-text" placeholder="#3b82f6" maxlength="7">
                   </div>
-                  <span class="pattern-name">モダン</span>
-                  <span class="pattern-desc">洗練されたデザイン</span>
                 </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="recruit-design-pattern" value="classic">
-                <div class="pattern-preview classic">
-                  <div class="pattern-mini-lp">
-                    <div class="mini-hero"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-cta"></div>
+                <div class="color-picker-item">
+                  <label for="recruit-custom-bg">背景カラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-bg" value="#ffffff">
+                    <input type="text" id="recruit-custom-bg-text" placeholder="#ffffff" maxlength="7">
                   </div>
-                  <span class="pattern-name">クラシック</span>
-                  <span class="pattern-desc">信頼感のある重厚感</span>
                 </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="recruit-design-pattern" value="minimal">
-                <div class="pattern-preview minimal">
-                  <div class="pattern-mini-lp">
-                    <div class="mini-hero"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-cta"></div>
+                <div class="color-picker-item">
+                  <label for="recruit-custom-text">テキストカラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-text" value="#1f2937">
+                    <input type="text" id="recruit-custom-text-text" placeholder="#1f2937" maxlength="7">
                   </div>
-                  <span class="pattern-name">ミニマル</span>
-                  <span class="pattern-desc">シックでモノトーン</span>
                 </div>
-              </label>
-              <label class="pattern-option">
-                <input type="radio" name="recruit-design-pattern" value="colorful">
-                <div class="pattern-preview colorful">
-                  <div class="pattern-mini-lp">
-                    <div class="mini-hero"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-section"></div>
-                    <div class="mini-cta"></div>
-                  </div>
-                  <span class="pattern-name">カラフル</span>
-                  <span class="pattern-desc">華やかで目を引く</span>
-                </div>
-              </label>
+              </div>
+              <button type="button" id="recruit-reset-colors" class="btn-link">カラーをリセット</button>
             </div>
           </div>
 
@@ -1265,19 +1432,19 @@
                       <span class="upload-icon">📷</span> アップロード
                     </button>
                   </div>
-                  <p class="form-hint">画像をアップロードするか、URLを直接入力してください（推奨: 高さ40px程度のPNG/SVG）</p>
+                  <span class="form-description">画像をアップロードするか、URLを直接入力してください（推奨: 高さ40px程度のPNG/SVG）</span>
                 </div>
               </div>
             </div>
             <div class="form-group">
               <label for="recruit-company-name-display">ヘッダー表示名</label>
               <input type="text" id="recruit-company-name-display" placeholder="例: 株式会社サンプル">
-              <p class="form-hint">ロゴがない場合にヘッダーに表示するテキスト（空欄の場合は会社名を使用）</p>
+              <span class="form-description">ロゴがない場合にヘッダーに表示するテキスト（空欄の場合は会社名を使用）</span>
             </div>
             <div class="form-group">
               <label for="recruit-phone-number">電話番号（CTAバー用）</label>
               <input type="text" id="recruit-phone-number" placeholder="例: 0120-000-000">
-              <p class="form-hint">固定CTAバーに表示する電話番号（空欄の場合は電話リンクを非表示）</p>
+              <span class="form-description">固定CTAバーに表示する電話番号（空欄の場合は電話リンクを非表示）</span>
             </div>
             <div class="form-group">
               <label for="recruit-cta-button-text">CTAボタンテキスト</label>
@@ -1302,7 +1469,7 @@
             <div class="form-group">
               <label for="recruit-hero-image">ヒーロー画像URL</label>
               <input type="text" id="recruit-hero-image" placeholder="https://example.com/image.jpg">
-              <p class="form-hint">下のプリセットから選択するか、直接URLを入力してください</p>
+              <span class="form-description">下のプリセットから選択するか、直接URLを入力してください</span>
             </div>
             <div class="form-group">
               <label>プリセット画像を選択</label>
@@ -1321,7 +1488,7 @@
             <div class="form-group">
               <label for="recruit-company-intro">会社紹介文</label>
               <textarea id="recruit-company-intro" rows="5" placeholder="会社の紹介文を入力..."></textarea>
-              <p class="form-hint">空欄の場合は会社一覧に登録されている説明文が使用されます</p>
+              <span class="form-description">空欄の場合は会社一覧に登録されている説明文が使用されます</span>
             </div>
           </div>
 
@@ -1370,7 +1537,7 @@
             <div class="form-group">
               <label for="recruit-ogp-image">OGP画像URL</label>
               <input type="text" id="recruit-ogp-image" placeholder="https://example.com/ogp.jpg">
-              <p class="form-hint">推奨サイズ: 1200×630px</p>
+              <span class="form-description">推奨サイズ: 1200×630px</span>
             </div>
           </div>
 
@@ -1382,7 +1549,59 @@
 
           <div id="recruit-save-message" class="form-success" style="display: none;">採用ページ設定を保存しました</div>
           <div id="recruit-error-message" class="form-error" style="display: none;"></div>
+            </div>
+          </div>
+          <!-- /左カラム：フォーム -->
+
+          <!-- 右カラム：リアルタイムプレビュー -->
+          <div class="recruit-editor-preview">
+            <div class="preview-panel-header">
+              <h4>リアルタイムプレビュー</h4>
+              <span class="preview-device-label">モバイル表示</span>
+            </div>
+            <div class="preview-panel-device">
+              <div class="preview-phone-frame">
+                <div class="preview-phone-notch"></div>
+                <div class="preview-phone-content" id="recruit-live-preview">
+                  <!-- ヘッダープレビュー -->
+                  <div class="preview-header" id="preview-header">
+                    <img id="preview-logo" class="preview-logo" src="" alt="" style="display: none;">
+                    <span id="preview-company-name" class="preview-company-name"></span>
+                  </div>
+                  <!-- ヒーロープレビュー -->
+                  <div class="preview-hero" id="preview-hero">
+                    <div class="preview-hero-overlay"></div>
+                    <div class="preview-hero-content">
+                      <h2 id="preview-hero-title" class="preview-hero-title"></h2>
+                      <p id="preview-hero-subtitle" class="preview-hero-subtitle"></p>
+                    </div>
+                  </div>
+                  <!-- コンテンツプレビュー -->
+                  <div class="preview-content">
+                    <div class="preview-section">
+                      <h3 id="preview-intro-label">会社紹介</h3>
+                      <p id="preview-intro-text" class="preview-intro-text"></p>
+                    </div>
+                    <div class="preview-section">
+                      <h3 id="preview-jobs-title">募集中の求人</h3>
+                      <div class="preview-job-cards">
+                        <div class="preview-job-card"></div>
+                        <div class="preview-job-card"></div>
+                      </div>
+                    </div>
+                    <div class="preview-cta" id="preview-cta">
+                      <h3 id="preview-cta-title"></h3>
+                      <button id="preview-cta-button" class="preview-cta-btn"></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="preview-note">※ 実際の表示とは異なる場合があります</p>
+          </div>
+          <!-- /右カラム：リアルタイムプレビュー -->
         </div>
+        <!-- /2カラムレイアウト -->
       </section>
     </main>
   </div>
@@ -1519,7 +1738,7 @@
         <button class="modal-close" id="add-section-modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="form-hint">追加したいセクションタイプを選択してください</p>
+        <span class="form-description">追加したいセクションタイプを選択してください</span>
         <div class="section-type-grid" id="section-type-grid">
           <!-- JSで動的に生成 -->
         </div>
