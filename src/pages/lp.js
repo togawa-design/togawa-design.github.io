@@ -3,6 +3,12 @@
  */
 import { LPRenderer, LPEditor } from '@features/lp/index.js';
 import { trackEvent, hasUrlParam, getUrlParam } from '@shared/utils.js';
+import { loadRecruitSettings } from '@features/recruit-settings/api.js';
+import {
+  renderSiteHeader,
+  renderSiteFooter,
+  renderFixedCtaBar
+} from '@components/organisms/LayoutComponents.js';
 import '@shared/jobs-loader.js';
 
 // UTMパラメータのキー一覧
@@ -62,6 +68,7 @@ class CompanyLPPage {
     this.lpSettings = null;
     this.company = null;
     this.mainJob = null;
+    this.recruitSettings = null; // 会社の採用ページ設定（ロゴ・ヘッダー情報用）
   }
 
   async init() {
@@ -154,6 +161,9 @@ class CompanyLPPage {
         this.lpSettings = this.loadPreviewSettings(this.companyDomain, this.lpSettings);
       }
 
+      // 会社の採用ページ設定からデザインパターンを継承
+      await this.inheritCompanyRecruitSettings();
+
       // URLパラメータでlayoutStyleをオーバーライド（テスト/プレビュー用）
       const urlLayoutStyle = getUrlParam('layoutStyle');
       if (urlLayoutStyle) {
@@ -175,6 +185,10 @@ class CompanyLPPage {
           ? [this.mainJob, ...jobs.filter(j => j !== this.mainJob)]
           : jobs;
         this.renderer.render(this.company, orderedJobs, this.lpSettings, contentEl);
+
+        // ヘッダー・フッター・CTAバーを追加
+        this.renderLayoutComponents(contentEl);
+
         this.setupEventListeners(this.company);
       }
 
@@ -247,6 +261,64 @@ class CompanyLPPage {
         company: company.company,
         companyDomain: company.companyDomain
       }));
+  }
+
+  /**
+   * 会社の採用ページ設定からテンプレート・カラーを継承
+   * LP設定にlayoutStyle/designPatternがない場合、会社の採用ページ設定から継承する
+   */
+  async inheritCompanyRecruitSettings() {
+    // LP固有の設定があるかチェック
+    const hasCustomLayoutStyle = this.lpSettings?.layoutStyle && this.lpSettings.layoutStyle !== 'default';
+    const hasCustomDesignPattern = this.lpSettings?.designPattern && this.lpSettings.designPattern !== 'standard';
+
+    const companyDomain = this.company?.companyDomain;
+    if (!companyDomain) {
+      console.log('[LP] 会社ドメインが見つかりません');
+      return;
+    }
+
+    try {
+      // 会社の採用ページ設定を取得
+      const recruitSettings = await loadRecruitSettings(companyDomain);
+
+      if (!recruitSettings) {
+        console.log('[LP] 会社の採用ページ設定がありません');
+        return;
+      }
+
+      // ロゴ・ヘッダー情報用に保存
+      this.recruitSettings = recruitSettings;
+
+      // 両方とも設定済みならテンプレート継承はスキップ
+      if (hasCustomLayoutStyle && hasCustomDesignPattern) {
+        console.log('[LP] LP固有のlayoutStyle/designPatternを使用');
+        return;
+      }
+
+      const inheritedSettings = {};
+
+      // layoutStyleを継承（LP固有設定がない場合）
+      if (!hasCustomLayoutStyle && recruitSettings.layoutStyle) {
+        console.log('[LP] 会社の採用ページ設定からlayoutStyleを継承:', recruitSettings.layoutStyle);
+        inheritedSettings.layoutStyle = recruitSettings.layoutStyle;
+      }
+
+      // designPatternを継承（LP固有設定がない場合）
+      if (!hasCustomDesignPattern && recruitSettings.designPattern) {
+        console.log('[LP] 会社の採用ページ設定からdesignPatternを継承:', recruitSettings.designPattern);
+        inheritedSettings.designPattern = recruitSettings.designPattern;
+      }
+
+      if (Object.keys(inheritedSettings).length > 0) {
+        this.lpSettings = {
+          ...this.lpSettings,
+          ...inheritedSettings
+        };
+      }
+    } catch (error) {
+      console.log('[LP] 採用ページ設定の取得エラー:', error.message);
+    }
   }
 
   // LP設定を取得（求人ID単位・新形式）
@@ -457,6 +529,62 @@ class CompanyLPPage {
       <button type="button" onclick="this.parentElement.remove()">✕</button>
     `;
     document.body.insertBefore(banner, document.body.firstChild);
+  }
+
+  /**
+   * 共通レイアウトコンポーネント（ヘッダー・フッター・CTAバー）を描画
+   */
+  renderLayoutComponents(contentEl) {
+    const rs = this.recruitSettings || {};
+    const designPattern = this.lpSettings?.designPattern || 'standard';
+    const companyDomain = this.company?.companyDomain || '';
+
+    // ロゴまたは会社名がある場合のみヘッダーを追加
+    const hasHeader = !!(rs.logoUrl || rs.companyNameDisplay);
+    const hasCtaBar = !!(rs.phoneNumber || rs.ctaButtonText);
+
+    // bodyにクラスを追加（ヘッダー・CTAバーのスペース確保用）
+    if (hasHeader) {
+      document.body.classList.add('has-fixed-header');
+    }
+    if (hasCtaBar) {
+      document.body.classList.add('has-fixed-cta-bar');
+    }
+
+    // レイアウトスタイルをbodyに設定
+    const layoutStyle = this.lpSettings?.layoutStyle || 'default';
+    document.body.setAttribute('data-layout-style', layoutStyle);
+
+    // ヘッダーを追加
+    if (hasHeader) {
+      const recruitPageUrl = `company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
+      const headerHtml = renderSiteHeader({
+        logoUrl: rs.logoUrl || '',
+        companyName: rs.companyNameDisplay || this.company?.company || '',
+        recruitPageUrl: recruitPageUrl,
+        showBackLink: true,
+        designPattern: designPattern
+      });
+      document.body.insertAdjacentHTML('afterbegin', headerHtml);
+    }
+
+    // フッターを追加
+    const footerHtml = renderSiteFooter({
+      companyName: rs.companyNameDisplay || this.company?.company || '',
+      designPattern: designPattern
+    });
+    contentEl.insertAdjacentHTML('afterend', footerHtml);
+
+    // CTAバーを追加
+    if (hasCtaBar) {
+      const ctaBarHtml = renderFixedCtaBar({
+        phoneNumber: rs.phoneNumber || '',
+        ctaButtonText: rs.ctaButtonText || '今すぐ応募する',
+        ctaUrl: '#apply',
+        designPattern: designPattern
+      });
+      document.body.insertAdjacentHTML('beforeend', ctaBarHtml);
+    }
   }
 
   hideLoading() {

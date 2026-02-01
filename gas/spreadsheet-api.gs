@@ -49,6 +49,9 @@ function doGet(e) {
         case "getJobStats":
           result = getJobStats();
           break;
+        case "getRecruitSettings":
+          result = getRecruitSettings(e.parameter.companyDomain);
+          break;
         default:
           result = { error: "Unknown action" };
       }
@@ -89,6 +92,8 @@ function handlePostAction(data) {
       return saveJob(data.companyDomain, data.job, data.rowIndex);
     case "deleteJob":
       return deleteJob(data.companyDomain, data.rowIndex);
+    case "updateRecruitSettings":
+      return updateRecruitSettings(data.settings || JSON.parse(data.data || "{}"));
     default:
       return { success: false, error: "Unknown action" };
   }
@@ -914,6 +919,148 @@ function deleteJob(companyDomain, rowIndex) {
 // テスト用
 function testGetJobs() {
   const result = getJobs("toyota");
+  Logger.log(result);
+}
+
+// ========================================
+// 採用ページ設定機能
+// ========================================
+
+const RECRUIT_SETTINGS_SHEET_NAME = "採用ページ設定";
+
+/**
+ * 採用ページ設定を取得
+ */
+function getRecruitSettings(companyDomain) {
+  if (!companyDomain) {
+    return { success: false, error: "companyDomainが指定されていません" };
+  }
+
+  try {
+    const companySs = openCompanySheet(companyDomain);
+    const sheet = companySs.getSheetByName(RECRUIT_SETTINGS_SHEET_NAME);
+
+    if (!sheet) {
+      return { success: true, settings: null };
+    }
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length < 2) {
+      return { success: true, settings: null };
+    }
+
+    const headers = data[0];
+    const row = data[1]; // 1行目がヘッダー、2行目がデータ
+
+    const settings = {};
+    headers.forEach((header, idx) => {
+      settings[header] = row[idx] || "";
+    });
+
+    return { success: true, settings };
+  } catch (error) {
+    console.error("getRecruitSettings error:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 採用ページ設定を保存
+ */
+function updateRecruitSettings(settingsData) {
+  const companyDomain = settingsData.companyDomain;
+
+  if (!companyDomain) {
+    return { success: false, error: "companyDomainが指定されていません" };
+  }
+
+  try {
+    const companySs = openCompanySheet(companyDomain);
+    let sheet = companySs.getSheetByName(RECRUIT_SETTINGS_SHEET_NAME);
+
+    // シートが存在しない場合は作成
+    if (!sheet) {
+      sheet = companySs.insertSheet(RECRUIT_SETTINGS_SHEET_NAME);
+      const headers = [
+        "companyDomain",
+        "layoutStyle",
+        "designPattern",
+        "logoUrl",
+        "companyNameDisplay",
+        "phoneNumber",
+        "ctaButtonText",
+        "heroTitle",
+        "heroSubtitle",
+        "heroImage",
+        "companyIntro",
+        "jobsTitle",
+        "ctaTitle",
+        "ctaText",
+        "ogpTitle",
+        "ogpDescription",
+        "ogpImage"
+      ];
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+      sheet.getRange(1, 1, 1, headers.length).setBackground("#f3f3f3");
+      sheet.setFrozenRows(1);
+    }
+
+    // 既存シートに必要な列がなければ追加
+    let existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const requiredCols = [
+      "companyDomain",
+      "layoutStyle",
+      "designPattern",
+      "logoUrl",
+      "companyNameDisplay",
+      "phoneNumber",
+      "ctaButtonText",
+      "heroTitle",
+      "heroSubtitle",
+      "heroImage",
+      "companyIntro",
+      "jobsTitle",
+      "ctaTitle",
+      "ctaText",
+      "ogpTitle",
+      "ogpDescription",
+      "ogpImage"
+    ];
+
+    for (const col of requiredCols) {
+      if (!existingHeaders.includes(col)) {
+        const newCol = sheet.getLastColumn() + 1;
+        sheet.getRange(1, newCol).setValue(col);
+        existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      }
+    }
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    // 行データを作成
+    const rowData = headers.map((header) => {
+      return settingsData[header] !== undefined ? settingsData[header] : "";
+    });
+
+    // 2行目にデータがあれば更新、なければ追加
+    const data = sheet.getDataRange().getValues();
+    if (data.length >= 2) {
+      sheet.getRange(2, 1, 1, rowData.length).setValues([rowData]);
+      return { success: true, message: "採用ページ設定を更新しました", isNew: false };
+    } else {
+      sheet.appendRow(rowData);
+      return { success: true, message: "採用ページ設定を登録しました", isNew: true };
+    }
+  } catch (error) {
+    console.error("updateRecruitSettings error:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// テスト用
+function testGetRecruitSettings() {
+  const result = getRecruitSettings("toyota");
   Logger.log(result);
 }
 

@@ -22,6 +22,7 @@ export default defineConfig({
         jobDetail: resolve(__dirname, 'job-detail.html'),
         company: resolve(__dirname, 'company.html'),
         companyEdit: resolve(__dirname, 'company-edit.html'),
+        companyRecruit: resolve(__dirname, 'company-recruit.html'),
         jobManage: resolve(__dirname, 'job-manage.html'),
         location: resolve(__dirname, 'location.html'),
         mypage: resolve(__dirname, 'mypage.html'),

@@ -128,7 +128,7 @@ export async function uploadToCloudinary(file, folder, publicId = null) {
 }
 
 /**
- * 企業ロゴをアップロードする
+ * 企業ロゴをアップロードする（会社情報用）
  * @param {File} file - 画像ファイル
  * @param {string} companyDomain - 企業ドメイン
  * @returns {Promise<string>} - 画像URL
@@ -137,11 +137,28 @@ export async function uploadCompanyLogo(file, companyDomain) {
   // 圧縮
   const compressed = await compressLogo(file);
 
-  // Cloudinaryにアップロード
+  // Cloudinaryにアップロード（タイムスタンプ付きでキャッシュ問題回避）
   const folder = `companies/${companyDomain}`;
+  const timestamp = Date.now();
+  const url = await uploadToCloudinary(compressed, folder, `logo_${timestamp}`);
+
+  return url;
+}
+
+/**
+ * 採用ページ用ロゴをアップロードする
+ * @param {File} file - 画像ファイル
+ * @param {string} companyDomain - 企業ドメイン
+ * @returns {Promise<string>} - 画像URL
+ */
+export async function uploadRecruitLogo(file, companyDomain) {
+  // 圧縮
+  const compressed = await compressLogo(file);
+
+  // Cloudinaryにアップロード（採用ページ専用パス）
+  const folder = `recruit/${companyDomain}`;
   const url = await uploadToCloudinary(compressed, folder, 'logo');
 
-  console.log('[ImageUploader] Logo uploaded:', url);
   return url;
 }
 
@@ -159,7 +176,6 @@ export async function uploadCompanyImage(file, companyDomain) {
   const folder = `companies/${companyDomain}/images`;
   const url = await uploadToCloudinary(compressed, folder);
 
-  console.log('[ImageUploader] Company image uploaded:', url);
   return url;
 }
 
@@ -178,7 +194,6 @@ export async function uploadJobImage(file, companyDomain, jobId) {
   const folder = `jobs/${companyDomain}/${jobId}`;
   const url = await uploadToCloudinary(compressed, folder);
 
-  console.log('[ImageUploader] Job image uploaded:', url);
   return url;
 }
 
@@ -196,7 +211,6 @@ export async function uploadLPImage(file, companyDomain) {
   const folder = `lp/${companyDomain}`;
   const url = await uploadToCloudinary(compressed, folder);
 
-  console.log('[ImageUploader] LP image uploaded:', url);
   return url;
 }
 
@@ -390,6 +404,7 @@ export default {
   compressContentImage,
   uploadToCloudinary,
   uploadCompanyLogo,
+  uploadRecruitLogo,
   uploadCompanyImage,
   uploadJobImage,
   uploadLPImage,

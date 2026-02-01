@@ -337,79 +337,95 @@ export class LPEditor {
   }
 
   /**
-   * サイドバーをレンダリング
+   * 編集パネルをレンダリング（右側タブ形式）
    */
   renderSidebar() {
-    const sidebar = document.createElement('div');
-    sidebar.className = 'lp-editor-sidebar';
-    sidebar.id = 'lp-editor-sidebar';
-    sidebar.innerHTML = `
-      <div class="lp-sidebar-header">
-        <span class="lp-sidebar-title">編集</span>
-        <button type="button" class="lp-sidebar-toggle" title="サイドバーを閉じる">
-          <span class="lp-sidebar-toggle-icon">◀</span>
-        </button>
-      </div>
-      <div class="lp-sidebar-content">
-        <!-- テンプレートデザイン選択 -->
-        <div class="lp-sidebar-section">
-          <div class="lp-sidebar-section-header">
-            <span class="lp-sidebar-section-title">📐 テンプレート</span>
-          </div>
-          <div class="lp-layout-selector" id="lp-layout-selector">
-            ${this.renderLayoutStyleOptions()}
-          </div>
-        </div>
-
-        <!-- カラーテーマ選択 -->
-        <div class="lp-sidebar-section">
-          <div class="lp-sidebar-section-header">
-            <span class="lp-sidebar-section-title">🎨 カラーテーマ</span>
-          </div>
-          <div class="lp-design-selector" id="lp-design-selector">
-            ${this.renderDesignPatternOptions()}
-          </div>
-        </div>
-
-        <!-- セクション一覧 -->
-        <div class="lp-sidebar-section">
-          <div class="lp-sidebar-section-header">
-            <span class="lp-sidebar-section-title">📄 セクション</span>
-          </div>
-          <div class="lp-sidebar-sections" id="lp-sidebar-sections">
-            ${this.renderSidebarSectionList()}
-          </div>
-          <button type="button" class="lp-btn-add-section" id="lp-btn-add-section">
-            <span class="lp-btn-add-icon">+</span>
-            セクションを追加
+    const panel = document.createElement('div');
+    panel.className = 'lp-editor-panel';
+    panel.id = 'lp-editor-panel';
+    panel.innerHTML = `
+      <div class="lp-editor-header">
+        <h2 class="lp-editor-title">LP編集</h2>
+        <div class="lp-editor-actions">
+          <button type="button" class="btn-preview-lp" id="btn-preview-lp" title="プレビュー">
+            <span>👁</span>
+          </button>
+          <button type="button" class="btn-close-editor" id="btn-close-lp-editor" title="閉じる">
+            <span>✕</span>
           </button>
         </div>
       </div>
-      <div class="lp-sidebar-footer">
-        <button type="button" class="lp-sidebar-btn lp-sidebar-btn-preview" id="lp-sidebar-preview">
-          プレビュー
-        </button>
-        <button type="button" class="lp-sidebar-btn lp-sidebar-btn-save" id="lp-sidebar-save">
-          保存
+
+      <div class="lp-editor-body">
+        <!-- タブナビゲーション -->
+        <div class="lp-editor-tabs">
+          <button type="button" class="lp-editor-tab active" data-tab="design">デザイン</button>
+          <button type="button" class="lp-editor-tab" data-tab="sections">セクション</button>
+        </div>
+
+        <!-- デザインタブ -->
+        <div class="lp-editor-tab-content active" data-tab-content="design">
+          <div class="editor-section">
+            <h3 class="editor-section-title">レイアウトスタイル</h3>
+            <div class="layout-style-grid" id="lp-layout-selector">
+              ${this.renderLayoutStyleOptions()}
+            </div>
+          </div>
+
+          <div class="editor-section">
+            <h3 class="editor-section-title">カラーテーマ</h3>
+            <div class="design-pattern-grid" id="lp-design-selector">
+              ${this.renderDesignPatternOptions()}
+            </div>
+          </div>
+        </div>
+
+        <!-- セクションタブ -->
+        <div class="lp-editor-tab-content" data-tab-content="sections">
+          <div class="editor-section">
+            <h3 class="editor-section-title">セクション一覧</h3>
+            <div class="lp-sidebar-sections" id="lp-sidebar-sections">
+              ${this.renderSidebarSectionList()}
+            </div>
+            <button type="button" class="lp-btn-add-section" id="lp-btn-add-section">
+              <span class="lp-btn-add-icon">+</span>
+              セクションを追加
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-editor-footer">
+        <button type="button" class="btn-save-lp" id="lp-sidebar-save">
+          <span>💾</span> 保存
         </button>
       </div>
     `;
 
-    document.body.appendChild(sidebar);
+    document.body.appendChild(panel);
 
-    // サイドバートグル
-    sidebar.querySelector('.lp-sidebar-toggle').addEventListener('click', () => {
-      this.toggleSidebar();
+    // タブ切り替え
+    panel.querySelectorAll('.lp-editor-tab').forEach(tab => {
+      tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+    });
+
+    // 閉じるボタン
+    panel.querySelector('#btn-close-lp-editor').addEventListener('click', () => {
+      this.closeLPEditor();
+    });
+
+    // プレビューボタン
+    panel.querySelector('#btn-preview-lp').addEventListener('click', () => {
+      this.previewChanges();
     });
 
     // セクション追加ボタン
-    sidebar.querySelector('#lp-btn-add-section').addEventListener('click', () => {
+    panel.querySelector('#lp-btn-add-section').addEventListener('click', () => {
       this.openAddSectionPanel();
     });
 
-    // 保存・プレビューボタン
-    sidebar.querySelector('#lp-sidebar-save').addEventListener('click', () => this.saveChanges());
-    sidebar.querySelector('#lp-sidebar-preview').addEventListener('click', () => this.previewChanges());
+    // 保存ボタン
+    panel.querySelector('#lp-sidebar-save').addEventListener('click', () => this.saveChanges());
 
     // レイアウトスタイル選択イベント
     this.setupLayoutStyleEvents();
@@ -420,11 +436,36 @@ export class LPEditor {
     // 初期レイアウトスタイルを適用
     this.applyLayoutStyle(this.currentLayoutStyle);
 
+    // bodyに編集モードクラスを追加
+    document.body.classList.add('lp-edit-mode');
+
     // コンテンツエリアを調整
     const content = document.getElementById('lp-content');
     if (content) {
       content.classList.add('lp-content-with-sidebar');
     }
+  }
+
+  /**
+   * タブ切り替え
+   */
+  switchTab(tabId) {
+    document.querySelectorAll('.lp-editor-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabId);
+    });
+    document.querySelectorAll('.lp-editor-tab-content').forEach(content => {
+      content.classList.toggle('active', content.dataset.tabContent === tabId);
+    });
+  }
+
+  /**
+   * LP編集パネルを閉じる
+   */
+  closeLPEditor() {
+    // 編集モードを終了（通常モードに戻る）
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('edit');
+    window.location.href = currentUrl.toString();
   }
 
   /**
@@ -701,17 +742,12 @@ export class LPEditor {
    * サイドバーを開閉
    */
   toggleSidebar() {
-    const sidebar = document.getElementById('lp-editor-sidebar');
+    const panel = document.getElementById('lp-editor-panel');
     const content = document.getElementById('lp-content');
 
-    if (sidebar) {
+    if (panel) {
       this.sidebarCollapsed = !this.sidebarCollapsed;
-      sidebar.classList.toggle('collapsed', this.sidebarCollapsed);
-
-      const toggleIcon = sidebar.querySelector('.lp-sidebar-toggle-icon');
-      if (toggleIcon) {
-        toggleIcon.textContent = this.sidebarCollapsed ? '▶' : '◀';
-      }
+      panel.classList.toggle('collapsed', this.sidebarCollapsed);
     }
 
     if (content) {

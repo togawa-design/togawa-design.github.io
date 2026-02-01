@@ -55,6 +55,9 @@ import {
 // LP設定
 import { loadCompanyLPSettings } from './lp-settings.js';
 
+// 採用ページ設定
+import { initRecruitSettings } from './recruit-settings.js';
+
 // アカウント設定
 import { applyCompanyUserRestrictions } from './settings.js';
 
@@ -104,6 +107,10 @@ function switchSection(sectionId) {
     if (pageTitle) pageTitle.textContent = 'LP設定';
     if (headerActions) headerActions.style.display = 'none';
     loadCompanyLPSettings();
+  } else if (sectionId === 'recruit-settings') {
+    if (pageTitle) pageTitle.textContent = '採用ページ設定';
+    if (headerActions) headerActions.style.display = 'none';
+    initRecruitSettings(companyDomain);
   } else if (sectionId === 'settings') {
     if (pageTitle) pageTitle.textContent = 'アカウント設定';
     if (headerActions) headerActions.style.display = 'none';

@@ -12,6 +12,7 @@ import {
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
 import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection, initVideoButtonSection } from './lp-settings.js';
+import { initRecruitSettings } from './recruit-settings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { escapeHtml } from '@shared/utils.js';
@@ -44,8 +45,6 @@ function applyRoleBasedUI() {
   const role = getUserRole();
   const companyDomain = getUserCompanyDomain();
 
-  console.log('[Admin] Applying role-based UI:', role, companyDomain);
-
   // 管理者以外は一部ナビゲーションを非表示
   if (!isAdmin()) {
     // 管理者専用セクションを非表示
@@ -55,6 +54,7 @@ function applyRoleBasedUI() {
       'applications',  // 応募データ一覧
       'company-manage', // 会社管理
       'lp-settings',   // LP設定
+      'recruit-settings', // 採用ページ設定
       'settings'       // システム設定
     ];
 
@@ -139,6 +139,7 @@ function switchSection(sectionName) {
     companies: '企業別データ',
     'company-manage': '会社管理',
     'lp-settings': 'LP設定',
+    'recruit-settings': '採用ページ設定',
     applications: '応募データ',
     'applicant-select': '応募者管理',
     'company-users': '会社ユーザー管理',
@@ -158,6 +159,11 @@ function switchSection(sectionName) {
   if (sectionName === 'lp-settings') {
     loadCompanyListForLP();
     renderHeroImagePresets();
+  }
+
+  // 採用ページ設定セクションに切り替えた場合は初期化
+  if (sectionName === 'recruit-settings') {
+    initRecruitSettings();
   }
 
   // LP設定セクションでは期間選択と更新ボタンを非表示
@@ -182,8 +188,6 @@ function switchSection(sectionName) {
 
 // イベントバインド
 function bindEvents() {
-  console.log('[Admin] bindEvents 開始');
-
   // モバイルメニュー
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   if (mobileMenuBtn) {
@@ -354,15 +358,10 @@ function bindEvents() {
 
   // LP設定: 保存ボタン
   const btnSaveLPSettings = document.getElementById('btn-save-lp-settings');
-  console.log('[Admin] 保存ボタン要素:', btnSaveLPSettings);
   if (btnSaveLPSettings) {
     btnSaveLPSettings.addEventListener('click', () => {
-      console.log('[Admin] 保存ボタンがクリックされました');
       saveLPSettings();
     });
-    console.log('[Admin] 保存ボタンにイベントリスナーを設定しました');
-  } else {
-    console.warn('[Admin] 保存ボタンが見つかりません: btn-save-lp-settings');
   }
 
   // LP設定: リセットボタン
@@ -1043,8 +1042,6 @@ function copyCredentialsToClipboard() {
 
 // 初期化
 export function initAdminDashboard() {
-  console.log('[Admin] initAdminDashboard 開始');
-
   // ローカルストレージからパスワードを復元
   const savedPassword = localStorage.getItem('admin_password');
   if (savedPassword) {
@@ -1064,7 +1061,6 @@ export function initAdminDashboard() {
     // フォールバック: 認証に時間がかかる場合は3秒後に読み込み
     setTimeout(() => {
       if (!getIdToken()) {
-        console.log('[Admin] Auth timeout, loading with mock data');
         loadDashboardData();
       }
     }, 3000);
