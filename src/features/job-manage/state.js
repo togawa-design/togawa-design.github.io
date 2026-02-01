@@ -33,6 +33,12 @@ export let currentJobDataForLP = null;
 export let applicantsInitialized = false;
 export let lpSettingsInitialized = false;
 
+// セクション切り替え中フラグ（連打防止）
+let isSwitchingSection = false;
+
+// 非同期処理キャンセル用AbortController
+let currentAbortController = null;
+
 // ヒーロー画像プリセット
 export const heroImagePresets = [
   { id: 'teamwork-1', name: 'チームミーティング', url: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1920&q=80', thumbnail: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&q=60' },
@@ -112,4 +118,43 @@ export function setApplicantsInitialized(value) {
 
 export function setLpSettingsInitialized(value) {
   lpSettingsInitialized = value;
+}
+
+/**
+ * セクション切り替え中かどうか
+ */
+export function isSectionSwitching() {
+  return isSwitchingSection;
+}
+
+/**
+ * セクション切り替え開始
+ */
+export function startSectionSwitch() {
+  isSwitchingSection = true;
+}
+
+/**
+ * セクション切り替え終了
+ */
+export function endSectionSwitch() {
+  isSwitchingSection = false;
+}
+
+/**
+ * 新しいAbortControllerを取得（前のをキャンセル）
+ */
+export function getNewAbortController() {
+  if (currentAbortController) {
+    currentAbortController.abort();
+  }
+  currentAbortController = new AbortController();
+  return currentAbortController;
+}
+
+/**
+ * 現在のAbortControllerをクリア
+ */
+export function clearAbortController() {
+  currentAbortController = null;
 }

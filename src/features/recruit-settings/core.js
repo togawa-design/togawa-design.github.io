@@ -32,8 +32,14 @@ export const heroImagePresets = [
 export function populateForm(settings, companyName = '') {
   // レイアウトスタイルを設定
   setLayoutStyle(settings.layoutStyle || 'default');
-  // デザインパターンを設定
-  setDesignPattern(settings.designPattern || 'standard');
+
+  // カスタムカラーを設定
+  setCustomColors({
+    primary: settings.customPrimary || '',
+    accent: settings.customAccent || '',
+    bg: settings.customBg || '',
+    text: settings.customText || ''
+  });
 
   // ロゴ・ヘッダー設定
   setInputValue('recruit-logo-url', settings.logoUrl || '');
@@ -65,8 +71,8 @@ export function populateForm(settings, companyName = '') {
 export function populateFormWithDefaults(companyName = '', companyDescription = '', companyImageUrl = '') {
   // レイアウトスタイルをデフォルトに設定
   setLayoutStyle('default');
-  // デザインパターンをデフォルトに設定
-  setDesignPattern('standard');
+  // カスタムカラーをリセット
+  resetCustomColors();
 
   // ロゴ・ヘッダー設定
   setInputValue('recruit-logo-url', '');
@@ -99,7 +105,11 @@ export function getFormValues(companyDomain) {
   return {
     companyDomain: companyDomain || '',
     layoutStyle: getLayoutStyle(),
-    designPattern: getDesignPattern(),
+    // カスタムカラー
+    customPrimary: document.getElementById('recruit-custom-primary')?.value || '',
+    customAccent: document.getElementById('recruit-custom-accent')?.value || '',
+    customBg: document.getElementById('recruit-custom-bg')?.value || '',
+    customText: document.getElementById('recruit-custom-text')?.value || '',
     // ロゴ・ヘッダー設定
     logoUrl: document.getElementById('recruit-logo-url')?.value || '',
     companyNameDisplay: document.getElementById('recruit-company-name-display')?.value || '',
@@ -148,21 +158,78 @@ export function getLayoutStyle() {
 }
 
 /**
- * デザインパターンを設定
+ * カスタムカラーを設定
  */
-export function setDesignPattern(pattern) {
-  const radio = document.querySelector(`input[name="recruit-design-pattern"][value="${pattern}"]`);
-  if (radio) {
-    radio.checked = true;
-  }
+export function setCustomColors(colors) {
+  const colorIds = ['primary', 'accent', 'bg', 'text'];
+  colorIds.forEach(id => {
+    const colorInput = document.getElementById(`recruit-custom-${id}`);
+    const textInput = document.getElementById(`recruit-custom-${id}-text`);
+    const value = colors[id] || '';
+    if (colorInput) {
+      colorInput.value = value || (id === 'bg' ? '#ffffff' : id === 'text' ? '#1f2937' : '#000000');
+    }
+    if (textInput) {
+      textInput.value = value;
+    }
+  });
 }
 
 /**
- * デザインパターンを取得
+ * カスタムカラーをリセット
  */
-export function getDesignPattern() {
-  const radio = document.querySelector('input[name="recruit-design-pattern"]:checked');
-  return radio?.value || 'standard';
+export function resetCustomColors() {
+  const colorIds = ['primary', 'accent', 'bg', 'text'];
+  const defaults = {
+    primary: '',
+    accent: '',
+    bg: '#ffffff',
+    text: '#1f2937'
+  };
+  colorIds.forEach(id => {
+    const colorInput = document.getElementById(`recruit-custom-${id}`);
+    const textInput = document.getElementById(`recruit-custom-${id}-text`);
+    if (colorInput) colorInput.value = defaults[id] || '#000000';
+    if (textInput) textInput.value = '';
+  });
+}
+
+/**
+ * カラーピッカーのイベントリスナーをセットアップ
+ */
+export function setupColorPickers() {
+  const colorIds = ['primary', 'accent', 'bg', 'text'];
+
+  colorIds.forEach(id => {
+    const colorInput = document.getElementById(`recruit-custom-${id}`);
+    const textInput = document.getElementById(`recruit-custom-${id}-text`);
+
+    if (colorInput && textInput) {
+      // カラーピッカー → テキスト入力
+      colorInput.addEventListener('input', () => {
+        textInput.value = colorInput.value;
+        updateLivePreview();
+      });
+
+      // テキスト入力 → カラーピッカー
+      textInput.addEventListener('input', () => {
+        const val = textInput.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+          colorInput.value = val;
+        }
+        updateLivePreview();
+      });
+    }
+  });
+
+  // リセットボタン
+  const resetBtn = document.getElementById('recruit-reset-colors');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      resetCustomColors();
+      updateLivePreview();
+    });
+  }
 }
 
 /**
@@ -382,6 +449,178 @@ export function setupLogoUpload(companyDomain) {
   });
 }
 
+/**
+ * レイアウトスタイルごとのデフォルトカラー
+ */
+const layoutStyleColors = {
+  default: { primary: '#6366f1', accent: '#818cf8', bg: '#ffffff', text: '#1f2937' },
+  modern: { primary: '#3b82f6', accent: '#60a5fa', bg: '#f8fafc', text: '#1e293b' },
+  yellow: { primary: '#f59e0b', accent: '#fbbf24', bg: '#fffbeb', text: '#78350f' },
+  impact: { primary: '#111827', accent: '#374151', bg: '#f9fafb', text: '#111827' },
+  local: { primary: '#92400e', accent: '#b45309', bg: '#fef3c7', text: '#78350f' },
+  zen: { primary: '#059669', accent: '#10b981', bg: '#f0fdf4', text: '#1f2937' }
+};
+
+/**
+ * リアルタイムプレビューを更新
+ */
+export function updateLivePreview() {
+  const previewContainer = document.getElementById('recruit-live-preview');
+  if (!previewContainer) return;
+
+  // ロゴ
+  const logoUrl = document.getElementById('recruit-logo-url')?.value || '';
+  const logoEl = document.getElementById('preview-logo');
+  if (logoEl) {
+    if (logoUrl) {
+      logoEl.src = logoUrl;
+      logoEl.style.display = 'block';
+    } else {
+      logoEl.style.display = 'none';
+    }
+  }
+
+  // 会社名
+  const companyName = document.getElementById('recruit-company-name-display')?.value || '';
+  const companyNameEl = document.getElementById('preview-company-name');
+  if (companyNameEl) {
+    companyNameEl.textContent = companyName || '会社名';
+  }
+
+  // ヒーロータイトル
+  const heroTitle = document.getElementById('recruit-hero-title')?.value || '';
+  const heroTitleEl = document.getElementById('preview-hero-title');
+  if (heroTitleEl) {
+    heroTitleEl.textContent = heroTitle || 'キャッチコピー';
+  }
+
+  // ヒーローサブタイトル
+  const heroSubtitle = document.getElementById('recruit-hero-subtitle')?.value || '';
+  const heroSubtitleEl = document.getElementById('preview-hero-subtitle');
+  if (heroSubtitleEl) {
+    heroSubtitleEl.textContent = heroSubtitle || 'サブタイトル';
+  }
+
+  // ヒーロー背景画像
+  const heroImage = document.getElementById('recruit-hero-image')?.value || '';
+  const heroEl = document.getElementById('preview-hero');
+  if (heroEl) {
+    if (heroImage) {
+      heroEl.style.backgroundImage = `url(${heroImage})`;
+    } else {
+      heroEl.style.backgroundImage = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+  }
+
+  // 会社紹介
+  const companyIntro = document.getElementById('recruit-company-intro')?.value || '';
+  const introEl = document.getElementById('preview-intro-text');
+  if (introEl) {
+    introEl.textContent = companyIntro ? truncateText(companyIntro, 60) : '会社紹介文がここに表示されます';
+  }
+
+  // 求人セクションタイトル
+  const jobsTitle = document.getElementById('recruit-jobs-title')?.value || '';
+  const jobsTitleEl = document.getElementById('preview-jobs-title');
+  if (jobsTitleEl) {
+    jobsTitleEl.textContent = jobsTitle || '募集中の求人';
+  }
+
+  // CTAタイトル
+  const ctaTitle = document.getElementById('recruit-cta-title')?.value || '';
+  const ctaTitleEl = document.getElementById('preview-cta-title');
+  if (ctaTitleEl) {
+    ctaTitleEl.textContent = ctaTitle || 'ご応募お待ちしています';
+  }
+
+  // CTAボタンテキスト
+  const ctaButtonText = document.getElementById('recruit-cta-button-text')?.value || '';
+  const ctaButtonEl = document.getElementById('preview-cta-button');
+  if (ctaButtonEl) {
+    ctaButtonEl.textContent = ctaButtonText || '今すぐ応募する';
+  }
+
+  // デザインパターンの色を適用
+  applyPreviewColorTheme();
+}
+
+/**
+ * プレビューにカラーテーマを適用
+ */
+export function applyPreviewColorTheme() {
+  const layoutStyle = getLayoutStyle();
+  const previewContainer = document.getElementById('recruit-live-preview');
+
+  if (!previewContainer) return;
+
+  // レイアウトスタイルをプレビューに適用
+  previewContainer.setAttribute('data-layout-style', layoutStyle);
+
+  // カスタムカラーを取得
+  const customPrimaryInput = document.getElementById('recruit-custom-primary-text');
+  const customAccentInput = document.getElementById('recruit-custom-accent-text');
+  const customBgInput = document.getElementById('recruit-custom-bg-text');
+  const customTextInput = document.getElementById('recruit-custom-text-text');
+
+  // カスタムカラーの値（テキスト入力から取得、空欄の場合はレイアウトスタイルのデフォルトを使用）
+  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+  const colors = {
+    primary: customPrimaryInput?.value || baseColors.primary,
+    accent: customAccentInput?.value || baseColors.accent,
+    bg: customBgInput?.value || baseColors.bg,
+    text: customTextInput?.value || baseColors.text
+  };
+
+  // CSS変数でカラーを設定（previewContainer = .preview-phone-content）
+  previewContainer.style.setProperty('--preview-primary', colors.primary);
+  previewContainer.style.setProperty('--preview-accent', colors.accent);
+  previewContainer.style.setProperty('--preview-bg', colors.bg);
+  previewContainer.style.setProperty('--preview-text', colors.text);
+}
+
+/**
+ * リアルタイムプレビューのイベントリスナーをセットアップ
+ */
+export function setupLivePreview() {
+  const previewContainer = document.getElementById('recruit-live-preview');
+  if (!previewContainer) return;
+
+  // 監視するフォームフィールドのIDリスト
+  const fieldIds = [
+    'recruit-logo-url',
+    'recruit-company-name-display',
+    'recruit-hero-title',
+    'recruit-hero-subtitle',
+    'recruit-hero-image',
+    'recruit-company-intro',
+    'recruit-jobs-title',
+    'recruit-cta-title',
+    'recruit-cta-button-text'
+  ];
+
+  // 各フィールドにinputイベントリスナーを追加
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateLivePreview);
+    }
+  });
+
+  // レイアウトスタイルのradioボタンにchangeイベントリスナーを追加
+  const layoutStyleRadios = document.querySelectorAll('input[name="recruit-layout-style"]');
+  layoutStyleRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      updateLivePreview();
+    });
+  });
+
+  // カスタムカラーピッカーをセットアップ
+  setupColorPickers();
+
+  // 初期プレビューを更新
+  updateLivePreview();
+}
+
 export default {
   loadRecruitSettings,
   saveRecruitSettings,
@@ -391,8 +630,9 @@ export default {
   setInputValue,
   setLayoutStyle,
   getLayoutStyle,
-  setDesignPattern,
-  getDesignPattern,
+  setCustomColors,
+  resetCustomColors,
+  setupColorPickers,
   truncateText,
   setSaveButtonLoading,
   handleSave,
@@ -403,5 +643,8 @@ export default {
   selectHeroImagePreset,
   updateHeroImagePresetSelection,
   updateLogoPreview,
-  setupLogoUpload
+  setupLogoUpload,
+  setupLivePreview,
+  updateLivePreview,
+  applyPreviewColorTheme
 };

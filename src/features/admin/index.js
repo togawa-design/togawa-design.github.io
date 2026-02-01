@@ -12,10 +12,31 @@ import {
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
 import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection, initVideoButtonSection } from './lp-settings.js';
-import { initRecruitSettings } from './recruit-settings.js';
+import { initRecruitSettings, setPendingCompany } from './recruit-settings.js';
+import { initJobListings, setCompanyFilter } from './job-listings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { escapeHtml } from '@shared/utils.js';
+
+// Job-Manage Embedded
+import {
+  currentCompany,
+  setCurrentCompany,
+  clearCurrentCompany,
+  pushHistory,
+  popHistory,
+  setEditingCompanyDomain,
+  getEditingCompanyDomain,
+  clearEditingCompanyDomain,
+  setPendingJobId,
+  getPendingJobId,
+  clearPendingJobId,
+  isSectionSwitching,
+  startSectionSwitch,
+  endSectionSwitch
+} from './admin-state.js';
+import { initJobManageEmbedded } from './job-manage-embedded.js';
+import { initCompanyEditEmbedded } from './company-edit-embedded.js';
 
 // ログイン画面表示
 function showLogin() {
@@ -45,45 +66,27 @@ function applyRoleBasedUI() {
   const role = getUserRole();
   const companyDomain = getUserCompanyDomain();
 
-  // 管理者以外は一部ナビゲーションを非表示
+  // 管理者とそれ以外でナビゲーションを切り替え
+  const navAdmin = document.getElementById('nav-admin');
+  const navCompany = document.getElementById('nav-company');
+
   if (!isAdmin()) {
-    // 管理者専用セクションを非表示
-    const adminOnlySections = [
-      'overview',      // 全体概要
-      'companies',     // 企業別データ
-      'applications',  // 応募データ一覧
-      'company-manage', // 会社管理
-      'lp-settings',   // LP設定
-      'recruit-settings', // 採用ページ設定
-      'settings'       // システム設定
-    ];
+    // 会社ユーザー用ナビゲーションを表示
+    if (navAdmin) navAdmin.style.display = 'none';
+    if (navCompany) navCompany.style.display = 'block';
 
-    adminOnlySections.forEach(section => {
-      const navItem = document.querySelector(`[data-section="${section}"]`);
-      if (navItem) {
-        navItem.parentElement.style.display = 'none';
-      }
-    });
-
-    // セクションタイトルも非表示にする
-    const navSections = document.querySelectorAll('.nav-section');
-    navSections.forEach(section => {
-      const visibleItems = section.querySelectorAll('li[style*="display: none"]');
-      const allItems = section.querySelectorAll('li');
-      if (visibleItems.length === allItems.length) {
-        section.style.display = 'none';
-      }
-    });
-
-    // 会社ユーザーは応募者管理（自社のみ）を表示
-    // デフォルトで応募者管理セクションに移動
-    switchSection('applicant-select');
+    // 会社ユーザーはデフォルトで求人一覧を表示
+    switchSection('job-listings');
 
     // サイドバーのヘッダーに会社名を表示
     const sidebarHeader = document.querySelector('.sidebar-header p');
     if (sidebarHeader && companyDomain) {
       sidebarHeader.textContent = `${companyDomain} 管理画面`;
     }
+  } else {
+    // 管理者用ナビゲーションを表示
+    if (navAdmin) navAdmin.style.display = 'block';
+    if (navCompany) navCompany.style.display = 'none';
   }
 }
 
@@ -112,6 +115,14 @@ function closeMobileMenu() {
 
 // セクション切り替え
 function switchSection(sectionName) {
+  // 連打防止: 切り替え中なら無視
+  if (isSectionSwitching()) {
+    return;
+  }
+
+  // 切り替え開始
+  startSectionSwitch();
+
   // モバイルメニューを閉じる
   closeMobileMenu();
 
@@ -136,18 +147,24 @@ function switchSection(sectionName) {
   // タイトル更新
   const titles = {
     overview: '概要',
-    companies: '企業別データ',
+    'analytics-detail': '詳細分析',
     'company-manage': '会社管理',
+    'job-listings': '求人一覧',
+    'job-manage': '求人管理',
+    'company-edit': '会社編集',
     'lp-settings': 'LP設定',
     'recruit-settings': '採用ページ設定',
-    applications: '応募データ',
     'applicant-select': '応募者管理',
     'company-users': '会社ユーザー管理',
     settings: '設定'
   };
   const pageTitle = document.getElementById('page-title');
   if (pageTitle) {
-    pageTitle.textContent = titles[sectionName] || sectionName;
+    if (sectionName === 'job-manage' && currentCompany.name) {
+      pageTitle.textContent = `${currentCompany.name} の求人管理`;
+    } else {
+      pageTitle.textContent = titles[sectionName] || sectionName;
+    }
   }
 
   // 会社管理セクションに切り替えた場合はデータを読み込む
@@ -166,10 +183,16 @@ function switchSection(sectionName) {
     initRecruitSettings();
   }
 
-  // LP設定セクションでは期間選択と更新ボタンを非表示
+  // 求人一覧セクションに切り替えた場合は初期化
+  if (sectionName === 'job-listings') {
+    initJobListings();
+  }
+
+  // 期間選択と更新ボタンはアナリティクスセクションのみ表示
   const headerActions = document.querySelector('.header-actions');
   if (headerActions) {
-    headerActions.style.display = sectionName === 'lp-settings' ? 'none' : '';
+    const analyticsSection = ['overview', 'analytics-detail'];
+    headerActions.style.display = analyticsSection.includes(sectionName) ? '' : 'none';
   }
 
   // LP設定セクションではフッター固定用のクラスを追加
@@ -184,6 +207,62 @@ function switchSection(sectionName) {
   if (sectionName === 'company-users') {
     loadCompanyUsersData();
   }
+
+  // Job-Manage埋め込みセクションに切り替えた場合は初期化
+  if (sectionName === 'job-manage') {
+    if (currentCompany.domain && currentCompany.name) {
+      const jobId = getPendingJobId();
+      clearPendingJobId();
+      initJobManageEmbedded(currentCompany.domain, currentCompany.name, jobId);
+    }
+  }
+
+  // Company-Edit埋め込みセクションに切り替えた場合は初期化
+  if (sectionName === 'company-edit') {
+    initCompanyEditEmbedded(getEditingCompanyDomain());
+  }
+
+  // 切り替え完了（次フレームで解除）
+  requestAnimationFrame(() => {
+    endSectionSwitch();
+  });
+}
+
+/**
+ * Job-Manage画面へナビゲート（SPA内）
+ * @param {string} domain - 会社ドメイン
+ * @param {string} name - 会社名
+ * @param {string} returnSection - 戻り先セクション
+ * @param {string} [jobId] - 編集する求人ID（オプション）
+ */
+function navigateToJobManage(domain, name, returnSection = 'job-listings', jobId = null) {
+  setCurrentCompany(domain, name);
+  if (jobId) {
+    setPendingJobId(jobId);
+  }
+  pushHistory(returnSection);
+  switchSection('job-manage');
+}
+
+/**
+ * 前のセクションに戻る
+ */
+function navigateBack() {
+  const prev = popHistory();
+  clearCurrentCompany();
+  clearEditingCompanyDomain();
+  switchSection(prev || 'job-listings');
+}
+
+/**
+ * Company-Edit画面へナビゲート（SPA内）
+ * @param {string} domain - 会社ドメイン（null で新規作成）
+ * @param {string} returnSection - 戻り先セクション
+ */
+function navigateToCompanyEdit(domain, returnSection = 'company-manage') {
+  setEditingCompanyDomain(domain);
+  pushHistory(returnSection);
+  switchSection('company-edit');
 }
 
 // イベントバインド
@@ -592,6 +671,33 @@ function bindEvents() {
         closeCompanyUserModal();
       }
     });
+  }
+
+  // カスタムイベント: セクション遷移（フィルター付き）
+  document.addEventListener('navigateToSection', (e) => {
+    const { section, companyDomain, company } = e.detail;
+
+    if (section === 'job-listings') {
+      // 求人一覧に遷移してフィルター適用
+      // setCompanyFilterで事前にフィルター値を設定してから遷移
+      if (companyDomain) {
+        setCompanyFilter(companyDomain);
+      }
+      switchSection('job-listings');
+    } else if (section === 'recruit-settings') {
+      // 採用ページ設定に遷移して会社選択済み
+      // 遷移前に保留フィルターを設定
+      if (companyDomain) {
+        setPendingCompany(companyDomain);
+      }
+      switchSection('recruit-settings');
+    }
+  });
+
+  // Job-Manage埋め込み: 戻るボタン
+  const jmBackBtn = document.getElementById('jm-back-btn');
+  if (jmBackBtn) {
+    jmBackBtn.addEventListener('click', navigateBack);
   }
 
 }
@@ -1090,7 +1196,12 @@ if (typeof window !== 'undefined') {
     },
     init: initAdminDashboard,
     switchSection,
-    getIdToken
+    getIdToken,
+    // Job-Manage埋め込みナビゲーション
+    navigateToJobManage,
+    navigateBack,
+    // Company-Edit埋め込みナビゲーション
+    navigateToCompanyEdit
   };
 
   window.AdminAnalytics = {

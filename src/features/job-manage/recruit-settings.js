@@ -11,7 +11,9 @@ import {
   handleReset,
   updatePreviewLink,
   renderHeroImagePresets,
-  setupLogoUpload
+  setupLogoUpload,
+  setupLivePreview,
+  updateLivePreview
 } from '@features/recruit-settings/core.js';
 
 // 現在の会社ドメイン
@@ -44,17 +46,62 @@ export async function initRecruitSettings(domain) {
   // ロゴアップロード機能を設定
   setupLogoUpload(domain);
 
-  // 設定を読み込み
-  recruitSettings = await loadRecruitSettings(domain) || {};
+  // 読み込み中状態を設定
+  setFormLoadingState(true);
 
-  if (Object.keys(recruitSettings).length > 0) {
-    populateForm(recruitSettings, companyName);
-  } else {
-    populateFormWithDefaults(companyName);
+  try {
+    // 設定を読み込み
+    recruitSettings = await loadRecruitSettings(domain) || {};
+
+    if (Object.keys(recruitSettings).length > 0) {
+      populateForm(recruitSettings, companyName);
+    } else {
+      populateFormWithDefaults(companyName);
+    }
+
+    // リアルタイムプレビューをセットアップ
+    setupLivePreview();
+
+    // イベントリスナーを設定
+    setupEventListeners();
+  } finally {
+    // 読み込み完了
+    setFormLoadingState(false);
   }
+}
 
-  // イベントリスナーを設定
-  setupEventListeners();
+/**
+ * フォームの読み込み中状態を設定
+ */
+function setFormLoadingState(isLoading) {
+  const container = document.getElementById('section-recruit-settings');
+  if (!container) return;
+
+  // フォーム要素を取得
+  const inputs = container.querySelectorAll('input, select, textarea, button');
+  inputs.forEach(el => {
+    el.disabled = isLoading;
+  });
+
+  // 保存・リセットボタン
+  const saveBtn = document.getElementById('btn-save-recruit-settings');
+  const resetBtn = document.getElementById('btn-reset-recruit-settings');
+  if (saveBtn) saveBtn.disabled = isLoading;
+  if (resetBtn) resetBtn.disabled = isLoading;
+
+  // ローディング表示
+  const loadingOverlay = container.querySelector('.recruit-loading-overlay');
+  if (isLoading) {
+    if (!loadingOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'recruit-loading-overlay';
+      overlay.innerHTML = '<div class="loading-spinner"></div><p>読み込み中...</p>';
+      container.style.position = 'relative';
+      container.appendChild(overlay);
+    }
+  } else {
+    loadingOverlay?.remove();
+  }
 }
 
 /**
@@ -85,6 +132,7 @@ function setupEventListeners() {
     resetBtn.replaceWith(resetBtn.cloneNode(true));
     document.getElementById('btn-reset-recruit-settings')?.addEventListener('click', () => {
       handleReset(recruitSettings, companyName);
+      updateLivePreview(); // プレビューも更新
     });
   }
 }

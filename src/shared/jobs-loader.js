@@ -9,6 +9,13 @@ export const STATS_SHEET_NAME = 'Stats';
 export const DEFAULT_IMAGE = 'images/default-job.svg';
 export const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
 
+// キャッシュ（5分間有効）
+const CACHE_TTL = 5 * 60 * 1000;
+const cache = {
+  companies: { data: null, timestamp: 0 },
+  jobs: new Map() // jobsSheetIdをキーとしてキャッシュ
+};
+
 // CSVを取得するURL
 export const getCsvUrl = () =>
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
@@ -139,26 +146,48 @@ export function extractSpreadsheetId(input) {
   return null;
 }
 
-// 会社一覧データを取得
+// 会社一覧データを取得（キャッシュ付き）
 export async function fetchCompanies() {
+  const now = Date.now();
+
+  // キャッシュが有効な場合はキャッシュを返す
+  if (cache.companies.data && (now - cache.companies.timestamp) < CACHE_TTL) {
+    return cache.companies.data;
+  }
+
   try {
     const response = await fetch(getCsvUrl());
     if (!response.ok) throw new Error('会社一覧の取得に失敗しました');
     const csvText = await response.text();
-    return parseCSV(csvText);
+    const data = parseCSV(csvText);
+
+    // キャッシュを更新
+    cache.companies.data = data;
+    cache.companies.timestamp = now;
+
+    return data;
   } catch (error) {
     console.error('会社一覧の取得エラー:', error);
-    return null;
+    return cache.companies.data || null; // エラー時は古いキャッシュを返す
   }
 }
 
-// 会社の求人データを取得
+// 会社の求人データを取得（キャッシュ付き）
 export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
   if (!jobsSheetIdOrUrl) return null;
-  try {
-    const sheetId = extractSpreadsheetId(jobsSheetIdOrUrl.trim());
-    if (!sheetId) return null;
 
+  const sheetId = extractSpreadsheetId(jobsSheetIdOrUrl.trim());
+  if (!sheetId) return null;
+
+  const now = Date.now();
+
+  // キャッシュが有効な場合はキャッシュを返す
+  const cached = cache.jobs.get(sheetId);
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
     const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
     const response = await fetch(csvUrl);
     if (!response.ok) throw new Error('求人データの取得に失敗しました');
@@ -169,10 +198,15 @@ export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
     // ヘッダーが「英語 日本語」形式（1行ヘッダー）か確認
     const isCombinedHeader = firstHeader.includes(' ') && !firstHeader.startsWith('"管理');
     const dataStartRow = isCombinedHeader ? 1 : 2;
-    return parseCSV(csvText, 0, dataStartRow);
+    const data = parseCSV(csvText, 0, dataStartRow);
+
+    // キャッシュを更新
+    cache.jobs.set(sheetId, { data, timestamp: now });
+
+    return data;
   } catch (error) {
     console.error('求人データの取得エラー:', error);
-    return null;
+    return cached?.data || null; // エラー時は古いキャッシュを返す
   }
 }
 

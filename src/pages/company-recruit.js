@@ -21,6 +21,7 @@ class CompanyRecruitPage {
     this.recruitSettings = null; // 採用ページ設定（ロゴ・ヘッダー情報用）
     this.isEditMode = hasUrlParam('edit'); // 編集モード判定
     this.editor = null;
+    this.selectedJobType = 'all'; // 現在選択中の職種タブ
   }
 
   async init() {
@@ -36,8 +37,13 @@ class CompanyRecruitPage {
       // JobsLoaderの読み込みを待機
       await this.waitForJobsLoader();
 
-      // 会社情報を取得
-      const companies = await window.JobsLoader.fetchCompanies();
+      // 会社情報と採用ページ設定を並列で取得
+      const [companies, recruitSettings] = await Promise.all([
+        window.JobsLoader.fetchCompanies(),
+        loadRecruitSettings(this.companyDomain)
+      ]);
+
+      this.recruitSettings = recruitSettings || {};
 
       this.company = companies?.find(c =>
         c.companyDomain?.trim() === this.companyDomain &&
@@ -51,9 +57,6 @@ class CompanyRecruitPage {
 
       // 求人データを取得
       this.jobs = await this.fetchJobs(this.company);
-
-      // 採用ページ設定を取得
-      this.recruitSettings = await loadRecruitSettings(this.companyDomain) || {};
 
       // ページを描画
       this.hideLoading();
@@ -208,6 +211,9 @@ class CompanyRecruitPage {
     if (logoEl && this.company?.company) {
       logoEl.innerHTML = `<span class="logo-text">${escapeHtml(this.company.company)}</span>`;
     }
+
+    // 職種タブのイベントリスナーを設定
+    this.setupJobTypeTabs();
   }
 
   /**
@@ -289,16 +295,92 @@ class CompanyRecruitPage {
       `;
     }
 
+    // 職種タブを生成
+    const jobTypeTabs = this.renderJobTypeTabs();
+
     return `
       <section class="recruit-section recruit-jobs" id="recruit-jobs">
         <div class="recruit-section-inner">
           <h2 class="recruit-section-title">${escapeHtml(jobsTitle)}</h2>
-          <div class="recruit-jobs-grid">
+          ${jobTypeTabs}
+          <div class="recruit-jobs-grid" id="recruit-jobs-grid">
             ${this.jobs.map(job => this.renderJobCard(job)).join('')}
           </div>
         </div>
       </section>
     `;
+  }
+
+  /**
+   * 職種タブを生成
+   */
+  renderJobTypeTabs() {
+    // 求人から職種を抽出（重複除去）
+    const jobTypes = [...new Set(this.jobs.map(job => job.jobType).filter(Boolean))];
+
+    // 職種が1種類以下ならタブを表示しない
+    if (jobTypes.length <= 1) {
+      return '';
+    }
+
+    // 各職種の件数をカウント
+    const typeCounts = {};
+    this.jobs.forEach(job => {
+      const type = job.jobType || 'その他';
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    });
+
+    return `
+      <div class="recruit-job-tabs" id="recruit-job-tabs">
+        <button class="recruit-job-tab active" data-type="all">
+          すべて<span class="tab-count">${this.jobs.length}</span>
+        </button>
+        ${jobTypes.map(type => `
+          <button class="recruit-job-tab" data-type="${escapeHtml(type)}">
+            ${escapeHtml(type)}<span class="tab-count">${typeCounts[type] || 0}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  /**
+   * 職種タブのイベントリスナーを設定
+   */
+  setupJobTypeTabs() {
+    const tabsContainer = document.getElementById('recruit-job-tabs');
+    if (!tabsContainer) return;
+
+    tabsContainer.addEventListener('click', (e) => {
+      const tab = e.target.closest('.recruit-job-tab');
+      if (!tab) return;
+
+      const type = tab.dataset.type;
+      this.filterJobsByType(type);
+
+      // タブのアクティブ状態を更新
+      tabsContainer.querySelectorAll('.recruit-job-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  }
+
+  /**
+   * 職種で求人をフィルタリング
+   */
+  filterJobsByType(type) {
+    this.selectedJobType = type;
+    const jobCards = document.querySelectorAll('.recruit-job-card');
+
+    jobCards.forEach(card => {
+      const jobType = card.dataset.jobType || '';
+      if (type === 'all' || jobType === type) {
+        card.style.display = '';
+        card.classList.remove('hidden');
+      } else {
+        card.style.display = 'none';
+        card.classList.add('hidden');
+      }
+    });
   }
 
   /**
@@ -308,13 +390,15 @@ class CompanyRecruitPage {
     const jobId = job.jobId || job['求人ID'] || job.id || '';
     const lpUrl = `lp.html?j=${this.companyDomain}_${jobId}`;
     const imageUrl = job.imageUrl || this.company?.imageUrl || '';
+    const jobType = job.jobType || '';
 
     return `
-      <a href="${lpUrl}" class="recruit-job-card">
+      <a href="${lpUrl}" class="recruit-job-card" data-job-type="${escapeHtml(jobType)}">
         <div class="recruit-job-card-image" style="${imageUrl ? `background-image: url('${escapeHtml(imageUrl)}')` : ''}">
           ${!imageUrl ? '<div class="recruit-job-card-placeholder"></div>' : ''}
         </div>
         <div class="recruit-job-card-content">
+          ${jobType ? `<span class="recruit-job-card-type">${escapeHtml(jobType)}</span>` : ''}
           <h3 class="recruit-job-card-title">${escapeHtml(job.title || '求人情報')}</h3>
           ${job.location ? `<p class="recruit-job-card-location">${escapeHtml(job.location)}</p>` : ''}
           <div class="recruit-job-card-highlights">

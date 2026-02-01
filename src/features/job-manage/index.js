@@ -8,7 +8,8 @@ import {
   checkSession,
   isAdmin,
   hasAccessToCompany,
-  initFirebase
+  initFirebase,
+  handleLogout
 } from './auth.js';
 
 // 状態管理
@@ -20,7 +21,10 @@ import {
   jobFilters,
   resetJobFilters,
   applicantsInitialized,
-  setApplicantsInitialized
+  setApplicantsInitialized,
+  isSectionSwitching,
+  startSectionSwitch,
+  endSectionSwitch
 } from './state.js';
 
 // 求人管理
@@ -62,9 +66,54 @@ import { initRecruitSettings } from './recruit-settings.js';
 import { applyCompanyUserRestrictions } from './settings.js';
 
 /**
+ * 管理者用サイドバーを設定
+ */
+function setupAdminSidebar() {
+  const companySidebar = document.getElementById('company-sidebar');
+  const adminSidebar = document.getElementById('admin-sidebar');
+
+  if (companySidebar) companySidebar.style.display = 'none';
+  if (adminSidebar) adminSidebar.style.display = '';
+
+  // ログアウトボタンのイベント設定
+  const logoutBtn = document.getElementById('btn-logout-admin');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      handleLogout();
+      window.location.href = 'admin.html';
+    });
+  }
+
+  // 管理者サイドバー内のセクションリンクのイベント設定
+  adminSidebar?.querySelectorAll('.sidebar-nav a[data-section]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const section = link.dataset.section;
+      // ローカルセクション（jobs, analytics, reports, applicants, recruit-settings）
+      if (['jobs', 'analytics', 'reports', 'applicants', 'recruit-settings'].includes(section)) {
+        e.preventDefault();
+        switchSection(section);
+        // アクティブ状態を更新
+        adminSidebar.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+        link.closest('li')?.classList.add('active');
+      }
+      // admin.htmlへのリンクはそのまま遷移
+    });
+  });
+}
+
+/**
  * セクション切り替え
  */
 function switchSection(sectionId) {
+  // 連打防止: 切り替え中なら無視
+  if (isSectionSwitching()) {
+    console.log('[JobManage] セクション切り替え中のため無視:', sectionId);
+    return;
+  }
+
+  // 切り替え開始
+  startSectionSwitch();
+
   document.querySelectorAll('.admin-section').forEach(section => {
     section.classList.remove('active');
   });
@@ -114,8 +163,19 @@ function switchSection(sectionId) {
   } else if (sectionId === 'settings') {
     if (pageTitle) pageTitle.textContent = 'アカウント設定';
     if (headerActions) headerActions.style.display = 'none';
+  } else if (sectionId === 'job-edit') {
+    if (pageTitle) pageTitle.textContent = '求人編集';
+    if (headerActions) headerActions.style.display = 'none';
   }
+
+  // 切り替え完了（次フレームで解除）
+  requestAnimationFrame(() => {
+    endSectionSwitch();
+  });
 }
+
+// グローバルにエクスポート（job-edit切り替え用）
+window.switchToJobsSection = () => switchSection('jobs');
 
 /**
  * イベントリスナーの設定
@@ -123,19 +183,15 @@ function switchSection(sectionId) {
 function setupEventListeners() {
   document.getElementById('btn-add-job')?.addEventListener('click', showJobModal);
   document.getElementById('btn-refresh')?.addEventListener('click', loadJobsData);
-  document.getElementById('job-modal-close')?.addEventListener('click', closeJobModal);
-  document.getElementById('job-modal-cancel')?.addEventListener('click', closeJobModal);
-  document.getElementById('job-modal-delete')?.addEventListener('click', deleteJob);
 
-  document.getElementById('job-edit-form')?.addEventListener('submit', (e) => {
+  // セクション形式の求人編集イベント
+  document.getElementById('job-edit-back-btn')?.addEventListener('click', closeJobModal);
+  document.getElementById('job-edit-cancel-btn')?.addEventListener('click', closeJobModal);
+  document.getElementById('job-edit-delete-btn')?.addEventListener('click', deleteJob);
+
+  document.getElementById('job-edit-form-section')?.addEventListener('submit', (e) => {
     e.preventDefault();
     saveJobData();
-  });
-
-  document.getElementById('job-modal')?.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal-overlay')) {
-      closeJobModal();
-    }
   });
 
   // フィードダウンロードボタン
@@ -247,7 +303,9 @@ export async function initJobManager() {
     return;
   }
 
-  if (!isAdmin()) {
+  if (isAdmin()) {
+    setupAdminSidebar();
+  } else {
     applyCompanyUserRestrictions();
   }
 
