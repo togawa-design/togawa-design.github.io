@@ -1,8 +1,10 @@
 /**
- * 会社編集機能モジュール
+ * Company-Edit Embedded
+ * admin.html内でcompany-edit機能を動作させるためのアダプターモジュール
  */
-import { escapeHtml } from '@shared/utils.js';
-import { uploadCompanyLogo, uploadCompanyImage, compressContentImage } from '@features/admin/image-uploader.js';
+
+import { escapeHtml, showToast } from '@shared/utils.js';
+import { uploadCompanyLogo, uploadCompanyImage } from './image-uploader.js';
 
 // 設定
 const config = {
@@ -11,17 +13,75 @@ const config = {
 
 // 状態
 let isNewMode = true;
-let companyDomain = null;
+let editingCompanyDomain = null;
 let originalData = null;
+let eventListenersSetup = false;
+
+/**
+ * company-edit埋め込みセクションを初期化
+ */
+export async function initCompanyEditEmbedded(domain) {
+  editingCompanyDomain = domain;
+  isNewMode = !domain;
+  originalData = null;
+
+  // フォームをリセット
+  resetForm();
+
+  // モードに応じたUI更新
+  updateUIForMode();
+
+  // イベントリスナー設定（初回のみ）
+  if (!eventListenersSetup) {
+    setupEventListeners();
+    initRichEditors();
+    eventListenersSetup = true;
+  }
+
+  // 編集モードの場合はデータを読み込み
+  if (!isNewMode) {
+    await loadCompanyData();
+  }
+}
+
+/**
+ * フォームをリセット
+ */
+function resetForm() {
+  const form = document.getElementById('ce-company-edit-form');
+  if (form) form.reset();
+
+  // リッチエディタをクリア
+  ['ce-description-editor', 'ce-job-content-editor', 'ce-working-hours-editor', 'ce-work-location-editor'].forEach(id => {
+    const editor = document.getElementById(id);
+    if (editor) editor.innerHTML = '';
+  });
+
+  // hidden inputsをクリア
+  ['ce-description', 'ce-job-content', 'ce-working-hours', 'ce-work-location', 'ce-logo-url'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.value = '';
+  });
+
+  // ロゴプレビューをリセット
+  updateLogoPreview('');
+
+  // ドメイン入力フィールドを編集可能に
+  const domainInput = document.getElementById('ce-company-domain');
+  if (domainInput) {
+    domainInput.readOnly = false;
+    domainInput.classList.remove('readonly');
+  }
+}
 
 /**
  * モードに応じたUI更新
  */
 function updateUIForMode() {
-  const pageTitle = document.getElementById('page-title');
-  const editModeBadge = document.getElementById('edit-mode-badge');
-  const deleteBtn = document.getElementById('btn-delete');
-  const domainInput = document.getElementById('company-domain');
+  const pageTitle = document.getElementById('ce-page-title');
+  const editModeBadge = document.getElementById('ce-edit-badge');
+  const deleteBtn = document.getElementById('ce-delete-btn');
+  const domainInput = document.getElementById('ce-company-domain');
 
   if (isNewMode) {
     if (pageTitle) pageTitle.textContent = '新規会社登録';
@@ -62,14 +122,12 @@ function sanitizeHtml(html) {
     if (!allowedTags.includes(el.tagName.toLowerCase())) {
       el.replaceWith(...el.childNodes);
     } else {
-      // 許可された属性以外を削除
       const attrs = Array.from(el.attributes);
       attrs.forEach(attr => {
         if (!allowedAttributes.includes(attr.name)) {
           el.removeAttribute(attr.name);
         }
       });
-      // img要素の場合、スタイル属性を追加（最大幅設定）
       if (el.tagName.toLowerCase() === 'img' && !el.style.maxWidth) {
         el.style.maxWidth = '100%';
       }
@@ -109,20 +167,25 @@ function setEditorContent(editorId, html) {
  * リッチエディタの初期化
  */
 function initRichEditors() {
-  const editors = document.querySelectorAll('.rich-editor');
+  const section = document.getElementById('section-company-edit');
+  if (!section) return;
+
+  const editors = section.querySelectorAll('.rich-editor');
 
   editors.forEach(editor => {
     const container = editor.closest('.rich-editor-container');
     const toolbar = container.querySelector('.rich-editor-toolbar');
     const hiddenInput = container.querySelector('input[type="hidden"]');
 
-    toolbar?.querySelectorAll('.toolbar-btn').forEach(btn => {
+    toolbar?.querySelectorAll('.toolbar-btn:not([id])').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const command = btn.dataset.command;
-        document.execCommand(command, false, null);
-        editor.focus();
-        updateHiddenInput(editor, hiddenInput);
+        if (command) {
+          document.execCommand(command, false, null);
+          editor.focus();
+          updateHiddenInput(editor, hiddenInput);
+        }
       });
     });
 
@@ -167,30 +230,30 @@ function populateForm(data) {
     if (el) el.value = val || '';
   };
 
-  setVal('company-name', data.company);
-  setVal('company-domain', data.companyDomain || data.company_domain);
-  setVal('design-pattern', data.designPattern || 'standard');
-  setVal('order', data.order);
-  setVal('company-address', data.companyAddress || data.location);
+  setVal('ce-company-name', data.company);
+  setVal('ce-company-domain', data.companyDomain || data.company_domain);
+  setVal('ce-design-pattern', data.designPattern || 'standard');
+  setVal('ce-order', data.order);
+  setVal('ce-company-address', data.companyAddress || data.location);
 
   // ロゴURL設定
   const logoUrl = data.logoUrl || data.imageUrl || '';
-  setVal('logo-url', logoUrl);
+  setVal('ce-logo-url', logoUrl);
   updateLogoPreview(logoUrl);
 
-  const showCompanyEl = document.getElementById('show-company');
+  const showCompanyEl = document.getElementById('ce-show-company');
   if (showCompanyEl) {
     showCompanyEl.checked =
       data.showCompany === '○' || data.showCompany === true || data.showCompany === 'true' || data.visible === true;
   }
 
-  setEditorContent('description-editor', data.description || '');
-  setEditorContent('job-content-editor', data.jobDescription || data.jobContent || '');
-  setEditorContent('working-hours-editor', data.workingHours || '');
-  setEditorContent('work-location-editor', data.workLocation || '');
+  setEditorContent('ce-description-editor', data.description || '');
+  setEditorContent('ce-job-content-editor', data.jobDescription || data.jobContent || '');
+  setEditorContent('ce-working-hours-editor', data.workingHours || '');
+  setEditorContent('ce-work-location-editor', data.workLocation || '');
 
   if (data.company) {
-    const pageTitle = document.getElementById('page-title');
+    const pageTitle = document.getElementById('ce-page-title');
     if (pageTitle) pageTitle.textContent = `${data.company} の編集`;
   }
 }
@@ -199,8 +262,8 @@ function populateForm(data) {
  * ロゴプレビューを更新
  */
 function updateLogoPreview(url) {
-  const preview = document.getElementById('logo-preview');
-  const removeBtn = document.getElementById('logo-remove-btn');
+  const preview = document.getElementById('ce-logo-preview');
+  const removeBtn = document.getElementById('ce-logo-remove-btn');
 
   if (!preview) return;
 
@@ -222,10 +285,10 @@ async function loadCompanyData() {
   if (sessionData) {
     try {
       const company = JSON.parse(sessionData);
-      if (company.companyDomain === companyDomain || company.company_domain === companyDomain) {
+      if (company.companyDomain === editingCompanyDomain || company.company_domain === editingCompanyDomain) {
         originalData = company;
         populateForm(company);
-        sessionStorage.removeItem('editing_company_data'); // 使用後は削除
+        sessionStorage.removeItem('editing_company_data');
         return;
       }
     } catch (e) {
@@ -235,7 +298,7 @@ async function loadCompanyData() {
   }
 
   // 2. localStorageから取得（更新データがある場合）
-  const localData = localStorage.getItem(`company_data_${companyDomain}`);
+  const localData = localStorage.getItem(`company_data_${editingCompanyDomain}`);
   if (localData) {
     try {
       const company = JSON.parse(localData);
@@ -247,23 +310,22 @@ async function loadCompanyData() {
     }
   }
 
-  // 3. APIから取得（個別会社取得API使用）
+  // 3. APIから取得
   const gasApiUrl = config.gasApiUrl;
   if (!gasApiUrl) {
-    alert('会社データが見つかりません');
-    window.location.href = 'admin.html';
+    showToast('会社データが見つかりません', 'error');
+    navigateBack();
     return;
   }
 
   try {
-    // getCompany APIで単一会社を直接取得（高速）
-    const url = `${gasApiUrl}?action=getCompany&domain=${encodeURIComponent(companyDomain)}`;
+    const url = `${gasApiUrl}?action=getCompany&domain=${encodeURIComponent(editingCompanyDomain)}`;
     const response = await fetch(url);
     const result = await response.json();
 
     if (!result.success || !result.company) {
-      alert('会社データが見つかりません');
-      window.location.href = 'admin.html';
+      showToast('会社データが見つかりません', 'error');
+      navigateBack();
       return;
     }
 
@@ -272,7 +334,7 @@ async function loadCompanyData() {
 
   } catch (error) {
     console.error('会社データ読み込みエラー:', error);
-    alert('データの読み込みに失敗しました: ' + error.message);
+    showToast('データの読み込みに失敗しました: ' + error.message, 'error');
   }
 }
 
@@ -280,7 +342,10 @@ async function loadCompanyData() {
  * リッチエディタの内容を同期
  */
 function syncRichEditors() {
-  const editors = document.querySelectorAll('.rich-editor');
+  const section = document.getElementById('section-company-edit');
+  if (!section) return;
+
+  const editors = section.querySelectorAll('.rich-editor');
   editors.forEach(editor => {
     const container = editor.closest('.rich-editor-container');
     const hiddenInput = container?.querySelector('input[type="hidden"]');
@@ -298,35 +363,35 @@ async function saveCompany() {
 
   const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
 
-  const logoUrl = getVal('logo-url');
+  const logoUrl = getVal('ce-logo-url');
 
   const companyData = {
-    company: getVal('company-name'),
-    companyDomain: getVal('company-domain'),
-    designPattern: document.getElementById('design-pattern')?.value || 'standard',
+    company: getVal('ce-company-name'),
+    companyDomain: getVal('ce-company-domain'),
+    designPattern: document.getElementById('ce-design-pattern')?.value || 'standard',
     logoUrl: logoUrl,
-    imageUrl: logoUrl, // 後方互換性のため
-    order: getVal('order'),
-    companyAddress: getVal('company-address'),
-    description: document.getElementById('description')?.value || '',
-    jobDescription: document.getElementById('job-content')?.value || '',
-    workingHours: document.getElementById('working-hours')?.value || '',
-    workLocation: document.getElementById('work-location')?.value || '',
-    showCompany: document.getElementById('show-company')?.checked ? '○' : '',
-    visible: document.getElementById('show-company')?.checked || false
+    imageUrl: logoUrl,
+    order: getVal('ce-order'),
+    companyAddress: getVal('ce-company-address'),
+    description: document.getElementById('ce-description')?.value || '',
+    jobDescription: document.getElementById('ce-job-content')?.value || '',
+    workingHours: document.getElementById('ce-working-hours')?.value || '',
+    workLocation: document.getElementById('ce-work-location')?.value || '',
+    showCompany: document.getElementById('ce-show-company')?.checked ? '○' : '',
+    visible: document.getElementById('ce-show-company')?.checked || false
   };
 
   if (!companyData.company || !companyData.companyDomain) {
-    alert('会社名と会社ドメインは必須です');
+    showToast('会社名と会社ドメインは必須です', 'error');
     return;
   }
 
   if (!/^[a-z0-9-]+$/.test(companyData.companyDomain)) {
-    alert('会社ドメインは半角英小文字・数字・ハイフンのみ使用できます');
+    showToast('会社ドメインは半角英小文字・数字・ハイフンのみ使用できます', 'error');
     return;
   }
 
-  const saveBtn = document.getElementById('btn-save');
+  const saveBtn = document.getElementById('ce-save-btn');
   if (saveBtn) {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="loading-spinner-small"></span> 保存中...';
@@ -352,12 +417,12 @@ async function saveCompany() {
 
     localStorage.setItem(`company_data_${companyData.companyDomain}`, JSON.stringify(companyData));
 
-    alert(isNewMode ? '会社を登録しました' : '会社情報を更新しました');
-    window.location.href = 'admin.html';
+    showToast(isNewMode ? '会社を登録しました' : '会社情報を更新しました');
+    navigateBack();
 
   } catch (error) {
     console.error('保存エラー:', error);
-    alert('保存中にエラーが発生しました: ' + error.message);
+    showToast('保存中にエラーが発生しました: ' + error.message, 'error');
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
@@ -370,9 +435,9 @@ async function saveCompany() {
  * 削除確認モーダルを表示
  */
 function showDeleteConfirm() {
-  const modal = document.getElementById('delete-confirm-modal');
-  const companyName = document.getElementById('company-name')?.value || '';
-  const deleteCompanyNameEl = document.getElementById('delete-company-name');
+  const modal = document.getElementById('ce-delete-confirm-modal');
+  const companyName = document.getElementById('ce-company-name')?.value || '';
+  const deleteCompanyNameEl = document.getElementById('ce-delete-company-name');
   if (deleteCompanyNameEl) deleteCompanyNameEl.textContent = companyName;
   if (modal) modal.style.display = 'flex';
 }
@@ -381,7 +446,7 @@ function showDeleteConfirm() {
  * 削除確認モーダルを非表示
  */
 function hideDeleteConfirm() {
-  const modal = document.getElementById('delete-confirm-modal');
+  const modal = document.getElementById('ce-delete-confirm-modal');
   if (modal) modal.style.display = 'none';
 }
 
@@ -390,7 +455,7 @@ function hideDeleteConfirm() {
  */
 async function deleteCompany() {
   const gasApiUrl = config.gasApiUrl;
-  const deleteBtn = document.getElementById('delete-confirm');
+  const deleteBtn = document.getElementById('ce-delete-confirm');
 
   if (deleteBtn) {
     deleteBtn.disabled = true;
@@ -401,7 +466,7 @@ async function deleteCompany() {
     if (gasApiUrl) {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
         action: 'deleteCompany',
-        domain: companyDomain
+        domain: editingCompanyDomain
       }))));
 
       const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
@@ -413,14 +478,15 @@ async function deleteCompany() {
       }
     }
 
-    localStorage.removeItem(`company_data_${companyDomain}`);
+    localStorage.removeItem(`company_data_${editingCompanyDomain}`);
 
-    alert('会社を削除しました');
-    window.location.href = 'admin.html';
+    showToast('会社を削除しました');
+    hideDeleteConfirm();
+    navigateBack();
 
   } catch (error) {
     console.error('削除エラー:', error);
-    alert('削除中にエラーが発生しました: ' + error.message);
+    showToast('削除中にエラーが発生しました: ' + error.message, 'error');
   } finally {
     if (deleteBtn) {
       deleteBtn.disabled = false;
@@ -430,29 +496,49 @@ async function deleteCompany() {
 }
 
 /**
+ * 戻る処理
+ */
+function navigateBack() {
+  if (window.AdminDashboard?.navigateBack) {
+    window.AdminDashboard.navigateBack();
+  } else {
+    // フォールバック
+    window.AdminDashboard?.switchSection?.('company-manage');
+  }
+}
+
+/**
  * イベントリスナーの設定
  */
 function setupEventListeners() {
-  document.getElementById('company-edit-form')?.addEventListener('submit', (e) => {
+  // フォーム送信
+  document.getElementById('ce-company-edit-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
     saveCompany();
   });
 
-  document.getElementById('btn-delete')?.addEventListener('click', () => {
-    showDeleteConfirm();
-  });
+  // 戻るボタン
+  document.getElementById('ce-back-btn')?.addEventListener('click', navigateBack);
 
-  document.getElementById('delete-modal-close')?.addEventListener('click', hideDeleteConfirm);
-  document.getElementById('delete-cancel')?.addEventListener('click', hideDeleteConfirm);
-  document.getElementById('delete-confirm')?.addEventListener('click', deleteCompany);
+  // キャンセルボタン
+  document.getElementById('ce-cancel-btn')?.addEventListener('click', navigateBack);
 
-  document.getElementById('delete-confirm-modal')?.addEventListener('click', (e) => {
+  // 削除ボタン
+  document.getElementById('ce-delete-btn')?.addEventListener('click', showDeleteConfirm);
+
+  // 削除モーダル
+  document.getElementById('ce-delete-modal-close')?.addEventListener('click', hideDeleteConfirm);
+  document.getElementById('ce-delete-cancel')?.addEventListener('click', hideDeleteConfirm);
+  document.getElementById('ce-delete-confirm')?.addEventListener('click', deleteCompany);
+
+  document.getElementById('ce-delete-confirm-modal')?.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
       hideDeleteConfirm();
     }
   });
 
-  document.getElementById('company-domain')?.addEventListener('input', (e) => {
+  // ドメイン入力の正規化
+  document.getElementById('ce-company-domain')?.addEventListener('input', (e) => {
     if (isNewMode) {
       e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     }
@@ -462,40 +548,37 @@ function setupEventListeners() {
   setupLogoUpload();
 
   // エディタ内画像挿入
-  setupEditorImageInsert('description-insert-image', 'description-image-input', 'description-editor');
-  setupEditorImageInsert('job-content-insert-image', 'job-content-image-input', 'job-content-editor');
+  setupEditorImageInsert('ce-description-insert-image', 'ce-description-image-input', 'ce-description-editor');
+  setupEditorImageInsert('ce-job-content-insert-image', 'ce-job-content-image-input', 'ce-job-content-editor');
 }
 
 /**
  * ロゴアップロードの設定
  */
 function setupLogoUpload() {
-  const uploadBtn = document.getElementById('logo-upload-btn');
-  const fileInput = document.getElementById('logo-file-input');
-  const removeBtn = document.getElementById('logo-remove-btn');
-  const preview = document.getElementById('logo-preview');
-  const logoUrlInput = document.getElementById('logo-url');
+  const uploadBtn = document.getElementById('ce-logo-upload-btn');
+  const fileInput = document.getElementById('ce-logo-file-input');
+  const removeBtn = document.getElementById('ce-logo-remove-btn');
+  const preview = document.getElementById('ce-logo-preview');
+  const logoUrlInput = document.getElementById('ce-logo-url');
 
   if (!uploadBtn || !fileInput) return;
 
-  // アップロードボタンクリック
   uploadBtn.addEventListener('click', () => {
     fileInput.click();
   });
 
-  // プレビュークリック
   preview?.addEventListener('click', () => {
     fileInput.click();
   });
 
-  // ファイル選択時
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const domain = document.getElementById('company-domain')?.value?.trim();
+    const domain = document.getElementById('ce-company-domain')?.value?.trim();
     if (!domain) {
-      alert('先に会社ドメインを入力してください');
+      showToast('先に会社ドメインを入力してください', 'error');
       return;
     }
 
@@ -510,7 +593,7 @@ function setupLogoUpload() {
 
     } catch (error) {
       console.error('ロゴアップロードエラー:', error);
-      alert('ロゴのアップロードに失敗しました: ' + error.message);
+      showToast('ロゴのアップロードに失敗しました: ' + error.message, 'error');
       updateLogoPreview(logoUrlInput.value);
     } finally {
       preview.classList.remove('uploading');
@@ -518,7 +601,6 @@ function setupLogoUpload() {
     }
   });
 
-  // 削除ボタン
   removeBtn?.addEventListener('click', () => {
     logoUrlInput.value = '';
     updateLogoPreview('');
@@ -542,9 +624,9 @@ function setupLogoUpload() {
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     if (files.length === 0) return;
 
-    const domain = document.getElementById('company-domain')?.value?.trim();
+    const domain = document.getElementById('ce-company-domain')?.value?.trim();
     if (!domain) {
-      alert('先に会社ドメインを入力してください');
+      showToast('先に会社ドメインを入力してください', 'error');
       return;
     }
 
@@ -559,7 +641,7 @@ function setupLogoUpload() {
 
     } catch (error) {
       console.error('ロゴアップロードエラー:', error);
-      alert('ロゴのアップロードに失敗しました: ' + error.message);
+      showToast('ロゴのアップロードに失敗しました: ' + error.message, 'error');
       updateLogoPreview(logoUrlInput.value);
     } finally {
       preview.classList.remove('uploading');
@@ -585,14 +667,13 @@ function setupEditorImageInsert(buttonId, inputId, editorId) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const domain = document.getElementById('company-domain')?.value?.trim();
+    const domain = document.getElementById('ce-company-domain')?.value?.trim();
     if (!domain) {
-      alert('先に会社ドメインを入力してください');
+      showToast('先に会社ドメインを入力してください', 'error');
       return;
     }
 
     try {
-      // プレースホルダー画像を挿入
       const placeholderId = `img-placeholder-${Date.now()}`;
       const placeholder = document.createElement('img');
       placeholder.id = placeholderId;
@@ -615,10 +696,8 @@ function setupEditorImageInsert(buttonId, inputId, editorId) {
         editor.appendChild(placeholder);
       }
 
-      // アップロード
       const url = await uploadCompanyImage(file, domain);
 
-      // プレースホルダーを実際の画像に置き換え
       const placeholderEl = document.getElementById(placeholderId);
       if (placeholderEl) {
         placeholderEl.src = url;
@@ -628,7 +707,6 @@ function setupEditorImageInsert(buttonId, inputId, editorId) {
         placeholderEl.removeAttribute('id');
       }
 
-      // hidden inputを更新
       const container = editor.closest('.rich-editor-container');
       const hiddenInput = container?.querySelector('input[type="hidden"]');
       if (hiddenInput) {
@@ -637,9 +715,8 @@ function setupEditorImageInsert(buttonId, inputId, editorId) {
 
     } catch (error) {
       console.error('画像アップロードエラー:', error);
-      alert('画像のアップロードに失敗しました: ' + error.message);
+      showToast('画像のアップロードに失敗しました: ' + error.message, 'error');
 
-      // プレースホルダーを削除
       const placeholderEl = editor.querySelector('img.uploading');
       if (placeholderEl) {
         placeholderEl.remove();
@@ -650,34 +727,6 @@ function setupEditorImageInsert(buttonId, inputId, editorId) {
   });
 }
 
-/**
- * 初期化
- */
-export async function initCompanyEditor() {
-  const params = new URLSearchParams(window.location.search);
-  companyDomain = params.get('domain');
-  isNewMode = !companyDomain;
-
-  updateUIForMode();
-  setupEventListeners();
-  initRichEditors();
-
-  if (!isNewMode) {
-    await loadCompanyData();
-  }
-}
-
-// グローバルにエクスポート（後方互換）
-if (typeof window !== 'undefined') {
-  window.CompanyEditor = {
-    init: initCompanyEditor,
-    saveCompany,
-    deleteCompany,
-    showDeleteConfirm,
-    hideDeleteConfirm
-  };
-}
-
 export default {
-  initCompanyEditor
+  initCompanyEditEmbedded
 };

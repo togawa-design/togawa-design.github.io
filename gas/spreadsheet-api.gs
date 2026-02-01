@@ -40,6 +40,9 @@ function doGet(e) {
         case "getCompanies":
           result = getCompanies();
           break;
+        case "getCompany":
+          result = getCompany(e.parameter.domain);
+          break;
         case "getLPSettings":
           result = getLPSettings(e.parameter.domain);
           break;
@@ -428,6 +431,44 @@ function getCompanies() {
   return { success: true, companies };
 }
 
+/**
+ * 特定の会社情報を取得（高速版）
+ */
+function getCompany(domain) {
+  if (!domain) {
+    return { success: false, error: "domainが指定されていません" };
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(COMPANY_SHEET_NAME);
+  if (!sheet) return { success: false, error: "シートが見つかりません" };
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  // company_domain列のインデックスを取得
+  const domainColIndex = headers.findIndex(h =>
+    h === "company_domain" || h === "companyDomain" || h === "会社ドメイン"
+  );
+
+  if (domainColIndex < 0) {
+    return { success: false, error: "ドメイン列が見つかりません" };
+  }
+
+  // 該当する会社を検索
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][domainColIndex] === domain) {
+      const company = {};
+      headers.forEach((h, idx) => {
+        company[normalizeHeader(h)] = data[i][idx] || "";
+      });
+      return { success: true, company };
+    }
+  }
+
+  return { success: false, error: "会社が見つかりません" };
+}
+
 // --- 会社情報削除 ---
 
 function deleteCompany(domain) {
@@ -551,6 +592,10 @@ function saveLPSettings(settingsData) {
         "ogpImage",
         "showVideoButton",
         "videoUrl",
+        "customPrimary",
+        "customAccent",
+        "customBg",
+        "customText",
       ]);
       sheet.getRange(1, 1, 1, sheet.getLastColumn()).setFontWeight("bold");
       sheet.getRange(1, 1, 1, sheet.getLastColumn()).setBackground("#f3f3f3");
@@ -583,6 +628,10 @@ function saveLPSettings(settingsData) {
       "ogpImage",
       "showVideoButton",
       "videoUrl",
+      "customPrimary",
+      "customAccent",
+      "customBg",
+      "customText",
     ];
 
     for (const col of requiredCols) {
@@ -985,6 +1034,10 @@ function updateRecruitSettings(settingsData) {
         "companyDomain",
         "layoutStyle",
         "designPattern",
+        "customPrimary",
+        "customAccent",
+        "customBg",
+        "customText",
         "logoUrl",
         "companyNameDisplay",
         "phoneNumber",
@@ -1012,6 +1065,10 @@ function updateRecruitSettings(settingsData) {
       "companyDomain",
       "layoutStyle",
       "designPattern",
+      "customPrimary",
+      "customAccent",
+      "customBg",
+      "customText",
       "logoUrl",
       "companyNameDisplay",
       "phoneNumber",

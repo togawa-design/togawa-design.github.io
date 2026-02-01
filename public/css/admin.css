@@ -2138,7 +2138,8 @@
   resize: vertical;
 }
 
-.recruit-settings-form .form-hint {
+.recruit-settings-form .form-hint,
+.recruit-settings-form .form-description {
   margin-top: 6px;
   font-size: 13px;
   color: #6b7280;
@@ -2167,6 +2168,408 @@
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+}
+
+/* ========================================
+   採用ページ設定 2カラムレイアウト + プレビュー
+======================================== */
+.recruit-editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: start;
+}
+
+.recruit-editor-form {
+  min-width: 0;
+}
+
+.recruit-editor-preview {
+  position: sticky;
+  top: 24px;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.preview-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.preview-panel-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.preview-device-label {
+  font-size: 11px;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.preview-panel-device {
+  display: flex;
+  justify-content: center;
+}
+
+.preview-phone-frame {
+  width: 280px;
+  height: 560px;
+  background: #1f2937;
+  border-radius: 32px;
+  padding: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.preview-phone-notch {
+  width: 80px;
+  height: 24px;
+  background: #1f2937;
+  border-radius: 0 0 12px 12px;
+  margin: 0 auto 4px;
+  position: relative;
+  z-index: 10;
+}
+
+.preview-phone-content {
+  width: 100%;
+  height: calc(100% - 28px);
+  background: var(--preview-bg, #fff);
+  border-radius: 24px;
+  overflow: hidden;
+  overflow-y: auto;
+  /* デフォルトのCSS変数 */
+  --preview-primary: #6366f1;
+  --preview-accent: #8b5cf6;
+  --preview-bg: #ffffff;
+  --preview-text: #1f2937;
+}
+
+/* プレビュー内のスタイル */
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 44px;
+}
+
+.preview-logo {
+  max-height: 24px;
+  max-width: 80px;
+  object-fit: contain;
+}
+
+.preview-company-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--preview-text, #1f2937);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-hero {
+  height: 160px;
+  background: linear-gradient(135deg, var(--preview-primary, #6366f1) 0%, var(--preview-accent, #8b5cf6) 100%);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.preview-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 100%);
+}
+
+.preview-hero-content {
+  position: relative;
+  padding: 16px;
+  color: #fff;
+  z-index: 1;
+}
+
+.preview-hero-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.preview-hero-subtitle {
+  margin: 0;
+  font-size: 10px;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.preview-content {
+  padding: 16px;
+}
+
+.preview-section {
+  margin-bottom: 16px;
+}
+
+.preview-section h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--preview-text, #374151);
+}
+
+.preview-intro-text {
+  margin: 0;
+  font-size: 10px;
+  color: var(--preview-text, #6b7280);
+  opacity: 0.8;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.preview-job-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-job-card {
+  height: 48px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.preview-cta {
+  background: linear-gradient(135deg, var(--preview-primary, #6366f1) 0%, var(--preview-accent, #8b5cf6) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.preview-cta h3 {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.preview-cta-btn {
+  background: var(--preview-bg, #fff);
+  color: var(--preview-primary, #6366f1);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: default;
+}
+
+.preview-note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* カラーテーマのプレビュー反映 */
+.preview-phone-content[data-theme="blue"] .preview-hero,
+.preview-phone-content[data-theme="blue"] .preview-cta {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.preview-phone-content[data-theme="green"] .preview-hero,
+.preview-phone-content[data-theme="green"] .preview-cta {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.preview-phone-content[data-theme="orange"] .preview-hero,
+.preview-phone-content[data-theme="orange"] .preview-cta {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.preview-phone-content[data-theme="red"] .preview-hero,
+.preview-phone-content[data-theme="red"] .preview-cta {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.preview-phone-content[data-theme="black"] .preview-hero,
+.preview-phone-content[data-theme="black"] .preview-cta {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+
+.preview-phone-content[data-theme="yellow"] .preview-hero,
+.preview-phone-content[data-theme="yellow"] .preview-cta {
+  background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+}
+
+.preview-phone-content[data-theme="yellow"] .preview-cta-btn {
+  color: #ca8a04;
+}
+
+/* レイアウトスタイル別プレビュー */
+.preview-phone-content[data-layout-style="yellow"] .preview-header {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.preview-phone-content[data-layout-style="yellow"] .preview-hero-overlay {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.6) 0%, rgba(245, 158, 11, 0.7) 100%);
+}
+
+.preview-phone-content[data-layout-style="yellow"] .preview-cta {
+  background: #fffbeb;
+}
+
+.preview-phone-content[data-layout-style="impact"] .preview-header {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.preview-phone-content[data-layout-style="impact"] .preview-hero-overlay {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.6) 0%, rgba(0, 0, 0, 0.75) 100%);
+}
+
+.preview-phone-content[data-layout-style="impact"] .preview-hero-title {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.preview-phone-content[data-layout-style="impact"] .preview-cta {
+  background: #1f2937;
+  color: #fff;
+}
+
+.preview-phone-content[data-layout-style="impact"] .preview-cta h3 {
+  color: #fff;
+}
+
+.preview-phone-content[data-layout-style="trust"] .preview-section h3 {
+  border-bottom: 2px solid var(--preview-primary, #2563eb);
+  padding-bottom: 4px;
+}
+
+.preview-phone-content[data-layout-style="bold"] .preview-hero-title {
+  font-size: 16px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.preview-phone-content[data-layout-style="elegant"] .preview-section h3 {
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+.preview-phone-content[data-layout-style="elegant"] .preview-content {
+  background: #fafaf9;
+}
+
+.preview-phone-content[data-layout-style="playful"] .preview-hero {
+  border-radius: 0 0 24px 24px;
+  overflow: hidden;
+}
+
+.preview-phone-content[data-layout-style="playful"] .preview-job-card {
+  border-radius: 16px;
+}
+
+.preview-phone-content[data-layout-style="corporate"] .preview-header {
+  background: #f1f5f9;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.preview-phone-content[data-layout-style="athome"] .preview-content {
+  background: #fef7ee;
+}
+
+.preview-phone-content[data-layout-style="athome"] .preview-section h3 {
+  color: #c2410c;
+}
+
+.preview-phone-content[data-layout-style="local"] .preview-hero-overlay {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.5) 0%, rgba(146, 64, 14, 0.65) 100%);
+}
+
+.preview-phone-content[data-layout-style="local"] .preview-content {
+  background: #f5f5f4;
+}
+
+.preview-phone-content[data-layout-style="magazine"] .preview-hero-title {
+  font-family: serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .recruit-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .recruit-editor-preview {
+    position: static;
+    max-width: 400px;
+    margin: 0 auto 24px;
+  }
+
+  .preview-phone-frame {
+    width: 240px;
+    height: 480px;
+  }
+}
+
+/* 設定画面 - ローディングオーバーレイ（採用ページ設定・LP設定共通） */
+.recruit-loading-overlay,
+.lp-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 8px;
+}
+
+.recruit-loading-overlay .loading-spinner,
+.lp-loading-overlay .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-radius: 50%;
+  border-top-color: #6366f1;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+.recruit-loading-overlay p,
+.lp-loading-overlay p {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
 }
 
 .lp-preview-link {
@@ -2365,6 +2768,104 @@
 .pattern-preview.colorful {
   background: linear-gradient(135deg, #ec4899, #8b5cf6, #06b6d4);
   color: #fff;
+}
+
+/* カスタムカラーセクション */
+.custom-color-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.custom-color-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.custom-color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.color-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.color-picker-item > label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0;
+}
+
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.color-input-wrapper input[type="color"] {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+.color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input-wrapper input[type="color"]::-webkit-color-swatch {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.color-input-wrapper input[type="text"] {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-family: monospace;
+  color: #475569;
+  padding: 4px;
+  min-width: 0;
+}
+
+.color-input-wrapper input[type="text"]:focus {
+  outline: none;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-top: 8px;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .custom-color-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ポイント入力 */
@@ -2701,7 +3202,8 @@
   cursor: not-allowed;
 }
 
-.modal-body .form-hint {
+.modal-body .form-hint,
+.modal-body .form-description {
   font-size: 12px;
   color: #6b7280;
   margin-top: 4px;
@@ -2789,12 +3291,148 @@
 }
 
 /* ========================================
+   LP設定 2カラムレイアウト
+======================================== */
+.lp-editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+.lp-editor-form {
+  min-width: 0;
+}
+
+.lp-preview-panel {
+  position: sticky;
+  top: 20px;
+  height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-preview-panel .lp-preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+}
+
+.lp-preview-panel .lp-preview-frame-wrapper {
+  flex: 1;
+  min-height: 0;
+}
+
+.lp-preview-panel .lp-preview-frame {
+  height: 100%;
+}
+
+/* LP設定 カスタムカラーセクション */
+.custom-color-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.custom-color-section .subsection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.color-pickers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.color-picker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.color-picker-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.color-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-input-row input[type="color"] {
+  width: 40px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.color-input-row input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-input-row input[type="color"]::-webkit-color-swatch {
+  border-radius: 3px;
+  border: none;
+}
+
+.color-input-row input[type="text"] {
+  flex: 1;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'SFMono-Regular', Menlo, Monaco, monospace;
+  font-size: 13px;
+  color: #374151;
+  background: #fff;
+}
+
+.color-input-row input[type="text"]:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+#lp-reset-colors {
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .color-pickers-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .lp-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-preview-panel {
+    position: static;
+    height: auto;
+    max-height: 600px;
+  }
+}
+
+/* ========================================
    LPプレビュー
 ======================================== */
 .lp-preview-container {
   display: flex;
   flex-direction: column;
-  margin-top: 24px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -3075,7 +3713,8 @@
 }
 
 /* フォームヒント改善 */
-.form-section .form-hint {
+.form-section .form-hint,
+.form-section .form-description {
   color: #64748b;
   font-size: 13px;
   margin-bottom: 12px;
@@ -3306,11 +3945,21 @@
   font-size: 14px;
   font-weight: 500;
   color: #374151;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .edit-form .required {
   color: #ef4444;
+}
+
+/* フォーム説明（ラベルの下、入力の上に表示） */
+.form-description {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+  padding-left: 1px;
+  line-height: 1.5;
 }
 
 .edit-form input[type="text"],
@@ -3617,7 +4266,8 @@
   margin-bottom: 4px;
 }
 
-.feed-info .form-hint {
+.feed-info .form-hint,
+.feed-info .form-description {
   margin: 0;
   font-size: 12px;
 }
@@ -3832,6 +4482,28 @@
 
 .btn-small.btn-danger:hover {
   background: #fee2e2;
+}
+
+.btn-small.btn-primary {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.btn-small.btn-primary:hover {
+  background: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.btn-small.btn-secondary {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.btn-small.btn-secondary:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
 }
 
 /* リッチエディタ内の画像 */
@@ -4781,7 +5453,8 @@
   color: #1f2937;
 }
 
-.form-hint.warning {
+.form-hint.warning,
+.form-description.warning {
   color: #dc2626;
   font-weight: 500;
 }
@@ -5147,7 +5820,8 @@
   font-size: 16px;
 }
 
-#custom-sections-panel .form-hint {
+#custom-sections-panel .form-hint,
+#custom-sections-panel .form-description {
   color: #a16207;
   font-size: 13px;
   margin-bottom: 16px;
@@ -6737,7 +7411,8 @@
 }
 
 /* ヒントテキスト */
-.form-hint {
+.form-hint,
+.lp-form-section > .form-description {
   font-size: 13px;
   color: #64748b;
   margin: 0 0 16px 0;
@@ -7614,5 +8289,921 @@ body.lp-settings-active #section-lp-settings {
   .btn-upload-small {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ========================================
+   求人一覧セクション
+======================================== */
+
+#section-job-listings .section-header {
+  margin-bottom: 8px;
+}
+
+#section-job-listings .section-description {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+/* サマリーカード */
+.job-listings-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.summary-card:nth-child(2) .summary-icon {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.summary-card:nth-child(3) .summary-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.summary-card:nth-child(4) .summary-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ツールバー */
+.job-listings-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+}
+
+.job-listings-filters {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.job-listings-filters .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.job-listings-filters .filter-group.filter-search {
+  flex: 1;
+  min-width: 250px;
+}
+
+.job-listings-filters .filter-group label,
+.job-listings-sort label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.job-listings-filters .filter-group label svg,
+.job-listings-sort label svg {
+  opacity: 0.7;
+}
+
+.job-listings-filters .filter-group select,
+.job-listings-filters .filter-group input,
+.job-listings-sort select {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #f8fafc;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.job-listings-filters .filter-group select:hover,
+.job-listings-filters .filter-group input:hover,
+.job-listings-sort select:hover {
+  background: #fff;
+  border-color: #cbd5e1;
+}
+
+.job-listings-filters .filter-group select:focus,
+.job-listings-filters .filter-group input:focus,
+.job-listings-sort select:focus {
+  outline: none;
+  background: #fff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.job-listings-sort {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 求人カウント */
+.job-listings-count {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #64748b;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.job-listings-count span {
+  font-weight: 700;
+  color: #6366f1;
+  font-size: 16px;
+}
+
+/* ローディング */
+.job-listings-container .loading-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.job-listings-container .loading-placeholder .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.job-listings-container .loading-placeholder p {
+  margin: 0;
+  color: #64748b;
+}
+
+/* 求人一覧コンテナ */
+.job-listings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 会社グループ */
+.job-listings-company-group {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.job-listings-company-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.company-logo-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.company-logo-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.company-logo-small .logo-fallback {
+  font-size: 20px;
+}
+
+.company-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.company-info .company-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.company-info .company-job-count {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.btn-view-company {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-view-company:hover {
+  background: #6366f1;
+  color: #fff;
+}
+
+/* 求人カード一覧 */
+.job-listings-cards {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 求人カード */
+.job-listing-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.job-listing-card:last-child {
+  border-bottom: none;
+}
+
+.job-listing-card:hover {
+  background: #f8fafc;
+}
+
+.job-card-image {
+  width: 80px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.job-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.job-card-image.no-image {
+  background: #e2e8f0;
+}
+
+.job-card-image .no-image-icon {
+  font-size: 24px;
+  opacity: 0.5;
+}
+
+.job-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.job-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.job-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-card-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.job-card-status.status-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.job-card-status.status-draft {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.job-card-status.status-expired {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.job-card-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.job-meta-item {
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.job-meta-item .meta-icon {
+  font-size: 12px;
+}
+
+.job-card-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.job-card-stats .stat-item {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.job-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-job-action {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-job-action:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.btn-job-action.btn-edit-job:hover {
+  background: #6366f1;
+  color: #fff;
+}
+
+.btn-job-action.btn-preview-job:hover {
+  background: #10b981;
+  color: #fff;
+}
+
+/* エラー・空状態 */
+.job-listings-container .no-data,
+.job-listings-container .error-message {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fff;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.job-listings-container .error-message {
+  color: #dc2626;
+}
+
+/* レスポンシブ */
+@media (max-width: 1024px) {
+  .job-listings-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .job-listings-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    padding: 16px;
+  }
+
+  .summary-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .summary-value {
+    font-size: 24px;
+  }
+
+  .job-listings-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .job-listings-filters {
+    flex-direction: column;
+  }
+
+  .job-listings-filters .filter-group {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .job-listings-filters .filter-group.filter-search {
+    min-width: auto;
+  }
+
+  .job-listings-sort {
+    width: 100%;
+  }
+
+  .job-listings-sort select {
+    width: 100%;
+  }
+
+  .job-listing-card {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .job-card-image {
+    width: 60px;
+    height: 45px;
+  }
+
+  .job-card-content {
+    width: calc(100% - 80px);
+  }
+
+  .job-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+  }
+}
+
+/* ===================================
+   Job-Manage Embedded Section
+   =================================== */
+
+/* ヘッダー */
+.job-manage-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.job-manage-header .btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.job-manage-header .btn-back:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.job-manage-company-info {
+  flex: 1;
+}
+
+.job-manage-company-info h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.job-manage-company-info .company-domain {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.job-manage-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* タブナビゲーション */
+.job-manage-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.jm-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.jm-tab:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.jm-tab.active {
+  background: var(--primary-color, #6366f1);
+  color: white;
+}
+
+.jm-tab .tab-icon {
+  font-size: 14px;
+}
+
+/* コンテンツエリア */
+.job-manage-content {
+  padding: 0;
+}
+
+.jm-subsection {
+  display: none;
+  padding: 24px;
+}
+
+.jm-subsection.active {
+  display: block;
+}
+
+/* 応募者管理サブセクション */
+#jm-applicants .applicants-content {
+  display: flex;
+  gap: 20px;
+  min-height: 500px;
+}
+
+#jm-applicants .applicants-list-panel {
+  flex: 0 0 55%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#jm-applicants .applicants-detail-panel {
+  flex: 1;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .job-manage-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .job-manage-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .job-manage-tabs {
+    padding: 8px 16px;
+  }
+
+  .jm-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .jm-subsection {
+    padding: 16px;
+  }
+
+  #jm-applicants .applicants-content {
+    flex-direction: column;
+  }
+
+  #jm-applicants .applicants-list-panel {
+    flex: none;
+  }
+}
+
+/* =====================================
+   Company-Edit Embedded - 戻るボタン強調
+   ===================================== */
+#section-company-edit .btn-back-prominent,
+.jm-header .btn-back-prominent {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  border: 2px solid #3b82f6 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+#section-company-edit .btn-back-prominent:hover,
+.jm-header .btn-back-prominent:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+#section-company-edit .btn-back-prominent svg,
+.jm-header .btn-back-prominent svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.btn-back-text {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  #section-company-edit .btn-back-prominent,
+  .jm-header .btn-back-prominent {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+
+  .btn-back-text {
+    display: none;
+  }
+
+  #section-company-edit .btn-back-prominent::after,
+  .jm-header .btn-back-prominent::after {
+    content: "戻る";
+  }
+}
+
+/* ========================================
+   求人編集セクション（job-manage.html用）
+======================================== */
+#section-job-edit {
+  padding: 0;
+}
+
+.job-edit-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.job-edit-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-edit-info h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.edit-mode-badge {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.edit-mode-badge.edit {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.edit-form-section {
+  padding: 24px;
+  max-width: 900px;
+}
+
+.form-section-card {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.form-section-title {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.form-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-top: 8px;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 12px;
+}
+
+/* 戻るボタン */
+#section-job-edit .btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+#section-job-edit .btn-back:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+#section-job-edit .btn-back svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .job-edit-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .edit-form-section {
+    padding: 16px;
+  }
+
+  .form-section-card {
+    padding: 16px;
+  }
+
+  .form-row-2,
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions-bar {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-actions-bar .btn-danger {
+    width: 100%;
+    order: 2;
+  }
+
+  .form-actions-right {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .form-actions-right button {
+    width: 100%;
   }
 }

@@ -15,6 +15,16 @@ import {
 } from './lp-section-manager.js';
 import { LAYOUT_STYLES } from '@features/lp/LPEditor.js';
 
+// レイアウトスタイルごとのデフォルトカラー
+const layoutStyleColors = {
+  default: { primary: '#6366f1', accent: '#818cf8', bg: '#ffffff', text: '#1f2937' },
+  modern: { primary: '#3b82f6', accent: '#60a5fa', bg: '#f8fafc', text: '#1e293b' },
+  yellow: { primary: '#f59e0b', accent: '#fbbf24', bg: '#fffbeb', text: '#78350f' },
+  impact: { primary: '#111827', accent: '#374151', bg: '#f9fafb', text: '#111827' },
+  local: { primary: '#92400e', accent: '#b45309', bg: '#fef3c7', text: '#78350f' },
+  zen: { primary: '#059669', accent: '#10b981', bg: '#f0fdf4', text: '#1f2937' }
+};
+
 let previewUpdateTimer = null;
 const MAX_POINTS = 6;
 let sectionManagerInitialized = false;
@@ -336,6 +346,40 @@ export async function loadCompanyListForLP() {
   return loadJobListForLP();
 }
 
+/**
+ * フォームの読み込み中状態を設定
+ */
+function setFormLoadingState(isLoading) {
+  const editorEl = document.getElementById('lp-editor');
+  if (!editorEl) return;
+
+  // フォーム要素を取得
+  const inputs = editorEl.querySelectorAll('input, select, textarea, button');
+  inputs.forEach(el => {
+    el.disabled = isLoading;
+  });
+
+  // 保存・リセットボタン
+  const saveBtn = document.getElementById('btn-save-lp-settings');
+  const resetBtn = document.getElementById('btn-reset-lp-settings');
+  if (saveBtn) saveBtn.disabled = isLoading;
+  if (resetBtn) resetBtn.disabled = isLoading;
+
+  // ローディング表示
+  const loadingOverlay = editorEl.querySelector('.lp-loading-overlay');
+  if (isLoading) {
+    if (!loadingOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'lp-loading-overlay';
+      overlay.innerHTML = '<div class="loading-spinner"></div><p>読み込み中...</p>';
+      editorEl.style.position = 'relative';
+      editorEl.appendChild(overlay);
+    }
+  } else {
+    loadingOverlay?.remove();
+  }
+}
+
 // LP設定を読み込み（求人ID単位）
 export async function loadLPSettings(jobId) {
   const editor = document.getElementById('lp-editor');
@@ -356,6 +400,9 @@ export async function loadLPSettings(jobId) {
   }
 
   if (editor) editor.style.display = 'block';
+
+  // 読み込み中状態を設定
+  setFormLoadingState(true);
 
   // LP URLは既にcompanyDomain_jobId形式のcurrentJobData.idを使用
   const lpJobId = currentJobData.id;
@@ -468,6 +515,14 @@ export async function loadLPSettings(jobId) {
         }
         setInputValue('lp-video-url', settings.videoUrl);
 
+        // カスタムカラー設定を反映
+        setLPCustomColors({
+          primary: settings.customPrimary || '',
+          accent: settings.customAccent || '',
+          bg: settings.customBg || '',
+          text: settings.customText || ''
+        });
+
         updateHeroImagePresetSelection(settings.heroImage || '');
 
         // セクションマネージャーを初期化してデータを読み込み
@@ -475,19 +530,189 @@ export async function loadLPSettings(jobId) {
         loadSectionsFromSettings(settings);
         renderSectionsList();
 
+        // リアルタイムプレビューをセットアップ
+        setupLPLivePreview();
+
         return;
       }
     }
   } catch (e) {
     console.log('LP設定シートが見つかりません');
+  } finally {
+    // 読み込み完了
+    setFormLoadingState(false);
   }
 
   clearLPForm();
+  // リアルタイムプレビューをセットアップ（新規作成時も）
+  setupLPLivePreview();
 }
 
 function setInputValue(id, value) {
   const el = document.getElementById(id);
   if (el) el.value = value || '';
+}
+
+/**
+ * LPカスタムカラーを設定
+ */
+function setLPCustomColors(colors) {
+  const colorIds = ['primary', 'accent', 'bg', 'text'];
+  colorIds.forEach(id => {
+    const colorInput = document.getElementById(`lp-custom-${id}`);
+    const textInput = document.getElementById(`lp-custom-${id}-text`);
+    const value = colors[id] || '';
+    if (colorInput) {
+      colorInput.value = value || (id === 'bg' ? '#ffffff' : id === 'text' ? '#1f2937' : '#000000');
+    }
+    if (textInput) {
+      textInput.value = value;
+    }
+  });
+}
+
+/**
+ * LPカスタムカラーをリセット
+ */
+function resetLPCustomColors() {
+  // 現在選択されているレイアウトスタイルのデフォルトカラーを適用
+  const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
+  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
+  const defaults = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+
+  const colorIds = ['primary', 'accent', 'bg', 'text'];
+  colorIds.forEach(id => {
+    const colorInput = document.getElementById(`lp-custom-${id}`);
+    const textInput = document.getElementById(`lp-custom-${id}-text`);
+    if (colorInput) colorInput.value = defaults[id] || '#000000';
+    if (textInput) textInput.value = '';  // 空にしてデフォルトを使用
+  });
+}
+
+/**
+ * LPカラーピッカーのイベントリスナーをセットアップ
+ */
+function setupLPColorPickers() {
+  const colorIds = ['primary', 'accent', 'bg', 'text'];
+
+  colorIds.forEach(id => {
+    const colorInput = document.getElementById(`lp-custom-${id}`);
+    const textInput = document.getElementById(`lp-custom-${id}-text`);
+
+    if (colorInput && textInput) {
+      // カラーピッカー → テキスト入力
+      colorInput.addEventListener('input', () => {
+        textInput.value = colorInput.value;
+        debouncedUpdatePreview();
+      });
+
+      // テキスト入力 → カラーピッカー
+      textInput.addEventListener('input', () => {
+        const val = textInput.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+          colorInput.value = val;
+        }
+        debouncedUpdatePreview();
+      });
+    }
+  });
+
+  // リセットボタン
+  const resetBtn = document.getElementById('lp-reset-colors');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      resetLPCustomColors();
+      debouncedUpdatePreview();
+    });
+  }
+}
+
+/**
+ * 現在のカスタムカラーを取得
+ */
+function getLPCustomColors() {
+  const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
+  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
+  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+
+  return {
+    primary: document.getElementById('lp-custom-primary-text')?.value || baseColors.primary,
+    accent: document.getElementById('lp-custom-accent-text')?.value || baseColors.accent,
+    bg: document.getElementById('lp-custom-bg-text')?.value || baseColors.bg,
+    text: document.getElementById('lp-custom-text-text')?.value || baseColors.text
+  };
+}
+
+// リアルタイムプレビュー初期化フラグ
+let lpLivePreviewInitialized = false;
+
+/**
+ * リアルタイムプレビューのセットアップ
+ */
+function setupLPLivePreview() {
+  // 既に初期化済みの場合はスキップ（重複登録防止）
+  if (lpLivePreviewInitialized) {
+    // 既存のセットアップ済みなら、プレビューを更新するだけ
+    updateLPPreview();
+    return;
+  }
+
+  const previewContainer = document.getElementById('lp-preview-container');
+  if (!previewContainer) return;
+
+  // 監視するフォームフィールドのIDリスト
+  const fieldIds = [
+    'lp-hero-title',
+    'lp-hero-subtitle',
+    'lp-hero-image',
+    'lp-cta-text',
+    'lp-faq',
+    'lp-tiktok-pixel',
+    'lp-google-ads-id',
+    'lp-google-ads-label',
+    'lp-meta-pixel',
+    'lp-line-tag',
+    'lp-clarity',
+    'lp-ogp-title',
+    'lp-ogp-description',
+    'lp-ogp-image',
+    'lp-video-url'
+  ];
+
+  // 各フィールドにinputイベントリスナーを追加
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => debouncedUpdatePreview());
+    }
+  });
+
+  // デザインパターンのradioボタンにchangeイベントリスナーを追加
+  document.querySelectorAll('input[name="design-pattern"]').forEach(radio => {
+    radio.addEventListener('change', () => debouncedUpdatePreview());
+  });
+
+  // 動画ボタン表示チェックボックス
+  const showVideoCheckbox = document.getElementById('lp-show-video-button');
+  if (showVideoCheckbox) {
+    showVideoCheckbox.addEventListener('change', () => debouncedUpdatePreview());
+  }
+
+  // レイアウトスタイルオプション（クリック時）
+  document.querySelectorAll('.lp-admin-layout-option').forEach(option => {
+    option.addEventListener('click', () => {
+      // 少し遅延させて選択状態が更新されてからプレビュー更新
+      setTimeout(() => debouncedUpdatePreview(), 50);
+    });
+  });
+
+  // カラーピッカーをセットアップ
+  setupLPColorPickers();
+
+  lpLivePreviewInitialized = true;
+
+  // 初期プレビューを更新
+  updateLPPreview();
 }
 
 // セクションマネージャーを初期化（一度だけ）
@@ -868,7 +1093,12 @@ function parseLPSettingsCSV(csvText, jobId) {
         showVideoButton: rowData.showVideoButton || rowData['動画ボタン表示'] || '',
         videoUrl: rowData.videoUrl || rowData['動画URL'] || '',
         // 新形式v2 LP構成データ
-        lpContent: rowData.lpContent || rowData['LP構成'] || ''
+        lpContent: rowData.lpContent || rowData['LP構成'] || '',
+        // カスタムカラー設定
+        customPrimary: rowData.customPrimary || rowData['カスタムカラー（メイン）'] || '',
+        customAccent: rowData.customAccent || rowData['カスタムカラー（アクセント）'] || '',
+        customBg: rowData.customBg || rowData['カスタムカラー（背景）'] || '',
+        customText: rowData.customText || rowData['カスタムカラー（テキスト）'] || ''
       };
 
       // ポイント1〜6を動的に読み込み
@@ -909,6 +1139,9 @@ export function clearLPForm() {
 
   const standardRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (standardRadio) standardRadio.checked = true;
+
+  // カスタムカラーをリセット
+  resetLPCustomColors();
 
   updateHeroImagePresetSelection('');
 
@@ -1030,6 +1263,13 @@ export async function saveLPSettings() {
   settings.ogpTitle = document.getElementById('lp-ogp-title')?.value || '';
   settings.ogpDescription = document.getElementById('lp-ogp-description')?.value || '';
   settings.ogpImage = document.getElementById('lp-ogp-image')?.value || '';
+
+  // カスタムカラー設定
+  const customColors = getLPCustomColors();
+  settings.customPrimary = document.getElementById('lp-custom-primary-text')?.value || '';
+  settings.customAccent = document.getElementById('lp-custom-accent-text')?.value || '';
+  settings.customBg = document.getElementById('lp-custom-bg-text')?.value || '';
+  settings.customText = document.getElementById('lp-custom-text-text')?.value || '';
 
   // 新形式v2のLP構成データ（セクションマネージャーから取得）
   const lpContent = getCurrentLPContent();
@@ -1189,30 +1429,15 @@ export function debouncedUpdatePreview() {
   }, 300);
 }
 
-// プレビュー表示/非表示切り替え
+// プレビュー表示/非表示切り替え（後方互換用 - 常時表示になったため基本使用しない）
 export function toggleLPPreview() {
-  const container = document.getElementById('lp-preview-container');
-  const btn = document.getElementById('btn-toggle-preview');
-
-  if (!container) return;
-
-  if (container.style.display === 'none') {
-    container.style.display = 'flex';
-    if (btn) btn.textContent = 'プレビューを隠す';
-    updateLPPreview();
-  } else {
-    container.style.display = 'none';
-    if (btn) btn.textContent = 'プレビュー表示';
-  }
+  // プレビューは常時表示のため、単にプレビューを更新
+  updateLPPreview();
 }
 
-// プレビューを閉じる
+// プレビューを閉じる（後方互換用 - 常時表示になったため基本使用しない）
 export function closeLPPreview() {
-  const container = document.getElementById('lp-preview-container');
-  const btn = document.getElementById('btn-toggle-preview');
-
-  if (container) container.style.display = 'none';
-  if (btn) btn.textContent = 'プレビュー表示';
+  // プレビューは常時表示のため何もしない
 }
 
 // LPプレビューを更新
@@ -1220,7 +1445,7 @@ export function updateLPPreview() {
   const iframe = document.getElementById('lp-preview-frame');
   const container = document.getElementById('lp-preview-container');
 
-  if (!iframe || !container || container.style.display === 'none') return;
+  if (!iframe || !container) return;
 
   const companyDomain = selectedCompanyDomain;
   if (!companyDomain) return;
@@ -1249,6 +1474,9 @@ function getCurrentLPSettings() {
   const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
   const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
 
+  // カスタムカラーを取得
+  const customColors = getLPCustomColors();
+
   const settings = {
     designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'standard',
     layoutStyle: layoutStyle,
@@ -1258,7 +1486,12 @@ function getCurrentLPSettings() {
     ctaText: document.getElementById('lp-cta-text')?.value || '今すぐ応募する',
     faq: document.getElementById('lp-faq')?.value || '',
     sectionOrder: getSectionOrder().join(','),
-    sectionVisibility: JSON.stringify(getSectionVisibility())
+    sectionVisibility: JSON.stringify(getSectionVisibility()),
+    // カスタムカラー
+    customPrimary: customColors.primary,
+    customAccent: customColors.accent,
+    customBg: customColors.bg,
+    customText: customColors.text
   };
 
   // ポイントデータを設定に追加
@@ -1273,6 +1506,16 @@ function getCurrentLPSettings() {
 // プレビューHTML生成
 function generatePreviewHtml(company, lpSettings) {
   const patternClass = `lp-pattern-${lpSettings.designPattern || 'standard'}`;
+  const layoutStyle = lpSettings.layoutStyle || 'default';
+
+  // カスタムカラーを取得
+  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+  const customColors = {
+    primary: lpSettings.customPrimary || baseColors.primary,
+    accent: lpSettings.customAccent || baseColors.accent,
+    bg: lpSettings.customBg || baseColors.bg,
+    text: lpSettings.customText || baseColors.text
+  };
 
   // セクション表示設定を解析
   let sectionVisibility = { points: true, jobs: true, details: true, faq: true };
@@ -1313,6 +1556,14 @@ function generatePreviewHtml(company, lpSettings) {
     }
   }).join('');
 
+  // CSS変数としてカスタムカラーを設定
+  const colorVars = `
+    --lp-primary: ${customColors.primary};
+    --lp-accent: ${customColors.accent};
+    --lp-bg: ${customColors.bg};
+    --lp-text: ${customColors.text};
+  `;
+
   return `
 <!DOCTYPE html>
 <html lang="ja">
@@ -1324,7 +1575,7 @@ function generatePreviewHtml(company, lpSettings) {
     ${getPreviewStyles()}
   </style>
 </head>
-<body class="lp-body ${patternClass}">
+<body class="lp-body ${patternClass}" style="${colorVars}" data-layout="${layoutStyle}">
   <div id="lp-content">
     ${sectionsHtml}
   </div>
@@ -1477,7 +1728,7 @@ function renderPreviewApply(company, lpSettings) {
 function getPreviewStyles() {
   return `
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Noto Sans JP', sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: 'Noto Sans JP', sans-serif; line-height: 1.6; color: var(--lp-text, #333); background-color: var(--lp-bg, #fff); }
 
     .lp-hero { position: relative; min-height: 400px; display: flex; align-items: center; justify-content: center; }
     .lp-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
@@ -1487,55 +1738,55 @@ function getPreviewStyles() {
     .lp-hero-title { font-size: 28px; font-weight: 900; margin-bottom: 15px; }
     .lp-hero-subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 20px; }
     .lp-hero-cta { margin-top: 20px; }
-    .lp-btn-apply-hero { display: inline-block; padding: 15px 40px; background: #ff6b35; color: #fff; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 16px; }
+    .lp-btn-apply-hero { display: inline-block; padding: 15px 40px; background: var(--lp-accent, #ff6b35); color: #fff; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 16px; }
 
     .lp-section-inner { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-    .lp-section-title { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 30px; }
+    .lp-section-title { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 30px; color: var(--lp-text, #333); }
 
-    .lp-points { background: #f8f9fa; }
+    .lp-points { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
     .lp-points-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-    .lp-point-card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .lp-point-number { width: 36px; height: 36px; background: #667eea; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 15px; }
-    .lp-point-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-    .lp-point-desc { font-size: 14px; color: #666; }
+    .lp-point-card { background: var(--lp-bg, #fff); padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .lp-point-number { width: 36px; height: 36px; background: var(--lp-primary, #667eea); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 15px; }
+    .lp-point-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--lp-text, #333); }
+    .lp-point-desc { font-size: 14px; color: color-mix(in srgb, var(--lp-text, #666) 70%, transparent); }
 
-    .lp-jobs, .lp-details { background: #fff; }
-    .lp-jobs-placeholder, .lp-details-placeholder { text-align: center; padding: 40px; background: #f8f9fa; border-radius: 8px; color: #888; }
+    .lp-jobs, .lp-details { background: var(--lp-bg, #fff); }
+    .lp-jobs-placeholder, .lp-details-placeholder { text-align: center; padding: 40px; background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); border-radius: 8px; color: color-mix(in srgb, var(--lp-text, #888) 60%, transparent); }
 
-    .lp-faq { background: #f8f9fa; }
+    .lp-faq { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
     .lp-faq-list { display: flex; flex-direction: column; gap: 15px; }
-    .lp-faq-item { background: #fff; border-radius: 8px; padding: 20px; }
-    .lp-faq-question { display: flex; gap: 12px; font-weight: 600; margin-bottom: 10px; }
-    .lp-faq-answer { display: flex; gap: 12px; color: #666; }
+    .lp-faq-item { background: var(--lp-bg, #fff); border-radius: 8px; padding: 20px; }
+    .lp-faq-question { display: flex; gap: 12px; font-weight: 600; margin-bottom: 10px; color: var(--lp-text, #333); }
+    .lp-faq-answer { display: flex; gap: 12px; color: color-mix(in srgb, var(--lp-text, #666) 70%, transparent); }
     .lp-faq-q, .lp-faq-a { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-    .lp-faq-q { background: #667eea; color: #fff; }
-    .lp-faq-a { background: #e9ecef; color: #333; }
+    .lp-faq-q { background: var(--lp-primary, #667eea); color: #fff; }
+    .lp-faq-a { background: color-mix(in srgb, var(--lp-primary, #e9ecef) 20%, var(--lp-bg, #fff) 80%); color: var(--lp-text, #333); }
 
-    .lp-apply { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; text-align: center; }
+    .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #667eea) 0%, var(--lp-accent, #764ba2) 100%); color: #fff; text-align: center; }
     .lp-apply .lp-section-title { color: #fff; }
     .lp-apply-text { margin-bottom: 25px; opacity: 0.9; }
-    .lp-btn-apply-main { padding: 18px 50px; background: #ff6b35; color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: 700; cursor: pointer; }
+    .lp-btn-apply-main { padding: 18px 50px; background: var(--lp-accent, #ff6b35); color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: 700; cursor: pointer; }
 
-    /* デザインパターン */
-    .lp-pattern-modern .lp-point-number { background: #10b981; }
-    .lp-pattern-modern .lp-btn-apply-hero, .lp-pattern-modern .lp-btn-apply-main { background: #10b981; }
-    .lp-pattern-modern .lp-apply { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    .lp-pattern-modern .lp-faq-q { background: #10b981; }
+    /* デザインパターン（フォールバック用、カスタムカラーが優先） */
+    .lp-pattern-modern .lp-point-number { background: var(--lp-primary, #10b981); }
+    .lp-pattern-modern .lp-btn-apply-hero, .lp-pattern-modern .lp-btn-apply-main { background: var(--lp-accent, #10b981); }
+    .lp-pattern-modern .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #10b981) 0%, var(--lp-accent, #059669) 100%); }
+    .lp-pattern-modern .lp-faq-q { background: var(--lp-primary, #10b981); }
 
-    .lp-pattern-classic .lp-point-number { background: #92400e; }
-    .lp-pattern-classic .lp-btn-apply-hero, .lp-pattern-classic .lp-btn-apply-main { background: #b45309; }
-    .lp-pattern-classic .lp-apply { background: linear-gradient(135deg, #92400e 0%, #78350f 100%); }
-    .lp-pattern-classic .lp-faq-q { background: #92400e; }
+    .lp-pattern-classic .lp-point-number { background: var(--lp-primary, #92400e); }
+    .lp-pattern-classic .lp-btn-apply-hero, .lp-pattern-classic .lp-btn-apply-main { background: var(--lp-accent, #b45309); }
+    .lp-pattern-classic .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #92400e) 0%, var(--lp-accent, #78350f) 100%); }
+    .lp-pattern-classic .lp-faq-q { background: var(--lp-primary, #92400e); }
 
-    .lp-pattern-minimal .lp-point-number { background: #374151; }
-    .lp-pattern-minimal .lp-btn-apply-hero, .lp-pattern-minimal .lp-btn-apply-main { background: #111827; }
-    .lp-pattern-minimal .lp-apply { background: #111827; }
-    .lp-pattern-minimal .lp-faq-q { background: #374151; }
+    .lp-pattern-minimal .lp-point-number { background: var(--lp-primary, #374151); }
+    .lp-pattern-minimal .lp-btn-apply-hero, .lp-pattern-minimal .lp-btn-apply-main { background: var(--lp-accent, #111827); }
+    .lp-pattern-minimal .lp-apply { background: var(--lp-primary, #111827); }
+    .lp-pattern-minimal .lp-faq-q { background: var(--lp-primary, #374151); }
 
-    .lp-pattern-colorful .lp-point-number { background: #ec4899; }
-    .lp-pattern-colorful .lp-btn-apply-hero, .lp-pattern-colorful .lp-btn-apply-main { background: linear-gradient(90deg, #ec4899, #8b5cf6); }
-    .lp-pattern-colorful .lp-apply { background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); }
-    .lp-pattern-colorful .lp-faq-q { background: #ec4899; }
+    .lp-pattern-colorful .lp-point-number { background: var(--lp-primary, #ec4899); }
+    .lp-pattern-colorful .lp-btn-apply-hero, .lp-pattern-colorful .lp-btn-apply-main { background: linear-gradient(90deg, var(--lp-primary, #ec4899), var(--lp-accent, #8b5cf6)); }
+    .lp-pattern-colorful .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #ec4899) 0%, var(--lp-accent, #8b5cf6) 100%); }
+    .lp-pattern-colorful .lp-faq-q { background: var(--lp-primary, #ec4899); }
   `;
 }
 
@@ -1664,6 +1915,14 @@ function getDragAfterElement(container, y) {
 // セクションマネージャー初期化をエクスポート
 export { initSectionManagerIfNeeded };
 
+// リアルタイムプレビュー初期化フラグをリセット（求人切り替え時に使用）
+export function resetLPLivePreviewState() {
+  lpLivePreviewInitialized = false;
+}
+
+// カラーピッカー関連の関数をエクスポート
+export { setLPCustomColors, resetLPCustomColors, setupLPColorPickers, getLPCustomColors, layoutStyleColors };
+
 export default {
   loadCompanyListForLP,
   loadJobListForLP,
@@ -1687,5 +1946,11 @@ export default {
   getPointsData,
   initPointsSection,
   initVideoButtonSection,
-  initSectionManagerIfNeeded
+  initSectionManagerIfNeeded,
+  resetLPLivePreviewState,
+  setLPCustomColors,
+  resetLPCustomColors,
+  setupLPColorPickers,
+  getLPCustomColors,
+  layoutStyleColors
 };

@@ -11,21 +11,37 @@ import {
   handleReset,
   updatePreviewLink,
   renderHeroImagePresets,
-  setupLogoUpload
+  setupLogoUpload,
+  setupLivePreview,
+  updateLivePreview
 } from '@features/recruit-settings/core.js';
 
 // 現在選択中の会社
 let selectedCompany = null;
 let recruitSettings = {};
+let pendingCompanyDomain = null; // 遷移時に自動選択する会社ドメイン
 
 /**
  * 採用ページ設定を初期化
+ * @param {string} [companyDomain] - 初期選択として自動選択する会社ドメイン
  */
-export async function initRecruitSettings() {
+export async function initRecruitSettings(companyDomain = null) {
+  // 引数で渡された場合のみ設定（事前にsetPendingCompanyで設定されている場合は上書きしない）
+  if (companyDomain) {
+    pendingCompanyDomain = companyDomain;
+  }
   await loadCompanyGrid();
   setupEventListeners();
   // ヒーロー画像プリセットをレンダリング
   renderHeroImagePresets();
+}
+
+/**
+ * 会社ドメインを設定（外部から呼び出し用）
+ * @param {string} companyDomain - 会社ドメイン
+ */
+export function setPendingCompany(companyDomain) {
+  pendingCompanyDomain = companyDomain;
 }
 
 /**
@@ -66,6 +82,15 @@ async function loadCompanyGrid() {
         }
       });
     });
+
+    // 保留中の会社があれば自動選択
+    if (pendingCompanyDomain) {
+      const pendingCompany = visibleCompanies.find(c => c.companyDomain === pendingCompanyDomain);
+      if (pendingCompany) {
+        selectCompany(pendingCompany);
+      }
+      pendingCompanyDomain = null; // 適用後はクリア
+    }
   } catch (error) {
     console.error('[RecruitSettings] 会社一覧の読み込みエラー:', error);
     gridEl.innerHTML = '<p class="error">会社一覧の読み込みに失敗しました</p>';
@@ -89,13 +114,58 @@ async function selectCompany(company) {
   // ロゴアップロード機能を設定
   setupLogoUpload(company.companyDomain);
 
-  // 設定を読み込み
-  recruitSettings = await loadRecruitSettings(company.companyDomain) || {};
+  // 読み込み中状態を設定
+  setFormLoadingState(true);
 
-  if (Object.keys(recruitSettings).length > 0) {
-    populateForm(recruitSettings, company.company);
+  try {
+    // 設定を読み込み
+    recruitSettings = await loadRecruitSettings(company.companyDomain) || {};
+
+    if (Object.keys(recruitSettings).length > 0) {
+      populateForm(recruitSettings, company.company);
+    } else {
+      populateFormWithDefaults(company.company, company.description, company.imageUrl);
+    }
+
+    // リアルタイムプレビューをセットアップ
+    setupLivePreview();
+  } finally {
+    // 読み込み完了
+    setFormLoadingState(false);
+  }
+}
+
+/**
+ * フォームの読み込み中状態を設定
+ */
+function setFormLoadingState(isLoading) {
+  const editorEl = document.getElementById('recruit-editor');
+  if (!editorEl) return;
+
+  // フォーム要素を取得
+  const inputs = editorEl.querySelectorAll('input, select, textarea, button');
+  inputs.forEach(el => {
+    el.disabled = isLoading;
+  });
+
+  // 保存・リセットボタン
+  const saveBtn = document.getElementById('btn-save-recruit-settings');
+  const resetBtn = document.getElementById('btn-reset-recruit-settings');
+  if (saveBtn) saveBtn.disabled = isLoading;
+  if (resetBtn) resetBtn.disabled = isLoading;
+
+  // ローディング表示
+  const loadingOverlay = editorEl.querySelector('.recruit-loading-overlay');
+  if (isLoading) {
+    if (!loadingOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'recruit-loading-overlay';
+      overlay.innerHTML = '<div class="loading-spinner"></div><p>読み込み中...</p>';
+      editorEl.style.position = 'relative';
+      editorEl.appendChild(overlay);
+    }
   } else {
-    populateFormWithDefaults(company.company, company.description, company.imageUrl);
+    loadingOverlay?.remove();
   }
 }
 
@@ -146,11 +216,13 @@ function setupEventListeners() {
       const confirmed = await showConfirm('設定をリセットしますか？', '未保存の変更は失われます。');
       if (confirmed && selectedCompany) {
         handleReset(recruitSettings, selectedCompany.company, selectedCompany.description, selectedCompany.imageUrl);
+        updateLivePreview(); // プレビューも更新
       }
     });
   }
 }
 
 export default {
-  initRecruitSettings
+  initRecruitSettings,
+  setPendingCompany
 };

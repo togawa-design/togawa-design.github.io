@@ -13,7 +13,12 @@ import {
   debouncedUpdatePreview,
   initPointsSection,
   initFAQSection,
-  initVideoButtonSection
+  initVideoButtonSection,
+  setLPCustomColors,
+  resetLPCustomColors,
+  setupLPColorPickers,
+  getLPCustomColors,
+  layoutStyleColors
 } from '@features/admin/lp-settings.js';
 import {
   initSectionManager,
@@ -128,6 +133,7 @@ export function initCompanyLPSettings() {
 
   setupLPFormListeners();
   setupCollapsibleSections();
+  setupLPColorPickers();
 
   setLpSettingsInitialized(true);
 }
@@ -306,6 +312,40 @@ function renderJobCardsForLP(jobs) {
 }
 
 /**
+ * フォームの読み込み中状態を設定
+ */
+function setFormLoadingState(isLoading) {
+  const editorEl = document.getElementById('lp-editor');
+  if (!editorEl) return;
+
+  // フォーム要素を取得
+  const inputs = editorEl.querySelectorAll('input, select, textarea, button');
+  inputs.forEach(el => {
+    el.disabled = isLoading;
+  });
+
+  // 保存・リセットボタン
+  const saveBtn = document.getElementById('btn-save-lp-settings');
+  const resetBtn = document.getElementById('btn-reset-lp-settings');
+  if (saveBtn) saveBtn.disabled = isLoading;
+  if (resetBtn) resetBtn.disabled = isLoading;
+
+  // ローディング表示
+  const loadingOverlay = editorEl.querySelector('.lp-loading-overlay');
+  if (isLoading) {
+    if (!loadingOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'lp-loading-overlay';
+      overlay.innerHTML = '<div class="loading-spinner"></div><p>読み込み中...</p>';
+      editorEl.style.position = 'relative';
+      editorEl.appendChild(overlay);
+    }
+  } else {
+    loadingOverlay?.remove();
+  }
+}
+
+/**
  * 特定の求人のLP設定を読み込み
  */
 async function loadLPSettingsForJob(jobId) {
@@ -317,6 +357,9 @@ async function loadLPSettingsForJob(jobId) {
   if (!jobId) {
     return;
   }
+
+  // 読み込み中状態を設定
+  setFormLoadingState(true);
 
   if (previewBtn) previewBtn.href = `lp.html?j=${encodeURIComponent(jobId)}`;
   if (editModeBtn) editModeBtn.href = `lp.html?j=${encodeURIComponent(jobId)}&edit`;
@@ -389,17 +432,33 @@ async function loadLPSettingsForJob(jobId) {
           if (radio) radio.checked = true;
         }
 
+        // カスタムカラー設定を反映
+        setLPCustomColors({
+          primary: settings.customPrimary || '',
+          accent: settings.customAccent || '',
+          bg: settings.customBg || '',
+          text: settings.customText || ''
+        });
+
         updateHeroImagePresetSelection(settings.heroImage || '');
         loadSectionsFromSettings(settings);
+
+        // リアルタイムプレビューを更新
+        debouncedUpdatePreview();
 
         return;
       }
     }
   } catch (e) {
     console.log('[LP設定] LP設定シートが見つかりません:', e);
+  } finally {
+    // 読み込み完了
+    setFormLoadingState(false);
   }
 
   clearLPFormForJob();
+  // リアルタイムプレビューを更新（新規作成時も）
+  debouncedUpdatePreview();
 }
 
 function setInputValue(id, value) {
@@ -444,7 +503,12 @@ function parseLPSettingsCSVForJob(csvText, jobId) {
         ogpImage: rowData.ogpImage || rowData['OGP画像'] || '',
         showVideoButton: rowData.showVideoButton || rowData['動画ボタン表示'] || '',
         videoUrl: rowData.videoUrl || rowData['動画URL'] || '',
-        lpContent: rowData.lpContent || rowData['LP構成'] || ''
+        lpContent: rowData.lpContent || rowData['LP構成'] || '',
+        // カスタムカラー設定
+        customPrimary: rowData.customPrimary || rowData['カスタムカラー（メイン）'] || '',
+        customAccent: rowData.customAccent || rowData['カスタムカラー（アクセント）'] || '',
+        customBg: rowData.customBg || rowData['カスタムカラー（背景）'] || '',
+        customText: rowData.customText || rowData['カスタムカラー（テキスト）'] || ''
       };
 
       for (let j = 1; j <= 6; j++) {
@@ -518,6 +582,9 @@ function clearLPFormForJob() {
 
   const standardRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (standardRadio) standardRadio.checked = true;
+
+  // カスタムカラーをリセット
+  resetLPCustomColors();
 
   updateHeroImagePresetSelection('');
   loadSectionsFromSettings({});

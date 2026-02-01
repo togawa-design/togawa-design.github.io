@@ -489,13 +489,15 @@ async function loadTabData(tabId) {
   const apiEndpoint = config.apiEndpoint;
 
   switch (tabId) {
-    case 'engagement-tab':
-      await loadEngagementData(days, apiEndpoint);
+    case 'traffic-behavior-tab':
+      // 流入・行動タブ：エンゲージメントと流入元データを両方読み込む
+      await Promise.all([
+        loadEngagementData(days, apiEndpoint),
+        loadTrafficData(days, apiEndpoint)
+      ]);
       break;
-    case 'traffic-tab':
-      await loadTrafficData(days, apiEndpoint);
-      break;
-    case 'funnel-tab':
+    case 'conversion-tab':
+      // 応募・CVRタブ：ファネルデータを読み込む
       await loadFunnelData(days, apiEndpoint);
       break;
     case 'trends-tab':

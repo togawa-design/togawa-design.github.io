@@ -87,14 +87,32 @@ function parseCompanyCSV(csvText) {
   return companies;
 }
 
-// 会社編集ページへ遷移
+// 会社編集ページへ遷移（SPA内遷移）
 export function editCompany(domain) {
-  window.location.href = `company-edit.html?domain=${encodeURIComponent(domain)}`;
+  // キャッシュから会社データを取得してsessionStorageに保存（高速読み込み用）
+  const company = companiesCache?.find(c => c.companyDomain === domain);
+  if (company) {
+    sessionStorage.setItem('editing_company_data', JSON.stringify(company));
+  }
+
+  // SPA内遷移を使用
+  if (window.AdminDashboard?.navigateToCompanyEdit) {
+    window.AdminDashboard.navigateToCompanyEdit(domain, 'company-manage');
+  } else {
+    // フォールバック: ページ遷移
+    window.location.href = `company-edit.html?domain=${encodeURIComponent(domain)}`;
+  }
 }
 
-// 新規会社登録ページへ遷移
+// 新規会社登録ページへ遷移（SPA内遷移）
 export function showCompanyModal() {
-  window.location.href = 'company-edit.html';
+  // SPA内遷移を使用
+  if (window.AdminDashboard?.navigateToCompanyEdit) {
+    window.AdminDashboard.navigateToCompanyEdit(null, 'company-manage');
+  } else {
+    // フォールバック: ページ遷移
+    window.location.href = 'company-edit.html';
+  }
 }
 
 // 会社編集モーダルを閉じる
@@ -236,7 +254,7 @@ export function renderCompanyTable() {
         <div class="action-buttons">
           <button class="btn-small btn-edit" data-action="edit" data-domain="${escapeHtml(company.companyDomain || '')}">編集</button>
           <button class="btn-small btn-primary" data-action="jobs" data-domain="${escapeHtml(company.companyDomain || '')}">求人管理</button>
-          <a href="lp.html?c=${escapeHtml(company.companyDomain || '')}" target="_blank" class="btn-small btn-view">LP確認</a>
+          <button class="btn-small btn-secondary" data-action="recruit" data-domain="${escapeHtml(company.companyDomain || '')}">採用ページ確認</button>
         </div>
       </td>
     </tr>
@@ -253,9 +271,23 @@ export function renderCompanyTable() {
     if (action === 'edit') {
       editCompany(domain);
     } else if (action === 'jobs') {
+      // 埋め込みJob-Manage画面に遷移
       openJobsArea(domain);
+    } else if (action === 'recruit') {
+      // 採用ページ設定に遷移して会社選択済み
+      navigateToRecruitSettings(domain);
     }
   });
+}
+
+// 採用ページ設定に遷移して会社選択
+function navigateToRecruitSettings(companyDomain) {
+  const company = companiesCache?.find(c => c.companyDomain === companyDomain);
+  // カスタムイベントで遷移を通知
+  const event = new CustomEvent('navigateToSection', {
+    detail: { section: 'recruit-settings', companyDomain, company }
+  });
+  document.dispatchEvent(event);
 }
 
 // 求人管理画面を開く
@@ -266,14 +298,23 @@ export function openJobsArea(companyDomain) {
     return;
   }
 
-  const params = new URLSearchParams();
-  params.set('domain', companyDomain);
-  params.set('company', company.company || companyDomain);
-  if (company.manageSheetUrl) {
-    params.set('sheetUrl', company.manageSheetUrl);
+  // 埋め込みナビゲーションを使用（SPA内遷移）
+  if (window.AdminDashboard?.navigateToJobManage) {
+    window.AdminDashboard.navigateToJobManage(
+      companyDomain,
+      company.company || companyDomain,
+      'company-manage'
+    );
+  } else {
+    // フォールバック: ページ遷移
+    const params = new URLSearchParams();
+    params.set('domain', companyDomain);
+    params.set('company', company.company || companyDomain);
+    if (company.manageSheetUrl) {
+      params.set('sheetUrl', company.manageSheetUrl);
+    }
+    window.location.href = `job-manage.html?${params.toString()}`;
   }
-
-  window.location.href = `job-manage.html?${params.toString()}`;
 }
 
 export default {
