@@ -199,12 +199,30 @@ class CompanyRecruitPage {
     const contentEl = document.getElementById('recruit-content');
     if (!contentEl) return;
 
-    contentEl.innerHTML = `
-      ${this.renderHeroSection()}
-      ${this.renderCompanyIntroSection()}
-      ${this.renderJobsSection()}
-      ${this.renderCTASection()}
-    `;
+    // セクション順序と表示設定を取得
+    const sectionOrder = this.getSectionOrder();
+    const sectionVisibility = this.getSectionVisibility();
+
+    // 順序に従ってセクションをレンダリング
+    const sectionsHtml = sectionOrder.map(sectionId => {
+      // 非表示の場合はスキップ（必須セクション以外）
+      if (sectionVisibility[sectionId] === false) return '';
+
+      switch (sectionId) {
+        case 'hero':
+          return this.renderHeroSection();
+        case 'company-intro':
+          return this.renderCompanyIntroSection();
+        case 'jobs':
+          return this.renderJobsSection();
+        case 'cta':
+          return this.renderCTASection();
+        default:
+          return '';
+      }
+    }).join('');
+
+    contentEl.innerHTML = sectionsHtml;
 
     // ヘッダーロゴに会社名を設定
     const logoEl = document.getElementById('header-logo');
@@ -214,6 +232,35 @@ class CompanyRecruitPage {
 
     // 職種タブのイベントリスナーを設定
     this.setupJobTypeTabs();
+
+    // 動画ボタンのイベントリスナーを設定
+    this.setupVideoButton();
+  }
+
+  /**
+   * セクション順序を取得
+   */
+  getSectionOrder() {
+    const rs = this.recruitSettings || {};
+    if (rs.sectionOrder) {
+      return rs.sectionOrder.split(',').map(s => s.trim()).filter(s => s);
+    }
+    return ['hero', 'company-intro', 'jobs', 'cta'];
+  }
+
+  /**
+   * セクション表示状態を取得
+   */
+  getSectionVisibility() {
+    const rs = this.recruitSettings || {};
+    if (rs.sectionVisibility) {
+      try {
+        return JSON.parse(rs.sectionVisibility);
+      } catch (e) {
+        console.error('[RecruitPage] セクション表示設定のパースエラー:', e);
+      }
+    }
+    return { 'company-intro': true };
   }
 
   /**
@@ -228,6 +275,10 @@ class CompanyRecruitPage {
     const heroTitle = rs.heroTitle || `${escapeHtml(company.company)}で働こう`;
     const heroSubtitle = rs.heroSubtitle || (company.description ? this.truncateText(company.description, 100) : '私たちと一緒に働きませんか？');
 
+    // 動画ボタン設定
+    const showVideoButton = String(rs.showVideoButton).toLowerCase() === 'true';
+    const videoUrl = rs.videoUrl || '';
+
     return `
       <section class="recruit-hero" id="recruit-hero">
         <div class="recruit-hero-bg" style="${heroImage ? `background-image: url('${escapeHtml(heroImage)}')` : ''}"></div>
@@ -241,7 +292,15 @@ class CompanyRecruitPage {
               <span class="recruit-stat-label">募集中の求人</span>
             </div>
           </div>
-          <a href="#recruit-jobs" class="recruit-hero-cta">求人を見る</a>
+          <div class="recruit-hero-buttons">
+            <a href="#recruit-jobs" class="recruit-hero-cta">求人を見る</a>
+            ${showVideoButton && videoUrl ? `
+              <button type="button" class="recruit-video-button" data-video-url="${escapeHtml(videoUrl)}">
+                <span class="recruit-video-button-icon">▶</span>
+                <span class="recruit-video-button-text">動画を見る</span>
+              </button>
+            ` : ''}
+          </div>
         </div>
       </section>
     `;
@@ -596,6 +655,109 @@ class CompanyRecruitPage {
     if (loadingEl) {
       loadingEl.style.display = 'none';
     }
+  }
+
+  /**
+   * 動画ボタンのイベントリスナーを設定
+   */
+  setupVideoButton() {
+    const videoButton = document.querySelector('.recruit-video-button');
+    if (!videoButton) return;
+
+    videoButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      const videoUrl = videoButton.dataset.videoUrl;
+      if (videoUrl) {
+        this.showVideoModal(videoUrl);
+      }
+    });
+  }
+
+  /**
+   * 動画モーダルを表示
+   */
+  showVideoModal(videoUrl) {
+    const embedUrl = this.getYouTubeEmbedUrl(videoUrl);
+    if (!embedUrl) {
+      console.error('[RecruitPage] YouTube URLの解析に失敗:', videoUrl);
+      return;
+    }
+
+    // モーダルHTML
+    const modalHtml = `
+      <div class="recruit-video-modal" id="recruit-video-modal">
+        <div class="recruit-video-modal-backdrop"></div>
+        <div class="recruit-video-modal-content">
+          <button type="button" class="recruit-video-modal-close" aria-label="閉じる">&times;</button>
+          <div class="recruit-video-modal-wrapper">
+            <iframe
+              src="${embedUrl}?autoplay=1&rel=0"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // モーダルをbodyに追加
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal = document.getElementById('recruit-video-modal');
+    const closeBtn = modal.querySelector('.recruit-video-modal-close');
+    const backdrop = modal.querySelector('.recruit-video-modal-backdrop');
+
+    // 閉じるボタンクリック
+    closeBtn.addEventListener('click', () => this.closeVideoModal());
+
+    // 背景クリックで閉じる
+    backdrop.addEventListener('click', () => this.closeVideoModal());
+
+    // ESCキーで閉じる
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        this.closeVideoModal();
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    // bodyスクロール無効化
+    document.body.style.overflow = 'hidden';
+  }
+
+  /**
+   * 動画モーダルを閉じる
+   */
+  closeVideoModal() {
+    const modal = document.getElementById('recruit-video-modal');
+    if (modal) {
+      modal.remove();
+    }
+    document.body.style.overflow = '';
+  }
+
+  /**
+   * YouTube URLを埋め込み用URLに変換
+   */
+  getYouTubeEmbedUrl(url) {
+    if (!url) return null;
+
+    // YouTube URLからvideo IDを抽出
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}`;
+      }
+    }
+
+    return null;
   }
 }
 

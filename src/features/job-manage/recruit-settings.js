@@ -13,7 +13,10 @@ import {
   renderHeroImagePresets,
   setupLogoUpload,
   setupLivePreview,
-  updateLivePreview
+  updateLivePreview,
+  initVideoButtonSection,
+  renderRecruitSectionsList,
+  setupRecruitSectionDragDrop
 } from '@features/recruit-settings/core.js';
 
 // 現在の会社ドメイン
@@ -45,6 +48,13 @@ export async function initRecruitSettings(domain) {
 
   // ロゴアップロード機能を設定
   setupLogoUpload(domain);
+
+  // 動画ボタンセクションを初期化
+  initVideoButtonSection();
+
+  // セクション管理リストを初期化
+  renderRecruitSectionsList();
+  setupRecruitSectionDragDrop();
 
   // 読み込み中状態を設定
   setFormLoadingState(true);

@@ -63,6 +63,25 @@ export function populateForm(settings, companyName = '') {
 
   // ロゴプレビューを更新
   updateLogoPreview(settings.logoUrl || '');
+
+  // 動画ボタン設定
+  const showVideoCheckbox = document.getElementById('recruit-show-video-button');
+  const videoUrlGroup = document.getElementById('recruit-video-url-group');
+  if (showVideoCheckbox) {
+    showVideoCheckbox.checked = String(settings.showVideoButton).toLowerCase() === 'true';
+    if (videoUrlGroup) {
+      videoUrlGroup.style.display = showVideoCheckbox.checked ? 'block' : 'none';
+    }
+  }
+  setInputValue('recruit-video-url', settings.videoUrl || '');
+
+  // セクション並び替え設定
+  if (settings.sectionOrder) {
+    applySectionOrder(settings.sectionOrder);
+  }
+  if (settings.sectionVisibility) {
+    applySectionVisibility(settings.sectionVisibility);
+  }
 }
 
 /**
@@ -96,6 +115,16 @@ export function populateFormWithDefaults(companyName = '', companyDescription = 
 
   // ロゴプレビューをクリア
   updateLogoPreview('');
+
+  // 動画ボタン設定をリセット
+  const showVideoCheckbox = document.getElementById('recruit-show-video-button');
+  const videoUrlGroup = document.getElementById('recruit-video-url-group');
+  if (showVideoCheckbox) showVideoCheckbox.checked = false;
+  if (videoUrlGroup) videoUrlGroup.style.display = 'none';
+  setInputValue('recruit-video-url', '');
+
+  // セクション設定をリセット
+  renderRecruitSectionsList();
 }
 
 /**
@@ -125,7 +154,13 @@ export function getFormValues(companyDomain) {
     ctaText: document.getElementById('recruit-cta-text')?.value || '',
     ogpTitle: document.getElementById('recruit-ogp-title')?.value || '',
     ogpDescription: document.getElementById('recruit-ogp-description')?.value || '',
-    ogpImage: document.getElementById('recruit-ogp-image')?.value || ''
+    ogpImage: document.getElementById('recruit-ogp-image')?.value || '',
+    // 動画ボタン設定
+    showVideoButton: document.getElementById('recruit-show-video-button')?.checked ? 'true' : 'false',
+    videoUrl: document.getElementById('recruit-video-url')?.value || '',
+    // セクション並び替え設定
+    sectionOrder: getRecruitSectionOrder().join(','),
+    sectionVisibility: JSON.stringify(getRecruitSectionVisibility())
   };
 }
 
@@ -621,6 +656,192 @@ export function setupLivePreview() {
   updateLivePreview();
 }
 
+// ========================================
+// セクション管理機能
+// ========================================
+
+/**
+ * 採用ページのデフォルトセクション
+ */
+export const RECRUIT_SECTIONS = [
+  { id: 'hero', name: 'ヒーロー', icon: '🎯', required: true },
+  { id: 'company-intro', name: '会社紹介', icon: '🏢', required: false },
+  { id: 'jobs', name: '求人一覧', icon: '📋', required: true },
+  { id: 'cta', name: 'CTA', icon: '📞', required: true }
+];
+
+/**
+ * セクション順序を取得
+ */
+export function getRecruitSectionOrder() {
+  const orderList = document.getElementById('recruit-sections-list');
+  if (!orderList) {
+    return RECRUIT_SECTIONS.map(s => s.id);
+  }
+  return Array.from(orderList.querySelectorAll('.recruit-section-item'))
+    .map(li => li.dataset.section);
+}
+
+/**
+ * セクション表示状態を取得
+ */
+export function getRecruitSectionVisibility() {
+  const visibility = {};
+  RECRUIT_SECTIONS.forEach(section => {
+    if (!section.required) {
+      const checkbox = document.getElementById(`recruit-section-${section.id}-visible`);
+      visibility[section.id] = checkbox?.checked ?? true;
+    }
+  });
+  return visibility;
+}
+
+/**
+ * セクション順序を適用
+ */
+export function applySectionOrder(orderString) {
+  const orderList = document.getElementById('recruit-sections-list');
+  if (!orderList || !orderString) return;
+
+  const order = orderString.split(',').map(s => s.trim()).filter(s => s);
+  const items = Array.from(orderList.querySelectorAll('.recruit-section-item'));
+  const itemMap = {};
+  items.forEach(item => {
+    itemMap[item.dataset.section] = item;
+  });
+
+  order.forEach(sectionId => {
+    const item = itemMap[sectionId];
+    if (item) {
+      orderList.appendChild(item);
+    }
+  });
+}
+
+/**
+ * セクション表示状態を適用
+ */
+export function applySectionVisibility(visibilityString) {
+  if (!visibilityString) return;
+
+  try {
+    const visibility = JSON.parse(visibilityString);
+    Object.keys(visibility).forEach(sectionId => {
+      const checkbox = document.getElementById(`recruit-section-${sectionId}-visible`);
+      if (checkbox) {
+        checkbox.checked = visibility[sectionId];
+      }
+    });
+  } catch (e) {
+    console.error('セクション表示状態のパースエラー:', e);
+  }
+}
+
+/**
+ * セクションリストをレンダリング
+ */
+export function renderRecruitSectionsList() {
+  const container = document.getElementById('recruit-sections-list');
+  if (!container) return;
+
+  container.innerHTML = RECRUIT_SECTIONS.map(section => `
+    <li class="recruit-section-item" data-section="${section.id}" draggable="true">
+      <span class="section-drag-handle">⋮⋮</span>
+      <span class="section-icon">${section.icon}</span>
+      <span class="section-name">${section.name}</span>
+      ${!section.required ? `
+        <label class="section-visibility-toggle">
+          <input type="checkbox" id="recruit-section-${section.id}-visible" checked>
+          <span class="toggle-label">表示</span>
+        </label>
+      ` : '<span class="section-required-badge">必須</span>'}
+    </li>
+  `).join('');
+
+  setupRecruitSectionDragDrop();
+
+  // 表示/非表示チェックボックスの変更イベント
+  RECRUIT_SECTIONS.forEach(section => {
+    if (!section.required) {
+      const checkbox = document.getElementById(`recruit-section-${section.id}-visible`);
+      if (checkbox) {
+        checkbox.addEventListener('change', updateLivePreview);
+      }
+    }
+  });
+}
+
+/**
+ * ドラッグ&ドロップを設定
+ */
+export function setupRecruitSectionDragDrop() {
+  const list = document.getElementById('recruit-sections-list');
+  if (!list) return;
+
+  let draggedItem = null;
+
+  list.querySelectorAll('.recruit-section-item').forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      draggedItem = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.recruit-section-item').forEach(i => {
+        i.classList.remove('drag-over');
+      });
+      draggedItem = null;
+      updateLivePreview();
+    });
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!draggedItem || draggedItem === item) return;
+
+      list.querySelectorAll('.recruit-section-item').forEach(i => {
+        i.classList.remove('drag-over');
+      });
+
+      const rect = item.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+
+      if (e.clientY < midY) {
+        item.classList.add('drag-over');
+        list.insertBefore(draggedItem, item);
+      } else {
+        list.insertBefore(draggedItem, item.nextSibling);
+      }
+    });
+
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('drag-over');
+    });
+  });
+}
+
+/**
+ * 動画ボタンセクションの初期化
+ */
+export function initVideoButtonSection() {
+  const checkbox = document.getElementById('recruit-show-video-button');
+  const videoUrlGroup = document.getElementById('recruit-video-url-group');
+
+  if (checkbox && videoUrlGroup) {
+    checkbox.addEventListener('change', () => {
+      videoUrlGroup.style.display = checkbox.checked ? 'block' : 'none';
+      updateLivePreview();
+    });
+  }
+
+  // 動画URL入力のプレビュー更新
+  const videoUrlInput = document.getElementById('recruit-video-url');
+  if (videoUrlInput) {
+    videoUrlInput.addEventListener('input', updateLivePreview);
+  }
+}
+
 export default {
   loadRecruitSettings,
   saveRecruitSettings,
@@ -646,5 +867,14 @@ export default {
   setupLogoUpload,
   setupLivePreview,
   updateLivePreview,
-  applyPreviewColorTheme
+  applyPreviewColorTheme,
+  // セクション管理
+  RECRUIT_SECTIONS,
+  getRecruitSectionOrder,
+  getRecruitSectionVisibility,
+  applySectionOrder,
+  applySectionVisibility,
+  renderRecruitSectionsList,
+  setupRecruitSectionDragDrop,
+  initVideoButtonSection
 };

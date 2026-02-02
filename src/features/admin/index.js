@@ -31,6 +31,9 @@ import {
   setPendingJobId,
   getPendingJobId,
   clearPendingJobId,
+  setPendingInitialTab,
+  getPendingInitialTab,
+  clearPendingInitialTab,
   isSectionSwitching,
   startSectionSwitch,
   endSectionSwitch
@@ -234,11 +237,15 @@ function switchSection(sectionName) {
  * @param {string} name - 会社名
  * @param {string} returnSection - 戻り先セクション
  * @param {string} [jobId] - 編集する求人ID（オプション）
+ * @param {string} [initialTab] - 初期表示タブ（jobs, analytics, reports, applicants, recruit）
  */
-function navigateToJobManage(domain, name, returnSection = 'job-listings', jobId = null) {
+function navigateToJobManage(domain, name, returnSection = 'job-listings', jobId = null, initialTab = null) {
   setCurrentCompany(domain, name);
   if (jobId) {
     setPendingJobId(jobId);
+  }
+  if (initialTab) {
+    setPendingInitialTab(initialTab);
   }
   pushHistory(returnSection);
   switchSection('job-manage');
@@ -328,8 +335,9 @@ function bindEvents() {
 
       const result = await handleCompanyLogin(username, password);
       if (result.success) {
-        // 会社ユーザーは自社の管理画面に直接リダイレクト
-        window.location.href = `job-manage.html?domain=${encodeURIComponent(result.companyDomain)}&company=${encodeURIComponent(result.companyName || result.companyDomain)}`;
+        // 会社ユーザーは自社の管理画面に直接遷移（SPA内）
+        showDashboard();
+        navigateToJobManage(result.companyDomain, result.companyName || result.companyDomain, 'overview', null, 'jobs');
       } else {
         if (errorEl) {
           errorEl.textContent = result.error;
@@ -709,11 +717,12 @@ async function renderApplicantCompanyGrid() {
 
   grid.innerHTML = '<div class="loading-cell">会社一覧を読み込み中...</div>';
 
-  // 会社ユーザーの場合は直接自社の応募者管理画面に遷移
+  // 会社ユーザーの場合は直接自社の応募者管理画面に遷移（SPA内）
   if (!isAdmin()) {
     const companyDomain = getUserCompanyDomain();
     if (companyDomain) {
-      window.location.href = `job-manage.html?domain=${encodeURIComponent(companyDomain)}`;
+      // SPA内で遷移
+      navigateToJobManage(companyDomain, companyDomain, 'applicant-select', null, 'applicants');
       return;
     }
   }
@@ -739,15 +748,24 @@ async function renderApplicantCompanyGrid() {
     }
 
     grid.innerHTML = displayCompanies.map(company => `
-      <a href="job-manage.html?domain=${encodeURIComponent(company.companyDomain)}" class="company-select-card">
+      <div class="company-select-card" data-domain="${escapeHtml(company.companyDomain)}" data-name="${escapeHtml(company.company)}">
         <div class="company-select-icon">🏢</div>
         <div class="company-select-info">
           <h4>${escapeHtml(company.company)}</h4>
           <p>${escapeHtml(company.companyDomain)}</p>
         </div>
         <div class="company-select-arrow">→</div>
-      </a>
+      </div>
     `).join('');
+
+    // 会社カードのクリックイベント設定
+    grid.querySelectorAll('.company-select-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const domain = card.dataset.domain;
+        const name = card.dataset.name;
+        navigateToJobManage(domain, name, 'applicant-select', null, 'applicants');
+      });
+    });
 
   } catch (error) {
     console.error('会社一覧取得エラー:', error);

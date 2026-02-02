@@ -20,6 +20,16 @@ const itemsPerPage = 20;
 let currentApplicantId = null;
 let assigneesCache = [];
 
+// IDプレフィックス（admin.html埋め込み時は 'jm-'）
+let idPrefix = '';
+
+/**
+ * IDプレフィックスを適用してDOM要素を取得
+ */
+function getEl(id) {
+  return document.getElementById(idPrefix + id);
+}
+
 // ステータスラベル
 const statusLabels = {
   new: '新規',
@@ -199,7 +209,7 @@ async function loadAssignees() {
  * 担当者セレクトボックスを更新
  */
 function updateAssigneeSelects() {
-  const detailSelect = document.getElementById('detail-assignee');
+  const detailSelect = getEl('detail-assignee');
   if (detailSelect) {
     const currentValue = detailSelect.value;
     detailSelect.innerHTML = '<option value="">未割当</option>' +
@@ -212,7 +222,7 @@ function updateAssigneeSelects() {
  * 担当者を追加
  */
 async function addAssignee() {
-  const input = document.getElementById('new-assignee-name');
+  const input = getEl('new-assignee-name');
   const name = input?.value?.trim();
 
   if (!name) {
@@ -239,7 +249,7 @@ async function addAssignee() {
     updateAssigneeSelects();
     closeAssigneeModal();
 
-    const detailSelect = document.getElementById('detail-assignee');
+    const detailSelect = getEl('detail-assignee');
     if (detailSelect) {
       detailSelect.value = name;
     }
@@ -254,8 +264,8 @@ async function addAssignee() {
  * 担当者追加モーダルを表示
  */
 function showAssigneeModal() {
-  const modal = document.getElementById('assignee-modal');
-  const input = document.getElementById('new-assignee-name');
+  const modal = getEl('assignee-modal');
+  const input = getEl('new-assignee-name');
   if (modal) modal.style.display = 'flex';
   if (input) {
     input.value = '';
@@ -267,7 +277,7 @@ function showAssigneeModal() {
  * 担当者追加モーダルを閉じる
  */
 function closeAssigneeModal() {
-  const modal = document.getElementById('assignee-modal');
+  const modal = getEl('assignee-modal');
   if (modal) modal.style.display = 'none';
 }
 
@@ -275,7 +285,7 @@ function closeAssigneeModal() {
  * 応募者データを読み込み
  */
 async function loadApplicantsData() {
-  const listContainer = document.getElementById('applicants-list');
+  const listContainer = getEl('applicants-list');
   if (listContainer) {
     listContainer.innerHTML = '<div class="loading-message">データを読み込み中...</div>';
   }
@@ -316,9 +326,9 @@ async function loadApplicantsData() {
  * フィルターを適用
  */
 function applyFilters() {
-  const statusFilter = document.getElementById('filter-status')?.value || '';
-  const typeFilter = document.getElementById('filter-type')?.value || '';
-  const searchText = document.getElementById('filter-search')?.value?.toLowerCase() || '';
+  const statusFilter = getEl('filter-status')?.value || '';
+  const typeFilter = getEl('filter-type')?.value || '';
+  const searchText = getEl('filter-search')?.value?.toLowerCase() || '';
 
   filteredApplicants = applicantsCache.filter(app => {
     if (statusFilter && (app.status || 'new') !== statusFilter) {
@@ -358,10 +368,10 @@ function updateStats() {
     ['hired', 'rejected', 'withdrawn'].includes(a.status)
   ).length;
 
-  const statTotal = document.getElementById('stat-total');
-  const statNew = document.getElementById('stat-new');
-  const statProgress = document.getElementById('stat-progress');
-  const statComplete = document.getElementById('stat-complete');
+  const statTotal = getEl('stat-total');
+  const statNew = getEl('stat-new');
+  const statProgress = getEl('stat-progress');
+  const statComplete = getEl('stat-complete');
 
   if (statTotal) statTotal.textContent = total;
   if (statNew) statNew.textContent = newCount;
@@ -373,7 +383,7 @@ function updateStats() {
  * 応募者リストを描画（カード形式）
  */
 function renderApplicantsList() {
-  const listContainer = document.getElementById('applicants-list');
+  const listContainer = getEl('applicants-list');
   if (!listContainer) return;
 
   if (filteredApplicants.length === 0) {
@@ -431,7 +441,7 @@ function renderApplicantsList() {
  * ページネーションを描画
  */
 function renderPagination() {
-  const pagination = document.getElementById('pagination');
+  const pagination = getEl('pagination');
   if (!pagination) return;
 
   const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
@@ -481,8 +491,8 @@ function showApplicantDetail(id) {
   });
 
   // パネル表示を切り替え
-  const emptyState = document.getElementById('detail-empty');
-  const detailContent = document.getElementById('detail-content');
+  const emptyState = getEl('detail-empty');
+  const detailContent = getEl('detail-content');
 
   if (emptyState) emptyState.style.display = 'none';
   if (detailContent) detailContent.style.display = 'flex';
@@ -495,19 +505,19 @@ function showApplicantDetail(id) {
   const applicantAddress = applicant.applicant?.address || '-';
   const startDate = applicant.applicant?.startDate || '-';
 
-  document.getElementById('detail-name').textContent = applicantName;
-  document.getElementById('detail-job-title').textContent = applicant.jobTitle || '-';
-  document.getElementById('detail-phone').textContent = applicantPhone;
-  document.getElementById('detail-email').textContent = applicantEmail;
-  document.getElementById('detail-age').textContent = applicantAge;
-  document.getElementById('detail-address').textContent = applicantAddress;
-  document.getElementById('detail-start-date').textContent = startDateLabels[startDate] || startDate;
+  getEl('detail-name').textContent = applicantName;
+  getEl('detail-job-title').textContent = applicant.jobTitle || '-';
+  getEl('detail-phone').textContent = applicantPhone;
+  getEl('detail-email').textContent = applicantEmail;
+  getEl('detail-age').textContent = applicantAge;
+  getEl('detail-address').textContent = applicantAddress;
+  getEl('detail-start-date').textContent = startDateLabels[startDate] || startDate;
 
   // 応募情報
   const date = applicant.createdAt?.toDate ? applicant.createdAt.toDate() : new Date(applicant.timestamp || applicant.createdAt);
-  document.getElementById('detail-datetime').textContent = formatDate(date, true);
-  document.getElementById('detail-type').textContent = typeLabels[applicant.type] || applicant.type || '-';
-  document.getElementById('detail-source').textContent = formatSource(applicant.source);
+  getEl('detail-datetime').textContent = formatDate(date, true);
+  getEl('detail-type').textContent = typeLabels[applicant.type] || applicant.type || '-';
+  getEl('detail-source').textContent = formatSource(applicant.source);
 
   // ステータスボタンを設定
   const status = applicant.status || 'new';
@@ -516,13 +526,13 @@ function showApplicantDetail(id) {
   });
 
   // 担当者を設定
-  const assigneeSelect = document.getElementById('detail-assignee');
+  const assigneeSelect = getEl('detail-assignee');
   if (assigneeSelect) {
     assigneeSelect.value = applicant.assignee || '';
   }
 
   // メモを設定
-  const notesTextarea = document.getElementById('detail-notes');
+  const notesTextarea = getEl('detail-notes');
   if (notesTextarea) {
     notesTextarea.value = applicant.notes || '';
   }
@@ -544,8 +554,8 @@ function closeDetailPanel() {
     card.classList.remove('selected');
   });
 
-  const emptyState = document.getElementById('detail-empty');
-  const detailContent = document.getElementById('detail-content');
+  const emptyState = getEl('detail-empty');
+  const detailContent = getEl('detail-content');
 
   if (emptyState) emptyState.style.display = 'flex';
   if (detailContent) detailContent.style.display = 'none';
@@ -555,7 +565,7 @@ function closeDetailPanel() {
  * メッセージを読み込んで表示
  */
 async function loadMessages(applicationId) {
-  const container = document.getElementById('messages-container');
+  const container = getEl('messages-container');
   if (!container) return;
 
   container.innerHTML = '<p class="no-data">読み込み中...</p>';
@@ -583,7 +593,7 @@ async function loadMessages(applicationId) {
  * メッセージを描画
  */
 function renderMessages(messages) {
-  const container = document.getElementById('messages-container');
+  const container = getEl('messages-container');
   if (!container) return;
 
   if (!messages || messages.length === 0) {
@@ -629,13 +639,13 @@ function applyMessageTemplate(templateKey) {
     .replace(/{applicantName}/g, applicantName)
     .replace(/{jobTitle}/g, jobTitle);
 
-  const textarea = document.getElementById('new-message-text');
+  const textarea = getEl('new-message-text');
   if (textarea) {
     textarea.value = message;
     textarea.focus();
   }
 
-  const select = document.getElementById('message-template-select');
+  const select = getEl('message-template-select');
   if (select) {
     select.value = '';
   }
@@ -647,7 +657,7 @@ function applyMessageTemplate(templateKey) {
 async function sendMessage() {
   if (!currentApplicantId) return;
 
-  const input = document.getElementById('new-message-text');
+  const input = getEl('new-message-text');
   const content = input?.value?.trim();
 
   if (!content) {
@@ -655,7 +665,7 @@ async function sendMessage() {
     return;
   }
 
-  const sendBtn = document.getElementById('btn-send-message');
+  const sendBtn = getEl('btn-send-message');
   if (sendBtn) {
     sendBtn.disabled = true;
     sendBtn.textContent = '送信中...';
@@ -692,7 +702,7 @@ async function sendMessage() {
  * 対応履歴を描画
  */
 function renderHistory(history) {
-  const container = document.getElementById('detail-history');
+  const container = getEl('detail-history');
   if (!container) return;
 
   if (!history || history.length === 0) {
@@ -752,10 +762,10 @@ async function changeStatus(newStatus) {
 async function saveNotes() {
   if (!currentApplicantId) return;
 
-  const notes = document.getElementById('detail-notes')?.value || '';
-  const assignee = document.getElementById('detail-assignee')?.value || '';
+  const notes = getEl('detail-notes')?.value || '';
+  const assignee = getEl('detail-assignee')?.value || '';
 
-  const saveBtn = document.getElementById('btn-save-notes');
+  const saveBtn = getEl('btn-save-notes');
   if (saveBtn) {
     saveBtn.disabled = true;
     saveBtn.textContent = '保存中...';
@@ -797,7 +807,7 @@ async function saveNotes() {
 async function addHistory() {
   if (!currentApplicantId) return;
 
-  const input = document.getElementById('new-history-text');
+  const input = getEl('new-history-text');
   const text = input?.value?.trim();
 
   if (!text) {
@@ -949,25 +959,25 @@ function formatSource(source) {
  */
 function setupEventListeners() {
   // 更新ボタン（job-manage.html内では btn-refresh-applicants）
-  document.getElementById('btn-refresh')?.addEventListener('click', loadApplicantsData);
-  document.getElementById('btn-refresh-applicants')?.addEventListener('click', loadApplicantsData);
+  getEl('btn-refresh')?.addEventListener('click', loadApplicantsData);
+  getEl('btn-refresh-applicants')?.addEventListener('click', loadApplicantsData);
 
   // CSVエクスポート
-  document.getElementById('btn-export-csv')?.addEventListener('click', exportCsv);
+  getEl('btn-export-csv')?.addEventListener('click', exportCsv);
 
   // フィルター
-  document.getElementById('filter-status')?.addEventListener('change', applyFilters);
-  document.getElementById('filter-type')?.addEventListener('change', applyFilters);
+  getEl('filter-status')?.addEventListener('change', applyFilters);
+  getEl('filter-type')?.addEventListener('change', applyFilters);
 
   // 検索（デバウンス付き）
   let searchTimeout;
-  document.getElementById('filter-search')?.addEventListener('input', () => {
+  getEl('filter-search')?.addEventListener('input', () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(applyFilters, 300);
   });
 
   // 詳細パネルを閉じる
-  document.getElementById('btn-close-detail')?.addEventListener('click', closeDetailPanel);
+  getEl('btn-close-detail')?.addEventListener('click', closeDetailPanel);
 
   // ステータスボタン
   document.querySelectorAll('.status-btn').forEach(btn => {
@@ -978,11 +988,11 @@ function setupEventListeners() {
   });
 
   // メモ保存
-  document.getElementById('btn-save-notes')?.addEventListener('click', saveNotes);
+  getEl('btn-save-notes')?.addEventListener('click', saveNotes);
 
   // 履歴追加
-  document.getElementById('btn-add-history')?.addEventListener('click', addHistory);
-  document.getElementById('new-history-text')?.addEventListener('keypress', (e) => {
+  getEl('btn-add-history')?.addEventListener('click', addHistory);
+  getEl('new-history-text')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addHistory();
@@ -990,8 +1000,8 @@ function setupEventListeners() {
   });
 
   // メッセージ送信
-  document.getElementById('btn-send-message')?.addEventListener('click', sendMessage);
-  document.getElementById('new-message-text')?.addEventListener('keydown', (e) => {
+  getEl('btn-send-message')?.addEventListener('click', sendMessage);
+  getEl('new-message-text')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       sendMessage();
@@ -999,23 +1009,23 @@ function setupEventListeners() {
   });
 
   // テンプレート選択
-  document.getElementById('message-template-select')?.addEventListener('change', (e) => {
+  getEl('message-template-select')?.addEventListener('change', (e) => {
     applyMessageTemplate(e.target.value);
   });
 
   // 担当者追加モーダル
-  document.getElementById('btn-add-assignee')?.addEventListener('click', showAssigneeModal);
-  document.getElementById('assignee-modal-close')?.addEventListener('click', closeAssigneeModal);
-  document.getElementById('assignee-modal-cancel')?.addEventListener('click', closeAssigneeModal);
-  document.getElementById('assignee-modal-save')?.addEventListener('click', addAssignee);
+  getEl('btn-add-assignee')?.addEventListener('click', showAssigneeModal);
+  getEl('assignee-modal-close')?.addEventListener('click', closeAssigneeModal);
+  getEl('assignee-modal-cancel')?.addEventListener('click', closeAssigneeModal);
+  getEl('assignee-modal-save')?.addEventListener('click', addAssignee);
 
-  document.getElementById('assignee-modal')?.addEventListener('click', (e) => {
+  getEl('assignee-modal')?.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
       closeAssigneeModal();
     }
   });
 
-  document.getElementById('new-assignee-name')?.addEventListener('keypress', (e) => {
+  getEl('new-assignee-name')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addAssignee();
@@ -1031,7 +1041,7 @@ export async function initApplicantsManager() {
   companyDomain = params.get('domain');
   companyName = params.get('company') ? decodeURIComponent(params.get('company')) : null;
 
-  const companyNameEl = document.getElementById('company-name');
+  const companyNameEl = getEl('company-name');
   if (companyNameEl) {
     companyNameEl.textContent = companyName || (companyDomain ? companyDomain : '全会社');
   }
@@ -1050,11 +1060,15 @@ export async function initApplicantsManager() {
 }
 
 /**
- * 外部から会社ドメインを設定して初期化（job-manage.htmlから呼び出す用）
+ * 外部から会社ドメインを設定して初期化
+ * @param {string} domain - 会社ドメイン
+ * @param {string} name - 会社名
+ * @param {string} [prefix=''] - DOM要素IDのプレフィックス（admin.html埋め込み時は 'jm-'）
  */
-export async function initApplicantsSection(domain, name) {
+export async function initApplicantsSection(domain, name, prefix = '') {
   companyDomain = domain;
   companyName = name;
+  idPrefix = prefix;
 
   setupEventListeners();
   await loadAssignees();

@@ -1051,7 +1051,11 @@ function updateRecruitSettings(settingsData) {
         "ctaText",
         "ogpTitle",
         "ogpDescription",
-        "ogpImage"
+        "ogpImage",
+        "showVideoButton",
+        "videoUrl",
+        "sectionOrder",
+        "sectionVisibility"
       ];
       sheet.appendRow(headers);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -1082,7 +1086,11 @@ function updateRecruitSettings(settingsData) {
       "ctaText",
       "ogpTitle",
       "ogpDescription",
-      "ogpImage"
+      "ogpImage",
+      "showVideoButton",
+      "videoUrl",
+      "sectionOrder",
+      "sectionVisibility"
     ];
 
     for (const col of requiredCols) {

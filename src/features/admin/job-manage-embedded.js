@@ -3,7 +3,7 @@
  * admin.html内でjob-manage機能を動作させるためのアダプターモジュール
  */
 
-import { setCurrentSubsection, getCurrentSubsection, getNewAbortController, clearAbortController } from './admin-state.js';
+import { setCurrentSubsection, getCurrentSubsection, getNewAbortController, clearAbortController, getPendingInitialTab, clearPendingInitialTab } from './admin-state.js';
 import {
   setCompanyInfo,
   setApplicantsInitialized,
@@ -80,6 +80,10 @@ export async function initJobManageEmbedded(domain, name, jobId = null) {
       eventListenersSetup = true;
     }
 
+    // 初期タブの取得（指定がある場合）
+    const initialTab = getPendingInitialTab();
+    clearPendingInitialTab();
+
     // jobIdが指定されている場合は先に編集画面を表示（UX改善）
     if (jobId) {
       // 編集画面をローディング状態で表示
@@ -90,6 +94,13 @@ export async function initJobManageEmbedded(domain, name, jobId = null) {
 
       // データ読み込み完了後、フォームに値をセット
       editJob(jobId);
+    } else if (initialTab) {
+      // 初期タブ指定がある場合（applicantsなど）
+      switchSubsection(initialTab);
+      // jobs, analytics, reports の場合はデータ読み込み
+      if (['jobs', 'analytics', 'reports'].includes(initialTab)) {
+        await loadJobsData();
+      }
     } else {
       // 通常フロー：求人一覧を表示
       switchSubsection('jobs');
@@ -579,7 +590,7 @@ export function switchSubsection(tab) {
 
   // セクション固有の初期化
   if (tab === 'applicants') {
-    initApplicantsSection(companyDomain, companyName);
+    initApplicantsSection(companyDomain, companyName, 'jm-');
   } else if (tab === 'recruit') {
     initRecruitSettings(companyDomain);
   }

@@ -21,6 +21,9 @@ export let editingCompanyDomain = null;
 // 編集待ちの求人ID（job-listings → job-manage遷移時に使用）
 export let pendingJobId = null;
 
+// 初期表示タブ（job-manage遷移時に使用）
+export let pendingInitialTab = null;
+
 // セクション切り替え中フラグ（連打防止）
 let isSwitchingSection = false;
 
@@ -123,6 +126,27 @@ export function clearPendingJobId() {
 }
 
 /**
+ * 初期表示タブを設定
+ */
+export function setPendingInitialTab(tab) {
+  pendingInitialTab = tab;
+}
+
+/**
+ * 初期表示タブを取得
+ */
+export function getPendingInitialTab() {
+  return pendingInitialTab;
+}
+
+/**
+ * 初期表示タブをクリア
+ */
+export function clearPendingInitialTab() {
+  pendingInitialTab = null;
+}
+
+/**
  * セクション切り替え中かどうか
  */
 export function isSectionSwitching() {
@@ -167,6 +191,7 @@ export default {
   currentSubsection,
   editingCompanyDomain,
   pendingJobId,
+  pendingInitialTab,
   setCurrentCompany,
   clearCurrentCompany,
   pushHistory,
@@ -180,6 +205,9 @@ export default {
   setPendingJobId,
   getPendingJobId,
   clearPendingJobId,
+  setPendingInitialTab,
+  getPendingInitialTab,
+  clearPendingInitialTab,
   isSectionSwitching,
   startSectionSwitch,
   endSectionSwitch,
