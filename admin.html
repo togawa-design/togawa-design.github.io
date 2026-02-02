@@ -14,15 +14,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/js/admin-BR_GLfWw.js"></script>
+  <script type="module" crossorigin src="/js/admin-CGboXEhx.js"></script>
   <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/js/utils-DCR9QUau.js">
   <link rel="modulepreload" crossorigin href="/js/jobs-loader-vTfia0vR.js">
   <link rel="modulepreload" crossorigin href="/js/api-B1sZYcOA.js">
   <link rel="modulepreload" crossorigin href="/js/LPEditor-DhYOL23n.js">
   <link rel="modulepreload" crossorigin href="/js/image-uploader-gAKnoYUY.js">
-  <link rel="modulepreload" crossorigin href="/js/core-CPFDvEyE.js">
-  <link rel="modulepreload" crossorigin href="/js/auth-DPrPBFQd.js">
+  <link rel="modulepreload" crossorigin href="/js/core-Dq8cduIa.js">
+  <link rel="modulepreload" crossorigin href="/js/auth-DthNNR7w.js">
 </head>
 <body class="admin-body">
   <!-- ログイン画面 -->
@@ -2152,6 +2152,18 @@
                   <!-- JavaScriptで動的に生成 -->
                 </div>
               </div>
+              <!-- 動画ボタン設定 -->
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="recruit-show-video-button">
+                  <span>動画ボタンを表示する</span>
+                </label>
+              </div>
+              <div class="form-group" id="recruit-video-url-group" style="display: none;">
+                <label for="recruit-video-url">動画URL（YouTube）</label>
+                <input type="url" id="recruit-video-url" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
+                <span class="form-description">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</span>
+              </div>
             </div>
 
             <!-- 5. 会社紹介 -->
@@ -2195,10 +2207,22 @@
               </div>
             </div>
 
-            <!-- 8. OGP設定 -->
+            <!-- 8. セクション管理 -->
             <div class="form-section lp-form-section">
               <div class="lp-section-header">
                 <span class="lp-section-number">8</span>
+                <h4>セクション管理</h4>
+              </div>
+              <span class="form-description">セクションの並び順と表示/非表示を設定できます。ドラッグ＆ドロップで並び替え可能です。</span>
+              <ul id="recruit-sections-list" class="recruit-sections-list">
+                <!-- JavaScriptで動的に生成 -->
+              </ul>
+            </div>
+
+            <!-- 9. OGP設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">9</span>
                 <h4>OGP設定（SNSシェア用）</h4>
               </div>
               <div class="form-group">
