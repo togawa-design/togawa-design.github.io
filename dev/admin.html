@@ -10,18 +10,19 @@
   <!-- スタイルシート -->
   <link rel="stylesheet" href="/dev/css/style.css">
   <link rel="stylesheet" href="/dev/css/admin.css">
+  <link rel="stylesheet" href="/dev/css/applicants.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/admin-b26Paq42.js"></script>
+  <script type="module" crossorigin src="/dev/js/admin-Cqlwy2JD.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-DCR9QUau.js">
   <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-vTfia0vR.js">
   <link rel="modulepreload" crossorigin href="/dev/js/api-Dk4Kctww.js">
   <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-I7hCT4B6.js">
   <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-gAKnoYUY.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/core-BbkOpo5H.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/auth-Csv9vC4v.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/core-DzNBKUsO.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/auth-DMAFx-oh.js">
 </head>
 <body class="admin-body">
   <!-- ログイン画面 -->
@@ -883,14 +884,35 @@
 
           <!-- 応募者管理サブセクション -->
           <div id="jm-applicants" class="jm-subsection">
+            <div class="applicants-header">
+              <div class="header-actions">
+                <button id="jm-btn-export-csv" class="btn-secondary">📥 CSVエクスポート</button>
+                <button id="jm-btn-refresh-applicants" class="btn-refresh">更新</button>
+              </div>
+            </div>
+
             <div class="applicants-content">
+              <!-- 左：応募者一覧 -->
               <div class="applicants-list-panel">
                 <div class="stats-cards compact">
-                  <div class="stat-card"><div class="stat-value" id="jm-stat-total">0</div><div class="stat-label">総応募</div></div>
-                  <div class="stat-card stat-new"><div class="stat-value" id="jm-stat-new">0</div><div class="stat-label">新規</div></div>
-                  <div class="stat-card stat-progress"><div class="stat-value" id="jm-stat-progress">0</div><div class="stat-label">対応中</div></div>
-                  <div class="stat-card stat-complete"><div class="stat-value" id="jm-stat-complete">0</div><div class="stat-label">完了</div></div>
+                  <div class="stat-card">
+                    <div class="stat-value" id="jm-stat-total">0</div>
+                    <div class="stat-label">総応募</div>
+                  </div>
+                  <div class="stat-card stat-new">
+                    <div class="stat-value" id="jm-stat-new">0</div>
+                    <div class="stat-label">新規</div>
+                  </div>
+                  <div class="stat-card stat-progress">
+                    <div class="stat-value" id="jm-stat-progress">0</div>
+                    <div class="stat-label">対応中</div>
+                  </div>
+                  <div class="stat-card stat-complete">
+                    <div class="stat-value" id="jm-stat-complete">0</div>
+                    <div class="stat-label">完了</div>
+                  </div>
                 </div>
+
                 <div class="filter-section compact">
                   <div class="filter-row">
                     <select id="jm-filter-status" class="filter-select">
@@ -903,17 +925,161 @@
                       <option value="rejected">不採用</option>
                       <option value="withdrawn">辞退</option>
                     </select>
+                    <select id="jm-filter-type" class="filter-select">
+                      <option value="">全種別</option>
+                      <option value="apply">応募</option>
+                      <option value="line">LINE相談</option>
+                      <option value="consult">お問い合わせ</option>
+                    </select>
                     <input type="text" id="jm-filter-search" class="filter-input" placeholder="検索...">
                   </div>
                 </div>
+
                 <div class="applicants-list" id="jm-applicants-list">
                   <div class="loading-message">データを読み込み中...</div>
                 </div>
+
+                <div class="pagination" id="jm-pagination"></div>
               </div>
+
+              <!-- 右：詳細パネル -->
               <div class="applicants-detail-panel" id="jm-detail-panel">
-                <div class="detail-empty-state">
+                <div class="detail-empty-state" id="jm-detail-empty">
                   <div class="empty-icon">👆</div>
                   <p>左の一覧から応募者を選択してください</p>
+                </div>
+
+                <div class="detail-content" id="jm-detail-content" style="display: none;">
+                  <div class="detail-header">
+                    <div class="detail-header-info">
+                      <h2 id="jm-detail-name">-</h2>
+                      <p id="jm-detail-job-title" class="detail-job">-</p>
+                    </div>
+                    <button class="btn-close-detail" id="jm-btn-close-detail" title="閉じる">&times;</button>
+                  </div>
+
+                  <div class="detail-scroll-area">
+                    <div class="detail-card">
+                      <h3>基本情報</h3>
+                      <div class="detail-grid">
+                        <div class="detail-item">
+                          <label>電話番号</label>
+                          <span id="jm-detail-phone">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>メール</label>
+                          <span id="jm-detail-email">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>年齢</label>
+                          <span id="jm-detail-age">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>現住所</label>
+                          <span id="jm-detail-address">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>希望開始日</label>
+                          <span id="jm-detail-start-date">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>応募日時</label>
+                          <span id="jm-detail-datetime">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>種別</label>
+                          <span id="jm-detail-type">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>流入元</label>
+                          <span id="jm-detail-source">-</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>ステータス</h3>
+                      <div class="status-buttons" id="jm-status-buttons">
+                        <button class="status-btn" data-status="new">新規</button>
+                        <button class="status-btn" data-status="contacted">連絡済み</button>
+                        <button class="status-btn" data-status="interviewing">面接調整</button>
+                        <button class="status-btn" data-status="interviewed">面接済み</button>
+                        <button class="status-btn status-success" data-status="hired">採用</button>
+                        <button class="status-btn status-danger" data-status="rejected">不採用</button>
+                        <button class="status-btn status-muted" data-status="withdrawn">辞退</button>
+                      </div>
+                      <div class="assignee-row">
+                        <label>担当者</label>
+                        <select id="jm-detail-assignee">
+                          <option value="">未割当</option>
+                        </select>
+                        <button type="button" id="jm-btn-add-assignee" class="btn-icon" title="担当者を追加">+</button>
+                      </div>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>メモ</h3>
+                      <textarea id="jm-detail-notes" rows="3" placeholder="メモを入力..."></textarea>
+                      <button id="jm-btn-save-notes" class="btn-save-small">保存</button>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>対応履歴</h3>
+                      <div id="jm-detail-history" class="history-list">
+                        <p class="no-data">対応履歴はありません</p>
+                      </div>
+                      <div class="add-history-row">
+                        <input type="text" id="jm-new-history-text" placeholder="対応内容を入力...">
+                        <button id="jm-btn-add-history" class="btn-add">追加</button>
+                      </div>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>メッセージ</h3>
+                      <div id="jm-messages-container" class="messages-container">
+                        <p class="no-data">メッセージはありません</p>
+                      </div>
+                      <div class="message-input-row">
+                        <select id="jm-message-template-select" class="template-select">
+                          <option value="">テンプレート選択...</option>
+                          <option value="first_contact">初回連絡</option>
+                          <option value="schedule_interview">面接日程調整</option>
+                          <option value="interview_reminder">面接リマインダー</option>
+                          <option value="document_request">書類提出依頼</option>
+                          <option value="result_pending">選考結果待ち</option>
+                          <option value="offer">内定通知</option>
+                          <option value="rejection">不採用通知</option>
+                        </select>
+                      </div>
+                      <div class="message-input-row">
+                        <textarea id="jm-new-message-text" rows="4" placeholder="メッセージを入力..."></textarea>
+                      </div>
+                      <div class="message-actions">
+                        <button id="jm-btn-send-message" class="btn-primary btn-send">送信</button>
+                      </div>
+                      <p class="message-hint">応募者がマイページで確認できます</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 担当者追加モーダル -->
+            <div class="modal-overlay" id="jm-assignee-modal" style="display: none;">
+              <div class="modal-content modal-small">
+                <div class="modal-header">
+                  <h3>担当者を追加</h3>
+                  <button class="modal-close" id="jm-assignee-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label for="jm-new-assignee-name">担当者名</label>
+                    <input type="text" id="jm-new-assignee-name" placeholder="例: 山田太郎">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn-secondary" id="jm-assignee-modal-cancel">キャンセル</button>
+                  <button class="btn-primary" id="jm-assignee-modal-save">追加</button>
                 </div>
               </div>
             </div>
