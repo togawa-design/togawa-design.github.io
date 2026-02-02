@@ -13,7 +13,10 @@ import {
   renderHeroImagePresets,
   setupLogoUpload,
   setupLivePreview,
-  updateLivePreview
+  updateLivePreview,
+  initVideoButtonSection,
+  renderRecruitSectionsList,
+  setupRecruitSectionDragDrop
 } from '@features/recruit-settings/core.js';
 
 // 現在選択中の会社
@@ -34,6 +37,11 @@ export async function initRecruitSettings(companyDomain = null) {
   setupEventListeners();
   // ヒーロー画像プリセットをレンダリング
   renderHeroImagePresets();
+  // 動画ボタンセクションを初期化
+  initVideoButtonSection();
+  // セクション管理リストを初期化
+  renderRecruitSectionsList();
+  setupRecruitSectionDragDrop();
 }
 
 /**
