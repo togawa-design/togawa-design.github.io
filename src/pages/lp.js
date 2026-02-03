@@ -546,6 +546,14 @@ class CompanyLPPage {
     // bodyにクラスを追加（ヘッダー・CTAバーのスペース確保用）
     if (hasHeader) {
       document.body.classList.add('has-fixed-header');
+      // 会社設定のヘッダーがある場合、動的ヘッダーを使用（デフォルトはCSS非表示のまま）
+    } else {
+      // 会社設定がない場合、デフォルトのLP静的ヘッダーを表示
+      const defaultLpHeader = document.querySelector('.lp-header');
+      if (defaultLpHeader) {
+        defaultLpHeader.style.display = 'block';
+      }
+      document.body.classList.add('has-fixed-header');
     }
     if (hasCtaBar) {
       document.body.classList.add('has-fixed-cta-bar');

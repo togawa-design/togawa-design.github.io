@@ -5,10 +5,21 @@
 import { escapeHtml, nl2br } from '@shared/utils.js';
 import { Badge, Button, Icons, TagList, Image } from '@components/atoms/index.js';
 
+// 掲載開始日から1週間以内かどうかをチェック
+function isWithinOneWeek(publishStartDate) {
+  if (!publishStartDate) return false;
+
+  const startDate = new Date(publishStartDate);
+  if (isNaN(startDate.getTime())) return false;
+
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  return startDate >= oneWeekAgo;
+}
+
 // 求人カード
 export function JobCard({ job, showCompanyName = false, linkToJobsList = false }) {
-  const badges = job.badges ? job.badges.split(',').map(b => b.trim()) : [];
-
   // displayedFeaturesが設定されている場合はそれを優先表示
   const displayedFeaturesRaw = job.displayedFeatures || '';
   const displayedFeatures = displayedFeaturesRaw
@@ -27,18 +38,11 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
   const totalBonus = job._displayTotalBonus || job.totalBonus || '';
   const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
 
-  let badgesHtml = '';
-  if (badges.includes('NEW') || badges.includes('new')) {
-    badgesHtml += Badge({ text: 'NEW', type: 'new' });
-  }
-  if (badges.includes('人気') || badges.includes('hot')) {
-    badgesHtml += Badge({ text: '人気', type: 'hot' });
-  }
-  if (badges.includes('急募') || badges.includes('URGENT')) {
-    badgesHtml += Badge({ text: '急募', type: 'urgent' });
-  }
+  // 掲載開始日から1週間以内の場合はNEWタグを自動表示
+  const isNew = isWithinOneWeek(job.publishStartDate);
+  const newTagHtml = isNew ? '<span class="job-new-tag">✨ NEW</span>' : '';
 
-  // linkToJobsList が true の場合は企業の求人一覧ページへ、それ以外は求人詳細ページへ
+  // linkToJobsList が true の場合は企業の求人一覧ページへ、それ以外はLPページへ
   let detailUrl = 'jobs.html';
   if (linkToJobsList) {
     // 企業の求人一覧ページへリンク
@@ -46,8 +50,9 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
       detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
     }
   } else {
+    // LPページへリンク
     if (job.companyDomain?.trim() && job.id) {
-      detailUrl = `job-detail.html?company=${encodeURIComponent(job.companyDomain.trim())}&job=${encodeURIComponent(job.id)}`;
+      detailUrl = `lp.html?j=${encodeURIComponent(job.companyDomain.trim())}_${encodeURIComponent(job.id)}`;
     } else if (job.companyDomain?.trim()) {
       detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
     } else if (job.detailUrl) {
@@ -56,8 +61,8 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
   }
 
   return `
-    <article class="job-card" data-job-id="${escapeHtml(job.id || '')}">
-      ${badgesHtml ? `<div class="job-card-header">${badgesHtml}</div>` : ''}
+    <article class="job-card${isNew ? ' is-new' : ''}" data-job-id="${escapeHtml(job.id || '')}">
+      ${newTagHtml}
       <div class="job-card-image">
         ${Image({ src: imageSrc, alt: job.company || job.title, fallback: job.company })}
       </div>

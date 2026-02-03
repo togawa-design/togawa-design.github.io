@@ -3,6 +3,19 @@
  */
 import { escapeHtml } from '@shared/utils.js';
 
+// 掲載開始日から1週間以内かどうかをチェック
+function isWithinOneWeek(publishStartDate) {
+  if (!publishStartDate) return false;
+
+  const startDate = new Date(publishStartDate);
+  if (isNaN(startDate.getTime())) return false;
+
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  return startDate >= oneWeekAgo;
+}
+
 export function renderJobsSection(company, jobs) {
   if (jobs.length === 0) return '';
 
@@ -33,8 +46,11 @@ function renderJobCard(job, company) {
   // displayedFeaturesがあればそれを使用、なければallFeaturesの最初の5つ
   const features = displayedFeatures.length > 0 ? displayedFeatures : allFeatures;
 
+  const isNew = isWithinOneWeek(job.publishStartDate);
+
   return `
-    <div class="lp-job-card">
+    <div class="lp-job-card${isNew ? ' is-new' : ''}">
+      ${isNew ? '<span class="lp-job-new-tag">✨ NEW</span>' : ''}
       <div class="lp-job-card-header">
         <h3 class="lp-job-title">${escapeHtml(job.title)}</h3>
         ${job.employmentType ? `<span class="lp-job-type">${escapeHtml(job.employmentType)}</span>` : ''}

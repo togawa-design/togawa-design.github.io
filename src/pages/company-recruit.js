@@ -10,6 +10,19 @@ import {
 } from '@components/organisms/LayoutComponents.js';
 import '@shared/jobs-loader.js';
 
+// 掲載開始日から1週間以内かどうかをチェック
+function isWithinOneWeek(publishStartDate) {
+  if (!publishStartDate) return false;
+
+  const startDate = new Date(publishStartDate);
+  if (isNaN(startDate.getTime())) return false;
+
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  return startDate >= oneWeekAgo;
+}
+
 /**
  * 会社採用ページクラス
  */
@@ -450,9 +463,11 @@ class CompanyRecruitPage {
     const lpUrl = `lp.html?j=${this.companyDomain}_${jobId}`;
     const imageUrl = job.imageUrl || this.company?.imageUrl || '';
     const jobType = job.jobType || '';
+    const isNew = isWithinOneWeek(job.publishStartDate);
 
     return `
-      <a href="${lpUrl}" class="recruit-job-card" data-job-type="${escapeHtml(jobType)}">
+      <a href="${lpUrl}" class="recruit-job-card${isNew ? ' is-new' : ''}" data-job-type="${escapeHtml(jobType)}">
+        ${isNew ? '<span class="recruit-job-new-tag">✨ NEW</span>' : ''}
         <div class="recruit-job-card-image" style="${imageUrl ? `background-image: url('${escapeHtml(imageUrl)}')` : ''}">
           ${!imageUrl ? '<div class="recruit-job-card-placeholder"></div>' : ''}
         </div>
@@ -598,6 +613,14 @@ class CompanyRecruitPage {
 
     // bodyにクラスを追加（ヘッダー・CTAバーのスペース確保用）
     if (hasHeader) {
+      document.body.classList.add('has-fixed-header');
+      // 会社設定のヘッダーがある場合、動的ヘッダーを使用（デフォルトはCSS非表示のまま）
+    } else {
+      // 会社設定がない場合、デフォルトの静的ヘッダーを表示
+      const defaultRecruitHeader = document.querySelector('.recruit-header');
+      if (defaultRecruitHeader) {
+        defaultRecruitHeader.style.display = 'block';
+      }
       document.body.classList.add('has-fixed-header');
     }
     if (hasCtaBar) {
