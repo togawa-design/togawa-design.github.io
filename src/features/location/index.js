@@ -111,7 +111,7 @@ export async function renderLocationJobs(container, prefecture) {
   document.title = `${prefecture}の求人一覧 | L-SET`;
   const metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc) {
-    metaDesc.content = `${prefecture}の期間工・期間従業員の求人一覧。工場・製造業の求人を多数掲載。`;
+    metaDesc.content = `${prefecture}の求人一覧。様々な業種の求人を多数掲載。`;
   }
   const breadcrumb = document.getElementById('breadcrumb-current');
   if (breadcrumb) breadcrumb.textContent = `${prefecture}の求人`;

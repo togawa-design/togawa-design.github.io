@@ -157,7 +157,7 @@ export function generateIndeedXml(jobs) {
     <description><![CDATA[${description}]]></description>
     <salary><![CDATA[${job.monthlySalary || ''}]]></salary>
     <jobtype>${mapEmploymentType(job.employmentType)}</jobtype>
-    <category><![CDATA[${job.jobType || '製造・工場'}]]></category>
+    <category><![CDATA[${job.jobType || 'その他'}]]></category>
     <experience><![CDATA[${job.requirements || '未経験歓迎'}]]></experience>
   </job>`;
   });

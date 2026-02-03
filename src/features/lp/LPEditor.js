@@ -176,19 +176,19 @@ const LAYOUT_STYLES = [
 const PRESET_IMAGES = [
   {
     url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200&q=80',
-    label: '工場・製造ライン'
+    label: 'オフィスワーク'
   },
   {
     url: 'https://images.unsplash.com/photo-1565043666747-69f6646db940?w=1200&q=80',
-    label: '自動車工場'
+    label: 'ビジネスシーン'
   },
   {
     url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=1200&q=80',
-    label: '溶接作業'
+    label: '技術職'
   },
   {
     url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&q=80',
-    label: '産業ロボット'
+    label: 'IT・テクノロジー'
   },
   {
     url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80',
@@ -196,7 +196,7 @@ const PRESET_IMAGES = [
   },
   {
     url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&q=80',
-    label: '製造業チーム'
+    label: 'チームワーク'
   },
   {
     url: 'https://images.unsplash.com/photo-1567789884554-0b844b597180?w=1200&q=80',

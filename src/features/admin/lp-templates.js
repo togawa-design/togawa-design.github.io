@@ -7,7 +7,7 @@ import { SECTION_TYPES, generateSectionId } from '../lp/sectionTypes.js';
 
 // テンプレートカテゴリ
 export const TEMPLATE_CATEGORIES = {
-  manufacturing: { id: 'manufacturing', name: '製造業', icon: '🏭' },
+  manufacturing: { id: 'manufacturing', name: 'ベーシック', icon: '📋' },
   logistics: { id: 'logistics', name: '物流・倉庫', icon: '📦' },
   construction: { id: 'construction', name: '建設・土木', icon: '🏗️' },
   general: { id: 'general', name: '汎用', icon: '📋' }
@@ -17,8 +17,8 @@ export const TEMPLATE_CATEGORIES = {
 export const LP_TEMPLATES = {
   'manufacturing-basic': {
     id: 'manufacturing-basic',
-    name: '製造業ベーシック',
-    description: 'シンプルな工場求人向けレイアウト',
+    name: 'ベーシック',
+    description: 'シンプルな求人向けレイアウト',
     category: 'manufacturing',
     thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&q=60',
     sections: [
@@ -74,7 +74,7 @@ export const LP_TEMPLATES = {
 
   'manufacturing-premium': {
     id: 'manufacturing-premium',
-    name: '製造業プレミアム',
+    name: 'プレミアム',
     description: '画像ギャラリーと社員の声付き',
     category: 'manufacturing',
     thumbnail: 'https://images.unsplash.com/photo-1565043666747-69f6646db940?w=400&q=60',
@@ -106,7 +106,7 @@ export const LP_TEMPLATES = {
         data: {
           sectionTitle: '職場の様子',
           images: [
-            { url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&q=70', caption: '製造ライン' },
+            { url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&q=70', caption: '職場風景' },
             { url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&q=70', caption: '最新設備' },
             { url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&q=70', caption: 'チームワーク' }
           ]

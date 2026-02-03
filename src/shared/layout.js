@@ -16,7 +16,7 @@ export function renderHeader() {
       <div class="logo">
         <a href="/">
           <span class="logo-text">L-SET</span>
-          <span class="logo-sub">製造業・工場求人専門</span>
+          <span class="logo-sub">あなたの仕事探しをサポート</span>
         </a>
       </div>
       <nav class="main-nav" aria-label="メインナビゲーション">
