@@ -30,7 +30,9 @@ export default defineConfig({
         guideJobSearch: resolve(__dirname, 'guide-job-search.html'),
         guideInterview: resolve(__dirname, 'guide-interview.html'),
         guideWork: resolve(__dirname, 'guide-work.html'),
-        guideSite: resolve(__dirname, 'guide-site.html')
+        guideSite: resolve(__dirname, 'guide-site.html'),
+        legal: resolve(__dirname, 'legal.html'),
+        privacy: resolve(__dirname, 'privacy.html')
       },
       output: {
         entryFileNames: 'js/[name]-[hash].js',
