@@ -32,7 +32,9 @@ export default defineConfig({
         guideWork: resolve(__dirname, 'guide-work.html'),
         guideSite: resolve(__dirname, 'guide-site.html'),
         legal: resolve(__dirname, 'legal.html'),
-        privacy: resolve(__dirname, 'privacy.html')
+        privacy: resolve(__dirname, 'privacy.html'),
+        about: resolve(__dirname, 'about.html'),
+        terms: resolve(__dirname, 'terms.html')
       },
       output: {
         entryFileNames: 'js/[name]-[hash].js',
