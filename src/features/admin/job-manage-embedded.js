@@ -349,6 +349,35 @@ function showJobEditNew() {
   // フォームをクリア
   clearForm('jm-edit-job');
 
+  // メモ欄をクリア
+  const memoEl = document.getElementById('jm-edit-job-memo');
+  if (memoEl) memoEl.value = '';
+
+  // 給与形態をクリア
+  const salaryTypeEl = document.getElementById('jm-edit-job-salary-type');
+  if (salaryTypeEl) salaryTypeEl.value = '';
+  const salaryOtherEl = document.getElementById('jm-edit-job-salary-other');
+  if (salaryOtherEl) salaryOtherEl.value = '';
+  const salaryOtherGroup = document.getElementById('jm-salary-other-group');
+  if (salaryOtherGroup) salaryOtherGroup.style.display = 'none';
+
+  // 勤務時間リストをクリア
+  const workingHoursList = document.getElementById('jm-working-hours-list');
+  if (workingHoursList) {
+    workingHoursList.innerHTML = `
+      <div class="multi-input-item">
+        <input type="text" class="jm-working-hours-input" placeholder="例: 8:00〜17:00">
+        <button type="button" class="btn-remove-item" title="削除">×</button>
+      </div>
+    `;
+    setupJmWorkingHoursRemoveButtons();
+  }
+
+  // 特徴チェックボックスをクリア
+  document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+  });
+
   // タイトル・バッジ更新
   const titleEl = document.getElementById('jm-job-edit-title');
   const badgeEl = document.getElementById('jm-job-edit-badge');
@@ -387,6 +416,19 @@ function editJob(jobId) {
   // フォームに値をセット
   populateForm(job, 'jm-edit-job');
 
+  // メモを設定
+  const memoEl = document.getElementById('jm-edit-job-memo');
+  if (memoEl) memoEl.value = job.memo || '';
+
+  // 給与形態を設定
+  populateSalaryFields(job);
+
+  // 勤務時間を設定
+  populateWorkingHoursFields(job);
+
+  // 特徴チェックボックスを設定
+  populateFeaturesCheckboxes(job);
+
   // タイトル・バッジ更新
   const titleEl = document.getElementById('jm-job-edit-title');
   const badgeEl = document.getElementById('jm-job-edit-badge');
@@ -409,6 +451,80 @@ function editJob(jobId) {
 }
 
 /**
+ * 給与形態フィールドを設定
+ */
+function populateSalaryFields(job) {
+  const salaryTypeEl = document.getElementById('jm-edit-job-salary-type');
+  const salaryOtherEl = document.getElementById('jm-edit-job-salary-other');
+  const salaryOtherGroup = document.getElementById('jm-salary-other-group');
+
+  if (salaryTypeEl) {
+    if (job.salaryType) {
+      salaryTypeEl.value = job.salaryType;
+    } else if (job.monthlySalary) {
+      salaryTypeEl.value = '月給';
+    } else {
+      salaryTypeEl.value = '';
+    }
+  }
+
+  if (salaryOtherEl && salaryOtherGroup) {
+    if (job.salaryType === 'その他' || job.salaryOther) {
+      salaryOtherEl.value = job.salaryOther || '';
+      salaryOtherGroup.style.display = 'block';
+    } else {
+      salaryOtherEl.value = '';
+      salaryOtherGroup.style.display = 'none';
+    }
+  }
+}
+
+/**
+ * 勤務時間フィールドを設定（複数入力対応）
+ */
+function populateWorkingHoursFields(job) {
+  const container = document.getElementById('jm-working-hours-list');
+  if (!container) return;
+
+  const hoursData = job.workingHours || '';
+  const hoursArray = hoursData.split(/[|\n]/).map(h => h.trim()).filter(h => h);
+
+  if (hoursArray.length === 0) {
+    hoursArray.push('');
+  }
+
+  container.innerHTML = hoursArray.map(hour => `
+    <div class="multi-input-item">
+      <input type="text" class="jm-working-hours-input" placeholder="例: 8:00〜17:00" value="${escapeHtml(hour)}">
+      <button type="button" class="btn-remove-item" title="削除">×</button>
+    </div>
+  `).join('');
+
+  setupJmWorkingHoursRemoveButtons();
+}
+
+/**
+ * 特徴チェックボックスを設定
+ */
+function populateFeaturesCheckboxes(job) {
+  const featuresData = job.features || '';
+  const featuresArray = featuresData.split(',').map(f => f.trim()).filter(f => f);
+
+  // まず全てのチェックを外す
+  document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+  });
+
+  // 該当するものをチェック
+  featuresArray.forEach(feature => {
+    const cb = document.querySelector(`#jm-features-checkbox-grid input[value="${feature}"]`);
+    if (cb) {
+      cb.checked = true;
+    }
+  });
+}
+
+/**
  * 求人一覧に戻る
  */
 function backToJobsList() {
@@ -423,20 +539,40 @@ function backToJobsList() {
 async function saveJob() {
   const getVal = (id) => document.getElementById(`jm-edit-job-${id}`)?.value?.trim() || '';
 
+  // 給与形態の取得
+  const salaryType = getVal('salary-type');
+  const salaryValue = getVal('salary');
+  const salaryOther = getVal('salary-other');
+
+  // 勤務時間の取得（複数入力から）
+  const workingHoursInputs = document.querySelectorAll('#jm-working-hours-list .jm-working-hours-input');
+  const workingHoursArray = Array.from(workingHoursInputs)
+    .map(input => input.value.trim())
+    .filter(v => v);
+  const workingHours = workingHoursArray.join(' | ');
+
+  // 特徴の取得（チェックボックスから）
+  const featuresCheckboxes = document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]:checked');
+  const featuresArray = Array.from(featuresCheckboxes).map(cb => cb.value);
+  const features = featuresArray.join(',');
+
   const jobData = {
     id: isNewJob ? '' : (currentEditingJob?.id || ''),
+    memo: getVal('memo'),
     title: getVal('title'),
     location: getVal('location'),
-    monthlySalary: getVal('salary'),
+    salaryType: salaryType,
+    monthlySalary: salaryValue,
+    salaryOther: salaryOther,
     totalBonus: getVal('bonus'),
     order: getVal('order'),
     jobType: getVal('type'),
-    features: getVal('features'),
-    badges: getVal('badges'),
+    features: features,
+    badges: '', // バッジは削除
     jobDescription: getVal('description'),
     requirements: getVal('requirements'),
     benefits: getVal('benefits'),
-    workingHours: getVal('hours'),
+    workingHours: workingHours,
     holidays: getVal('holidays'),
     publishStartDate: getVal('start-date'),
     publishEndDate: getVal('end-date'),
@@ -668,6 +804,166 @@ function setupEventListeners() {
   document.getElementById('jm-btn-download-google')?.addEventListener('click', () => downloadFeed('google'));
   document.getElementById('jm-btn-download-jobbox')?.addEventListener('click', () => downloadFeed('jobbox'));
   document.getElementById('jm-btn-download-csv')?.addEventListener('click', () => downloadFeed('csv'));
+
+  // 給与形態変更イベント
+  document.getElementById('jm-edit-job-salary-type')?.addEventListener('change', handleJmSalaryTypeChange);
+
+  // 勤務時間追加ボタン
+  document.getElementById('jm-btn-add-working-hours')?.addEventListener('click', addJmWorkingHoursItem);
+
+  // 既存の勤務時間削除ボタン
+  setupJmWorkingHoursRemoveButtons();
+
+  // アナリティクス日付範囲の初期化
+  initJmDateRangePicker();
+}
+
+/**
+ * アナリティクス日付範囲ピッカーを初期化
+ */
+function initJmDateRangePicker() {
+  const startInput = document.getElementById('jm-analytics-start-date');
+  const endInput = document.getElementById('jm-analytics-end-date');
+  const presetBtns = document.querySelectorAll('#jm-analytics .date-preset-btn');
+
+  if (!startInput || !endInput) return;
+
+  // デフォルト: 過去30日間
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 29);
+
+  endInput.value = formatDateForDateInput(today);
+  startInput.value = formatDateForDateInput(thirtyDaysAgo);
+
+  // 最大値を今日に設定
+  endInput.max = formatDateForDateInput(today);
+  startInput.max = formatDateForDateInput(today);
+
+  // プリセットボタンのイベント
+  presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = btn.dataset.preset;
+      const { start, end } = getJmPresetDates(preset);
+
+      startInput.value = formatDateForDateInput(start);
+      endInput.value = formatDateForDateInput(end);
+
+      // アクティブ状態を更新
+      presetBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // 日付変更時にプリセットのアクティブ状態をクリア
+  startInput.addEventListener('change', () => {
+    presetBtns.forEach(b => b.classList.remove('active'));
+  });
+  endInput.addEventListener('change', () => {
+    presetBtns.forEach(b => b.classList.remove('active'));
+  });
+}
+
+/**
+ * 日付をinput[type=date]用にフォーマット
+ */
+function formatDateForDateInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * プリセット期間の日付を取得
+ */
+function getJmPresetDates(preset) {
+  const today = new Date();
+  let start, end;
+
+  switch (preset) {
+    case '7days':
+      end = new Date(today);
+      start = new Date(today);
+      start.setDate(today.getDate() - 6);
+      break;
+    case '30days':
+      end = new Date(today);
+      start = new Date(today);
+      start.setDate(today.getDate() - 29);
+      break;
+    case '90days':
+      end = new Date(today);
+      start = new Date(today);
+      start.setDate(today.getDate() - 89);
+      break;
+    default:
+      end = new Date(today);
+      start = new Date(today);
+      start.setDate(today.getDate() - 29);
+  }
+
+  return { start, end };
+}
+
+/**
+ * 給与形態変更時の処理
+ */
+function handleJmSalaryTypeChange() {
+  const salaryTypeEl = document.getElementById('jm-edit-job-salary-type');
+  const salaryOtherGroup = document.getElementById('jm-salary-other-group');
+
+  if (!salaryTypeEl || !salaryOtherGroup) return;
+
+  if (salaryTypeEl.value === 'その他') {
+    salaryOtherGroup.style.display = 'block';
+  } else {
+    salaryOtherGroup.style.display = 'none';
+  }
+}
+
+/**
+ * 勤務時間の削除ボタンにイベントを設定
+ */
+function setupJmWorkingHoursRemoveButtons() {
+  const container = document.getElementById('jm-working-hours-list');
+  if (!container) return;
+
+  container.querySelectorAll('.btn-remove-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const items = container.querySelectorAll('.multi-input-item');
+      if (items.length > 1) {
+        btn.closest('.multi-input-item').remove();
+      }
+    });
+  });
+}
+
+/**
+ * 勤務時間を追加
+ */
+function addJmWorkingHoursItem() {
+  const container = document.getElementById('jm-working-hours-list');
+  if (!container) return;
+
+  const newItem = document.createElement('div');
+  newItem.className = 'multi-input-item';
+  newItem.innerHTML = `
+    <input type="text" class="jm-working-hours-input" placeholder="例: 8:00〜17:00">
+    <button type="button" class="btn-remove-item" title="削除">×</button>
+  `;
+
+  container.appendChild(newItem);
+
+  const removeBtn = newItem.querySelector('.btn-remove-item');
+  removeBtn.addEventListener('click', () => {
+    const items = container.querySelectorAll('.multi-input-item');
+    if (items.length > 1) {
+      newItem.remove();
+    }
+  });
+
+  newItem.querySelector('input').focus();
 }
 
 /**

@@ -14,6 +14,8 @@ import {
   initPointsSection,
   initFAQSection,
   initVideoButtonSection,
+  setupHeroImageUpload,
+  updateHeroImageUploadPreview,
   setLPCustomColors,
   resetLPCustomColors,
   setupLPColorPickers,
@@ -366,6 +368,9 @@ async function loadLPSettingsForJob(jobId) {
 
   renderHeroImagePresets();
 
+  // ヒーロー画像アップロードを設定
+  setupHeroImageUpload(companyDomain);
+
   const patternRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (patternRadio) patternRadio.checked = true;
 
@@ -441,6 +446,7 @@ async function loadLPSettingsForJob(jobId) {
         });
 
         updateHeroImagePresetSelection(settings.heroImage || '');
+        updateHeroImageUploadPreview(settings.heroImage || '');
         loadSectionsFromSettings(settings);
 
         // リアルタイムプレビューを更新

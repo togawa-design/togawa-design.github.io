@@ -6,6 +6,7 @@ import { escapeHtml, trackEvent } from '@shared/utils.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { JobCard, CompanyJobCard } from '@components/molecules/index.js';
 import { LoadingSpinner, Image } from '@components/atoms/index.js';
+import { initFooterContent } from '@shared/layout.js';
 
 // 会社ページのHTMLを生成
 export function renderCompanyPageContent(companyInfo, companyJobs) {
@@ -171,6 +172,7 @@ export async function renderCompanyPage() {
 
   setupApplyTracking(companyInfo.companyDomain);
   renderRelatedJobs(companies, companyDomain);
+  initFooterContent();
 }
 
 export default {

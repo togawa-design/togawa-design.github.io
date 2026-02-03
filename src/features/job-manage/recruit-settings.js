@@ -16,7 +16,8 @@ import {
   updateLivePreview,
   initVideoButtonSection,
   renderRecruitSectionsList,
-  setupRecruitSectionDragDrop
+  setupRecruitSectionDragDrop,
+  setupRecruitInfoPanel
 } from '@features/recruit-settings/core.js';
 
 // 現在の会社ドメイン
@@ -42,6 +43,9 @@ export async function initRecruitSettings(domain) {
 
   // プレビューリンク更新
   updatePreviewLink(domain);
+
+  // 採用ページ情報パネルを初期化
+  setupRecruitInfoPanel(domain);
 
   // ヒーロー画像プリセットをレンダリング
   renderHeroImagePresets();

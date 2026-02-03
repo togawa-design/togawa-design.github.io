@@ -69,13 +69,9 @@ export function renderFooter() {
           </ul>
         </div>
         <div class="footer-col">
-          <h3>メーカーから探す</h3>
-          <ul>
-            <li><a href="#">トヨタの求人</a></li>
-            <li><a href="#">日産の求人</a></li>
-            <li><a href="#">ホンダの求人</a></li>
-            <li><a href="#">スバルの求人</a></li>
-            <li><a href="#">その他のメーカー</a></li>
+          <h3>職種名から探す</h3>
+          <ul id="footer-job-types">
+            <li><a href="jobs.html">すべての求人</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -141,9 +137,48 @@ export async function renderFooterLocations() {
   }
 }
 
+/**
+ * フッターの職種名リンクを更新
+ */
+export async function renderFooterJobTypes() {
+  const container = document.getElementById('footer-job-types');
+  if (!container) return;
+
+  try {
+    const jobTypes = await JobsLoader.getJobTypeList();
+    const topJobTypes = jobTypes.slice(0, 5);
+
+    if (topJobTypes.length === 0) {
+      container.innerHTML = '<li><a href="jobs.html">すべての求人</a></li>';
+      return;
+    }
+
+    container.innerHTML = topJobTypes.map(jt =>
+      `<li><a href="jobs.html?occupation=${encodeURIComponent(jt.jobType)}">${escapeHtml(jt.jobType)}の求人</a></li>`
+    ).join('') + '<li><a href="jobs.html">すべての求人</a></li>';
+
+  } catch (error) {
+    console.error('フッター職種名の取得エラー:', error);
+  }
+}
+
+/**
+ * フッターの動的コンテンツを初期化
+ */
+export function initFooterContent() {
+  if (document.getElementById('footer-locations')) {
+    renderFooterLocations();
+  }
+  if (document.getElementById('footer-job-types')) {
+    renderFooterJobTypes();
+  }
+}
+
 export default {
   renderHeader,
   renderFooter,
   initLayout,
-  renderFooterLocations
+  renderFooterLocations,
+  renderFooterJobTypes,
+  initFooterContent
 };

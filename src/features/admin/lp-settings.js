@@ -2,8 +2,9 @@
  * Admin Dashboard - LP設定モジュール
  */
 
-import { escapeHtml } from '@shared/utils.js';
+import { escapeHtml, showToast } from '@shared/utils.js';
 import { spreadsheetConfig, heroImagePresets } from './config.js';
+import { uploadLPImage, selectImageFile } from './image-uploader.js';
 import { parseCSVLine } from './csv-utils.js';
 import { getCompaniesCache, loadCompanyManageData } from './company-manager.js';
 import { isAdmin, getUserCompanyDomain } from './auth.js';
@@ -91,6 +92,10 @@ export async function loadJobListForLP() {
     const userCompanyDomain = getUserCompanyDomain();
     if (companySelectGroup) companySelectGroup.style.display = 'none';
     if (stepsIndicator) stepsIndicator.style.display = 'none';
+
+    // 戻るボタンを非表示
+    const backBtn = document.getElementById('lp-back-to-companies');
+    if (backBtn) backBtn.style.display = 'none';
 
     if (userCompanyDomain) {
       selectedCompanyDomain = userCompanyDomain;
@@ -412,6 +417,9 @@ export async function loadLPSettings(jobId) {
 
   renderHeroImagePresets();
 
+  // ヒーロー画像アップロードを設定
+  setupHeroImageUpload(currentJobData?.companyDomain || selectedCompanyDomain);
+
   // デフォルトのデザインパターンを設定
   const patternRadio = document.querySelector('input[name="design-pattern"][value="standard"]');
   if (patternRadio) patternRadio.checked = true;
@@ -524,6 +532,7 @@ export async function loadLPSettings(jobId) {
         });
 
         updateHeroImagePresetSelection(settings.heroImage || '');
+        updateHeroImageUploadPreview(settings.heroImage || '');
 
         // セクションマネージャーを初期化してデータを読み込み
         initSectionManagerIfNeeded();
@@ -858,6 +867,107 @@ export function initVideoButtonSection() {
       videoUrlGroup.style.display = checkbox.checked ? 'block' : 'none';
     });
   }
+}
+
+// ===========================================
+// ヒーロー画像アップロード
+// ===========================================
+
+/**
+ * ヒーロー画像プレビューを更新
+ */
+export function updateHeroImageUploadPreview(url) {
+  const previewEl = document.getElementById('lp-hero-image-preview');
+  if (!previewEl) return;
+
+  if (url) {
+    previewEl.innerHTML = `<img src="${escapeHtml(url)}" alt="ヒーロー画像プレビュー" style="max-width: 200px; max-height: 120px; object-fit: cover; border-radius: 8px;">`;
+    previewEl.style.display = 'block';
+  } else {
+    previewEl.innerHTML = '';
+    previewEl.style.display = 'none';
+  }
+}
+
+/**
+ * ヒーロー画像アップロードボタンを設定
+ */
+export function setupHeroImageUpload(companyDomain) {
+  let uploadBtn = document.getElementById('btn-upload-hero-image');
+  let urlInput = document.getElementById('lp-hero-image');
+  const previewEl = document.getElementById('lp-hero-image-preview');
+
+  if (!uploadBtn || !urlInput) return;
+
+  // 既存のイベントリスナーを削除するために要素を複製して置き換え
+  const newUploadBtn = uploadBtn.cloneNode(true);
+  uploadBtn.parentNode.replaceChild(newUploadBtn, uploadBtn);
+  uploadBtn = newUploadBtn;
+
+  // URL入力時のプレビュー更新
+  urlInput.addEventListener('input', () => {
+    updateHeroImageUploadPreview(urlInput.value);
+  });
+
+  // 初期プレビュー
+  if (urlInput.value) {
+    updateHeroImageUploadPreview(urlInput.value);
+  }
+
+  // アップロードボタンクリック
+  uploadBtn.addEventListener('click', async () => {
+    const domain = companyDomain || selectedCompanyDomain;
+    if (!domain) {
+      showToast('会社情報が設定されていません', 'error');
+      return;
+    }
+
+    try {
+      // ファイル選択
+      const file = await selectImageFile({ accept: 'image/png,image/jpeg,image/webp' });
+
+      // アップロード中の表示
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="upload-spinner"></span> アップロード中...';
+      if (previewEl) {
+        previewEl.classList.add('uploading');
+        previewEl.innerHTML = '<div class="upload-spinner"></div>';
+        previewEl.style.display = 'block';
+      }
+
+      // Cloudinaryにアップロード
+      const timestamp = Date.now();
+      const url = await uploadLPImage(file, domain);
+
+      // キャッシュ回避のためタイムスタンプを追加
+      const urlWithCache = url.includes('?') ? `${url}&t=${timestamp}` : `${url}?t=${timestamp}`;
+
+      // URLを入力欄に設定
+      urlInput.value = urlWithCache;
+      urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // プレビューを更新
+      updateHeroImageUploadPreview(urlWithCache);
+
+      // ヒーロー画像プリセットの選択状態を更新
+      updateHeroImagePresetSelection(urlWithCache);
+
+      showToast('画像をアップロードしました', 'success');
+    } catch (error) {
+      console.error('[LPSettings] ヒーロー画像アップロードエラー:', error);
+      if (error.message !== 'ファイルが選択されませんでした') {
+        showToast('アップロードに失敗しました: ' + error.message, 'error');
+      }
+      // プレビューを元に戻す
+      updateHeroImageUploadPreview(urlInput.value);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = '<span class="upload-icon">📷</span> アップロード';
+      if (previewEl) {
+        previewEl.classList.remove('uploading');
+      }
+    }
+  });
 }
 
 // ===========================================
@@ -1946,6 +2056,8 @@ export default {
   getPointsData,
   initPointsSection,
   initVideoButtonSection,
+  setupHeroImageUpload,
+  updateHeroImageUploadPreview,
   initSectionManagerIfNeeded,
   resetLPLivePreviewState,
   setLPCustomColors,

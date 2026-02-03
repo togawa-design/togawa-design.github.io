@@ -35,7 +35,8 @@ import {
   editJob,
   closeJobModal,
   saveJobData,
-  deleteJob
+  deleteJob,
+  setupJobEditEventHandlers
 } from './jobs.js';
 
 // フィード生成
@@ -47,7 +48,7 @@ import {
 } from './feeds.js';
 
 // アクセス解析
-import { loadAnalyticsData } from './analytics.js';
+import { loadAnalyticsData, initDateRangePicker, initAnalyticsTabs } from './analytics.js';
 
 // レポート
 import {
@@ -265,7 +266,12 @@ function setupEventListeners() {
   document.getElementById('btn-report-excel')?.addEventListener('click', downloadReportExcel);
 
   // アクセス解析機能
+  initDateRangePicker();
+  initAnalyticsTabs();
   document.getElementById('btn-load-analytics')?.addEventListener('click', loadAnalyticsData);
+
+  // 求人編集フォームのイベントハンドラ
+  setupJobEditEventHandlers();
 }
 
 /**

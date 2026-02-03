@@ -6,6 +6,7 @@ import { escapeHtml, nl2br, getUrlParam, trackEvent, showLoading, showError, wai
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { JobCard, PointCard, DetailRow } from '@components/molecules/index.js';
 import { Icons, TagList } from '@components/atoms/index.js';
+import { initFooterContent } from '@shared/layout.js';
 
 // 求人詳細を描画
 export function renderJobDetail(job) {
@@ -469,6 +470,9 @@ export async function initJobDetailPage() {
 
     // 応募ボタンのクリックイベントを設定
     setupApplyButtonTracking();
+
+    // フッターコンテンツを初期化
+    initFooterContent();
 
   } catch (error) {
     console.error('求人詳細の取得エラー:', error);

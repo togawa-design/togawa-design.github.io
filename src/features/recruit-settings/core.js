@@ -82,6 +82,13 @@ export function populateForm(settings, companyName = '') {
   if (settings.sectionVisibility) {
     applySectionVisibility(settings.sectionVisibility);
   }
+
+  // SNS連携設定
+  setInputValue('recruit-sns-twitter', settings.snsTwitter || '');
+  setInputValue('recruit-sns-instagram', settings.snsInstagram || '');
+  setInputValue('recruit-sns-facebook', settings.snsFacebook || '');
+  setInputValue('recruit-sns-youtube', settings.snsYoutube || '');
+  setInputValue('recruit-sns-line', settings.snsLine || '');
 }
 
 /**
@@ -160,7 +167,13 @@ export function getFormValues(companyDomain) {
     videoUrl: document.getElementById('recruit-video-url')?.value || '',
     // セクション並び替え設定
     sectionOrder: getRecruitSectionOrder().join(','),
-    sectionVisibility: JSON.stringify(getRecruitSectionVisibility())
+    sectionVisibility: JSON.stringify(getRecruitSectionVisibility()),
+    // SNS連携
+    snsTwitter: document.getElementById('recruit-sns-twitter')?.value || '',
+    snsInstagram: document.getElementById('recruit-sns-instagram')?.value || '',
+    snsFacebook: document.getElementById('recruit-sns-facebook')?.value || '',
+    snsYoutube: document.getElementById('recruit-sns-youtube')?.value || '',
+    snsLine: document.getElementById('recruit-sns-line')?.value || ''
   };
 }
 
@@ -482,6 +495,120 @@ export function setupLogoUpload(companyDomain) {
       }
     }
   });
+}
+
+/**
+ * 採用ページ情報パネルを初期化
+ */
+export function setupRecruitInfoPanel(companyDomain) {
+  const baseUrl = window.location.origin;
+  const recruitUrl = `${baseUrl}/company-recruit.html?c=${encodeURIComponent(companyDomain)}`;
+
+  // URL表示を更新
+  const urlLink = document.getElementById('recruit-page-url-link');
+  const previewLink = document.getElementById('recruit-preview-link');
+  if (urlLink) {
+    urlLink.href = recruitUrl;
+    urlLink.textContent = recruitUrl;
+  }
+  if (previewLink) {
+    previewLink.href = recruitUrl;
+  }
+
+  // URLコピーボタン
+  const copyBtn = document.getElementById('btn-copy-recruit-url');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(recruitUrl);
+        showToast('URLをコピーしました', 'success');
+      } catch (e) {
+        console.error('URLコピーに失敗:', e);
+        showToast('コピーに失敗しました', 'error');
+      }
+    });
+  }
+
+  // 埋め込みリンクを更新
+  updateEmbedLinks(recruitUrl);
+
+  // 埋め込みリンクコピーボタン
+  setupEmbedCopyButtons();
+
+  // QRコード生成ボタン
+  const qrBtn = document.getElementById('btn-generate-qr');
+  if (qrBtn) {
+    qrBtn.addEventListener('click', () => {
+      generateQRCode(recruitUrl);
+    });
+  }
+}
+
+/**
+ * 埋め込みリンクを更新
+ */
+function updateEmbedLinks(url) {
+  const textLinkEl = document.getElementById('embed-text-link');
+  const buttonLinkEl = document.getElementById('embed-button-link');
+
+  if (textLinkEl) {
+    textLinkEl.textContent = `<a href="${url}" target="_blank">採用情報を見る</a>`;
+  }
+
+  if (buttonLinkEl) {
+    buttonLinkEl.textContent = `<a href="${url}" target="_blank" style="display:inline-block;padding:12px 24px;background:#6366f1;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">採用情報</a>`;
+  }
+}
+
+/**
+ * 埋め込みリンクのコピーボタンを設定
+ */
+function setupEmbedCopyButtons() {
+  document.querySelectorAll('.btn-copy-embed').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.target;
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        try {
+          await navigator.clipboard.writeText(targetEl.textContent);
+          showToast('コードをコピーしました', 'success');
+        } catch (e) {
+          console.error('コピーに失敗:', e);
+          showToast('コピーに失敗しました', 'error');
+        }
+      }
+    });
+  });
+}
+
+/**
+ * QRコードを生成（簡易版：Google Chart APIを使用）
+ */
+function generateQRCode(url) {
+  const container = document.getElementById('recruit-qr-code');
+  if (!container) return;
+
+  // Google Chart API でQRコード生成
+  const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(url)}&choe=UTF-8`;
+
+  container.innerHTML = `<img src="${qrUrl}" alt="QRコード" style="width:100%;height:100%;">`;
+}
+
+/**
+ * 公開状態を更新
+ */
+export function updatePublishStatus(isPublished) {
+  const badge = document.getElementById('recruit-status-badge');
+  const toggleBtn = document.getElementById('btn-toggle-publish');
+
+  if (badge) {
+    badge.className = `status-badge ${isPublished ? 'status-published' : 'status-draft'}`;
+    badge.textContent = isPublished ? '公開中' : '非公開';
+  }
+
+  if (toggleBtn) {
+    toggleBtn.textContent = isPublished ? '非公開にする' : '公開する';
+  }
 }
 
 /**

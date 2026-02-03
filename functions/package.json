@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "functions-framework --target=getAnalyticsData",
-    "deploy": "gcloud functions deploy getAnalyticsData --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1"
+    "start:email": "functions-framework --target=sendEmail --port=8081",
+    "deploy": "gcloud functions deploy getAnalyticsData --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1",
+    "deploy:sendEmail": "gcloud functions deploy sendEmail --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY",
+    "deploy:inboundParse": "gcloud functions deploy inboundParse --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1",
+    "deploy:getEmails": "gcloud functions deploy getEmails --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1"
   },
   "engines": {
     "node": ">=20"
@@ -13,6 +17,8 @@
   "dependencies": {
     "@google-analytics/data": "^4.0.0",
     "@google-cloud/functions-framework": "^3.3.0",
+    "@sendgrid/mail": "^8.1.0",
+    "busboy": "^1.6.0",
     "cors": "^2.8.5",
     "firebase-admin": "^12.0.0"
   },

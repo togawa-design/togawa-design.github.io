@@ -752,6 +752,20 @@ function normalizeHeader(header) {
     // 勤務地（実際に働く場所）
     勤務地: "workLocation",
     workLocation: "workLocation",
+    // 給与形態
+    給与形態: "salaryType",
+    salaryType: "salaryType",
+    "給与詳細（その他）": "salaryOther",
+    salaryOther: "salaryOther",
+    // 雇用形態
+    雇用形態: "employmentType",
+    employmentType: "employmentType",
+    // メモ
+    メモ: "memo",
+    memo: "memo",
+    // 職種
+    職種: "jobType",
+    jobType: "jobType",
   };
   const cleanHeader = String(header).trim();
   return mapping[cleanHeader] || cleanHeader;
@@ -870,13 +884,19 @@ function saveJob(companyDomain, jobData, rowIndex) {
     let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     // 必要な列が存在しなければ追加
-    const requiredCols = ["jobType"];
+    const requiredCols = ["memo", "employmentType", "jobType", "salaryType", "salaryOther"];
     for (const col of requiredCols) {
       if (!headers.includes(col)) {
-        const newColIndex = lastCol + 1;
+        const newColIndex = sheet.getLastColumn() + 1;
         sheet.getRange(1, newColIndex).setValue(col);
         // 2行目に日本語ヘッダーを追加
-        const japaneseHeaders = { jobType: "職種" };
+        const japaneseHeaders = {
+          memo: "メモ",
+          employmentType: "雇用形態",
+          jobType: "職種",
+          salaryType: "給与形態",
+          salaryOther: "給与詳細（その他）"
+        };
         if (japaneseHeaders[col]) {
           sheet.getRange(2, newColIndex).setValue(japaneseHeaders[col]);
         }
@@ -888,10 +908,14 @@ function saveJob(companyDomain, jobData, rowIndex) {
     const rowData = headers.map((header) => {
       const mapping = {
         id: jobData.id || "",
+        memo: jobData.memo || "",
         title: jobData.title || "",
+        employmentType: jobData.employmentType || "",
         location: jobData.location || "",
         totalBonus: jobData.totalBonus || "",
+        salaryType: jobData.salaryType || "",
         monthlySalary: jobData.monthlySalary || "",
+        salaryOther: jobData.salaryOther || "",
         jobType: jobData.jobType || "",
         features: jobData.features || "",
         badges: jobData.badges || "",
@@ -1055,7 +1079,12 @@ function updateRecruitSettings(settingsData) {
         "showVideoButton",
         "videoUrl",
         "sectionOrder",
-        "sectionVisibility"
+        "sectionVisibility",
+        "snsTwitter",
+        "snsInstagram",
+        "snsFacebook",
+        "snsYoutube",
+        "snsLine"
       ];
       sheet.appendRow(headers);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -1090,7 +1119,12 @@ function updateRecruitSettings(settingsData) {
       "showVideoButton",
       "videoUrl",
       "sectionOrder",
-      "sectionVisibility"
+      "sectionVisibility",
+      "snsTwitter",
+      "snsInstagram",
+      "snsFacebook",
+      "snsYoutube",
+      "snsLine"
     ];
 
     for (const col of requiredCols) {

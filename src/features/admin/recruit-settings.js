@@ -3,6 +3,7 @@
  * 会社選択グリッド + 共通コアを使用
  */
 import { escapeHtml, showConfirm } from '@shared/utils.js';
+import { isAdmin, getUserCompanyDomain } from './auth.js';
 import {
   loadRecruitSettings,
   populateForm,
@@ -63,6 +64,22 @@ async function loadCompanyGrid() {
     const companies = await window.JobsLoader.fetchCompanies();
     const visibleCompanies = companies.filter(c => window.JobsLoader.isCompanyVisible(c));
 
+    // 会社ユーザーの場合は直接自社を選択
+    if (!isAdmin()) {
+      const userCompanyDomain = getUserCompanyDomain();
+      const userCompany = visibleCompanies.find(c => c.companyDomain === userCompanyDomain);
+      if (userCompany) {
+        // 会社選択グリッドを非表示
+        document.getElementById('recruit-company-select-group').style.display = 'none';
+        // 戻るボタンを非表示
+        const backBtn = document.getElementById('recruit-back-to-companies');
+        if (backBtn) backBtn.style.display = 'none';
+        // 直接会社を選択
+        selectCompany(userCompany);
+        return;
+      }
+    }
+
     if (visibleCompanies.length === 0) {
       gridEl.innerHTML = '<p class="no-data">表示可能な会社がありません</p>';
       return;
@@ -116,6 +133,9 @@ async function selectCompany(company) {
   document.getElementById('recruit-editor').style.display = 'block';
   document.getElementById('recruit-selected-company-name').textContent = company.company;
 
+  // URL表示を更新
+  updateRecruitUrlDisplay(company.companyDomain);
+
   // プレビューリンク更新
   updatePreviewLink(company.companyDomain);
 
@@ -141,6 +161,23 @@ async function selectCompany(company) {
     // 読み込み完了
     setFormLoadingState(false);
   }
+}
+
+/**
+ * 採用ページURLの表示を更新
+ * @param {string} companyDomain - 会社ドメイン
+ */
+function updateRecruitUrlDisplay(companyDomain) {
+  const urlDisplay = document.getElementById('recruit-url-display');
+  const urlLink = document.getElementById('recruit-url-link');
+  if (!urlDisplay || !urlLink) return;
+
+  const baseUrl = window.location.origin;
+  const fullUrl = `${baseUrl}/company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
+
+  urlLink.href = fullUrl;
+  urlLink.textContent = fullUrl;
+  urlDisplay.style.display = 'block';
 }
 
 /**
@@ -203,6 +240,9 @@ function setupEventListeners() {
       recruitSettings = {};
       document.getElementById('recruit-company-select-group').style.display = 'block';
       document.getElementById('recruit-editor').style.display = 'none';
+      // URL表示を非表示
+      const urlDisplay = document.getElementById('recruit-url-display');
+      if (urlDisplay) urlDisplay.style.display = 'none';
     });
   }
 

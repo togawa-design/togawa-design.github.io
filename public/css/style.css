@@ -746,6 +746,52 @@ img {
   box-shadow: var(--shadow-lg);
 }
 
+/* 注目の求人グリッド（トップページ用） */
+.jobs-grid-featured {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.jobs-grid-featured .job-card {
+  min-width: 0;
+}
+
+/* スマホ: 横スクロール、3件表示 */
+@media (max-width: 768px) {
+  .jobs-grid-featured {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 16px;
+    padding-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .jobs-grid-featured::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+
+  .jobs-grid-featured .job-card {
+    flex: 0 0 85%;
+    max-width: 85%;
+    scroll-snap-align: start;
+  }
+
+  /* 4件目以降は非表示 */
+  .jobs-grid-featured .job-card:nth-child(n+4) {
+    display: none;
+  }
+}
+
+/* タブレット: 2列表示 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .jobs-grid-featured {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ========================================
    コンテンツセクション
 ======================================== */
@@ -4213,4 +4259,288 @@ img {
   .modal-title {
     font-size: 20px;
   }
+}
+
+/* ========================================
+   アクセス解析タブ（job-manage用）
+   ======================================== */
+.analytics-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+}
+
+.analytics-tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.analytics-tab:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.analytics-tab.active {
+  background: #6366f1;
+  color: #fff;
+}
+
+.analytics-tab-content {
+  display: none;
+}
+
+.analytics-tab-content.active {
+  display: block;
+}
+
+/* 統計グリッド */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stats-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.stats-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 767px) {
+  .stats-grid,
+  .stats-grid-2,
+  .stats-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-tabs {
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .analytics-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  font-size: 24px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* 分析レイアウト */
+.analytics-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.analytics-col {
+  min-width: 0;
+}
+
+@media (max-width: 991px) {
+  .analytics-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* チャートコンテナ */
+.chart-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+.chart-container h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.chart-placeholder {
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* テーブルコンテナ */
+.table-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+.table-container h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+/* ファネルチャート */
+.funnel-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.funnel-container h3 {
+  margin: 0 0 20px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.funnel-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(90deg, #e0e7ff 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  position: relative;
+}
+
+.funnel-stage:nth-child(1) {
+  background: linear-gradient(90deg, #c7d2fe 0%, #e0e7ff 100%);
+}
+
+.funnel-stage:nth-child(2) {
+  background: linear-gradient(90deg, #a5b4fc 0%, #c7d2fe 100%);
+  margin-left: 20px;
+}
+
+.funnel-stage:nth-child(3) {
+  background: linear-gradient(90deg, #818cf8 0%, #a5b4fc 100%);
+  margin-left: 40px;
+}
+
+.funnel-stage:nth-child(4) {
+  background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%);
+  margin-left: 60px;
+  color: #fff;
+}
+
+.funnel-stage-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.funnel-stage-count {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.funnel-stage-rate {
+  font-size: 13px;
+  opacity: 0.8;
+  min-width: 60px;
+  text-align: right;
+}
+
+@media (max-width: 767px) {
+  .funnel-stage {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .funnel-stage:nth-child(2),
+  .funnel-stage:nth-child(3),
+  .funnel-stage:nth-child(4) {
+    margin-left: 0;
+  }
+
+  .funnel-stage-count {
+    font-size: 16px;
+  }
+}
+
+/* ローディングプレースホルダー */
+.loading-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* タイプバッジ */
+.type-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.type-badge.apply {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.type-badge.line {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.type-badge.consult {
+  background: #fef3c7;
+  color: #92400e;
 }

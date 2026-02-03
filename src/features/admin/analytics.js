@@ -5,7 +5,7 @@
 import { escapeHtml, formatNumber } from '@shared/utils.js';
 import { renderDemographics } from '@shared/analytics-utils.js';
 import { config } from './config.js';
-import { getIdToken } from './auth.js';
+import { getIdToken, isAdmin, getUserCompanyDomain } from './auth.js';
 import { getPatternLabel } from './config.js';
 
 // 企業データキャッシュ
@@ -23,11 +23,41 @@ export function getCompanyData() {
   return companyData;
 }
 
+/**
+ * APIのURLを構築（会社ユーザーの場合は自社フィルターを追加）
+ * @param {string} baseUrl - ベースURL
+ * @param {Object} params - クエリパラメータ
+ * @returns {string} 完成したURL
+ */
+function buildApiUrl(baseUrl, params = {}) {
+  const url = new URL(baseUrl, window.location.origin);
+
+  // パラメータを追加
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  // 会社ユーザーの場合は自社フィルターを追加
+  if (!isAdmin()) {
+    const companyDomain = getUserCompanyDomain();
+    if (companyDomain) {
+      url.searchParams.set('company_domain', companyDomain);
+    }
+  }
+
+  return url.toString();
+}
+
 // ダッシュボードデータ読み込み
 export async function loadDashboardData() {
   const dateRangeEl = document.getElementById('date-range');
   const days = dateRangeEl?.value || 7;
   const apiEndpoint = config.apiEndpoint;
+
+  // 会社ユーザー用のUI制限を適用
+  applyAnalyticsUIRestrictions();
 
   if (apiEndpoint) {
     try {
@@ -38,6 +68,51 @@ export async function loadDashboardData() {
     }
   } else {
     loadMockData(days);
+  }
+}
+
+/**
+ * 会社ユーザー用のアナリティクスUI制限を適用
+ */
+function applyAnalyticsUIRestrictions() {
+  if (isAdmin()) return;
+
+  // 概要セクションの「企業別アクセスランキング」を非表示
+  const companyRanking = document.getElementById('overview-company-ranking');
+  if (companyRanking) {
+    companyRanking.style.display = 'none';
+  }
+
+  // 詳細分析セクションの「企業別」タブを非表示
+  const companiesTab = document.getElementById('tab-companies');
+  if (companiesTab) {
+    companiesTab.style.display = 'none';
+  }
+
+  // 「企業別」タブコンテンツを非表示
+  const companiesTabContent = document.getElementById('companies-tab');
+  if (companiesTabContent) {
+    companiesTabContent.classList.remove('active');
+  }
+
+  // デフォルトタブを「応募・CVR」に変更
+  const conversionTab = document.getElementById('tab-conversion');
+  const conversionTabContent = document.getElementById('conversion-tab');
+  if (conversionTab && conversionTabContent) {
+    conversionTab.classList.add('active');
+    conversionTabContent.classList.add('active');
+  }
+
+  // 「企業別エンゲージメント」セクションを非表示
+  const engagementSection = document.getElementById('engagement-company-section');
+  if (engagementSection) {
+    engagementSection.style.display = 'none';
+  }
+
+  // 「企業別CVR」セクションを非表示
+  const cvrSection = document.getElementById('company-cvr-section');
+  if (cvrSection) {
+    cvrSection.style.display = 'none';
   }
 }
 
@@ -53,7 +128,18 @@ async function fetchGAData(days, apiEndpoint) {
       headers['Authorization'] = `Bearer ${idToken}`;
     }
 
-    const response = await fetch(`${apiEndpoint}?days=${days}`, { headers });
+    // URLを構築
+    let url = `${apiEndpoint}?days=${days}`;
+
+    // 会社ユーザーの場合は自社のみ
+    if (!isAdmin()) {
+      const companyDomain = getUserCompanyDomain();
+      if (companyDomain) {
+        url += `&company_domain=${encodeURIComponent(companyDomain)}`;
+      }
+    }
+
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -515,7 +601,8 @@ async function loadEngagementData(days, apiEndpoint) {
       headers['Authorization'] = `Bearer ${idToken}`;
     }
 
-    const response = await fetch(`${apiEndpoint}?type=engagement&days=${days}`, { headers });
+    const url = buildApiUrl(apiEndpoint, { type: 'engagement', days });
+    const response = await fetch(url, { headers });
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -586,7 +673,8 @@ async function loadTrafficData(days, apiEndpoint) {
       headers['Authorization'] = `Bearer ${idToken}`;
     }
 
-    const response = await fetch(`${apiEndpoint}?type=traffic&days=${days}`, { headers });
+    const url = buildApiUrl(apiEndpoint, { type: 'traffic', days });
+    const response = await fetch(url, { headers });
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -704,7 +792,8 @@ async function loadFunnelData(days, apiEndpoint) {
       headers['Authorization'] = `Bearer ${idToken}`;
     }
 
-    const response = await fetch(`${apiEndpoint}?type=funnel&days=${days}`, { headers });
+    const url = buildApiUrl(apiEndpoint, { type: 'funnel', days });
+    const response = await fetch(url, { headers });
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -837,7 +926,8 @@ async function loadTrendData(days, apiEndpoint) {
       headers['Authorization'] = `Bearer ${idToken}`;
     }
 
-    const response = await fetch(`${apiEndpoint}?type=trends&days=${days}`, { headers });
+    const url = buildApiUrl(apiEndpoint, { type: 'trends', days });
+    const response = await fetch(url, { headers });
     const result = await response.json();
 
     if (result.success && result.data) {

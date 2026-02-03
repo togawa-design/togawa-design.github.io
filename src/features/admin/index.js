@@ -86,11 +86,38 @@ function applyRoleBasedUI() {
     if (sidebarHeader && companyDomain) {
       sidebarHeader.textContent = `${companyDomain} 管理画面`;
     }
+
+    // 設定画面の制御（パスワード変更のみ表示）
+    applySettingsRestrictions();
   } else {
     // 管理者用ナビゲーションを表示
     if (navAdmin) navAdmin.style.display = 'block';
     if (navCompany) navCompany.style.display = 'none';
   }
+}
+
+/**
+ * 設定画面の制限を適用（会社ユーザー用）
+ * パスワード変更のみ表示し、他の設定項目は非表示
+ */
+function applySettingsRestrictions() {
+  const settingsSection = document.getElementById('section-settings');
+  if (!settingsSection) return;
+
+  const cards = settingsSection.querySelectorAll('.settings-card');
+  cards.forEach(card => {
+    const title = card.querySelector('h3')?.textContent;
+    // パスワード変更（管理者アカウント）以外は非表示
+    if (title !== '管理者アカウント') {
+      card.style.display = 'none';
+    } else {
+      // パスワード変更セクションのタイトルを変更
+      const titleEl = card.querySelector('h3');
+      if (titleEl) {
+        titleEl.textContent = 'パスワード変更';
+      }
+    }
+  });
 }
 
 // モバイルメニュー開閉
@@ -717,18 +744,23 @@ async function renderApplicantCompanyGrid() {
 
   grid.innerHTML = '<div class="loading-cell">会社一覧を読み込み中...</div>';
 
-  // 会社ユーザーの場合は直接自社の応募者管理画面に遷移（SPA内）
-  if (!isAdmin()) {
-    const companyDomain = getUserCompanyDomain();
-    if (companyDomain) {
-      // SPA内で遷移
-      navigateToJobManage(companyDomain, companyDomain, 'applicant-select', null, 'applicants');
-      return;
-    }
-  }
-
   try {
     const companies = await JobsLoader.fetchCompanies();
+
+    // 会社ユーザーの場合は直接自社の応募者管理画面に遷移（SPA内）
+    if (!isAdmin()) {
+      const companyDomain = getUserCompanyDomain();
+      if (companyDomain) {
+        // 会社名を取得
+        const userCompany = companies.find(c => c.companyDomain === companyDomain);
+        const companyName = userCompany?.company || companyDomain;
+        // セクション切り替え完了後に遷移（isSectionSwitching チェックを回避）
+        setTimeout(() => {
+          navigateToJobManage(companyDomain, companyName, 'applicant-select', null, 'applicants');
+        }, 50);
+        return;
+      }
+    }
     if (!companies || companies.length === 0) {
       grid.innerHTML = '<div class="loading-cell">会社データがありません</div>';
       return;

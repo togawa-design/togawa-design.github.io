@@ -87,7 +87,8 @@ export function normalizeHeader(header) {
     '給与': 'salary', 'salary': 'salary',
     '雇用形態': 'employmentType', 'employmentType': 'employmentType', 'employment_type': 'employmentType',
     '資格・スキル': 'skills', 'skills': 'skills', '資格': 'skills', 'スキル': 'skills',
-    '検索タグ': 'tags', 'tags': 'tags'
+    '検索タグ': 'tags', 'tags': 'tags',
+    'メモ': 'memo', 'memo': 'memo'
   };
 
   const cleanHeader = header.replace(/"/g, '').trim();
@@ -353,6 +354,25 @@ export async function getJobsByLocation(prefecture) {
   });
 }
 
+// すべての職種名を取得（求人数の多い順）
+export async function getJobTypeList() {
+  const allJobs = await fetchAllJobs();
+  const jobTypeMap = {};
+
+  allJobs.forEach(job => {
+    // jobType（職種名）フィールドを参照
+    const jobType = job.jobType?.trim();
+    if (!jobType) return;
+
+    if (!jobTypeMap[jobType]) {
+      jobTypeMap[jobType] = { jobType, count: 0 };
+    }
+    jobTypeMap[jobType].count++;
+  });
+
+  return Object.values(jobTypeMap).sort((a, b) => b.count - a.count);
+}
+
 // キーワードで求人をフィルタリング
 export async function getJobsByKeyword(keyword) {
   const allJobs = await fetchAllJobs();
@@ -503,6 +523,7 @@ const JobsLoader = {
   getMaxMonthlySalary,
   fetchAllJobs,
   getLocationList,
+  getJobTypeList,
   getJobsByLocation,
   getJobsByKeyword,
   getJobsByOccupation,

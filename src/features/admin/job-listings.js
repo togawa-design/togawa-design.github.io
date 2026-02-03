@@ -5,6 +5,7 @@
 import { escapeHtml } from '@shared/utils.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { getJobStatus } from '@shared/job-service.js';
+import { isAdmin, getUserCompanyDomain } from './auth.js';
 
 // 状態管理
 let allJobs = [];
@@ -52,6 +53,14 @@ async function loadJobListingsData() {
     // 会社一覧と求人一覧を取得
     allCompanies = await JobsLoader.fetchCompanies();
     allJobs = await JobsLoader.fetchAllJobs();
+
+    // 会社ユーザーの場合は自社の求人のみフィルタ
+    if (!isAdmin()) {
+      const userCompanyDomain = getUserCompanyDomain();
+      if (userCompanyDomain) {
+        allJobs = allJobs.filter(job => job.companyDomain === userCompanyDomain);
+      }
+    }
 
     // 会社フィルターのオプションを生成
     populateCompanyFilter();
@@ -110,6 +119,15 @@ function updateSummary() {
 function populateCompanyFilter() {
   const select = document.getElementById('job-company-filter');
   if (!select) return;
+
+  // 会社ユーザーの場合はフィルターを非表示
+  if (!isAdmin()) {
+    const filterGroup = select.closest('.filter-group') || select.parentElement;
+    if (filterGroup) {
+      filterGroup.style.display = 'none';
+    }
+    return;
+  }
 
   // 表示可能な会社のみフィルタリング
   const visibleCompanies = allCompanies.filter(c => JobsLoader.isCompanyVisible(c));

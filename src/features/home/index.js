@@ -327,7 +327,7 @@ function animateNumber(element, target) {
   requestAnimationFrame(update);
 }
 
-// 求人一覧を描画
+// 求人一覧を描画（注目の求人：新規作成順）
 export async function renderJobs(containerId = 'jobs-container') {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -367,9 +367,10 @@ export async function renderJobs(containerId = 'jobs-container') {
     return;
   }
 
-  const companies = await JobsLoader.fetchCompanies();
+  // 全求人を取得して新規作成順にソート
+  const allJobs = await JobsLoader.fetchAllJobs();
 
-  if (!companies || companies.length === 0) {
+  if (!allJobs || allJobs.length === 0) {
     container.innerHTML = `
       <div class="jobs-error">
         <p>求人情報を取得できませんでした。</p>
@@ -379,38 +380,28 @@ export async function renderJobs(containerId = 'jobs-container') {
     return;
   }
 
-  const visibleCompanies = companies
-    .filter(company => JobsLoader.isCompanyVisible(company))
-    .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+  // 新規作成順にソート（createdAtまたはpublishStartで判定）
+  const sortedJobs = allJobs.sort((a, b) => {
+    const dateA = parseJobDate(a.createdAt || a.publishStart || '');
+    const dateB = parseJobDate(b.createdAt || b.publishStart || '');
+    return dateB - dateA; // 新しい順
+  });
 
-  const companiesWithJobData = await Promise.all(
-    visibleCompanies.map(async (company) => {
-      company._displayTotalBonus = '';
-      company._displayMonthlySalary = company.monthlySalary || '';
+  // 表示件数: 6件（モバイルはCSSで3件に制限）
+  const displayJobs = sortedJobs.slice(0, 6);
 
-      if (company.jobsSheet && company.jobsSheet.trim()) {
-        const companyJobs = await JobsLoader.fetchCompanyJobs(company.jobsSheet.trim());
-        if (companyJobs && companyJobs.length > 0) {
-          const sortedJobs = companyJobs
-            .filter(j => j.visible !== 'false' && j.visible !== 'FALSE')
-            .filter(j => JobsLoader.isJobInPublishPeriod(j))
-            .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+  // 横スクロール対応のためクラスを追加
+  container.classList.add('jobs-grid-featured');
+  container.innerHTML = displayJobs.map(job => JobCard({ job, showCompanyName: true })).join('');
+}
 
-          if (sortedJobs.length > 0) {
-            const firstJob = sortedJobs[0];
-            company._displayTotalBonus = firstJob.totalBonus || '';
-            const maxMonthlySalary = JobsLoader.getMaxMonthlySalary(sortedJobs);
-            if (maxMonthlySalary) {
-              company._displayMonthlySalary = maxMonthlySalary;
-            }
-          }
-        }
-      }
-      return company;
-    })
-  );
-
-  container.innerHTML = companiesWithJobData.map(company => JobCard({ job: company, linkToJobsList: true })).join('');
+// 日付文字列をパース
+function parseJobDate(dateStr) {
+  if (!dateStr) return new Date(0);
+  // YYYY/MM/DD または YYYY-MM-DD 形式に対応
+  const normalized = dateStr.replace(/\//g, '-');
+  const date = new Date(normalized);
+  return isNaN(date.getTime()) ? new Date(0) : date;
 }
 
 // 実績を描画
@@ -426,11 +417,6 @@ export async function renderStats() {
     }
 
     const items = [
-      {
-        value: stats.jobCount || 0,
-        label: '掲載求人数',
-        suffix: '件'
-      },
       {
         value: stats.avgHourlyWage || 0,
         label: '平均時給',
@@ -481,6 +467,29 @@ export async function renderFooterLocations() {
   }
 }
 
+// フッターの職種名リンクを更新
+export async function renderFooterJobTypes() {
+  const container = document.getElementById('footer-job-types');
+  if (!container) return;
+
+  try {
+    const jobTypes = await JobsLoader.getJobTypeList();
+    const topJobTypes = jobTypes.slice(0, 5);
+
+    if (topJobTypes.length === 0) {
+      container.innerHTML = '<li><a href="jobs.html">すべての求人</a></li>';
+      return;
+    }
+
+    container.innerHTML = topJobTypes.map(jt =>
+      `<li><a href="jobs.html?occupation=${encodeURIComponent(jt.jobType)}">${escapeHtml(jt.jobType)}の求人</a></li>`
+    ).join('') + '<li><a href="jobs.html">すべての求人</a></li>';
+
+  } catch (error) {
+    console.error('フッター職種名の取得エラー:', error);
+  }
+}
+
 // ページ初期化
 export function initHomePage() {
   initSearchTabs();
@@ -500,6 +509,10 @@ export function initHomePage() {
     renderFooterLocations();
   }
 
+  if (document.getElementById('footer-job-types')) {
+    renderFooterJobTypes();
+  }
+
   window.addEventListener('load', animateNumbers);
 }
 
@@ -513,6 +526,7 @@ export default {
   renderJobs,
   renderStats,
   renderFooterLocations,
+  renderFooterJobTypes,
   showLocationModal,
   showOccupationModal,
   showConsultModal

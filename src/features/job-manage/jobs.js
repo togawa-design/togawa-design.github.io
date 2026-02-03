@@ -465,8 +465,8 @@ export function showJobModal() {
  * セクションフォームをクリア
  */
 function clearSectionForm() {
-  const fields = ['title', 'location', 'salary', 'bonus', 'order', 'type', 'features',
-                  'badges', 'description', 'requirements', 'benefits', 'hours',
+  const fields = ['memo', 'title', 'employment-type', 'location', 'salary', 'bonus', 'order', 'type', 'features',
+                  'description', 'requirements', 'benefits',
                   'holidays', 'start-date', 'end-date'];
 
   fields.forEach(field => {
@@ -476,6 +476,31 @@ function clearSectionForm() {
 
   const visibleEl = document.getElementById('edit-job-visible-section');
   if (visibleEl) visibleEl.checked = true;
+
+  // 給与形態をクリア
+  const salaryTypeEl = document.getElementById('edit-job-salary-type-section');
+  if (salaryTypeEl) salaryTypeEl.value = '';
+  const salaryOtherEl = document.getElementById('edit-job-salary-other-section');
+  if (salaryOtherEl) salaryOtherEl.value = '';
+  const salaryOtherGroup = document.getElementById('salary-other-group');
+  if (salaryOtherGroup) salaryOtherGroup.style.display = 'none';
+
+  // 勤務時間リストをクリア（1つの空フィールドに戻す）
+  const workingHoursList = document.getElementById('working-hours-list');
+  if (workingHoursList) {
+    workingHoursList.innerHTML = `
+      <div class="multi-input-item">
+        <input type="text" class="working-hours-input" placeholder="例: 8:00〜17:00">
+        <button type="button" class="btn-remove-item" title="削除">×</button>
+      </div>
+    `;
+    setupWorkingHoursRemoveButtons();
+  }
+
+  // 特徴チェックボックスをクリア
+  document.querySelectorAll('#features-checkbox-grid input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+  });
 }
 
 /**
@@ -487,21 +512,91 @@ function populateSectionForm(job) {
     if (el) el.value = val || '';
   };
 
+  setVal('memo', job.memo);
   setVal('title', job.title);
+  setVal('employment-type', job.employmentType);
   setVal('location', job.location);
-  setVal('salary', job.monthlySalary);
   setVal('bonus', job.totalBonus);
   setVal('order', job.order);
   setVal('type', job.jobType);
-  setVal('features', job.features);
-  setVal('badges', job.badges);
   setVal('description', job.jobDescription);
   setVal('requirements', job.requirements);
   setVal('benefits', job.benefits);
-  setVal('hours', job.workingHours);
   setVal('holidays', job.holidays);
   setVal('start-date', formatDateForInput(job.publishStartDate));
   setVal('end-date', formatDateForInput(job.publishEndDate));
+
+  // 給与形態を設定
+  const salaryTypeEl = document.getElementById('edit-job-salary-type-section');
+  const salaryEl = document.getElementById('edit-job-salary-section');
+  const salaryOtherEl = document.getElementById('edit-job-salary-other-section');
+  const salaryOtherGroup = document.getElementById('salary-other-group');
+
+  if (salaryTypeEl) {
+    // salaryType があれば使用、なければ monthlySalary から推測
+    if (job.salaryType) {
+      salaryTypeEl.value = job.salaryType;
+    } else if (job.monthlySalary) {
+      // 既存データの場合、月給として設定
+      salaryTypeEl.value = '月給';
+    } else {
+      salaryTypeEl.value = '';
+    }
+  }
+
+  if (salaryEl) {
+    salaryEl.value = job.monthlySalary || '';
+  }
+
+  if (salaryOtherEl && salaryOtherGroup) {
+    if (job.salaryType === 'その他' || job.salaryOther) {
+      salaryOtherEl.value = job.salaryOther || '';
+      salaryOtherGroup.style.display = 'block';
+    } else {
+      salaryOtherEl.value = '';
+      salaryOtherGroup.style.display = 'none';
+    }
+  }
+
+  // 勤務時間を複数入力に対応
+  const workingHoursList = document.getElementById('working-hours-list');
+  if (workingHoursList) {
+    const hoursData = job.workingHours || '';
+    // 「|」または改行で分割
+    const hoursArray = hoursData.split(/[|\n]/).map(h => h.trim()).filter(h => h);
+
+    if (hoursArray.length === 0) {
+      hoursArray.push(''); // 空でも1つのフィールドを表示
+    }
+
+    workingHoursList.innerHTML = hoursArray.map(hour => `
+      <div class="multi-input-item">
+        <input type="text" class="working-hours-input" placeholder="例: 8:00〜17:00" value="${escapeHtml(hour)}">
+        <button type="button" class="btn-remove-item" title="削除">×</button>
+      </div>
+    `).join('');
+    setupWorkingHoursRemoveButtons();
+  }
+
+  // 特徴チェックボックスを設定
+  const featuresData = job.features || '';
+  const featuresArray = featuresData.split(',').map(f => f.trim()).filter(f => f);
+
+  // まず全てのチェックを外す
+  document.querySelectorAll('#features-checkbox-grid input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+  });
+
+  // 該当するものをチェック
+  featuresArray.forEach(feature => {
+    const cb = document.querySelector(`#features-checkbox-grid input[value="${feature}"]`);
+    if (cb) {
+      cb.checked = true;
+    }
+  });
+
+  // hidden フィールドにも設定
+  setVal('features', job.features);
 
   const visibleEl = document.getElementById('edit-job-visible-section');
   if (visibleEl) {
@@ -643,20 +738,41 @@ export async function saveJobData() {
   // セクション形式のフォームからデータを取得
   const getVal = (id) => document.getElementById(`edit-job-${id}-section`)?.value?.trim() || '';
 
+  // 給与形態の取得
+  const salaryType = getVal('salary-type');
+  const salaryValue = getVal('salary');
+  const salaryOther = getVal('salary-other');
+
+  // 勤務時間の取得（複数入力から）
+  const workingHoursInputs = document.querySelectorAll('#working-hours-list .working-hours-input');
+  const workingHoursArray = Array.from(workingHoursInputs)
+    .map(input => input.value.trim())
+    .filter(v => v);
+  const workingHours = workingHoursArray.join(' | ');
+
+  // 特徴の取得（チェックボックスから）
+  const featuresCheckboxes = document.querySelectorAll('#features-checkbox-grid input[type="checkbox"]:checked');
+  const featuresArray = Array.from(featuresCheckboxes).map(cb => cb.value);
+  const features = featuresArray.join(',');
+
   const jobData = {
     id: isNewJob ? '' : (currentEditingJob?.id || ''),
+    memo: getVal('memo'),
     title: getVal('title'),
+    employmentType: getVal('employment-type'),
     location: getVal('location'),
-    monthlySalary: getVal('salary'),
+    salaryType: salaryType,
+    monthlySalary: salaryValue,
+    salaryOther: salaryOther,
     totalBonus: getVal('bonus'),
     order: getVal('order'),
     jobType: getVal('type'),
-    features: getVal('features'),
-    badges: getVal('badges'),
+    features: features,
+    badges: '', // バッジは削除
     jobDescription: getVal('description'),
     requirements: getVal('requirements'),
     benefits: getVal('benefits'),
-    workingHours: getVal('hours'),
+    workingHours: workingHours,
     holidays: getVal('holidays'),
     publishStartDate: getVal('start-date'),
     publishEndDate: getVal('end-date'),
@@ -792,4 +908,87 @@ export async function deleteJob() {
       deleteBtn.textContent = '削除';
     }
   }
+}
+
+/**
+ * 勤務時間の削除ボタンにイベントを設定
+ */
+function setupWorkingHoursRemoveButtons() {
+  const container = document.getElementById('working-hours-list');
+  if (!container) return;
+
+  container.querySelectorAll('.btn-remove-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const items = container.querySelectorAll('.multi-input-item');
+      // 最後の1つは削除しない
+      if (items.length > 1) {
+        btn.closest('.multi-input-item').remove();
+      }
+    });
+  });
+}
+
+/**
+ * 勤務時間を追加
+ */
+function addWorkingHoursItem() {
+  const container = document.getElementById('working-hours-list');
+  if (!container) return;
+
+  const newItem = document.createElement('div');
+  newItem.className = 'multi-input-item';
+  newItem.innerHTML = `
+    <input type="text" class="working-hours-input" placeholder="例: 8:00〜17:00">
+    <button type="button" class="btn-remove-item" title="削除">×</button>
+  `;
+
+  container.appendChild(newItem);
+
+  // 新しい削除ボタンにイベントを設定
+  const removeBtn = newItem.querySelector('.btn-remove-item');
+  removeBtn.addEventListener('click', () => {
+    const items = container.querySelectorAll('.multi-input-item');
+    if (items.length > 1) {
+      newItem.remove();
+    }
+  });
+
+  // 新しい入力フィールドにフォーカス
+  newItem.querySelector('input').focus();
+}
+
+/**
+ * 給与形態変更時の処理
+ */
+function handleSalaryTypeChange() {
+  const salaryTypeEl = document.getElementById('edit-job-salary-type-section');
+  const salaryOtherGroup = document.getElementById('salary-other-group');
+
+  if (!salaryTypeEl || !salaryOtherGroup) return;
+
+  if (salaryTypeEl.value === 'その他') {
+    salaryOtherGroup.style.display = 'block';
+  } else {
+    salaryOtherGroup.style.display = 'none';
+  }
+}
+
+/**
+ * 求人編集フォームのイベントハンドラを設定
+ */
+export function setupJobEditEventHandlers() {
+  // 給与形態の変更イベント
+  const salaryTypeEl = document.getElementById('edit-job-salary-type-section');
+  if (salaryTypeEl) {
+    salaryTypeEl.addEventListener('change', handleSalaryTypeChange);
+  }
+
+  // 勤務時間追加ボタン
+  const addHoursBtn = document.getElementById('btn-add-working-hours');
+  if (addHoursBtn) {
+    addHoursBtn.addEventListener('click', addWorkingHoursItem);
+  }
+
+  // 既存の勤務時間削除ボタン
+  setupWorkingHoursRemoveButtons();
 }

@@ -7,6 +7,7 @@ import * as JobsLoader from '@shared/jobs-loader.js';
 import { JobCard } from '@components/molecules/index.js';
 import { LoadingSpinner } from '@components/atoms/index.js';
 import { initMobileMenu } from '@features/home/index.js';
+import { initFooterContent } from '@shared/layout.js';
 
 // 都道府県を地域ごとにグループ化
 const regionMap = {
@@ -213,6 +214,7 @@ export async function initLocationPage() {
 
   await renderOtherLocations(prefecture);
   initMobileMenu();
+  initFooterContent();
 }
 
 export default {

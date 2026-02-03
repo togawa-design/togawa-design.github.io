@@ -7,6 +7,7 @@ import * as JobsLoader from '@shared/jobs-loader.js';
 import { JobCard, LocationCard } from '@components/molecules/index.js';
 import { LoadingSpinner } from '@components/atoms/index.js';
 import { initMobileMenu } from '@features/home/index.js';
+import { initFooterContent } from '@shared/layout.js';
 
 // 全求人一覧を表示
 export async function renderAllJobs(container) {
@@ -223,6 +224,7 @@ export async function initJobsPage() {
 
   await renderLocationsList();
   initMobileMenu();
+  initFooterContent();
 }
 
 export default {

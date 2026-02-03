@@ -98,35 +98,43 @@ functions.http('getAnalyticsData', (req, res) => {
         console.log('Anonymous access to analytics data');
       }
 
-      const { type, days = 30 } = req.query;
+      const { type, days = 30, company_domain: companyDomain } = req.query;
       const client = getAnalyticsClient();
 
       let data;
 
       switch (type) {
         case 'overview':
-          data = await getOverviewData(client, parseInt(days));
+          data = await getOverviewData(client, parseInt(days), companyDomain);
           break;
         case 'companies':
           data = await getCompanyData(client, parseInt(days));
           break;
         case 'daily':
-          data = await getDailyData(client, parseInt(days));
+          data = await getDailyData(client, parseInt(days), companyDomain);
           break;
         case 'applications':
-          data = await getApplicationData(client, parseInt(days));
+          data = await getApplicationData(client, parseInt(days), companyDomain);
           break;
         case 'engagement':
-          data = await getEngagementData(client, parseInt(days));
+          // domain パラメータも受け付ける
+          const engagementDomain = req.query.domain || companyDomain;
+          data = await getEngagementData(client, parseInt(days), engagementDomain);
           break;
         case 'traffic':
-          data = await getTrafficSourceData(client, parseInt(days));
+          // domain パラメータも受け付ける
+          const trafficDomain = req.query.domain || companyDomain;
+          data = await getTrafficSourceData(client, parseInt(days), trafficDomain);
           break;
         case 'funnel':
-          data = await getFunnelData(client, parseInt(days));
+          // domain パラメータも受け付ける（フロントエンドの呼び出し方に対応）
+          const funnelDomain = req.query.domain || companyDomain;
+          data = await getFunnelData(client, parseInt(days), funnelDomain);
           break;
         case 'trends':
-          data = await getTrendData(client, parseInt(days));
+          // domain パラメータも受け付ける
+          const trendsDomain = req.query.domain || companyDomain;
+          data = await getTrendData(client, parseInt(days), trendsDomain);
           break;
         case 'company-detail':
           const { domain } = req.query;
@@ -146,10 +154,10 @@ functions.http('getAnalyticsData', (req, res) => {
         default:
           // すべてのデータを取得
           data = {
-            overview: await getOverviewData(client, parseInt(days)),
+            overview: await getOverviewData(client, parseInt(days), companyDomain),
             companies: await getCompanyData(client, parseInt(days)),
-            daily: await getDailyData(client, parseInt(days)),
-            applications: await getApplicationData(client, parseInt(days))
+            daily: await getDailyData(client, parseInt(days), companyDomain),
+            applications: await getApplicationData(client, parseInt(days), companyDomain)
           };
       }
 
@@ -175,40 +183,96 @@ functions.http('getAnalyticsData', (req, res) => {
 
 /**
  * 概要データを取得
+ * @param {object} client - Analytics Data APIクライアント
+ * @param {number} days - 取得日数
+ * @param {string|null} companyDomain - 会社ドメイン（指定時はその会社のみ）
  */
-async function getOverviewData(client, days) {
+async function getOverviewData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
-  console.log(`Fetching overview data for property: ${GA4_PROPERTY_ID}, days: ${days}`);
+  console.log(`Fetching overview data for property: ${GA4_PROPERTY_ID}, days: ${days}, company: ${companyDomain || 'all'}`);
 
-  // 基本指標を取得
-  const [response] = await client.runReport({
-    property: `properties/${GA4_PROPERTY_ID}`,
-    dateRanges: [{ startDate, endDate }],
-    metrics: [
-      { name: 'screenPageViews' },
-      { name: 'totalUsers' },
-      { name: 'sessions' }
-    ]
-  });
-
-  console.log('Basic metrics response:', JSON.stringify(response, null, 2));
-
-  const metrics = response.rows?.[0]?.metricValues || [];
-
-  // カスタムイベントを取得（企業ページ閲覧、応募クリック）
-  let companyViews = 0;
-  let applyClicks = 0;
-
-  try {
-    const [eventResponse] = await client.runReport({
+  // 会社指定がない場合は従来の全体データ
+  if (!companyDomain) {
+    // 基本指標を取得
+    const [response] = await client.runReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: 'eventName' }],
-      metrics: [{ name: 'eventCount' }],
+      metrics: [
+        { name: 'screenPageViews' },
+        { name: 'totalUsers' },
+        { name: 'sessions' }
+      ]
+    });
+
+    const metrics = response.rows?.[0]?.metricValues || [];
+
+    // カスタムイベントを取得（企業ページ閲覧、応募クリック）
+    let companyViews = 0;
+    let applyClicks = 0;
+
+    try {
+      const [eventResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'eventName' }],
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: {
+          orGroup: {
+            expressions: [
+              {
+                filter: {
+                  fieldName: 'eventName',
+                  stringFilter: { value: 'view_company_page' }
+                }
+              },
+              {
+                filter: {
+                  fieldName: 'eventName',
+                  stringFilter: { value: 'click_apply' }
+                }
+              }
+            ]
+          }
+        }
+      });
+
+      eventResponse.rows?.forEach(row => {
+        const eventName = row.dimensionValues[0].value;
+        const count = parseInt(row.metricValues[0].value) || 0;
+
+        if (eventName === 'view_company_page') {
+          companyViews = count;
+        } else if (eventName === 'click_apply') {
+          applyClicks = count;
+        }
+      });
+    } catch (eventError) {
+      console.warn('Event data fetch failed:', eventError.message);
+    }
+
+    return {
+      pageViews: parseInt(metrics[0]?.value) || 0,
+      users: parseInt(metrics[1]?.value) || 0,
+      sessions: parseInt(metrics[2]?.value) || 0,
+      companyViews,
+      applyClicks
+    };
+  }
+
+  // 会社指定がある場合は、その会社のイベントのみでメトリクスを計算
+  try {
+    // 会社ページ閲覧数とユニークユーザー数を取得
+    const [viewResponse] = await client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate, endDate }],
+      metrics: [
+        { name: 'eventCount' },
+        { name: 'totalUsers' }
+      ],
       dimensionFilter: {
-        orGroup: {
+        andGroup: {
           expressions: [
             {
               filter: {
@@ -218,8 +282,8 @@ async function getOverviewData(client, days) {
             },
             {
               filter: {
-                fieldName: 'eventName',
-                stringFilter: { value: 'click_apply' }
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
               }
             }
           ]
@@ -227,27 +291,81 @@ async function getOverviewData(client, days) {
       }
     });
 
-    eventResponse.rows?.forEach(row => {
-      const eventName = row.dimensionValues[0].value;
-      const count = parseInt(row.metricValues[0].value) || 0;
+    const viewMetrics = viewResponse.rows?.[0]?.metricValues || [];
+    const companyViews = parseInt(viewMetrics[0]?.value) || 0;
+    const users = parseInt(viewMetrics[1]?.value) || 0;
 
-      if (eventName === 'view_company_page') {
-        companyViews = count;
-      } else if (eventName === 'click_apply') {
-        applyClicks = count;
+    // 応募クリック数を取得
+    const [clickResponse] = await client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'click_apply' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
       }
     });
-  } catch (eventError) {
-    console.warn('Event data fetch failed:', eventError.message);
-  }
 
-  return {
-    pageViews: parseInt(metrics[0]?.value) || 0,
-    users: parseInt(metrics[1]?.value) || 0,
-    sessions: parseInt(metrics[2]?.value) || 0,
-    companyViews,
-    applyClicks
-  };
+    const applyClicks = parseInt(clickResponse.rows?.[0]?.metricValues?.[0]?.value) || 0;
+
+    // セッション数（会社ページを閲覧したセッション）
+    const [sessionResponse] = await client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: 'sessions' }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'view_company_page' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
+      }
+    });
+
+    const sessions = parseInt(sessionResponse.rows?.[0]?.metricValues?.[0]?.value) || 0;
+
+    return {
+      pageViews: companyViews, // 会社ページ閲覧数をPVとして返す
+      users,
+      sessions,
+      companyViews,
+      applyClicks
+    };
+  } catch (error) {
+    console.error('Company-specific overview data error:', error.message);
+    return {
+      pageViews: 0,
+      users: 0,
+      sessions: 0,
+      companyViews: 0,
+      applyClicks: 0
+    };
+  }
 }
 
 /**
@@ -331,48 +449,136 @@ async function getCompanyData(client, days) {
 
 /**
  * 日別データを取得
+ * @param {object} client - Analytics Data APIクライアント
+ * @param {number} days - 取得日数
+ * @param {string|null} companyDomain - 会社ドメイン（指定時はその会社のみ）
  */
-async function getDailyData(client, days) {
+async function getDailyData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
-  const [response] = await client.runReport({
-    property: `properties/${GA4_PROPERTY_ID}`,
-    dateRanges: [{ startDate, endDate }],
-    dimensions: [{ name: 'date' }],
-    metrics: [
-      { name: 'screenPageViews' },
-      { name: 'totalUsers' }
-    ],
-    orderBys: [
-      { dimension: { dimensionName: 'date' }, desc: false }
-    ]
-  });
+  // 会社指定がない場合は従来のサイト全体データ
+  if (!companyDomain) {
+    const [response] = await client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'date' }],
+      metrics: [
+        { name: 'screenPageViews' },
+        { name: 'totalUsers' }
+      ],
+      orderBys: [
+        { dimension: { dimensionName: 'date' }, desc: false }
+      ]
+    });
 
-  return response.rows?.map(row => {
-    const dateStr = row.dimensionValues[0].value;
-    const year = dateStr.substring(0, 4);
-    const month = dateStr.substring(4, 6);
-    const day = dateStr.substring(6, 8);
+    return response.rows?.map(row => {
+      const dateStr = row.dimensionValues[0].value;
+      const year = dateStr.substring(0, 4);
+      const month = dateStr.substring(4, 6);
+      const day = dateStr.substring(6, 8);
 
-    return {
-      date: `${month}/${day}`,
-      fullDate: `${year}-${month}-${day}`,
-      views: parseInt(row.metricValues[0].value) || 0,
-      users: parseInt(row.metricValues[1].value) || 0
-    };
-  }) || [];
+      return {
+        date: `${month}/${day}`,
+        fullDate: `${year}-${month}-${day}`,
+        views: parseInt(row.metricValues[0].value) || 0,
+        users: parseInt(row.metricValues[1].value) || 0
+      };
+    }) || [];
+  }
+
+  // 会社指定がある場合は、その会社のイベントで日別データを取得
+  try {
+    const [response] = await client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'date' }],
+      metrics: [
+        { name: 'eventCount' },
+        { name: 'totalUsers' }
+      ],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'view_company_page' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
+      },
+      orderBys: [
+        { dimension: { dimensionName: 'date' }, desc: false }
+      ]
+    });
+
+    return response.rows?.map(row => {
+      const dateStr = row.dimensionValues[0].value;
+      const year = dateStr.substring(0, 4);
+      const month = dateStr.substring(4, 6);
+      const day = dateStr.substring(6, 8);
+
+      return {
+        date: `${month}/${day}`,
+        fullDate: `${year}-${month}-${day}`,
+        views: parseInt(row.metricValues[0].value) || 0,
+        users: parseInt(row.metricValues[1].value) || 0
+      };
+    }) || [];
+  } catch (error) {
+    console.error('Company-specific daily data error:', error.message);
+    return [];
+  }
 }
 
 /**
  * 応募イベントデータを取得
  * 注意: カスタムディメンションが登録されていない場合はシンプルなデータを返す
  */
-async function getApplicationData(client, days) {
+async function getApplicationData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
   try {
+    // フィルター構築
+    let dimensionFilter;
+    if (companyDomain) {
+      // 会社ドメイン指定がある場合はANDフィルター
+      dimensionFilter = {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'click_apply' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
+      };
+    } else {
+      dimensionFilter = {
+        filter: {
+          fieldName: 'eventName',
+          stringFilter: { value: 'click_apply' }
+        }
+      };
+    }
+
     const [response] = await client.runReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
@@ -384,12 +590,7 @@ async function getApplicationData(client, days) {
         { name: 'pagePath' }
       ],
       metrics: [{ name: 'eventCount' }],
-      dimensionFilter: {
-        filter: {
-          fieldName: 'eventName',
-          stringFilter: { value: 'click_apply' }
-        }
-      },
+      dimensionFilter,
       orderBys: [
         { dimension: { dimensionName: 'dateHourMinute' }, desc: true }
       ],
@@ -431,9 +632,16 @@ async function getApplicationData(client, days) {
       };
     }) || [];
   } catch (error) {
-    console.warn('Application data with custom dimensions failed, trying simple query:', error.message);
+    console.warn('Application data with custom dimensions failed:', error.message);
 
-    // カスタムディメンションなしでシンプルなクエリ
+    // 会社ドメイン指定がある場合はフォールバックせず空配列を返す
+    // （カスタムディメンションなしではフィルタリングできないため）
+    if (companyDomain) {
+      console.warn('Company domain specified but custom dimensions query failed, returning empty array');
+      return [];
+    }
+
+    // カスタムディメンションなしでシンプルなクエリ（管理者全体表示用）
     try {
       const [simpleResponse] = await client.runReport({
         property: `properties/${GA4_PROPERTY_ID}`,
@@ -498,103 +706,295 @@ async function getApplicationData(client, days) {
 
 /**
  * エンゲージメントデータを取得（滞在時間、スクロール深度、直帰率）
+ * @param {object} client - Analytics Data APIクライアント
+ * @param {number} days - 取得日数
+ * @param {string|null} companyDomain - 会社ドメイン（指定時はその会社のみ）
  */
-async function getEngagementData(client, days) {
+async function getEngagementData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
   try {
-    // 基本エンゲージメント指標
-    const [basicResponse] = await client.runReport({
+    // 会社指定がない場合はサイト全体のエンゲージメント
+    if (!companyDomain) {
+      // 基本エンゲージメント指標
+      const [basicResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        metrics: [
+          { name: 'averageSessionDuration' },
+          { name: 'bounceRate' },
+          { name: 'engagementRate' },
+          { name: 'engagedSessions' },
+          { name: 'sessionsPerUser' }
+        ]
+      });
+
+      const basicMetrics = basicResponse.rows?.[0]?.metricValues || [];
+
+      // 企業別エンゲージメント
+      let companyEngagement = [];
+      try {
+        const [companyResponse] = await client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate, endDate }],
+          dimensions: [
+            { name: 'customEvent:company_domain' },
+            { name: 'customEvent:company_name' }
+          ],
+          metrics: [
+            { name: 'eventCount' },
+            { name: 'userEngagementDuration' }
+          ],
+          dimensionFilter: {
+            filter: {
+              fieldName: 'eventName',
+              stringFilter: { value: 'view_company_page' }
+            }
+          },
+          orderBys: [
+            { metric: { metricName: 'userEngagementDuration' }, desc: true }
+          ],
+          limit: 20
+        });
+
+        companyEngagement = companyResponse.rows?.map(row => ({
+          domain: row.dimensionValues[0].value,
+          name: row.dimensionValues[1].value,
+          views: parseInt(row.metricValues[0].value) || 0,
+          engagementTime: parseFloat(row.metricValues[1].value) || 0,
+          avgTimePerView: row.metricValues[0].value > 0
+            ? (parseFloat(row.metricValues[1].value) / parseInt(row.metricValues[0].value)).toFixed(1)
+            : 0
+        })) || [];
+      } catch (e) {
+        console.warn('Company engagement data failed:', e.message);
+      }
+
+      return {
+        overall: {
+          avgSessionDuration: parseFloat(basicMetrics[0]?.value || 0).toFixed(1),
+          bounceRate: (parseFloat(basicMetrics[1]?.value || 0) * 100).toFixed(1),
+          engagementRate: (parseFloat(basicMetrics[2]?.value || 0) * 100).toFixed(1),
+          engagedSessions: parseInt(basicMetrics[3]?.value || 0),
+          sessionsPerUser: parseFloat(basicMetrics[4]?.value || 0).toFixed(2)
+        },
+        byCompany: companyEngagement
+      };
+    }
+
+    // 会社指定がある場合は、その会社のエンゲージメントデータのみを取得
+    const [companyResponse] = await client.runReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
       metrics: [
-        { name: 'averageSessionDuration' },
-        { name: 'bounceRate' },
-        { name: 'engagementRate' },
-        { name: 'engagedSessions' },
-        { name: 'sessionsPerUser' }
-      ]
+        { name: 'eventCount' },
+        { name: 'totalUsers' },
+        { name: 'userEngagementDuration' }
+      ],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'view_company_page' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
+      }
     });
 
-    const basicMetrics = basicResponse.rows?.[0]?.metricValues || [];
+    const metrics = companyResponse.rows?.[0]?.metricValues || [];
+    const views = parseInt(metrics[0]?.value) || 0;
+    const users = parseInt(metrics[1]?.value) || 0;
+    const totalEngagementTime = parseFloat(metrics[2]?.value) || 0;
+    const avgTimePerView = views > 0 ? (totalEngagementTime / views).toFixed(1) : '0';
+    const avgSessionDuration = users > 0 ? (totalEngagementTime / users).toFixed(1) : '0';
 
-    // 企業別エンゲージメント
-    let companyEngagement = [];
+    // 求人別エンゲージメントデータを取得
+    let byJob = [];
     try {
-      const [companyResponse] = await client.runReport({
-        property: `properties/${GA4_PROPERTY_ID}`,
-        dateRanges: [{ startDate, endDate }],
-        dimensions: [
-          { name: 'customEvent:company_domain' },
-          { name: 'customEvent:company_name' }
-        ],
-        metrics: [
-          { name: 'eventCount' },
-          { name: 'userEngagementDuration' }
-        ],
-        dimensionFilter: {
-          filter: {
-            fieldName: 'eventName',
-            stringFilter: { value: 'view_company_page' }
-          }
-        },
-        orderBys: [
-          { metric: { metricName: 'userEngagementDuration' }, desc: true }
-        ],
-        limit: 20
-      });
-
-      companyEngagement = companyResponse.rows?.map(row => ({
-        domain: row.dimensionValues[0].value,
-        name: row.dimensionValues[1].value,
-        views: parseInt(row.metricValues[0].value) || 0,
-        engagementTime: parseFloat(row.metricValues[1].value) || 0,
-        avgTimePerView: row.metricValues[0].value > 0
-          ? (parseFloat(row.metricValues[1].value) / parseInt(row.metricValues[0].value)).toFixed(1)
-          : 0
-      })) || [];
-    } catch (e) {
-      console.warn('Company engagement data failed:', e.message);
+      const jobPerformance = await getJobPerformanceData(client, days, companyDomain);
+      byJob = (jobPerformance.jobs || []).map(job => ({
+        jobId: job.jobId,
+        title: job.jobTitle,
+        views: job.views,
+        engagementTime: job.views * 30, // 推定値（1閲覧あたり30秒と仮定）
+        avgTimePerView: '30.0' // 推定値
+      }));
+    } catch (jobError) {
+      console.warn('Failed to get job engagement:', jobError.message);
     }
 
     return {
       overall: {
-        avgSessionDuration: parseFloat(basicMetrics[0]?.value || 0).toFixed(1),
-        bounceRate: (parseFloat(basicMetrics[1]?.value || 0) * 100).toFixed(1),
-        engagementRate: (parseFloat(basicMetrics[2]?.value || 0) * 100).toFixed(1),
-        engagedSessions: parseInt(basicMetrics[3]?.value || 0),
-        sessionsPerUser: parseFloat(basicMetrics[4]?.value || 0).toFixed(2)
+        avgSessionDuration,
+        bounceRate: '0', // 会社単位では計算不可
+        engagementRate: '0', // 会社単位では計算不可
+        engagedSessions: views,
+        sessionsPerUser: users > 0 ? (views / users).toFixed(2) : '0'
       },
-      byCompany: companyEngagement
+      byCompany: [{
+        domain: companyDomain,
+        name: companyDomain,
+        views,
+        engagementTime: totalEngagementTime,
+        avgTimePerView
+      }],
+      byJob
     };
   } catch (error) {
     console.error('Engagement data error:', error.message);
-    return { overall: {}, byCompany: [] };
+    return { overall: {}, byCompany: [], byJob: [] };
   }
 }
 
 /**
  * 流入元データを取得
+ * @param {object} client - Analytics Data APIクライアント
+ * @param {number} days - 取得日数
+ * @param {string|null} companyDomain - 会社ドメイン（指定時はその会社のみ）
  */
-async function getTrafficSourceData(client, days) {
+async function getTrafficSourceData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
   try {
+    // 会社指定がない場合はサイト全体のトラフィックデータ
+    if (!companyDomain) {
+      // チャネル別データ
+      const [channelResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+        metrics: [
+          { name: 'sessions' },
+          { name: 'totalUsers' },
+          { name: 'engagementRate' },
+          { name: 'conversions' }
+        ],
+        orderBys: [
+          { metric: { metricName: 'sessions' }, desc: true }
+        ],
+        limit: 10
+      });
+
+      const channels = channelResponse.rows?.map(row => ({
+        channel: row.dimensionValues[0].value,
+        sessions: parseInt(row.metricValues[0].value) || 0,
+        users: parseInt(row.metricValues[1].value) || 0,
+        engagementRate: (parseFloat(row.metricValues[2].value || 0) * 100).toFixed(1),
+        conversions: parseInt(row.metricValues[3].value) || 0
+      })) || [];
+
+      // 参照元別データ
+      const [sourceResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [
+          { name: 'sessionSource' },
+          { name: 'sessionMedium' }
+        ],
+        metrics: [
+          { name: 'sessions' },
+          { name: 'totalUsers' }
+        ],
+        orderBys: [
+          { metric: { metricName: 'sessions' }, desc: true }
+        ],
+        limit: 15
+      });
+
+      const sources = sourceResponse.rows?.map(row => ({
+        source: row.dimensionValues[0].value,
+        medium: row.dimensionValues[1].value,
+        sessions: parseInt(row.metricValues[0].value) || 0,
+        users: parseInt(row.metricValues[1].value) || 0
+      })) || [];
+
+      // 企業別の流入元
+      let companyTraffic = [];
+      try {
+        const [companyTrafficResponse] = await client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate, endDate }],
+          dimensions: [
+            { name: 'customEvent:company_domain' },
+            { name: 'sessionDefaultChannelGroup' }
+          ],
+          metrics: [{ name: 'eventCount' }],
+          dimensionFilter: {
+            filter: {
+              fieldName: 'eventName',
+              stringFilter: { value: 'view_company_page' }
+            }
+          },
+          orderBys: [
+            { metric: { metricName: 'eventCount' }, desc: true }
+          ],
+          limit: 50
+        });
+
+        // 企業ごとにチャネルをまとめる
+        const companyMap = {};
+        companyTrafficResponse.rows?.forEach(row => {
+          const domain = row.dimensionValues[0].value;
+          const channel = row.dimensionValues[1].value;
+          const count = parseInt(row.metricValues[0].value) || 0;
+
+          if (!companyMap[domain]) {
+            companyMap[domain] = { domain, channels: {} };
+          }
+          companyMap[domain].channels[channel] = count;
+        });
+
+        companyTraffic = Object.values(companyMap);
+      } catch (e) {
+        console.warn('Company traffic data failed:', e.message);
+      }
+
+      return {
+        channels,
+        sources,
+        byCompany: companyTraffic
+      };
+    }
+
+    // 会社指定がある場合は、その会社のトラフィックデータのみを取得
     // チャネル別データ
     const [channelResponse] = await client.runReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'sessionDefaultChannelGroup' }],
-      metrics: [
-        { name: 'sessions' },
-        { name: 'totalUsers' },
-        { name: 'engagementRate' },
-        { name: 'conversions' }
-      ],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'view_company_page' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
+      },
       orderBys: [
-        { metric: { metricName: 'sessions' }, desc: true }
+        { metric: { metricName: 'eventCount' }, desc: true }
       ],
       limit: 10
     });
@@ -602,9 +1002,9 @@ async function getTrafficSourceData(client, days) {
     const channels = channelResponse.rows?.map(row => ({
       channel: row.dimensionValues[0].value,
       sessions: parseInt(row.metricValues[0].value) || 0,
-      users: parseInt(row.metricValues[1].value) || 0,
-      engagementRate: (parseFloat(row.metricValues[2].value || 0) * 100).toFixed(1),
-      conversions: parseInt(row.metricValues[3].value) || 0
+      users: parseInt(row.metricValues[0].value) || 0, // sessionsと同じ値を使用
+      engagementRate: '0',
+      conversions: 0
     })) || [];
 
     // 参照元別データ
@@ -615,12 +1015,27 @@ async function getTrafficSourceData(client, days) {
         { name: 'sessionSource' },
         { name: 'sessionMedium' }
       ],
-      metrics: [
-        { name: 'sessions' },
-        { name: 'totalUsers' }
-      ],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: { value: 'view_company_page' }
+              }
+            },
+            {
+              filter: {
+                fieldName: 'customEvent:company_domain',
+                stringFilter: { value: companyDomain }
+              }
+            }
+          ]
+        }
+      },
       orderBys: [
-        { metric: { metricName: 'sessions' }, desc: true }
+        { metric: { metricName: 'eventCount' }, desc: true }
       ],
       limit: 15
     });
@@ -629,54 +1044,13 @@ async function getTrafficSourceData(client, days) {
       source: row.dimensionValues[0].value,
       medium: row.dimensionValues[1].value,
       sessions: parseInt(row.metricValues[0].value) || 0,
-      users: parseInt(row.metricValues[1].value) || 0
+      users: parseInt(row.metricValues[0].value) || 0
     })) || [];
-
-    // 企業別の流入元
-    let companyTraffic = [];
-    try {
-      const [companyTrafficResponse] = await client.runReport({
-        property: `properties/${GA4_PROPERTY_ID}`,
-        dateRanges: [{ startDate, endDate }],
-        dimensions: [
-          { name: 'customEvent:company_domain' },
-          { name: 'sessionDefaultChannelGroup' }
-        ],
-        metrics: [{ name: 'eventCount' }],
-        dimensionFilter: {
-          filter: {
-            fieldName: 'eventName',
-            stringFilter: { value: 'view_company_page' }
-          }
-        },
-        orderBys: [
-          { metric: { metricName: 'eventCount' }, desc: true }
-        ],
-        limit: 50
-      });
-
-      // 企業ごとにチャネルをまとめる
-      const companyMap = {};
-      companyTrafficResponse.rows?.forEach(row => {
-        const domain = row.dimensionValues[0].value;
-        const channel = row.dimensionValues[1].value;
-        const count = parseInt(row.metricValues[0].value) || 0;
-
-        if (!companyMap[domain]) {
-          companyMap[domain] = { domain, channels: {} };
-        }
-        companyMap[domain].channels[channel] = count;
-      });
-
-      companyTraffic = Object.values(companyMap);
-    } catch (e) {
-      console.warn('Company traffic data failed:', e.message);
-    }
 
     return {
       channels,
       sources,
-      byCompany: companyTraffic
+      byCompany: [{ domain: companyDomain, channels: {} }]
     };
   } catch (error) {
     console.error('Traffic source data error:', error.message);
@@ -686,71 +1060,200 @@ async function getTrafficSourceData(client, days) {
 
 /**
  * コンバージョンファネルデータを取得
+ * @param {object} client - Analytics Data APIクライアント
+ * @param {number} days - 取得日数
+ * @param {string|null} companyDomain - 会社ドメイン（指定時はその会社のみ）
  */
-async function getFunnelData(client, days) {
+async function getFunnelData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
   try {
-    // 各ステージのイベント数を取得
-    const [funnelResponse] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: 'eventName' }],
-      metrics: [
-        { name: 'eventCount' },
-        { name: 'totalUsers' }
-      ],
-      dimensionFilter: {
-        orGroup: {
-          expressions: [
-            { filter: { fieldName: 'eventName', stringFilter: { value: 'page_view' } } },
-            { filter: { fieldName: 'eventName', stringFilter: { value: 'view_company_page' } } },
-            { filter: { fieldName: 'eventName', stringFilter: { value: 'scroll' } } },
-            { filter: { fieldName: 'eventName', stringFilter: { value: 'click_apply' } } },
-            { filter: { fieldName: 'eventName', stringFilter: { value: 'click_line' } } },
-            { filter: { fieldName: 'eventName', stringFilter: { value: 'form_submit' } } }
-          ]
+    // 会社指定がない場合はサイト全体のファネルデータ
+    if (!companyDomain) {
+      // 各ステージのイベント数を取得
+      const [funnelResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'eventName' }],
+        metrics: [
+          { name: 'eventCount' },
+          { name: 'totalUsers' }
+        ],
+        dimensionFilter: {
+          orGroup: {
+            expressions: [
+              { filter: { fieldName: 'eventName', stringFilter: { value: 'page_view' } } },
+              { filter: { fieldName: 'eventName', stringFilter: { value: 'view_company_page' } } },
+              { filter: { fieldName: 'eventName', stringFilter: { value: 'scroll' } } },
+              { filter: { fieldName: 'eventName', stringFilter: { value: 'click_apply' } } },
+              { filter: { fieldName: 'eventName', stringFilter: { value: 'click_line' } } },
+              { filter: { fieldName: 'eventName', stringFilter: { value: 'form_submit' } } }
+            ]
+          }
         }
+      });
+
+      const eventMap = {};
+      funnelResponse.rows?.forEach(row => {
+        const eventName = row.dimensionValues[0].value;
+        eventMap[eventName] = {
+          count: parseInt(row.metricValues[0].value) || 0,
+          users: parseInt(row.metricValues[1].value) || 0
+        };
+      });
+
+      // ファネルステージを構築
+      const pageViews = eventMap['page_view']?.count || 0;
+      const companyViews = eventMap['view_company_page']?.count || 0;
+      const scrolls = eventMap['scroll']?.count || 0;
+      const applyClicks = eventMap['click_apply']?.count || 0;
+      const lineClicks = eventMap['click_line']?.count || 0;
+      const formSubmits = eventMap['form_submit']?.count || 0;
+      const totalConversions = applyClicks + lineClicks + formSubmits;
+
+      const funnel = [
+        {
+          stage: 'サイト訪問',
+          event: 'page_view',
+          count: pageViews,
+          rate: 100
+        },
+        {
+          stage: '企業ページ閲覧',
+          event: 'view_company_page',
+          count: companyViews,
+          rate: pageViews > 0 ? ((companyViews / pageViews) * 100).toFixed(1) : 0
+        },
+        {
+          stage: 'ページスクロール',
+          event: 'scroll',
+          count: scrolls,
+          rate: pageViews > 0 ? ((scrolls / pageViews) * 100).toFixed(1) : 0
+        },
+        {
+          stage: 'アクション（応募・LINE・フォーム）',
+          event: 'conversions',
+          count: totalConversions,
+          rate: companyViews > 0 ? ((totalConversions / companyViews) * 100).toFixed(1) : 0
+        }
+      ];
+
+      // アクション種別の内訳
+      const actionBreakdown = [
+        { type: 'apply', label: '応募ボタン', count: applyClicks },
+        { type: 'line', label: 'LINE相談', count: lineClicks },
+        { type: 'form', label: 'フォーム送信', count: formSubmits }
+      ];
+
+      // 企業別ファネル
+      let companyFunnels = [];
+      try {
+        // 企業別の閲覧数とクリック数を取得
+        const [companyViewResponse] = await client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate, endDate }],
+          dimensions: [{ name: 'customEvent:company_domain' }],
+          metrics: [{ name: 'eventCount' }],
+          dimensionFilter: {
+            filter: {
+              fieldName: 'eventName',
+              stringFilter: { value: 'view_company_page' }
+            }
+          }
+        });
+
+        const [companyClickResponse] = await client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate, endDate }],
+          dimensions: [{ name: 'customEvent:company_domain' }],
+          metrics: [{ name: 'eventCount' }],
+          dimensionFilter: {
+            filter: {
+              fieldName: 'eventName',
+              stringFilter: { value: 'click_apply' }
+            }
+          }
+        });
+
+        const viewMap = {};
+        companyViewResponse.rows?.forEach(row => {
+          viewMap[row.dimensionValues[0].value] = parseInt(row.metricValues[0].value) || 0;
+        });
+
+        const clickMap = {};
+        companyClickResponse.rows?.forEach(row => {
+          clickMap[row.dimensionValues[0].value] = parseInt(row.metricValues[0].value) || 0;
+        });
+
+        // 全企業のファネルデータを構築
+        for (const domain of Object.keys(viewMap)) {
+          const views = viewMap[domain] || 0;
+          const clicks = clickMap[domain] || 0;
+          const cvr = views > 0 ? ((clicks / views) * 100).toFixed(1) : 0;
+
+          companyFunnels.push({
+            domain,
+            views,
+            clicks,
+            cvr: parseFloat(cvr)
+          });
+        }
+
+        companyFunnels.sort((a, b) => b.views - a.views);
+        companyFunnels = companyFunnels.slice(0, 20);
+      } catch (e) {
+        console.warn('Company funnel data failed:', e.message);
       }
-    });
 
-    const eventMap = {};
-    funnelResponse.rows?.forEach(row => {
-      const eventName = row.dimensionValues[0].value;
-      eventMap[eventName] = {
-        count: parseInt(row.metricValues[0].value) || 0,
-        users: parseInt(row.metricValues[1].value) || 0
+      return {
+        funnel,
+        actionBreakdown,
+        byCompany: companyFunnels
       };
-    });
+    }
 
-    // ファネルステージを構築
-    const pageViews = eventMap['page_view']?.count || 0;
-    const companyViews = eventMap['view_company_page']?.count || 0;
-    const scrolls = eventMap['scroll']?.count || 0;
-    const applyClicks = eventMap['click_apply']?.count || 0;
-    const lineClicks = eventMap['click_line']?.count || 0;
-    const formSubmits = eventMap['form_submit']?.count || 0;
+    // 会社指定がある場合は、その会社のファネルデータのみを取得
+    // ヘルパー関数：イベント数取得
+    const getEventCount = async (eventName) => {
+      try {
+        const [response] = await client.runReport({
+          property: `properties/${GA4_PROPERTY_ID}`,
+          dateRanges: [{ startDate, endDate }],
+          metrics: [{ name: 'eventCount' }],
+          dimensionFilter: {
+            andGroup: {
+              expressions: [
+                { filter: { fieldName: 'eventName', stringFilter: { value: eventName } } },
+                { filter: { fieldName: 'customEvent:company_domain', stringFilter: { value: companyDomain } } }
+              ]
+            }
+          }
+        });
+        return parseInt(response.rows?.[0]?.metricValues?.[0]?.value) || 0;
+      } catch (e) {
+        return 0;
+      }
+    };
+
+    // 全てのAPI呼び出しを並列実行
+    const [companyViews, applyClicks, lineClicks, formSubmits, recentAppsResult, jobPerformance] = await Promise.all([
+      getEventCount('view_company_page'),
+      getEventCount('click_apply'),
+      getEventCount('click_line'),
+      getEventCount('form_submit'),
+      getRecentApplications(companyDomain, 50).catch(e => { console.warn('Failed to get recent applications:', e.message); return { applications: [] }; }),
+      getJobPerformanceData(client, days, companyDomain).catch(e => { console.warn('Failed to get job performance:', e.message); return { jobs: [] }; })
+    ]);
+
     const totalConversions = applyClicks + lineClicks + formSubmits;
 
     const funnel = [
       {
-        stage: 'サイト訪問',
-        event: 'page_view',
-        count: pageViews,
-        rate: 100
-      },
-      {
         stage: '企業ページ閲覧',
         event: 'view_company_page',
         count: companyViews,
-        rate: pageViews > 0 ? ((companyViews / pageViews) * 100).toFixed(1) : 0
-      },
-      {
-        stage: 'ページスクロール',
-        event: 'scroll',
-        count: scrolls,
-        rate: pageViews > 0 ? ((scrolls / pageViews) * 100).toFixed(1) : 0
+        rate: 100
       },
       {
         stage: 'アクション（応募・LINE・フォーム）',
@@ -760,102 +1263,166 @@ async function getFunnelData(client, days) {
       }
     ];
 
-    // アクション種別の内訳
     const actionBreakdown = [
       { type: 'apply', label: '応募ボタン', count: applyClicks },
       { type: 'line', label: 'LINE相談', count: lineClicks },
       { type: 'form', label: 'フォーム送信', count: formSubmits }
     ];
 
-    // 企業別ファネル
-    let companyFunnels = [];
-    try {
-      // 企業別の閲覧数とクリック数を取得
-      const [companyViewResponse] = await client.runReport({
-        property: `properties/${GA4_PROPERTY_ID}`,
-        dateRanges: [{ startDate, endDate }],
-        dimensions: [{ name: 'customEvent:company_domain' }],
-        metrics: [{ name: 'eventCount' }],
-        dimensionFilter: {
-          filter: {
-            fieldName: 'eventName',
-            stringFilter: { value: 'view_company_page' }
-          }
-        }
-      });
+    const cvr = companyViews > 0 ? ((applyClicks / companyViews) * 100).toFixed(1) : 0;
 
-      const [companyClickResponse] = await client.runReport({
-        property: `properties/${GA4_PROPERTY_ID}`,
-        dateRanges: [{ startDate, endDate }],
-        dimensions: [{ name: 'customEvent:company_domain' }],
-        metrics: [{ name: 'eventCount' }],
-        dimensionFilter: {
-          filter: {
-            fieldName: 'eventName',
-            stringFilter: { value: 'click_apply' }
-          }
-        }
-      });
-
-      const viewMap = {};
-      companyViewResponse.rows?.forEach(row => {
-        viewMap[row.dimensionValues[0].value] = parseInt(row.metricValues[0].value) || 0;
-      });
-
-      const clickMap = {};
-      companyClickResponse.rows?.forEach(row => {
-        clickMap[row.dimensionValues[0].value] = parseInt(row.metricValues[0].value) || 0;
-      });
-
-      // 全企業のファネルデータを構築
-      for (const domain of Object.keys(viewMap)) {
-        const views = viewMap[domain] || 0;
-        const clicks = clickMap[domain] || 0;
-        const cvr = views > 0 ? ((clicks / views) * 100).toFixed(1) : 0;
-
-        companyFunnels.push({
-          domain,
-          views,
-          clicks,
-          cvr: parseFloat(cvr)
-        });
-      }
-
-      companyFunnels.sort((a, b) => b.views - a.views);
-      companyFunnels = companyFunnels.slice(0, 20);
-    } catch (e) {
-      console.warn('Company funnel data failed:', e.message);
-    }
+    // 並列で取得済みのデータを使用
+    const applications = recentAppsResult.applications || [];
+    const byJob = (jobPerformance.jobs || []).map(job => ({
+      jobId: job.jobId,
+      title: job.jobTitle,
+      views: job.views,
+      clicks: job.applications,
+      cvr: job.cvr
+    }));
 
     return {
       funnel,
       actionBreakdown,
-      byCompany: companyFunnels
+      byCompany: [{
+        domain: companyDomain,
+        views: companyViews,
+        clicks: applyClicks,
+        cvr: parseFloat(cvr)
+      }],
+      byJob,
+      applications
     };
   } catch (error) {
     console.error('Funnel data error:', error.message);
-    return { funnel: [], actionBreakdown: [], byCompany: [] };
+    return { funnel: [], actionBreakdown: [], byCompany: [], byJob: [], applications: [] };
   }
 }
 
 /**
  * 時系列トレンドデータを取得（曜日・時間帯別）
+ * @param {object} client - Analytics Data APIクライアント
+ * @param {number} days - 取得日数
+ * @param {string|null} companyDomain - 会社ドメイン（指定時はその会社のみ）
  */
-async function getTrendData(client, days) {
+async function getTrendData(client, days, companyDomain = null) {
   const startDate = `${days}daysAgo`;
   const endDate = 'today';
 
   try {
+    // 会社指定がない場合はサイト全体のトレンドデータ
+    if (!companyDomain) {
+      // 曜日別データ
+      const [dayOfWeekResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'dayOfWeek' }],
+        metrics: [
+          { name: 'sessions' },
+          { name: 'screenPageViews' },
+          { name: 'totalUsers' }
+        ],
+        orderBys: [
+          { dimension: { dimensionName: 'dayOfWeek' }, desc: false }
+        ]
+      });
+
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      const byDayOfWeek = dayOfWeekResponse.rows?.map(row => ({
+        dayIndex: parseInt(row.dimensionValues[0].value),
+        day: dayNames[parseInt(row.dimensionValues[0].value)] || row.dimensionValues[0].value,
+        sessions: parseInt(row.metricValues[0].value) || 0,
+        pageViews: parseInt(row.metricValues[1].value) || 0,
+        users: parseInt(row.metricValues[2].value) || 0
+      })).sort((a, b) => a.dayIndex - b.dayIndex) || [];
+
+      // 時間帯別データ
+      const [hourResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'hour' }],
+        metrics: [
+          { name: 'sessions' },
+          { name: 'screenPageViews' }
+        ],
+        orderBys: [
+          { dimension: { dimensionName: 'hour' }, desc: false }
+        ]
+      });
+
+      const byHour = hourResponse.rows?.map(row => ({
+        hour: parseInt(row.dimensionValues[0].value),
+        hourLabel: `${row.dimensionValues[0].value}時`,
+        sessions: parseInt(row.metricValues[0].value) || 0,
+        pageViews: parseInt(row.metricValues[1].value) || 0
+      })) || [];
+
+      // 週次トレンド
+      const [weeklyResponse] = await client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'week' }],
+        metrics: [
+          { name: 'sessions' },
+          { name: 'totalUsers' },
+          { name: 'screenPageViews' }
+        ],
+        orderBys: [
+          { dimension: { dimensionName: 'week' }, desc: false }
+        ]
+      });
+
+      const weekly = weeklyResponse.rows?.map(row => ({
+        week: row.dimensionValues[0].value,
+        sessions: parseInt(row.metricValues[0].value) || 0,
+        users: parseInt(row.metricValues[1].value) || 0,
+        pageViews: parseInt(row.metricValues[2].value) || 0
+      })) || [];
+
+      // ピーク時間帯を特定
+      let peakHour = byHour.reduce((max, h) => h.sessions > max.sessions ? h : max, { sessions: 0 });
+      let peakDay = byDayOfWeek.reduce((max, d) => d.sessions > max.sessions ? d : max, { sessions: 0 });
+
+      return {
+        byDayOfWeek,
+        byHour,
+        weekly,
+        insights: {
+          peakHour: peakHour.hourLabel || 'データなし',
+          peakDay: peakDay.day || 'データなし',
+          peakHourSessions: peakHour.sessions,
+          peakDaySessions: peakDay.sessions
+        }
+      };
+    }
+
+    // 会社指定がある場合は、その会社のトレンドデータのみを取得
+    const companyFilter = {
+      andGroup: {
+        expressions: [
+          {
+            filter: {
+              fieldName: 'eventName',
+              stringFilter: { value: 'view_company_page' }
+            }
+          },
+          {
+            filter: {
+              fieldName: 'customEvent:company_domain',
+              stringFilter: { value: companyDomain }
+            }
+          }
+        ]
+      }
+    };
+
     // 曜日別データ
     const [dayOfWeekResponse] = await client.runReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'dayOfWeek' }],
-      metrics: [
-        { name: 'sessions' },
-        { name: 'screenPageViews' },
-        { name: 'totalUsers' }
-      ],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: companyFilter,
       orderBys: [
         { dimension: { dimensionName: 'dayOfWeek' }, desc: false }
       ]
@@ -866,8 +1433,8 @@ async function getTrendData(client, days) {
       dayIndex: parseInt(row.dimensionValues[0].value),
       day: dayNames[parseInt(row.dimensionValues[0].value)] || row.dimensionValues[0].value,
       sessions: parseInt(row.metricValues[0].value) || 0,
-      pageViews: parseInt(row.metricValues[1].value) || 0,
-      users: parseInt(row.metricValues[2].value) || 0
+      pageViews: parseInt(row.metricValues[0].value) || 0,
+      users: 0
     })).sort((a, b) => a.dayIndex - b.dayIndex) || [];
 
     // 時間帯別データ
@@ -875,10 +1442,8 @@ async function getTrendData(client, days) {
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'hour' }],
-      metrics: [
-        { name: 'sessions' },
-        { name: 'screenPageViews' }
-      ],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: companyFilter,
       orderBys: [
         { dimension: { dimensionName: 'hour' }, desc: false }
       ]
@@ -888,7 +1453,7 @@ async function getTrendData(client, days) {
       hour: parseInt(row.dimensionValues[0].value),
       hourLabel: `${row.dimensionValues[0].value}時`,
       sessions: parseInt(row.metricValues[0].value) || 0,
-      pageViews: parseInt(row.metricValues[1].value) || 0
+      pageViews: parseInt(row.metricValues[0].value) || 0
     })) || [];
 
     // 週次トレンド
@@ -896,11 +1461,8 @@ async function getTrendData(client, days) {
       property: `properties/${GA4_PROPERTY_ID}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: 'week' }],
-      metrics: [
-        { name: 'sessions' },
-        { name: 'totalUsers' },
-        { name: 'screenPageViews' }
-      ],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: companyFilter,
       orderBys: [
         { dimension: { dimensionName: 'week' }, desc: false }
       ]
@@ -909,9 +1471,30 @@ async function getTrendData(client, days) {
     const weekly = weeklyResponse.rows?.map(row => ({
       week: row.dimensionValues[0].value,
       sessions: parseInt(row.metricValues[0].value) || 0,
-      users: parseInt(row.metricValues[1].value) || 0,
-      pageViews: parseInt(row.metricValues[2].value) || 0
+      users: 0,
+      pageViews: parseInt(row.metricValues[0].value) || 0
     })) || [];
+
+    // 日別データを取得
+    const [dailyResponse] = await client.runReport({
+      property: `properties/${GA4_PROPERTY_ID}`,
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'date' }],
+      metrics: [{ name: 'eventCount' }],
+      dimensionFilter: companyFilter,
+      orderBys: [
+        { dimension: { dimensionName: 'date' }, desc: false }
+      ]
+    });
+
+    const daily = dailyResponse.rows?.map(row => {
+      const dateStr = row.dimensionValues[0].value;
+      return {
+        date: `${dateStr.substring(4, 6)}/${dateStr.substring(6, 8)}`,
+        fullDate: `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`,
+        views: parseInt(row.metricValues[0].value) || 0
+      };
+    }) || [];
 
     // ピーク時間帯を特定
     let peakHour = byHour.reduce((max, h) => h.sessions > max.sessions ? h : max, { sessions: 0 });
@@ -921,6 +1504,7 @@ async function getTrendData(client, days) {
       byDayOfWeek,
       byHour,
       weekly,
+      daily,
       insights: {
         peakHour: peakHour.hourLabel || 'データなし',
         peakDay: peakDay.day || 'データなし',
@@ -930,7 +1514,7 @@ async function getTrendData(client, days) {
     };
   } catch (error) {
     console.error('Trend data error:', error.message);
-    return { byDayOfWeek: [], byHour: [], weekly: [], insights: {} };
+    return { byDayOfWeek: [], byHour: [], weekly: [], daily: [], insights: {} };
   }
 }
 
@@ -1249,99 +1833,90 @@ async function getJobPerformanceData(client, days, companyDomain = null) {
       }
     } : viewFilter;
 
-    const [viewResponse] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [
-        { name: 'customEvent:company_domain' },
-        { name: 'customEvent:company_name' },
-        { name: 'customEvent:job_id' },
-        { name: 'customEvent:job_title' }
-      ],
-      metrics: [{ name: 'eventCount' }],
-      dimensionFilter,
-      orderBys: [
-        { metric: { metricName: 'eventCount' }, desc: true }
-      ],
-      limit: 100
-    });
-
-    // 応募クリックデータ
+    // 応募クリックデータ用フィルター
     const clickFilter = {
       filter: {
         fieldName: 'eventName',
         stringFilter: { value: 'click_apply' }
       }
     };
-
     const clickDimensionFilter = companyDomain ? {
       andGroup: {
         expressions: [
           clickFilter,
-          {
-            filter: {
-              fieldName: 'customEvent:company_domain',
-              stringFilter: { value: companyDomain }
-            }
-          }
+          { filter: { fieldName: 'customEvent:company_domain', stringFilter: { value: companyDomain } } }
         ]
       }
     } : clickFilter;
 
-    const [clickResponse] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [
-        { name: 'customEvent:company_domain' },
-        { name: 'customEvent:job_id' }
-      ],
-      metrics: [{ name: 'eventCount' }],
-      dimensionFilter: clickDimensionFilter,
-      limit: 100
-    });
+    // 3つのAPI呼び出しを並列実行
+    const [viewResult, clickResult, dailyResult] = await Promise.all([
+      // 求人詳細閲覧データ
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [
+          { name: 'customEvent:company_domain' },
+          { name: 'customEvent:company_name' },
+          { name: 'customEvent:job_id' },
+          { name: 'customEvent:job_title' }
+        ],
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter,
+        orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+        limit: 100
+      }),
+      // 応募クリックデータ
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [
+          { name: 'customEvent:company_domain' },
+          { name: 'customEvent:job_id' }
+        ],
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter: clickDimensionFilter,
+        limit: 100
+      }),
+      // 日別トレンド
+      client.runReport({
+        property: `properties/${GA4_PROPERTY_ID}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'eventCount' }],
+        dimensionFilter,
+        orderBys: [{ dimension: { dimensionName: 'date' }, desc: false }]
+      })
+    ]);
+
+    const [viewResponse] = viewResult;
+    const [clickResponse] = clickResult;
+    const [dailyResponse] = dailyResult;
 
     // クリック数をマップに変換
     const clicksMap = {};
     clickResponse.rows?.forEach(row => {
       const domain = row.dimensionValues[0].value;
       const jobId = row.dimensionValues[1].value;
-      const key = `${domain}:${jobId}`;
-      clicksMap[key] = parseInt(row.metricValues[0].value) || 0;
+      clicksMap[`${domain}:${jobId}`] = parseInt(row.metricValues[0].value) || 0;
     });
 
     // データを整形
     const jobs = viewResponse.rows?.map(row => {
       const domain = row.dimensionValues[0].value;
-      const companyName = row.dimensionValues[1].value;
-      const jobId = row.dimensionValues[2].value;
-      const jobTitle = row.dimensionValues[3].value;
       const views = parseInt(row.metricValues[0].value) || 0;
-      const key = `${domain}:${jobId}`;
+      const key = `${domain}:${row.dimensionValues[2].value}`;
       const clicks = clicksMap[key] || 0;
-      const cvr = views > 0 ? ((clicks / views) * 100).toFixed(1) : '0.0';
-
       return {
         companyDomain: domain,
-        companyName,
-        jobId,
-        jobTitle,
+        companyName: row.dimensionValues[1].value,
+        jobId: row.dimensionValues[2].value,
+        jobTitle: row.dimensionValues[3].value,
         views,
         applications: clicks,
-        cvr: parseFloat(cvr)
+        cvr: parseFloat(views > 0 ? ((clicks / views) * 100).toFixed(1) : '0.0')
       };
     }) || [];
-
-    // 日別トレンドを取得（全体または企業指定）
-    const [dailyResponse] = await client.runReport({
-      property: `properties/${GA4_PROPERTY_ID}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: 'date' }],
-      metrics: [{ name: 'eventCount' }],
-      dimensionFilter,
-      orderBys: [
-        { dimension: { dimensionName: 'date' }, desc: false }
-      ]
-    });
 
     const daily = dailyResponse.rows?.map(row => {
       const dateStr = row.dimensionValues[0].value;
@@ -1380,46 +1955,49 @@ async function getJobPerformanceData(client, days, companyDomain = null) {
 async function getRecentApplications(companyDomain = null, limit = 20) {
   try {
     const db = admin.firestore();
-    let snapshot;
+    let docs = [];
 
-    console.log('[getRecentApplications] Query params:', { companyDomain, limit });
-
-    // 企業ドメイン指定がある場合
     if (companyDomain) {
+      // まずFirestoreの直接クエリを試す（高速）
       try {
-        // まずフィルタなしで全件取得してみる（デバッグ用）
-        const allDocsSnapshot = await db.collection('applications').limit(5).get();
-        console.log('[getRecentApplications] All docs count (without filter):', allDocsSnapshot.docs.length);
-        allDocsSnapshot.docs.forEach(doc => {
-          const data = doc.data();
-          console.log('[getRecentApplications] Sample doc:', { id: doc.id, companyDomain: data.companyDomain, type: typeof data.companyDomain });
-        });
-
-        // フィルター付きクエリ（インデックス不要版）
-        const query = db.collection('applications')
+        const directSnapshot = await db.collection('applications')
           .where('companyDomain', '==', companyDomain)
-          .limit(limit);
-        snapshot = await query.get();
-        console.log('[getRecentApplications] Filtered query result:', snapshot.docs.length);
+          .orderBy('createdAt', 'desc')
+          .limit(limit)
+          .get();
+
+        if (directSnapshot.docs.length > 0) {
+          docs = directSnapshot.docs;
+        } else {
+          // 直接クエリで見つからない場合のみ、フォールバック（100件に削減）
+          const allDocsSnapshot = await db.collection('applications')
+            .orderBy('createdAt', 'desc')
+            .limit(100)
+            .get();
+
+          const normalizedTarget = companyDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+          docs = allDocsSnapshot.docs.filter(doc => {
+            const data = doc.data();
+            if (!data.companyDomain) return false;
+            const docDomain = data.companyDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+            return docDomain === normalizedTarget;
+          });
+        }
       } catch (queryError) {
-        console.error('[getRecentApplications] Query error:', queryError.message);
-        console.error('[getRecentApplications] Full query error:', JSON.stringify(queryError, null, 2));
-        snapshot = { docs: [] };
+        console.warn('[getRecentApplications] Query error:', queryError.message);
+        docs = [];
       }
     } else {
-      const query = db.collection('applications')
+      const snapshot = await db.collection('applications')
         .orderBy('createdAt', 'desc')
-        .limit(limit);
-      snapshot = await query.get();
+        .limit(limit)
+        .get();
+      docs = snapshot.docs;
     }
 
-    console.log('[getRecentApplications] Found docs:', snapshot.docs.length);
-
-    let applications = snapshot.docs.map(doc => {
+    const applications = docs.slice(0, limit).map(doc => {
       const data = doc.data();
-      console.log('[getRecentApplications] Doc data:', { id: doc.id, companyDomain: data.companyDomain, jobTitle: data.jobTitle });
       const timestamp = data.createdAt?.toDate() || data.timestamp || new Date();
-
       return {
         id: doc.id,
         companyDomain: data.companyDomain,
@@ -1429,25 +2007,13 @@ async function getRecentApplications(companyDomain = null, limit = 20) {
         type: data.type || 'apply',
         source: parseSource(data.source),
         date: formatApplicationDate(timestamp),
-        timestamp: timestamp.toISOString(),
-        _sortTime: timestamp.getTime()
+        timestamp: timestamp.toISOString()
       };
     });
 
-    // 手動ソート（フォールバック時用）
-    applications.sort((a, b) => b._sortTime - a._sortTime);
-    applications = applications.slice(0, limit);
-
-    // _sortTimeを削除
-    applications.forEach(app => delete app._sortTime);
-
-    return {
-      applications,
-      total: applications.length
-    };
+    return { applications, total: applications.length };
   } catch (error) {
-    console.error('Recent applications error:', error.message);
-    console.error('Full error:', JSON.stringify(error, null, 2));
+    console.warn('Recent applications error:', error.message);
     return { applications: [], total: 0 };
   }
 }
