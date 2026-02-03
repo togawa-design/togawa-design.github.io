@@ -9,9 +9,9 @@ import * as JobsLoader from '../../shared/jobs-loader.js';
 
 // サイト設定
 const SITE_CONFIG = {
-  siteName: 'リクエコ求人ナビ',
+  siteName: 'L-SET',
   siteUrl: 'https://rikueko.com',
-  publisherName: 'リクエコ求人ナビ',
+  publisherName: 'L-SET',
   publisherUrl: 'https://rikueko.com'
 };
 

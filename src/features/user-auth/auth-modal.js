@@ -43,7 +43,7 @@ function createAuthModalHTML() {
         <div id="auth-login-view" class="auth-view">
           <div class="auth-modal-header">
             <h2>ログイン</h2>
-            <p>リクエコ求人ナビにログイン</p>
+            <p>L-SETにログイン</p>
           </div>
 
           <form id="login-form" class="auth-form">
@@ -81,7 +81,7 @@ function createAuthModalHTML() {
         <div id="auth-register-view" class="auth-view" style="display: none;">
           <div class="auth-modal-header">
             <h2>新規登録</h2>
-            <p>リクエコ求人ナビに登録</p>
+            <p>L-SETに登録</p>
           </div>
 
           <form id="register-form" class="auth-form">

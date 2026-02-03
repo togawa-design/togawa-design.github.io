@@ -1,5 +1,5 @@
 /**
- * リクエコ求人ナビ - Google Analytics Data API Cloud Function
+ * L-SET - Google Analytics Data API Cloud Function
  *
  * GA4のデータを取得して管理者ダッシュボードに提供するAPI
  */

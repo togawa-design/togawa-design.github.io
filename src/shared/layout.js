@@ -15,7 +15,7 @@ export function renderHeader() {
     <div class="header-inner">
       <div class="logo">
         <a href="/">
-          <span class="logo-text">リクエコ求人ナビ</span>
+          <span class="logo-text">L-SET</span>
           <span class="logo-sub">製造業・工場求人専門</span>
         </a>
       </div>
@@ -88,7 +88,7 @@ export function renderFooter() {
         </div>
       </div>
       <div class="footer-bottom">
-        <p><small>&copy; 2025 リクエコ求人ナビ All Rights Reserved.</small></p>
+        <p><small>&copy; 2025 L-SET All Rights Reserved.</small></p>
       </div>
     </div>
   </footer>

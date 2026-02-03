@@ -131,7 +131,7 @@ export function updateBreadcrumb(job) {
 
 // SEOを更新
 export function updateSEO(job) {
-  document.title = `${job.title} | ${job.company} | リクエコ求人ナビ`;
+  document.title = `${job.title} | ${job.company} | L-SET`;
   const metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc) {
     metaDesc.content = `${job.company}の${job.title}。${job.location}勤務。${job.totalBonus ? '特典総額' + job.totalBonus + '。' : ''}`;

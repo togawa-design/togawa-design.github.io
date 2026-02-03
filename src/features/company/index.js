@@ -149,7 +149,7 @@ export async function renderCompanyPage() {
     companyJobs = [companyInfo];
   }
 
-  document.title = `${companyInfo.company}の求人一覧 | リクエコ求人ナビ`;
+  document.title = `${companyInfo.company}の求人一覧 | L-SET`;
   const metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc) {
     metaDesc.content = `${companyInfo.company}の期間工・期間従業員求人一覧。${companyJobs.length}件の求人を掲載中。`;

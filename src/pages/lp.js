@@ -726,7 +726,7 @@ class CompanyLPPage {
 
     const title = ogpTitle
       ? `${ogpTitle} | ${company.company}`
-      : `${company.company} 求人情報 | リクエコ求人ナビ`;
+      : `${company.company} 求人情報 | L-SET`;
     const description = ogpDescription
       ? ogpDescription
       : (jobs.length > 0

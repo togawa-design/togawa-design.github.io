@@ -54,7 +54,7 @@ function getPrefectureFromUrl() {
 
 // 全エリア一覧を表示
 export async function renderAllLocations(container) {
-  document.title = '勤務地から探す | リクエコ求人ナビ';
+  document.title = '勤務地から探す | L-SET';
   const breadcrumb = document.getElementById('breadcrumb-current');
   if (breadcrumb) breadcrumb.textContent = '勤務地から探す';
 
@@ -108,7 +108,7 @@ export async function renderAllLocations(container) {
 
 // 特定の都道府県の求人一覧を表示
 export async function renderLocationJobs(container, prefecture) {
-  document.title = `${prefecture}の求人一覧 | リクエコ求人ナビ`;
+  document.title = `${prefecture}の求人一覧 | L-SET`;
   const metaDesc = document.querySelector('meta[name="description"]');
   if (metaDesc) {
     metaDesc.content = `${prefecture}の期間工・期間従業員の求人一覧。工場・製造業の求人を多数掲載。`;
