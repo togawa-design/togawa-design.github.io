@@ -4023,6 +4023,43 @@
   line-height: 1.5;
 }
 
+/* フォーム通知・警告 */
+.form-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.form-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.form-notice.warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.form-notice.warning svg {
+  color: #f59e0b;
+}
+
+.form-notice.info {
+  background: #dbeafe;
+  border: 1px solid #3b82f6;
+  color: #1e40af;
+}
+
+.form-notice.info svg {
+  color: #3b82f6;
+}
+
 .edit-form input[type="text"],
 .edit-form input[type="url"],
 .edit-form input[type="number"],

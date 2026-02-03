@@ -331,7 +331,8 @@
    求人カード
    ======================================== */
 .recruit-job-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   background: var(--recruit-white);
   border-radius: var(--recruit-radius);
   overflow: hidden;
@@ -374,6 +375,9 @@
 
 .recruit-job-card-content {
   padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .recruit-job-card-title {
@@ -446,6 +450,7 @@
   color: var(--recruit-primary);
   font-weight: 600;
   font-size: 0.875rem;
+  margin-top: auto;
 }
 
 /* ========================================

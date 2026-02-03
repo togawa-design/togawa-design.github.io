@@ -333,6 +333,8 @@
   overflow: hidden;
   transition: box-shadow 0.3s;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .lp-job-card:hover {
@@ -380,6 +382,7 @@
 
 .lp-job-card-body {
   padding: 1.5rem;
+  flex: 1;
 }
 
 .lp-job-info {
