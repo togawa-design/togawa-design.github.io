@@ -2057,6 +2057,448 @@ function parseSource(referrer) {
 }
 
 /**
+ * ページアナリティクスイベントを受信・保存
+ * LP・採用ページの独立した計測データをFirestoreに保存
+ */
+functions.http('trackPageAnalytics', (req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      // OPTIONSリクエスト（プリフライト）の処理
+      if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+      }
+
+      if (req.method !== 'POST') {
+        res.status(405).json({ success: false, error: 'Method not allowed' });
+        return;
+      }
+
+      const eventData = req.body;
+
+      // 必須フィールドのバリデーション
+      if (!eventData.eventType || !eventData.pageType || !eventData.companyDomain) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required fields: eventType, pageType, companyDomain'
+        });
+        return;
+      }
+
+      const db = admin.firestore();
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      // イベントデータを整形
+      const event = {
+        ...eventData,
+        serverTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+        receivedAt: now.toISOString()
+      };
+
+      // イベントをFirestoreに保存
+      await db.collection('page_analytics_events').add(event);
+
+      // 日次集計を更新
+      const statsDocId = eventData.jobId
+        ? `${eventData.pageType}_${eventData.companyDomain}_${eventData.jobId}`
+        : `${eventData.pageType}_${eventData.companyDomain}`;
+
+      const statsRef = db.collection('page_analytics_daily').doc(dateStr).collection('stats').doc(statsDocId);
+
+      // トランザクションで集計を更新
+      await db.runTransaction(async (transaction) => {
+        const statsDoc = await transaction.get(statsRef);
+
+        if (!statsDoc.exists) {
+          // 新規作成
+          const initialStats = {
+            pageType: eventData.pageType,
+            companyDomain: eventData.companyDomain,
+            jobId: eventData.jobId || null,
+            companyName: eventData.companyName || null,
+            jobTitle: eventData.jobTitle || null,
+            date: dateStr,
+            pageViews: 0,
+            uniqueVisitors: [],
+            ctaClicks: 0,
+            ctaClicksByType: {},
+            scrollDepth: { '25': 0, '50': 0, '75': 0, '100': 0 },
+            referrerTypes: {},
+            devices: {},
+            applications: 0,
+            totalTimeOnPage: 0,
+            timeOnPageCount: 0,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          };
+          transaction.set(statsRef, initialStats);
+        }
+
+        const stats = statsDoc.exists ? statsDoc.data() : {};
+        const updates = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+
+        switch (eventData.eventType) {
+          case 'page_view':
+            updates.pageViews = (stats.pageViews || 0) + 1;
+            const visitors = stats.uniqueVisitors || [];
+            if (eventData.visitorId && !visitors.includes(eventData.visitorId) && visitors.length < 1000) {
+              updates.uniqueVisitors = admin.firestore.FieldValue.arrayUnion(eventData.visitorId);
+            }
+            if (eventData.referrerType) {
+              const refTypes = stats.referrerTypes || {};
+              refTypes[eventData.referrerType] = (refTypes[eventData.referrerType] || 0) + 1;
+              updates.referrerTypes = refTypes;
+            }
+            if (eventData.device) {
+              const devices = stats.devices || {};
+              devices[eventData.device] = (devices[eventData.device] || 0) + 1;
+              updates.devices = devices;
+            }
+            if (eventData.companyName) updates.companyName = eventData.companyName;
+            if (eventData.jobTitle) updates.jobTitle = eventData.jobTitle;
+            break;
+
+          case 'cta_click':
+            updates.ctaClicks = (stats.ctaClicks || 0) + 1;
+            if (eventData.buttonType) {
+              const ctaTypes = stats.ctaClicksByType || {};
+              ctaTypes[eventData.buttonType] = (ctaTypes[eventData.buttonType] || 0) + 1;
+              updates.ctaClicksByType = ctaTypes;
+            }
+            break;
+
+          case 'scroll_depth':
+            if (eventData.depth) {
+              const scrollDepth = stats.scrollDepth || { '25': 0, '50': 0, '75': 0, '100': 0 };
+              scrollDepth[String(eventData.depth)] = (scrollDepth[String(eventData.depth)] || 0) + 1;
+              updates.scrollDepth = scrollDepth;
+            }
+            break;
+
+          case 'time_on_page':
+            if (eventData.duration) {
+              updates.totalTimeOnPage = (stats.totalTimeOnPage || 0) + eventData.duration;
+              updates.timeOnPageCount = (stats.timeOnPageCount || 0) + 1;
+            }
+            break;
+
+          case 'application_complete':
+            updates.applications = (stats.applications || 0) + 1;
+            break;
+        }
+
+        transaction.update(statsRef, updates);
+      });
+
+      res.status(200).json({ success: true, message: 'Event tracked' });
+
+    } catch (error) {
+      console.error('trackPageAnalytics error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+});
+
+/**
+ * ページアナリティクスデータを取得
+ */
+functions.http('getPageAnalytics', (req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+      }
+
+      const { type = 'overview', days = 7, company_domain: companyDomain, page_type: pageType } = req.query;
+      const db = admin.firestore();
+
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - parseInt(days));
+
+      let data;
+
+      switch (type) {
+        case 'overview':
+          data = await getPageAnalyticsOverview(db, startDate, endDate, companyDomain, pageType);
+          break;
+        case 'daily':
+          data = await getPageAnalyticsDaily(db, startDate, endDate, companyDomain, pageType);
+          break;
+        case 'companies':
+          data = await getPageAnalyticsByCompany(db, startDate, endDate, pageType);
+          break;
+        case 'lp':
+          data = await getPageAnalyticsByLP(db, startDate, endDate, companyDomain);
+          break;
+        case 'recruit':
+          data = await getPageAnalyticsByRecruit(db, startDate, endDate, companyDomain);
+          break;
+        default:
+          data = await getPageAnalyticsOverview(db, startDate, endDate, companyDomain, pageType);
+      }
+
+      res.status(200).json({ success: true, data, timestamp: new Date().toISOString() });
+
+    } catch (error) {
+      console.error('getPageAnalytics error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+});
+
+// ページアナリティクス概要取得
+async function getPageAnalyticsOverview(db, startDate, endDate, companyDomain = null, pageType = null) {
+  const dateStr = d => d.toISOString().split('T')[0];
+  const stats = {
+    totalPageViews: 0,
+    totalUniqueVisitors: new Set(),
+    totalCtaClicks: 0,
+    totalApplications: 0,
+    avgTimeOnPage: 0,
+    byPageType: { lp: { views: 0, clicks: 0 }, recruit: { views: 0, clicks: 0 } },
+    byReferrer: {},
+    byDevice: {}
+  };
+
+  let totalTime = 0, timeCount = 0;
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dayStr = dateStr(currentDate);
+    let query = db.collection('page_analytics_daily').doc(dayStr).collection('stats');
+
+    const snapshot = await query.get();
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (companyDomain && data.companyDomain !== companyDomain) return;
+      if (pageType && data.pageType !== pageType) return;
+
+      stats.totalPageViews += data.pageViews || 0;
+      stats.totalCtaClicks += data.ctaClicks || 0;
+      stats.totalApplications += data.applications || 0;
+      (data.uniqueVisitors || []).forEach(v => stats.totalUniqueVisitors.add(v));
+
+      if (data.pageType === 'lp') {
+        stats.byPageType.lp.views += data.pageViews || 0;
+        stats.byPageType.lp.clicks += data.ctaClicks || 0;
+      } else if (data.pageType === 'recruit') {
+        stats.byPageType.recruit.views += data.pageViews || 0;
+        stats.byPageType.recruit.clicks += data.ctaClicks || 0;
+      }
+
+      Object.entries(data.referrerTypes || {}).forEach(([ref, count]) => {
+        stats.byReferrer[ref] = (stats.byReferrer[ref] || 0) + count;
+      });
+
+      Object.entries(data.devices || {}).forEach(([device, count]) => {
+        stats.byDevice[device] = (stats.byDevice[device] || 0) + count;
+      });
+
+      totalTime += data.totalTimeOnPage || 0;
+      timeCount += data.timeOnPageCount || 0;
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  stats.totalUniqueVisitors = stats.totalUniqueVisitors.size;
+  stats.avgTimeOnPage = timeCount > 0 ? Math.round(totalTime / timeCount) : 0;
+
+  return stats;
+}
+
+// ページアナリティクス日別データ取得
+async function getPageAnalyticsDaily(db, startDate, endDate, companyDomain = null, pageType = null) {
+  const dateStr = d => d.toISOString().split('T')[0];
+  const daily = [];
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dayStr = dateStr(currentDate);
+    const snapshot = await db.collection('page_analytics_daily').doc(dayStr).collection('stats').get();
+
+    let dayStats = { date: dayStr, pageViews: 0, uniqueVisitors: new Set(), ctaClicks: 0, applications: 0 };
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (companyDomain && data.companyDomain !== companyDomain) return;
+      if (pageType && data.pageType !== pageType) return;
+
+      dayStats.pageViews += data.pageViews || 0;
+      dayStats.ctaClicks += data.ctaClicks || 0;
+      dayStats.applications += data.applications || 0;
+      (data.uniqueVisitors || []).forEach(v => dayStats.uniqueVisitors.add(v));
+    });
+
+    dayStats.uniqueVisitors = dayStats.uniqueVisitors.size;
+    daily.push(dayStats);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return daily;
+}
+
+// 会社別ページアナリティクス取得
+async function getPageAnalyticsByCompany(db, startDate, endDate, pageType = null) {
+  const dateStr = d => d.toISOString().split('T')[0];
+  const companyStats = {};
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dayStr = dateStr(currentDate);
+    const snapshot = await db.collection('page_analytics_daily').doc(dayStr).collection('stats').get();
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (pageType && data.pageType !== pageType) return;
+
+      const domain = data.companyDomain;
+      if (!companyStats[domain]) {
+        companyStats[domain] = {
+          companyDomain: domain,
+          companyName: data.companyName || domain,
+          lpViews: 0, lpClicks: 0, recruitViews: 0, recruitClicks: 0,
+          totalApplications: 0, uniqueVisitors: new Set()
+        };
+      }
+
+      if (data.pageType === 'lp') {
+        companyStats[domain].lpViews += data.pageViews || 0;
+        companyStats[domain].lpClicks += data.ctaClicks || 0;
+      } else if (data.pageType === 'recruit') {
+        companyStats[domain].recruitViews += data.pageViews || 0;
+        companyStats[domain].recruitClicks += data.ctaClicks || 0;
+      }
+
+      companyStats[domain].totalApplications += data.applications || 0;
+      (data.uniqueVisitors || []).forEach(v => companyStats[domain].uniqueVisitors.add(v));
+      if (data.companyName) companyStats[domain].companyName = data.companyName;
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return Object.values(companyStats)
+    .map(c => ({
+      ...c,
+      uniqueVisitors: c.uniqueVisitors.size,
+      totalViews: c.lpViews + c.recruitViews,
+      totalClicks: c.lpClicks + c.recruitClicks
+    }))
+    .sort((a, b) => b.totalViews - a.totalViews);
+}
+
+// LP別アナリティクス取得
+async function getPageAnalyticsByLP(db, startDate, endDate, companyDomain = null) {
+  const dateStr = d => d.toISOString().split('T')[0];
+  const lpStats = {};
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dayStr = dateStr(currentDate);
+    const snapshot = await db.collection('page_analytics_daily').doc(dayStr).collection('stats').get();
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.pageType !== 'lp') return;
+      if (companyDomain && data.companyDomain !== companyDomain) return;
+
+      const key = data.jobId ? `${data.companyDomain}_${data.jobId}` : data.companyDomain;
+      if (!lpStats[key]) {
+        lpStats[key] = {
+          companyDomain: data.companyDomain,
+          jobId: data.jobId || null,
+          companyName: data.companyName || data.companyDomain,
+          jobTitle: data.jobTitle || null,
+          pageViews: 0, ctaClicks: 0, applications: 0,
+          uniqueVisitors: new Set(), referrerTypes: {}, devices: {}
+        };
+      }
+
+      lpStats[key].pageViews += data.pageViews || 0;
+      lpStats[key].ctaClicks += data.ctaClicks || 0;
+      lpStats[key].applications += data.applications || 0;
+      (data.uniqueVisitors || []).forEach(v => lpStats[key].uniqueVisitors.add(v));
+
+      Object.entries(data.referrerTypes || {}).forEach(([ref, count]) => {
+        lpStats[key].referrerTypes[ref] = (lpStats[key].referrerTypes[ref] || 0) + count;
+      });
+      Object.entries(data.devices || {}).forEach(([device, count]) => {
+        lpStats[key].devices[device] = (lpStats[key].devices[device] || 0) + count;
+      });
+
+      if (data.companyName) lpStats[key].companyName = data.companyName;
+      if (data.jobTitle) lpStats[key].jobTitle = data.jobTitle;
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return Object.values(lpStats)
+    .map(lp => ({
+      ...lp,
+      uniqueVisitors: lp.uniqueVisitors.size,
+      cvr: lp.pageViews > 0 ? ((lp.ctaClicks / lp.pageViews) * 100).toFixed(1) : '0.0'
+    }))
+    .sort((a, b) => b.pageViews - a.pageViews);
+}
+
+// 採用ページ別アナリティクス取得
+async function getPageAnalyticsByRecruit(db, startDate, endDate, companyDomain = null) {
+  const dateStr = d => d.toISOString().split('T')[0];
+  const recruitStats = {};
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dayStr = dateStr(currentDate);
+    const snapshot = await db.collection('page_analytics_daily').doc(dayStr).collection('stats').get();
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.pageType !== 'recruit') return;
+      if (companyDomain && data.companyDomain !== companyDomain) return;
+
+      const domain = data.companyDomain;
+      if (!recruitStats[domain]) {
+        recruitStats[domain] = {
+          companyDomain: domain,
+          companyName: data.companyName || domain,
+          pageViews: 0, ctaClicks: 0, applications: 0,
+          uniqueVisitors: new Set(), referrerTypes: {}, devices: {}
+        };
+      }
+
+      recruitStats[domain].pageViews += data.pageViews || 0;
+      recruitStats[domain].ctaClicks += data.ctaClicks || 0;
+      recruitStats[domain].applications += data.applications || 0;
+      (data.uniqueVisitors || []).forEach(v => recruitStats[domain].uniqueVisitors.add(v));
+
+      Object.entries(data.referrerTypes || {}).forEach(([ref, count]) => {
+        recruitStats[domain].referrerTypes[ref] = (recruitStats[domain].referrerTypes[ref] || 0) + count;
+      });
+      Object.entries(data.devices || {}).forEach(([device, count]) => {
+        recruitStats[domain].devices[device] = (recruitStats[domain].devices[device] || 0) + count;
+      });
+
+      if (data.companyName) recruitStats[domain].companyName = data.companyName;
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return Object.values(recruitStats)
+    .map(r => ({
+      ...r,
+      uniqueVisitors: r.uniqueVisitors.size,
+      cvr: r.pageViews > 0 ? ((r.ctaClicks / r.pageViews) * 100).toFixed(1) : '0.0'
+    }))
+    .sort((a, b) => b.pageViews - a.pageViews);
+}
+
+/**
  * ヘルスチェック用エンドポイント
  */
 functions.http('health', (req, res) => {

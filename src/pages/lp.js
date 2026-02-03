@@ -9,6 +9,7 @@ import {
   renderSiteFooter,
   renderFixedCtaBar
 } from '@components/organisms/LayoutComponents.js';
+import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
 import '@shared/jobs-loader.js';
 
 // UTMパラメータのキー一覧
@@ -955,6 +956,15 @@ class CompanyLPPage {
       ...this.utmParams
     });
 
+    // Firestoreへの独立したページアナリティクス
+    initPageTracking({
+      pageType: 'lp',
+      companyDomain: company.companyDomain,
+      jobId: this.mainJob?.id || this.mainJob?.jobId || null,
+      companyName: company.company,
+      jobTitle: this.mainJob?.title || null
+    });
+
     // TikTok Pixel PageView（初期化時に既にpage()が呼ばれているが、追加情報付きで再送信）
     if (window.ttq) {
       window.ttq.track('ViewContent', {
@@ -970,6 +980,17 @@ class CompanyLPPage {
         content_category: 'company_lp'
       });
     }
+  }
+
+  // CTAボタンクリックのトラッキング（外部から呼び出し可能）
+  trackCTAButtonClick(buttonType, buttonText = null) {
+    trackCTAClick({
+      pageType: 'lp',
+      companyDomain: this.company?.companyDomain,
+      buttonType,
+      jobId: this.mainJob?.id || this.mainJob?.jobId || null,
+      buttonText
+    });
   }
 }
 

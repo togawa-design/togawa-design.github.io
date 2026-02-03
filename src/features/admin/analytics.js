@@ -7,6 +7,7 @@ import { renderDemographics } from '@shared/analytics-utils.js';
 import { config } from './config.js';
 import { getIdToken, isAdmin, getUserCompanyDomain } from './auth.js';
 import { getPatternLabel } from './config.js';
+import { getDateRange } from './date-picker.js';
 
 // 企業データキャッシュ
 let companyData = [];
@@ -52,8 +53,7 @@ function buildApiUrl(baseUrl, params = {}) {
 
 // ダッシュボードデータ読み込み
 export async function loadDashboardData() {
-  const dateRangeEl = document.getElementById('date-range');
-  const days = dateRangeEl?.value || 7;
+  const { days } = getDateRange();
   const apiEndpoint = config.apiEndpoint;
 
   // 会社ユーザー用のUI制限を適用
@@ -570,8 +570,7 @@ export function initAnalyticsTabs() {
 
 // タブごとのデータ読み込み
 async function loadTabData(tabId) {
-  const dateRangeEl = document.getElementById('date-range');
-  const days = dateRangeEl?.value || 30;
+  const { days } = getDateRange();
   const apiEndpoint = config.apiEndpoint;
 
   switch (tabId) {
@@ -1141,8 +1140,7 @@ export async function showCompanyDetailSection(domain, name) {
   showDetailLoading(true);
 
   // データ取得
-  const dateRangeEl = document.getElementById('date-range');
-  const days = dateRangeEl?.value || 30;
+  const { days } = getDateRange();
 
   try {
     await loadCompanyDetailData(domain, days);

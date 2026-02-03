@@ -8,6 +8,7 @@ import {
   renderSiteFooter,
   renderFixedCtaBar
 } from '@components/organisms/LayoutComponents.js';
+import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
 import '@shared/jobs-loader.js';
 
 // 掲載開始日から1週間以内かどうかをチェック
@@ -84,12 +85,38 @@ class CompanyRecruitPage {
       // 編集モードの場合
       if (this.isEditMode) {
         this.enableEditMode();
+      } else {
+        // アナリティクス（編集モード以外）
+        this.trackPageView();
       }
 
     } catch (error) {
       console.error('[RecruitPage] 初期化エラー:', error);
       this.showError('ページの読み込みに失敗しました。');
     }
+  }
+
+  /**
+   * ページビューをトラッキング
+   */
+  trackPageView() {
+    initPageTracking({
+      pageType: 'recruit',
+      companyDomain: this.companyDomain,
+      companyName: this.company?.company || null
+    });
+  }
+
+  /**
+   * CTAボタンクリックのトラッキング
+   */
+  trackCTAButtonClick(buttonType, buttonText = null) {
+    trackCTAClick({
+      pageType: 'recruit',
+      companyDomain: this.companyDomain,
+      buttonType,
+      buttonText
+    });
   }
 
   /**

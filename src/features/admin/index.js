@@ -10,6 +10,8 @@ import {
   resetCompanyUserPassword, generatePassword, generateUsername, hasCompanyUser
 } from './auth.js';
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
+import { initPageAnalyticsTab, loadPageAnalyticsData } from './page-analytics.js';
+import { initDatePicker, getDateRange } from './date-picker.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
 import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection, initVideoButtonSection } from './lp-settings.js';
 import { initRecruitSettings, setPendingCompany } from './recruit-settings.js';
@@ -414,12 +416,6 @@ function bindEvents() {
       switchSection(section);
     });
   });
-
-  // 日付範囲変更
-  const dateRange = document.getElementById('date-range');
-  if (dateRange) {
-    dateRange.addEventListener('change', () => loadDashboardData());
-  }
 
   // 更新ボタン
   const refreshBtn = document.getElementById('refresh-btn');
@@ -1227,8 +1223,30 @@ export function initAdminDashboard() {
   // イベントバインド
   bindEvents();
 
+  // 日付ピッカーの初期化
+  initDatePicker(() => {
+    // 日付変更時にダッシュボードデータを再読み込み
+    loadDashboardData();
+    // ページアナリティクスタブが表示中の場合は再読み込み
+    const paTab = document.getElementById('page-analytics-tab');
+    if (paTab && paTab.classList.contains('active')) {
+      loadPageAnalyticsData();
+    }
+  });
+
   // 分析タブの初期化
   initAnalyticsTabs();
+
+  // ページアナリティクスタブの初期化
+  initPageAnalyticsTab();
+
+  // タブ切り替え時にページアナリティクスデータを読み込み
+  const pageAnalyticsTab = document.getElementById('tab-page-analytics');
+  if (pageAnalyticsTab) {
+    pageAnalyticsTab.addEventListener('click', () => {
+      loadPageAnalyticsData();
+    });
+  }
 
   // 企業詳細セクションの初期化
   initCompanyDetailSection();

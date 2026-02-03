@@ -43,6 +43,26 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // page_analytics_events コレクション - ページアナリティクスイベント（LP/採用ページ）
+    match /page_analytics_events/{docId} {
+      // 書き込みは誰でも可能（Cloud Functions経由で送信）
+      allow write: if true;
+      // 読み取りは認証済みユーザーのみ
+      allow read: if request.auth != null;
+    }
+
+    // page_analytics_daily コレクション - ページアナリティクス日次集計
+    match /page_analytics_daily/{dateStr} {
+      allow read: if request.auth != null;
+      allow write: if true;
+
+      // サブコレクション: stats
+      match /stats/{statsId} {
+        allow read: if request.auth != null;
+        allow write: if true;
+      }
+    }
+
     // users コレクション - ユーザープロフィール
     match /users/{userId} {
       allow read, write: if true;
