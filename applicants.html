@@ -14,8 +14,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/js/applicants-DWX_YbDx.js"></script>
+  <script type="module" crossorigin src="/js/applicants-DjC6l6pV.js"></script>
   <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/js/utils-DCR9QUau.js">
+  <link rel="modulepreload" crossorigin href="/js/index-BcENNApD.js">
 </head>
 <body class="admin-body">
   <!-- 応募者管理ダッシュボード -->
@@ -33,6 +35,7 @@
           <li><a href="#" id="nav-analytics" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
           <li><a href="#" id="nav-reports" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
           <li class="active"><a href="#" data-section="applicants"><span class="nav-icon">👥</span>応募者管理</a></li>
+          <li><a href="#" id="nav-settings" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
         </ul>
       </nav>
       <div class="sidebar-footer">
@@ -90,6 +93,9 @@
                 <option value="interviewing">面接調整中</option>
                 <option value="interviewed">面接済み</option>
                 <option value="hired">採用</option>
+                <option value="joined">入社</option>
+                <option value="pending">保留</option>
+                <option value="ng">NG</option>
                 <option value="rejected">不採用</option>
                 <option value="withdrawn">辞退</option>
               </select>
@@ -179,6 +185,9 @@
                   <button class="status-btn" data-status="interviewing">面接調整</button>
                   <button class="status-btn" data-status="interviewed">面接済み</button>
                   <button class="status-btn status-success" data-status="hired">採用</button>
+                  <button class="status-btn status-joined" data-status="joined">入社</button>
+                  <button class="status-btn status-warning" data-status="pending">保留</button>
+                  <button class="status-btn status-ng" data-status="ng">NG</button>
                   <button class="status-btn status-danger" data-status="rejected">不採用</button>
                   <button class="status-btn status-muted" data-status="withdrawn">辞退</button>
                 </div>
@@ -189,6 +198,15 @@
                   </select>
                   <button type="button" id="btn-add-assignee" class="btn-icon" title="担当者を追加">+</button>
                 </div>
+              </div>
+
+              <!-- 面談情報 -->
+              <div class="detail-card">
+                <h3>面談</h3>
+                <div id="interview-info" class="interview-info">
+                  <p class="no-data">面談は設定されていません</p>
+                </div>
+                <button type="button" id="btn-schedule-interview" class="btn-primary btn-schedule">面談日を設定</button>
               </div>
 
               <!-- メモ -->
@@ -241,6 +259,132 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- 設定セクション（非表示時） -->
+  <div id="settings-section" class="settings-section" style="display: none;">
+    <div class="settings-header">
+      <h2>設定</h2>
+      <button id="btn-back-to-applicants" class="btn-secondary">応募者一覧に戻る</button>
+    </div>
+
+    <!-- カレンダー連携設定 -->
+    <div class="settings-card">
+      <h3>Googleカレンダー連携</h3>
+      <p class="settings-description">担当者ごとにGoogleカレンダーを連携すると、空き時間から面談日を設定できます。</p>
+      <div class="calendar-integrations-list" id="calendar-integrations-list">
+        <div class="loading-message">担当者情報を読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- リマインダー設定 -->
+    <div class="settings-card">
+      <h3>リマインダー設定</h3>
+      <p class="settings-description">面談前にリマインダーメールを送信します。</p>
+      <div class="reminder-settings">
+        <div class="reminder-option">
+          <label>
+            <input type="checkbox" id="reminder-1day" checked>
+            1日前
+            <input type="time" id="reminder-1day-time" value="10:00" class="time-input">
+            に送信
+          </label>
+        </div>
+        <div class="reminder-option">
+          <label>
+            <input type="checkbox" id="reminder-1hour" checked>
+            1時間前に送信
+          </label>
+        </div>
+        <button id="btn-save-reminder-settings" class="btn-primary">リマインダー設定を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 面談設定モーダル -->
+  <div id="interview-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>面談日を設定</h3>
+        <button class="modal-close" id="interview-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 担当者選択 -->
+        <div class="form-group">
+          <label for="interview-staff">担当者 <span class="required">*</span></label>
+          <select id="interview-staff" required>
+            <option value="">担当者を選択...</option>
+          </select>
+          <p class="form-hint" id="calendar-status-hint"></p>
+        </div>
+
+        <!-- 空き時間ピッカー -->
+        <div class="form-group" id="availability-section" style="display: none;">
+          <label>空き時間から選択</label>
+          <div class="week-navigation">
+            <button type="button" id="btn-prev-week" class="btn-icon">&lt;</button>
+            <span id="week-label">-</span>
+            <button type="button" id="btn-next-week" class="btn-icon">&gt;</button>
+          </div>
+          <div class="availability-grid" id="availability-grid">
+            <div class="loading-message">空き時間を取得中...</div>
+          </div>
+        </div>
+
+        <!-- 選択された日時 -->
+        <div class="form-group" id="selected-slot-section" style="display: none;">
+          <label>選択された日時</label>
+          <div class="selected-slot" id="selected-slot">-</div>
+        </div>
+
+        <!-- 手動入力（カレンダー未連携時） -->
+        <div class="form-group" id="manual-datetime-section">
+          <label for="interview-datetime">面談日時 <span class="required">*</span></label>
+          <input type="datetime-local" id="interview-datetime" required>
+        </div>
+
+        <!-- 面談時間 -->
+        <div class="form-group">
+          <label for="interview-duration">面談時間</label>
+          <select id="interview-duration">
+            <option value="30">30分</option>
+            <option value="60" selected>60分</option>
+            <option value="90">90分</option>
+            <option value="120">120分</option>
+          </select>
+        </div>
+
+        <!-- 面談形式 -->
+        <div class="form-group">
+          <label>面談形式</label>
+          <div class="radio-group">
+            <label><input type="radio" name="meeting-type" value="in_person" checked> 対面</label>
+            <label><input type="radio" name="meeting-type" value="online"> オンライン</label>
+            <label><input type="radio" name="meeting-type" value="phone"> 電話</label>
+          </div>
+        </div>
+
+        <!-- 場所/URL -->
+        <div class="form-group">
+          <label for="interview-location">場所 / URL</label>
+          <input type="text" id="interview-location" placeholder="例: 本社会議室 / https://meet.google.com/...">
+        </div>
+
+        <!-- リマインダー -->
+        <div class="form-group">
+          <label>リマインダー</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="send-reminder-1day" checked> 1日前 10:00 に送信</label>
+            <label><input type="checkbox" id="send-reminder-1hour" checked> 1時間前に送信</label>
+          </div>
+          <p class="form-hint">担当者と応募者の両方にメールを送信します</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="interview-modal-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="interview-modal-save">面談を登録</button>
+      </div>
+    </div>
   </div>
 
   <!-- 担当者追加モーダル -->
