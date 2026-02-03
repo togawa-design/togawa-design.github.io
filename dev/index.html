@@ -82,12 +82,12 @@
     }
   }
   </script>
-  <script type="module" crossorigin src="/dev/js/main-Bphvl6I3.js"></script>
+  <script type="module" crossorigin src="/dev/js/main-0JYy6vkP.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-DCR9QUau.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-vTfia0vR.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-CbBJAmIK.js">
   <link rel="modulepreload" crossorigin href="/dev/js/index-D_r1cfQj.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/index-B2ZqHtll.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/index-DPyR-BYm.js">
 </head>
 <body>
   <!-- ヘッダー -->
@@ -122,17 +122,10 @@
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-inner">
       <h1 id="hero-title" class="hero-title">
-        <span class="hero-title-main">あなたに合った期間工を見つけよう</span>
-        <span class="hero-title-sub">大手メーカーの高待遇求人を多数掲載</span>
+        <span class="hero-title-main">「読む」求人は、もう終わり。</span>
+        <span class="hero-title-sub">動画で仕事内容も職場の空気も直感的にチェック！</span>
       </h1>
       <div class="hero-stats">
-        <div class="stat-item">
-          <span class="stat-number">
-            <span class="stat-value">--</span>
-            <span class="stat-suffix">件</span>
-          </span>
-          <span class="stat-label">掲載求人数</span>
-        </div>
         <div class="stat-item">
           <span class="stat-number">
             <span class="stat-value">--</span>
@@ -154,33 +147,12 @@
   <!-- 検索セクション -->
   <section class="search-section" id="search">
     <div class="container">
-      <h2 class="section-title">お仕事を探す</h2>
-      <div class="search-methods">
-        <div class="search-card" data-method="location">
-          <div class="search-card-icon">📍</div>
-          <h3>勤務地から探す</h3>
-          <p>働きたいエリアから求人を検索</p>
-        </div>
-        <div class="search-card" data-method="occupation">
-          <div class="search-card-icon">🔧</div>
-          <h3>職種から探す</h3>
-          <p>希望の職種から求人を検索</p>
-        </div>
-        <div class="search-card" data-method="keyword">
-          <div class="search-card-icon">🔍</div>
-          <h3>フリーキーワード</h3>
-          <p>キーワードで求人を検索</p>
-        </div>
-      </div>
-
-      <!-- キーワード検索パネル -->
-      <div class="search-panel" id="panel-keyword">
-        <h3>キーワードで検索</h3>
-        <form class="keyword-search-form" id="keyword-search-form">
-          <input type="text" id="keyword-input" placeholder="例: 寮完備、高収入、未経験" class="keyword-input">
-          <button type="submit" class="keyword-search-btn">検索</button>
-        </form>
-      </div>
+      <h2 class="section-title">フリーワードで探す</h2>
+      <!-- キーワード検索 -->
+      <form class="keyword-search-form" id="keyword-search-form">
+        <input type="text" id="keyword-input" placeholder="例: 寮完備、高収入、未経験" class="keyword-input">
+        <button type="submit" class="keyword-search-btn">検索</button>
+      </form>
     </div>
   </section>
 
@@ -269,13 +241,9 @@
           </ul>
         </div>
         <div class="footer-col">
-          <h3>メーカーから探す</h3>
-          <ul>
-            <li><a href="#">トヨタの求人</a></li>
-            <li><a href="#">日産の求人</a></li>
-            <li><a href="#">ホンダの求人</a></li>
-            <li><a href="#">スバルの求人</a></li>
-            <li><a href="#">その他のメーカー</a></li>
+          <h3>職種名から探す</h3>
+          <ul id="footer-job-types">
+            <li><a href="jobs.html">すべての求人</a></li>
           </ul>
         </div>
         <div class="footer-col">
