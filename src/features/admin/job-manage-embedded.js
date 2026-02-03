@@ -378,6 +378,12 @@ function showJobEditNew() {
     cb.checked = false;
   });
 
+  // 表示する特徴をクリア
+  const displayedFeaturesContainer = document.getElementById('jm-displayed-features-container');
+  if (displayedFeaturesContainer) {
+    displayedFeaturesContainer.innerHTML = '<div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>';
+  }
+
   // タイトル・バッジ更新
   const titleEl = document.getElementById('jm-job-edit-title');
   const badgeEl = document.getElementById('jm-job-edit-badge');
@@ -487,7 +493,8 @@ function populateWorkingHoursFields(job) {
   if (!container) return;
 
   const hoursData = job.workingHours || '';
-  const hoursArray = hoursData.split(/[|\n]/).map(h => h.trim()).filter(h => h);
+  const hoursString = typeof hoursData === 'string' ? hoursData : String(hoursData);
+  const hoursArray = hoursString.split(/[|\n]/).map(h => h.trim()).filter(h => h);
 
   if (hoursArray.length === 0) {
     hoursArray.push('');
@@ -521,6 +528,99 @@ function populateFeaturesCheckboxes(job) {
     if (cb) {
       cb.checked = true;
     }
+  });
+
+  // 表示する特徴を設定
+  const displayedFeaturesData = job.displayedFeatures || '';
+  const displayedFeaturesArray = displayedFeaturesData.split(',').map(f => f.trim()).filter(f => f);
+  updateDisplayedFeaturesContainer(featuresArray, displayedFeaturesArray);
+}
+
+/**
+ * 表示する特徴のコンテナを更新
+ * @param {Array} checkedFeatures - チェックされた特徴の配列
+ * @param {Array} selectedDisplayed - 表示用に選択された特徴の配列
+ */
+function updateDisplayedFeaturesContainer(checkedFeatures, selectedDisplayed = []) {
+  const container = document.getElementById('jm-displayed-features-container');
+  if (!container) return;
+
+  if (checkedFeatures.length === 0) {
+    container.innerHTML = '<div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>';
+    return;
+  }
+
+  container.innerHTML = checkedFeatures.map(feature => {
+    const isSelected = selectedDisplayed.includes(feature);
+    return `
+      <label class="displayed-feature-item ${isSelected ? 'selected' : ''}" data-feature="${escapeHtml(feature)}">
+        <input type="checkbox" name="jm-displayed-features" value="${escapeHtml(feature)}" ${isSelected ? 'checked' : ''}>
+        <span class="displayed-feature-label">${escapeHtml(feature)}</span>
+        <span class="displayed-feature-badge">${isSelected ? '表示中' : ''}</span>
+      </label>
+    `;
+  }).join('');
+
+  // 表示する特徴のチェックボックスにイベントを設定
+  setupDisplayedFeaturesEvents();
+}
+
+/**
+ * 表示する特徴のイベントを設定
+ */
+function setupDisplayedFeaturesEvents() {
+  const checkboxes = document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]');
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]:checked');
+
+      // 最大3つまでの制限
+      if (checked.length > 3) {
+        cb.checked = false;
+        showToast('表示する特徴は最大3つまでです', 'warning');
+        return;
+      }
+
+      // UIを更新
+      const item = cb.closest('.displayed-feature-item');
+      const badge = item.querySelector('.displayed-feature-badge');
+
+      if (cb.checked) {
+        item.classList.add('selected');
+        badge.textContent = '表示中';
+      } else {
+        item.classList.remove('selected');
+        badge.textContent = '';
+      }
+    });
+  });
+}
+
+/**
+ * 特徴チェックボックスの変更を監視
+ */
+function setupFeaturesCheckboxEvents() {
+  const checkboxes = document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]');
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      // チェックされた特徴を取得
+      const checkedFeatures = Array.from(
+        document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]:checked')
+      ).map(c => c.value);
+
+      // 現在表示用に選択されている特徴を取得
+      const currentDisplayed = Array.from(
+        document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]:checked')
+      ).map(c => c.value);
+
+      // チェックが外された特徴は表示用からも削除
+      const validDisplayed = currentDisplayed.filter(f => checkedFeatures.includes(f));
+
+      // コンテナを更新
+      updateDisplayedFeaturesContainer(checkedFeatures, validDisplayed);
+    });
   });
 }
 
@@ -556,6 +656,11 @@ async function saveJob() {
   const featuresArray = Array.from(featuresCheckboxes).map(cb => cb.value);
   const features = featuresArray.join(',');
 
+  // 表示する特徴の取得
+  const displayedFeaturesCheckboxes = document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]:checked');
+  const displayedFeaturesArray = Array.from(displayedFeaturesCheckboxes).map(cb => cb.value);
+  const displayedFeatures = displayedFeaturesArray.join(',');
+
   const jobData = {
     id: isNewJob ? '' : (currentEditingJob?.id || ''),
     memo: getVal('memo'),
@@ -568,6 +673,7 @@ async function saveJob() {
     order: getVal('order'),
     jobType: getVal('type'),
     features: features,
+    displayedFeatures: displayedFeatures,
     badges: '', // バッジは削除
     jobDescription: getVal('description'),
     requirements: getVal('requirements'),
@@ -813,6 +919,9 @@ function setupEventListeners() {
 
   // 既存の勤務時間削除ボタン
   setupJmWorkingHoursRemoveButtons();
+
+  // 特徴チェックボックスの変更監視
+  setupFeaturesCheckboxEvents();
 
   // アナリティクス日付範囲の初期化
   initJmDateRangePicker();

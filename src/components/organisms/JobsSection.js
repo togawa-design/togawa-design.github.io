@@ -19,9 +19,19 @@ export function renderJobsSection(company, jobs) {
 }
 
 function renderJobCard(job, company) {
-  const features = job.features
-    ? (Array.isArray(job.features) ? job.features : job.features.split(','))
+  // displayedFeaturesが設定されている場合はそれを優先表示
+  const displayedFeaturesRaw = job.displayedFeatures || '';
+  const displayedFeatures = displayedFeaturesRaw
+    ? displayedFeaturesRaw.split(',').map(f => f.trim()).filter(f => f)
     : [];
+
+  const allFeaturesRaw = job.features || '';
+  const allFeatures = allFeaturesRaw
+    ? (Array.isArray(allFeaturesRaw) ? allFeaturesRaw : allFeaturesRaw.split(',').map(f => f.trim()))
+    : [];
+
+  // displayedFeaturesがあればそれを使用、なければallFeaturesの最初の5つ
+  const features = displayedFeatures.length > 0 ? displayedFeatures : allFeatures;
 
   return `
     <div class="lp-job-card">
@@ -56,8 +66,8 @@ function renderJobCard(job, company) {
         </ul>
         ${features.length > 0 ? `
         <div class="lp-job-tags">
-          ${features.slice(0, 5).map(f =>
-            `<span class="lp-job-tag">${escapeHtml(f.trim())}</span>`
+          ${features.slice(0, 3).map(f =>
+            `<span class="lp-job-tag">${escapeHtml(typeof f === 'string' ? f.trim() : f)}</span>`
           ).join('')}
         </div>
         ` : ''}

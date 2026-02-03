@@ -464,9 +464,9 @@ class CompanyRecruitPage {
             ${job.monthlySalary ? `<span class="recruit-highlight salary">${escapeHtml(job.monthlySalary)}</span>` : ''}
             ${job.totalBonus ? `<span class="recruit-highlight bonus">${escapeHtml(job.totalBonus)}</span>` : ''}
           </div>
-          ${job.features ? `
+          ${job.features || job.displayedFeatures ? `
             <div class="recruit-job-card-features">
-              ${this.renderFeatures(job.features)}
+              ${this.renderFeatures(job.features, job.displayedFeatures)}
             </div>
           ` : ''}
           <span class="recruit-job-card-link">詳細を見る →</span>
@@ -477,8 +477,18 @@ class CompanyRecruitPage {
 
   /**
    * 特徴タグを描画
+   * @param {string} features - カンマ区切りの特徴文字列
+   * @param {string} displayedFeatures - 表示用にカンマ区切りの特徴文字列（オプション）
    */
-  renderFeatures(features) {
+  renderFeatures(features, displayedFeatures = '') {
+    // displayedFeaturesが設定されている場合はそちらを優先
+    if (displayedFeatures && typeof displayedFeatures === 'string') {
+      const displayedList = displayedFeatures.split(/[,、]/).map(f => f.trim()).filter(f => f).slice(0, 3);
+      if (displayedList.length > 0) {
+        return displayedList.map(f => `<span class="recruit-feature-tag">${escapeHtml(f)}</span>`).join('');
+      }
+    }
+
     if (!features) return '';
     // 文字列でない場合は空を返す
     if (typeof features !== 'string') return '';

@@ -8,7 +8,21 @@ import { Badge, Button, Icons, TagList, Image } from '@components/atoms/index.js
 // 求人カード
 export function JobCard({ job, showCompanyName = false, linkToJobsList = false }) {
   const badges = job.badges ? job.badges.split(',').map(b => b.trim()) : [];
-  const features = Array.isArray(job.features) ? job.features : [];
+
+  // displayedFeaturesが設定されている場合はそれを優先表示
+  const displayedFeaturesRaw = job.displayedFeatures || '';
+  const displayedFeatures = displayedFeaturesRaw
+    ? displayedFeaturesRaw.split(',').map(f => f.trim()).filter(f => f)
+    : [];
+
+  const allFeaturesRaw = job.features || '';
+  const allFeatures = Array.isArray(allFeaturesRaw)
+    ? allFeaturesRaw
+    : (allFeaturesRaw ? allFeaturesRaw.split(',').map(f => f.trim()).filter(f => f) : []);
+
+  // displayedFeaturesがあればそれを使用、なければallFeaturesの最初の3つ
+  const features = displayedFeatures.length > 0 ? displayedFeatures.slice(0, 3) : allFeatures.slice(0, 3);
+
   const imageSrc = job.imageUrl?.trim() || 'images/default-job.svg';
   const totalBonus = job._displayTotalBonus || job.totalBonus || '';
   const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
@@ -72,7 +86,20 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
 
 // 会社ページ用求人カード（シンプル版）
 export function CompanyJobCard({ job }) {
-  const features = Array.isArray(job.features) ? job.features : [];
+  // displayedFeaturesが設定されている場合はそれを優先表示
+  const displayedFeaturesRaw = job.displayedFeatures || '';
+  const displayedFeatures = displayedFeaturesRaw
+    ? displayedFeaturesRaw.split(',').map(f => f.trim()).filter(f => f)
+    : [];
+
+  const allFeaturesRaw = job.features || '';
+  const allFeatures = Array.isArray(allFeaturesRaw)
+    ? allFeaturesRaw
+    : (allFeaturesRaw ? allFeaturesRaw.split(',').map(f => f.trim()).filter(f => f) : []);
+
+  // displayedFeaturesがあればそれを使用、なければallFeaturesの最初の3つ
+  const features = displayedFeatures.length > 0 ? displayedFeatures.slice(0, 3) : allFeatures.slice(0, 3);
+
   let shortDesc = '';
   if (job.jobDescription) {
     shortDesc = job.jobDescription.length > 100

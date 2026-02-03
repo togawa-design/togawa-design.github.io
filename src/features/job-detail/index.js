@@ -13,7 +13,21 @@ export function renderJobDetail(job) {
   const container = document.getElementById('job-detail-container');
   if (!container) return;
 
-  const features = Array.isArray(job.features) ? job.features : [];
+  // displayedFeaturesが設定されている場合はそれを使用、なければfeaturesを使用
+  const displayedFeaturesRaw = job.displayedFeatures || '';
+  const displayedFeaturesArray = displayedFeaturesRaw
+    ? displayedFeaturesRaw.split(',').map(f => f.trim()).filter(f => f)
+    : [];
+
+  // 表示用の特徴（displayedFeaturesがあればそれを、なければfeaturesの最初の3つ）
+  const featuresRaw = job.features || '';
+  const allFeatures = featuresRaw
+    ? featuresRaw.split(',').map(f => f.trim()).filter(f => f)
+    : [];
+
+  const features = displayedFeaturesArray.length > 0
+    ? displayedFeaturesArray.slice(0, 3)
+    : allFeatures.slice(0, 3);
 
   container.innerHTML = `
     <div class="lp-container">
