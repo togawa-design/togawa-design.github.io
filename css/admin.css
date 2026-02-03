@@ -1964,6 +1964,18 @@
   margin-bottom: 0;
 }
 
+.info-box .recruit-url {
+  color: #0284c7;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.info-box .recruit-url:hover {
+  text-decoration: underline;
+}
+
 .btn-link {
   display: inline-block;
   padding: 8px 16px;
@@ -5007,6 +5019,94 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
+/* 日付範囲選択 */
+.analytics-date-range {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.analytics-date-range > label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-range-inputs .date-input {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #fff;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.date-range-inputs .date-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.date-separator {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.date-range-presets {
+  display: flex;
+  gap: 6px;
+}
+
+.date-preset-btn {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #fff;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-preset-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.date-preset-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+/* メモセクション */
+.memo-section {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+
+.memo-section .section-title {
+  color: #b45309;
+}
+
+.memo-section textarea {
+  background: #fff;
+  border: 1px solid #fcd34d;
+}
+
+.memo-section textarea:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
 .analytics-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -5292,6 +5392,27 @@
 
   .analytics-period-select select {
     width: 100%;
+  }
+
+  .analytics-date-range {
+    width: 100%;
+  }
+
+  .date-range-inputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-range-inputs .date-input {
+    width: 100%;
+  }
+
+  .date-separator {
+    text-align: center;
+  }
+
+  .date-range-presets {
+    justify-content: center;
   }
 
   .analytics-summary {
@@ -8271,6 +8392,80 @@ body.lp-settings-active #section-lp-settings {
   to { transform: rotate(360deg); }
 }
 
+/* インライン画像アップロードボタン */
+.btn-upload-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-upload-inline:hover {
+  background: #4f46e5;
+}
+
+.btn-upload-inline:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn-upload-inline .upload-icon {
+  font-size: 1rem;
+}
+
+.btn-upload-inline .upload-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+/* ヒーロー画像プレビュー */
+.hero-image-preview {
+  margin-top: 8px;
+  display: none;
+}
+
+.hero-image-preview img {
+  max-width: 200px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.hero-image-preview.uploading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 120px;
+  background: #f8fafc;
+  border: 2px dashed #6366f1;
+  border-radius: 8px;
+}
+
+.hero-image-preview .upload-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 /* レスポンシブ */
 @media (max-width: 600px) {
   .logo-upload-container {
@@ -8286,9 +8481,236 @@ body.lp-settings-active #section-lp-settings {
     flex-direction: column;
   }
 
-  .btn-upload-small {
+  .btn-upload-small,
+  .btn-upload-inline {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ========================================
+   採用ページ情報パネル
+======================================== */
+
+.recruit-info-panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.recruit-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.recruit-info-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.recruit-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recruit-info-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.recruit-info-label {
+  min-width: 80px;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.recruit-info-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.status-badge.status-published {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.status-draft {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.btn-toggle-status {
+  font-size: 0.8125rem;
+  color: #6366f1;
+}
+
+.btn-toggle-status:hover {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
+.recruit-url-display {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.recruit-url-display:hover {
+  text-decoration: underline;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: #e2e8f0;
+  color: #1f2937;
+}
+
+/* リンク・バナー取得 */
+.embed-links-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.embed-link-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.embed-link-item label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.embed-code-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.embed-code-box code {
+  flex: 1;
+  font-size: 0.75rem;
+  color: #475569;
+  word-break: break-all;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.btn-copy-embed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-copy-embed:hover {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.qr-code-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.qr-code-placeholder {
+  width: 120px;
+  height: 120px;
+  background: #f8fafc;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.qr-code-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* SNS連携 */
+.sns-links-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.sns-links-container .form-group {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .recruit-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .recruit-info-label {
+    min-width: auto;
+  }
+
+  .sns-links-container {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -9307,4 +9729,157 @@ body.lp-settings-active #section-lp-settings {
   background: rgba(99, 102, 241, 0.1);
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+/* ========================================
+   求人編集 - 複数入力リスト（勤務時間など）
+   ======================================== */
+
+.multi-input-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.multi-input-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.multi-input-item input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.multi-input-item input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.btn-remove-item {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-remove-item:hover {
+  background: #fecaca;
+  transform: scale(1.05);
+}
+
+.btn-add-item {
+  padding: 10px 16px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-add-item:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+/* ========================================
+   求人編集 - 特徴チェックボックスグリッド
+   ======================================== */
+
+.features-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.feature-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.feature-checkbox:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.feature-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.feature-checkbox input[type="checkbox"]:checked + span {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.feature-checkbox span {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.3;
+}
+
+/* ========================================
+   求人編集 - 給与形態選択
+   ======================================== */
+
+#salary-other-group {
+  margin-top: 12px;
+}
+
+#salary-other-group.visible {
+  display: block !important;
+}
+
+/* 給与入力欄のレイアウト調整 */
+.salary-input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.salary-input-group .input-with-unit {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .features-checkbox-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .multi-input-item {
+    flex-wrap: nowrap;
+  }
+
+  .multi-input-item input {
+    min-width: 0;
+  }
 }
