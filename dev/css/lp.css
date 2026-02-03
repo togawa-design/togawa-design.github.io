@@ -24,6 +24,8 @@
    ======================================== */
 
 .lp-header {
+  /* デフォルトでは非表示（会社設定がない場合のみJSで表示） */
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -330,10 +332,25 @@
   border-radius: 12px;
   overflow: hidden;
   transition: box-shadow 0.3s;
+  position: relative;
 }
 
 .lp-job-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* 新着タグ */
+.lp-job-new-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  color: #dc2626;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 10;
 }
 
 .lp-job-card-header {
