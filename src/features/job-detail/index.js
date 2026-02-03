@@ -92,6 +92,12 @@ export function renderJobDetail(job) {
               <div class="lp-detail-label">勤務地</div>
               <div class="lp-detail-value">${escapeHtml(job.location)}</div>
             </div>
+            ${job.access ? `
+            <div class="lp-detail-row">
+              <div class="lp-detail-label">アクセス</div>
+              <div class="lp-detail-value">${escapeHtml(job.access)}</div>
+            </div>
+            ` : ''}
           </div>
         </div>
       </section>

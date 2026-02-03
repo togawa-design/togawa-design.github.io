@@ -65,6 +65,7 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
         ${showCompanyName ? `<p class="job-company-name">${escapeHtml(job.company || '')}</p>` : ''}
         <h3 class="job-title">${escapeHtml(job.title)}</h3>
         <p class="job-location">${escapeHtml(job.companyAddress || job.location || '')}</p>
+        ${job.access ? `<p class="job-access">${escapeHtml(job.access)}</p>` : ''}
         <div class="job-benefits">
           ${totalBonus ? `
             <div class="benefit-item highlight">
@@ -119,6 +120,7 @@ export function CompanyJobCard({ job }) {
       <div class="job-list-card-body">
         <ul class="job-list-info">
           <li><span class="info-label">勤務地</span><span class="info-value">${escapeHtml(job.location)}</span></li>
+          ${job.access ? `<li><span class="info-label">アクセス</span><span class="info-value">${escapeHtml(job.access)}</span></li>` : ''}
           <li><span class="info-label">給与</span><span class="info-value">${escapeHtml(job.monthlySalary || job.salary || '')}</span></li>
           <li><span class="info-label">雇用形態</span><span class="info-value">${escapeHtml(job.employmentType || '')}</span></li>
           ${job.totalBonus ? `<li><span class="info-label">特典総額</span><span class="info-value highlight">${escapeHtml(job.totalBonus)}</span></li>` : ''}

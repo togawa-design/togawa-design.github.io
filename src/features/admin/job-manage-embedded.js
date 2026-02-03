@@ -617,6 +617,7 @@ async function saveJob() {
     memo: getVal('memo'),
     title: getVal('title'),
     location: getVal('location'),
+    access: getVal('access'),
     salaryType: salaryType,
     monthlySalary: salaryValue,
     salaryOther: salaryOther,

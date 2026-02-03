@@ -460,6 +460,7 @@ class CompanyRecruitPage {
           ${jobType ? `<span class="recruit-job-card-type">${escapeHtml(jobType)}</span>` : ''}
           <h3 class="recruit-job-card-title">${escapeHtml(job.title || '求人情報')}</h3>
           ${job.location ? `<p class="recruit-job-card-location">${escapeHtml(job.location)}</p>` : ''}
+          ${job.access ? `<p class="recruit-job-card-access">${escapeHtml(job.access)}</p>` : ''}
           <div class="recruit-job-card-highlights">
             ${job.monthlySalary ? `<span class="recruit-highlight salary">${escapeHtml(job.monthlySalary)}</span>` : ''}
             ${job.totalBonus ? `<span class="recruit-highlight bonus">${escapeHtml(job.totalBonus)}</span>` : ''}

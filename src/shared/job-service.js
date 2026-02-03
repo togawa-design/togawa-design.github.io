@@ -392,6 +392,7 @@ export function populateForm(job, prefix = 'edit-job') {
 
   setVal('title', job.title);
   setVal('location', job.location);
+  setVal('access', job.access);
   setVal('salary', job.monthlySalary);
   setVal('bonus', job.totalBonus);
   setVal('order', job.order);
@@ -417,7 +418,7 @@ export function populateForm(job, prefix = 'edit-job') {
  * @param {string} prefix - フォーム要素IDのプレフィックス
  */
 export function clearForm(prefix = 'edit-job') {
-  const fields = ['title', 'location', 'salary', 'bonus', 'order', 'type', 'features',
+  const fields = ['title', 'location', 'access', 'salary', 'bonus', 'order', 'type', 'features',
                   'badges', 'description', 'requirements', 'benefits', 'hours',
                   'holidays', 'start-date', 'end-date'];
 

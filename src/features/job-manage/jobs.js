@@ -528,6 +528,7 @@ function populateSectionForm(job) {
   setVal('title', job.title);
   setVal('employment-type', job.employmentType);
   setVal('location', job.location);
+  setVal('access', job.access);
   setVal('bonus', job.totalBonus);
   setVal('order', job.order);
   setVal('type', job.jobType);
@@ -784,6 +785,7 @@ export async function saveJobData() {
     title: getVal('title'),
     employmentType: getVal('employment-type'),
     location: getVal('location'),
+    access: getVal('access'),
     salaryType: salaryType,
     monthlySalary: salaryValue,
     salaryOther: salaryOther,

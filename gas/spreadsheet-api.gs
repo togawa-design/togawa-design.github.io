@@ -769,6 +769,9 @@ function normalizeHeader(header) {
     // 表示する特徴
     "表示する特徴": "displayedFeatures",
     displayedFeatures: "displayedFeatures",
+    // アクセス
+    アクセス: "access",
+    access: "access",
   };
   const cleanHeader = String(header).trim();
   return mapping[cleanHeader] || cleanHeader;
@@ -887,7 +890,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
     let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     // 必要な列が存在しなければ追加
-    const requiredCols = ["memo", "employmentType", "jobType", "salaryType", "salaryOther", "displayedFeatures"];
+    const requiredCols = ["memo", "employmentType", "jobType", "salaryType", "salaryOther", "displayedFeatures", "access"];
     for (const col of requiredCols) {
       if (!headers.includes(col)) {
         const newColIndex = sheet.getLastColumn() + 1;
@@ -899,7 +902,8 @@ function saveJob(companyDomain, jobData, rowIndex) {
           jobType: "職種",
           salaryType: "給与形態",
           salaryOther: "給与詳細（その他）",
-          displayedFeatures: "表示する特徴"
+          displayedFeatures: "表示する特徴",
+          access: "アクセス"
         };
         if (japaneseHeaders[col]) {
           sheet.getRange(2, newColIndex).setValue(japaneseHeaders[col]);
@@ -916,6 +920,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
         title: jobData.title || "",
         employmentType: jobData.employmentType || "",
         location: jobData.location || "",
+        access: jobData.access || "",
         totalBonus: jobData.totalBonus || "",
         salaryType: jobData.salaryType || "",
         monthlySalary: jobData.monthlySalary || "",
