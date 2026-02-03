@@ -390,6 +390,14 @@ function showJobEditNew() {
     displayedFeaturesContainer.innerHTML = '<div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>';
   }
 
+  // 動画設定をクリア
+  const showVideoCheckbox = document.getElementById('jm-edit-job-show-video');
+  if (showVideoCheckbox) showVideoCheckbox.checked = false;
+  const videoUrlInput = document.getElementById('jm-edit-job-video-url');
+  if (videoUrlInput) videoUrlInput.value = '';
+  const videoUrlGroup = document.getElementById('jm-video-url-group');
+  if (videoUrlGroup) videoUrlGroup.style.display = 'none';
+
   // タイトル・バッジ更新
   const titleEl = document.getElementById('jm-job-edit-title');
   const badgeEl = document.getElementById('jm-job-edit-badge');
@@ -440,6 +448,9 @@ function editJob(jobId) {
 
   // 特徴チェックボックスを設定
   populateFeaturesCheckboxes(job);
+
+  // 動画設定を設定
+  populateVideoFields(job);
 
   // タイトル・バッジ更新
   const titleEl = document.getElementById('jm-job-edit-title');
@@ -517,6 +528,27 @@ function populateWorkingHoursFields(job) {
 }
 
 /**
+ * 動画設定フィールドを設定
+ */
+function populateVideoFields(job) {
+  const showVideoCheckbox = document.getElementById('jm-edit-job-show-video');
+  const videoUrlInput = document.getElementById('jm-edit-job-video-url');
+  const videoUrlGroup = document.getElementById('jm-video-url-group');
+
+  if (showVideoCheckbox) {
+    showVideoCheckbox.checked = String(job.showVideoButton).toLowerCase() === 'true';
+  }
+
+  if (videoUrlInput) {
+    videoUrlInput.value = job.videoUrl || '';
+  }
+
+  if (videoUrlGroup) {
+    videoUrlGroup.style.display = showVideoCheckbox?.checked ? 'block' : 'none';
+  }
+}
+
+/**
  * 特徴チェックボックスを設定
  */
 function populateFeaturesCheckboxes(job) {
@@ -585,6 +617,88 @@ function backToJobsList() {
 }
 
 /**
+ * 動画設定をLP設定に同期
+ * 求人編集で動画を設定した場合、LP設定にも反映させる
+ * 既存のsaveLPSettingsアクションを使用
+ */
+async function syncVideoToLP(jobId, jobData, showVideoButton, videoUrl) {
+  const gasApiUrl = config.gasApiUrl;
+  if (!gasApiUrl) return;
+
+  try {
+    // LP設定の同期データを作成
+    // 初期値としてheroCTAセクションを含むlpContentを設定
+    const initialLpContent = {
+      version: 2,
+      sections: [
+        {
+          id: 'hero-cta-1',
+          type: 'heroCta',
+          data: {
+            title: `${jobData.title || ''}で一緒に働きませんか？`,
+            subtitle: '',
+            backgroundImage: '',
+            showVideoButton: showVideoButton === 'true',
+            videoUrl: videoUrl || ''
+          }
+        },
+        {
+          id: 'job-info-1',
+          type: 'jobInfo',
+          data: {}
+        },
+        {
+          id: 'cta-1',
+          type: 'cta',
+          data: {
+            title: '今すぐ応募する'
+          }
+        }
+      ]
+    };
+
+    const lpSettings = {
+      jobId: jobId,
+      companyDomain: companyDomain,
+      company: companyName,
+      jobTitle: jobData.title || '',
+      showVideoButton: showVideoButton,
+      videoUrl: videoUrl,
+      lpContent: JSON.stringify(initialLpContent),
+      // 動画同期フラグ（既存設定がある場合は動画のみ更新するためのフラグ）
+      syncVideoOnly: true
+    };
+
+    // 既存のsaveLPSettingsアクションを使用
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+      action: 'saveLPSettings',
+      settings: lpSettings
+    }))));
+
+    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const responseText = await response.text();
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      console.warn('[JobManageEmbedded] LP同期レスポンスのパースエラー');
+      return;
+    }
+
+    if (result.success) {
+      console.log('[JobManageEmbedded] 動画設定をLPに同期しました');
+    } else {
+      console.warn('[JobManageEmbedded] LP同期エラー:', result.error);
+    }
+  } catch (error) {
+    // LP同期のエラーは求人保存のメイン処理に影響を与えない
+    console.warn('[JobManageEmbedded] LP同期中にエラー:', error.message);
+  }
+}
+
+/**
  * 求人を保存
  */
 async function saveJob() {
@@ -612,6 +726,10 @@ async function saveJob() {
   const displayedFeaturesArray = Array.from(displayedFeaturesCheckboxes).map(cb => cb.value);
   const displayedFeatures = displayedFeaturesArray.join(',');
 
+  // 動画設定の取得
+  const showVideoButton = document.getElementById('jm-edit-job-show-video')?.checked ? 'true' : 'false';
+  const videoUrl = getVal('video-url');
+
   const jobData = {
     id: isNewJob ? '' : (currentEditingJob?.id || ''),
     memo: getVal('memo'),
@@ -634,7 +752,9 @@ async function saveJob() {
     holidays: getVal('holidays'),
     publishStartDate: getVal('start-date'),
     publishEndDate: getVal('end-date'),
-    visible: document.getElementById('jm-edit-job-visible')?.checked ? 'true' : 'false'
+    visible: document.getElementById('jm-edit-job-visible')?.checked ? 'true' : 'false',
+    showVideoButton: showVideoButton,
+    videoUrl: videoUrl
   };
 
   if (!jobData.title || !jobData.location) {
@@ -676,6 +796,14 @@ async function saveJob() {
 
     if (!result.success) {
       throw new Error(result.error || '保存に失敗しました');
+    }
+
+    // 動画設定がある場合、LP設定にも同期
+    if (showVideoButton === 'true' && videoUrl) {
+      const jobId = isNewJob ? result.jobId : (currentEditingJob?.id || '');
+      if (jobId) {
+        await syncVideoToLP(jobId, jobData, showVideoButton, videoUrl);
+      }
     }
 
     showToast(isNewJob ? '求人を作成しました' : '求人情報を更新しました', 'success');
@@ -875,6 +1003,9 @@ function setupEventListeners() {
   // 特徴チェックボックスの変更監視
   setupFeaturesCheckboxEvents();
 
+  // 動画表示チェックボックスの変更監視
+  document.getElementById('jm-edit-job-show-video')?.addEventListener('change', handleJmShowVideoChange);
+
   // アナリティクス日付範囲の初期化
   initJmDateRangePicker();
 }
@@ -965,6 +1096,22 @@ function getJmPresetDates(preset) {
   }
 
   return { start, end };
+}
+
+/**
+ * 動画表示チェックボックス変更時の処理
+ */
+function handleJmShowVideoChange() {
+  const showVideoCheckbox = document.getElementById('jm-edit-job-show-video');
+  const videoUrlGroup = document.getElementById('jm-video-url-group');
+
+  if (!showVideoCheckbox || !videoUrlGroup) return;
+
+  if (showVideoCheckbox.checked) {
+    videoUrlGroup.style.display = 'block';
+  } else {
+    videoUrlGroup.style.display = 'none';
+  }
 }
 
 /**

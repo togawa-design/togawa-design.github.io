@@ -490,12 +490,117 @@ export async function renderFooterJobTypes() {
   }
 }
 
+// 動画モーダルを初期化
+export function initJobVideoModal() {
+  // イベント委譲で動画ボタンのクリックを処理
+  document.addEventListener('click', (e) => {
+    const videoBtn = e.target.closest('.btn-job-video');
+    if (videoBtn) {
+      e.preventDefault();
+      const videoUrl = videoBtn.dataset.videoUrl;
+      if (videoUrl) {
+        showJobVideoModal(videoUrl);
+      }
+    }
+
+    // モーダルを閉じる
+    const closeBtn = e.target.closest('.job-video-modal-close');
+    const overlay = e.target.closest('.job-video-modal-overlay');
+    if (closeBtn || overlay) {
+      closeJobVideoModal();
+    }
+  });
+
+  // ESCキーでモーダルを閉じる
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeJobVideoModal();
+    }
+  });
+}
+
+// 動画モーダルを表示
+function showJobVideoModal(videoUrl) {
+  // YouTubeのURLを埋め込み形式に変換
+  const embedUrl = getYouTubeEmbedUrl(videoUrl);
+  if (!embedUrl) {
+    console.error('[JobVideo] YouTube URLの解析に失敗:', videoUrl);
+    return;
+  }
+
+  // 既存のモーダルがあれば削除
+  const existingModal = document.querySelector('.job-video-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // モーダルを作成
+  const modal = document.createElement('div');
+  modal.className = 'job-video-modal';
+  modal.innerHTML = `
+    <div class="job-video-modal-overlay"></div>
+    <div class="job-video-modal-content">
+      <button class="job-video-modal-close">&times;</button>
+      <iframe
+        class="job-video-modal-iframe"
+        src="${embedUrl}"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // 少し遅延してからactiveクラスを追加（アニメーション用）
+  requestAnimationFrame(() => {
+    modal.classList.add('active');
+  });
+
+  // スクロールを無効化
+  document.body.style.overflow = 'hidden';
+}
+
+// 動画モーダルを閉じる
+function closeJobVideoModal() {
+  const modal = document.querySelector('.job-video-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    setTimeout(() => {
+      modal.remove();
+      document.body.style.overflow = '';
+    }, 300);
+  }
+}
+
+// YouTubeのURLを埋め込み形式に変換
+function getYouTubeEmbedUrl(url) {
+  if (!url) return null;
+
+  // 各種YouTube URL形式に対応
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) {
+      return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
+    }
+  }
+
+  return null;
+}
+
 // ページ初期化
 export function initHomePage() {
   initSearchTabs();
   initMobileMenu();
   initSmoothScroll();
   initHeaderScroll();
+  initJobVideoModal();
 
   if (document.getElementById('jobs-container')) {
     renderJobs();
@@ -522,6 +627,7 @@ export default {
   initMobileMenu,
   initSmoothScroll,
   initHeaderScroll,
+  initJobVideoModal,
   animateNumbers,
   renderJobs,
   renderStats,

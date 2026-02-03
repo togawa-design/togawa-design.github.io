@@ -88,7 +88,9 @@ export function normalizeHeader(header) {
     '雇用形態': 'employmentType', 'employmentType': 'employmentType', 'employment_type': 'employmentType',
     '資格・スキル': 'skills', 'skills': 'skills', '資格': 'skills', 'スキル': 'skills',
     '検索タグ': 'tags', 'tags': 'tags',
-    'メモ': 'memo', 'memo': 'memo'
+    'メモ': 'memo', 'memo': 'memo',
+    '動画URL': 'videoUrl', 'videoUrl': 'videoUrl', 'video_url': 'videoUrl',
+    '動画表示': 'showVideoButton', 'showVideoButton': 'showVideoButton', 'show_video_button': 'showVideoButton'
   };
 
   const cleanHeader = header.replace(/"/g, '').trim();

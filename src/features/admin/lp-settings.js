@@ -1309,6 +1309,23 @@ export function updateHeroImagePresetSelection(selectedUrl) {
   });
 }
 
+/**
+ * 動画設定を求人シートに同期
+ * LP設定で動画を設定した場合、求人シートにも反映させる
+ * 注意: 現状はバックエンドの部分更新APIがないため、ログ出力のみ
+ */
+async function syncVideoToJob(jobId, showVideoButton, videoUrl, jobData) {
+  // TODO: バックエンドにupdateJobVideoアクションを追加後に有効化
+  // 現状は求人編集画面から動画を設定すればLP側にも同期されるため、
+  // LP→求人の同期は必須ではない（求人シートが正とする運用）
+  console.log('[LP設定] 動画設定の求人シート同期（未実装）:', {
+    jobId,
+    showVideoButton,
+    videoUrl,
+    companyDomain: jobData?.companyDomain || selectedCompanyDomain
+  });
+}
+
 // LP設定を保存（求人ID単位）
 export async function saveLPSettings() {
   console.log('[LP保存] saveLPSettings 開始');
@@ -1449,6 +1466,11 @@ export async function saveLPSettings() {
       if (!result.success) {
         alert('スプレッドシートへの保存に失敗しました: ' + (result.error || '不明なエラー'));
         return;
+      }
+
+      // 動画設定を求人シートにも同期
+      if (settings.showVideoButton || settings.videoUrl) {
+        await syncVideoToJob(jobId, settings.showVideoButton, settings.videoUrl, jobData);
       }
 
       localStorage.removeItem(`lp_settings_${jobId}`);

@@ -704,6 +704,17 @@ function saveLPSettings(settingsData) {
 
     if (rowIndex > 0) {
       // 既存行を更新
+      // syncVideoOnlyフラグがtrueの場合、動画関連フィールドのみ更新
+      if (settingsData.syncVideoOnly) {
+        const videoFields = ["showVideoButton", "videoUrl"];
+        videoFields.forEach((field) => {
+          const colIndex = headers.indexOf(field);
+          if (colIndex >= 0 && settingsData[field] !== undefined) {
+            sheet.getRange(rowIndex, colIndex + 1).setValue(settingsData[field]);
+          }
+        });
+        return { success: true, message: "動画設定を同期しました", isNew: false, syncVideoOnly: true };
+      }
       sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
       return { success: true, message: "LP設定を更新しました", isNew: false };
     } else {
@@ -772,6 +783,11 @@ function normalizeHeader(header) {
     // アクセス
     アクセス: "access",
     access: "access",
+    // 動画設定
+    動画表示: "showVideoButton",
+    showVideoButton: "showVideoButton",
+    動画URL: "videoUrl",
+    videoUrl: "videoUrl",
   };
   const cleanHeader = String(header).trim();
   return mapping[cleanHeader] || cleanHeader;
@@ -890,7 +906,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
     let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     // 必要な列が存在しなければ追加
-    const requiredCols = ["memo", "employmentType", "jobType", "salaryType", "salaryOther", "displayedFeatures", "access"];
+    const requiredCols = ["memo", "employmentType", "jobType", "salaryType", "salaryOther", "displayedFeatures", "access", "showVideoButton", "videoUrl"];
     for (const col of requiredCols) {
       if (!headers.includes(col)) {
         const newColIndex = sheet.getLastColumn() + 1;
@@ -903,7 +919,9 @@ function saveJob(companyDomain, jobData, rowIndex) {
           salaryType: "給与形態",
           salaryOther: "給与詳細（その他）",
           displayedFeatures: "表示する特徴",
-          access: "アクセス"
+          access: "アクセス",
+          showVideoButton: "動画表示",
+          videoUrl: "動画URL"
         };
         if (japaneseHeaders[col]) {
           sheet.getRange(2, newColIndex).setValue(japaneseHeaders[col]);
@@ -938,6 +956,8 @@ function saveJob(companyDomain, jobData, rowIndex) {
         order: jobData.order || "",
         publishStartDate: jobData.publishStartDate || "",
         publishEndDate: jobData.publishEndDate || "",
+        showVideoButton: jobData.showVideoButton || "false",
+        videoUrl: jobData.videoUrl || "",
       };
       return mapping[header] !== undefined ? mapping[header] : "";
     });
@@ -967,6 +987,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
         success: true,
         message: "求人を作成しました",
         rowIndex: sheet.getLastRow(),
+        jobId: newId, // LP同期用にjobIdを返す
       };
     }
   } catch (error) {

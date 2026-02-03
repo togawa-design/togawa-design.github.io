@@ -42,6 +42,10 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
   const isNew = isWithinOneWeek(job.publishStartDate);
   const newTagHtml = isNew ? '<span class="job-new-tag">✨ NEW</span>' : '';
 
+  // 動画ボタン表示判定
+  const showVideoButton = String(job.showVideoButton).toLowerCase() === 'true' && job.videoUrl?.trim();
+  const videoUrl = job.videoUrl?.trim() || '';
+
   // linkToJobsList が true の場合は企業の求人一覧ページへ、それ以外はLPページへ
   let detailUrl = 'jobs.html';
   if (linkToJobsList) {
@@ -60,8 +64,16 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
     }
   }
 
+  // 動画ボタンのHTML（動画URLがある場合のみ表示）
+  const videoButtonHtml = showVideoButton ? `
+    <button type="button" class="btn-job-video" data-video-url="${escapeHtml(videoUrl)}" title="動画で求人を見る">
+      <span class="btn-job-video-icon">▶</span>
+      <span class="btn-job-video-text">動画を見る</span>
+    </button>
+  ` : '';
+
   return `
-    <article class="job-card${isNew ? ' is-new' : ''}" data-job-id="${escapeHtml(job.id || '')}">
+    <article class="job-card${isNew ? ' is-new' : ''}${showVideoButton ? ' has-video' : ''}" data-job-id="${escapeHtml(job.id || '')}">
       ${newTagHtml}
       <div class="job-card-image">
         ${Image({ src: imageSrc, alt: job.company || job.title, fallback: job.company })}
@@ -84,7 +96,10 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
           </div>
         </div>
         ${TagList({ tags: features, className: 'job-features' })}
-        ${Button({ text: '詳細を見る', href: detailUrl, className: 'btn-apply' })}
+        <div class="job-card-actions">
+          ${Button({ text: '詳細を見る', href: detailUrl, className: 'btn-apply' })}
+          ${videoButtonHtml}
+        </div>
       </div>
     </article>
   `;
