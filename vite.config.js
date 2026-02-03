@@ -26,7 +26,11 @@ export default defineConfig({
         jobManage: resolve(__dirname, 'job-manage.html'),
         location: resolve(__dirname, 'location.html'),
         mypage: resolve(__dirname, 'mypage.html'),
-        applicants: resolve(__dirname, 'applicants.html')
+        applicants: resolve(__dirname, 'applicants.html'),
+        guideJobSearch: resolve(__dirname, 'guide-job-search.html'),
+        guideInterview: resolve(__dirname, 'guide-interview.html'),
+        guideWork: resolve(__dirname, 'guide-work.html'),
+        guideSite: resolve(__dirname, 'guide-site.html')
       },
       output: {
         entryFileNames: 'js/[name]-[hash].js',
