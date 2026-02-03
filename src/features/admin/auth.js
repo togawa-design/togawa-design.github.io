@@ -304,8 +304,13 @@ export async function addAdminUser(email, role, companyDomain = null) {
 
 /**
  * 会社ユーザーを追加（管理者のみ実行可能）
+ * @param {string} username - ユーザーID
+ * @param {string} password - パスワード
+ * @param {string} companyDomain - 会社ドメイン
+ * @param {string} name - 表示名
+ * @param {string} role - 役割 ('admin' | 'staff')
  */
-export async function addCompanyUser(username, password, companyDomain, name = '') {
+export async function addCompanyUser(username, password, companyDomain, name = '', role = 'staff') {
   if (!isAdmin()) {
     return { success: false, error: '権限がありません' };
   }
@@ -330,6 +335,8 @@ export async function addCompanyUser(username, password, companyDomain, name = '
       password, // 本番では適切にハッシュ化
       companyDomain,
       name,
+      role, // 'admin' or 'staff'
+      isActive: true,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 

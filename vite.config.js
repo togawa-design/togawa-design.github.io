@@ -34,7 +34,8 @@ export default defineConfig({
         legal: resolve(__dirname, 'legal.html'),
         privacy: resolve(__dirname, 'privacy.html'),
         about: resolve(__dirname, 'about.html'),
-        terms: resolve(__dirname, 'terms.html')
+        terms: resolve(__dirname, 'terms.html'),
+        oauthCallback: resolve(__dirname, 'oauth-callback.html')
       },
       output: {
         entryFileNames: 'js/[name]-[hash].js',

@@ -2504,3 +2504,565 @@ async function getPageAnalyticsByRecruit(db, startDate, endDate, companyDomain =
 functions.http('health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// ========================================
+// Google Calendar連携機能
+// ========================================
+
+const { google } = require('googleapis');
+const crypto = require('crypto');
+
+// 環境変数からOAuth設定を取得
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net/calendarOAuthCallback';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-for-development-32b';
+
+// OAuth2クライアントを作成
+function createOAuth2Client() {
+  return new google.auth.OAuth2(
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI
+  );
+}
+
+// トークンを暗号化
+function encryptToken(token) {
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  let encrypted = cipher.update(token, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag().toString('hex');
+  return iv.toString('hex') + ':' + authTag + ':' + encrypted;
+}
+
+// トークンを復号
+function decryptToken(encryptedToken) {
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const parts = encryptedToken.split(':');
+  const iv = Buffer.from(parts[0], 'hex');
+  const authTag = Buffer.from(parts[1], 'hex');
+  const encrypted = parts[2];
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
+
+// stateを生成（CSRF対策）
+function generateState(data) {
+  const stateData = JSON.stringify({
+    ...data,
+    timestamp: Date.now(),
+    nonce: crypto.randomBytes(8).toString('hex')
+  });
+  return Buffer.from(stateData).toString('base64url');
+}
+
+// stateを検証
+function verifyState(state) {
+  try {
+    const decoded = Buffer.from(state, 'base64url').toString('utf8');
+    const data = JSON.parse(decoded);
+    if (Date.now() - data.timestamp > 10 * 60 * 1000) {
+      return null;
+    }
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * カレンダーOAuth認証を開始
+ */
+functions.http('initiateCalendarAuth', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send('');
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+      const { companyDomain, companyUserId, staffName } = req.body;
+
+      if (!companyDomain || !companyUserId) {
+        return res.status(400).json({ error: 'companyDomain and companyUserId are required' });
+      }
+
+      // フロントエンドのコールバックURLを使用（GitHub Pages上）
+      const frontendRedirectUri = process.env.FRONTEND_CALLBACK_URL || 'https://togawa-design.github.io/kikanko/oauth-callback.html';
+      const oauth2Client = new google.auth.OAuth2(
+        GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET,
+        frontendRedirectUri
+      );
+
+      const state = generateState({ companyDomain, companyUserId, staffName });
+
+      const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: [
+          'https://www.googleapis.com/auth/calendar.readonly',
+          'https://www.googleapis.com/auth/calendar.events'
+        ],
+        state,
+        prompt: 'consent'
+      });
+
+      res.json({ success: true, authUrl });
+
+    } catch (error) {
+      console.error('initiateCalendarAuth error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+/**
+ * OAuth コールバック処理
+ */
+functions.http('calendarOAuthCallback', async (req, res) => {
+  try {
+    const { code, state, error } = req.query;
+
+    if (error) {
+      return res.status(400).send(`<html><body><h2>認証がキャンセルされました</h2><script>setTimeout(() => window.close(), 3000);</script></body></html>`);
+    }
+
+    if (!code || !state) {
+      return res.status(400).send('Missing code or state');
+    }
+
+    const stateData = verifyState(state);
+    if (!stateData) {
+      return res.status(400).send('Invalid or expired state');
+    }
+
+    const { companyDomain, companyUserId, staffName } = stateData;
+
+    const oauth2Client = createOAuth2Client();
+    const { tokens } = await oauth2Client.getToken(code);
+
+    oauth2Client.setCredentials(tokens);
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const userInfo = await oauth2.userinfo.get();
+    const googleEmail = userInfo.data.email;
+
+    const db = admin.firestore();
+    const integrationData = {
+      companyDomain,
+      companyUserId,
+      staffName: staffName || '',
+      googleEmail,
+      accessToken: encryptToken(tokens.access_token),
+      refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : null,
+      tokenExpiresAt: tokens.expiry_date ? admin.firestore.Timestamp.fromMillis(tokens.expiry_date) : null,
+      calendarId: 'primary',
+      isActive: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    const existingQuery = await db.collection('calendar_integrations')
+      .where('companyDomain', '==', companyDomain)
+      .where('companyUserId', '==', companyUserId)
+      .limit(1)
+      .get();
+
+    if (!existingQuery.empty) {
+      await existingQuery.docs[0].ref.update({
+        ...integrationData,
+        createdAt: existingQuery.docs[0].data().createdAt
+      });
+    } else {
+      await db.collection('calendar_integrations').add(integrationData);
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="ja">
+      <head><meta charset="UTF-8"><title>カレンダー連携完了</title>
+      <style>body{font-family:sans-serif;text-align:center;padding:50px}.success{color:#10b981;font-size:48px}</style></head>
+      <body>
+        <div class="success">✓</div>
+        <h2>カレンダー連携が完了しました</h2>
+        <p>連携アカウント: ${googleEmail}</p>
+        <script>setTimeout(() => { if(window.opener){window.opener.postMessage({type:'calendar_auth_success',email:'${googleEmail}'},'*');} window.close(); }, 2000);</script>
+      </body></html>
+    `);
+
+  } catch (error) {
+    console.error('calendarOAuthCallback error:', error);
+    res.status(500).send(`<html><body><h2>エラーが発生しました</h2><p>${error.message}</p></body></html>`);
+  }
+});
+
+/**
+ * フロントエンドからのトークン交換リクエストを処理
+ * フロントエンドのoauth-callback.htmlから呼び出される
+ */
+functions.http('exchangeCalendarToken', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      // Firebase認証を確認（オプション - ログ用）
+      const authUser = await verifyToken(req);
+      if (authUser) {
+        console.log(`Token exchange initiated by: ${authUser.email || authUser.uid}`);
+      }
+
+      const { code, companyDomain, companyUserId, staffName } = req.body;
+
+      if (!code || !companyDomain || !companyUserId) {
+        return res.status(400).json({ error: 'code, companyDomain, and companyUserId are required' });
+      }
+
+      // フロントエンドコールバック用のOAuth2クライアントを作成
+      const frontendRedirectUri = process.env.FRONTEND_CALLBACK_URL || 'https://togawa-design.github.io/kikanko/oauth-callback.html';
+      const oauth2Client = new google.auth.OAuth2(
+        GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET,
+        frontendRedirectUri
+      );
+
+      // 認可コードをトークンに交換
+      const { tokens } = await oauth2Client.getToken(code);
+
+      // Googleアカウント情報を取得
+      oauth2Client.setCredentials(tokens);
+      const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+      const userInfo = await oauth2.userinfo.get();
+      const googleEmail = userInfo.data.email;
+
+      // Firestoreに保存
+      const db = admin.firestore();
+      const integrationData = {
+        companyDomain,
+        companyUserId,
+        staffName: staffName || '',
+        googleEmail,
+        accessToken: encryptToken(tokens.access_token),
+        refreshToken: tokens.refresh_token ? encryptToken(tokens.refresh_token) : null,
+        tokenExpiresAt: tokens.expiry_date ? admin.firestore.Timestamp.fromMillis(tokens.expiry_date) : null,
+        calendarId: 'primary',
+        isActive: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      // 既存の連携を確認
+      const existingQuery = await db.collection('calendar_integrations')
+        .where('companyDomain', '==', companyDomain)
+        .where('companyUserId', '==', companyUserId)
+        .limit(1)
+        .get();
+
+      if (!existingQuery.empty) {
+        // 既存の連携を更新
+        await existingQuery.docs[0].ref.update(integrationData);
+      } else {
+        // 新規作成
+        integrationData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+        await db.collection('calendar_integrations').add(integrationData);
+      }
+
+      console.log(`Calendar integration saved for ${companyUserId} (${googleEmail})`);
+      res.json({ success: true, email: googleEmail });
+
+    } catch (error) {
+      console.error('exchangeCalendarToken error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+/**
+ * カレンダー連携を解除
+ */
+functions.http('revokeCalendarAuth', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      const { companyDomain, companyUserId } = req.body;
+      if (!companyDomain || !companyUserId) {
+        return res.status(400).json({ error: 'companyDomain and companyUserId are required' });
+      }
+
+      const db = admin.firestore();
+      const query = await db.collection('calendar_integrations')
+        .where('companyDomain', '==', companyDomain)
+        .where('companyUserId', '==', companyUserId)
+        .limit(1)
+        .get();
+
+      if (query.empty) {
+        return res.status(404).json({ error: 'Integration not found' });
+      }
+
+      await query.docs[0].ref.delete();
+      res.json({ success: true });
+
+    } catch (error) {
+      console.error('revokeCalendarAuth error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+/**
+ * カレンダーの空き時間を取得
+ */
+functions.http('getCalendarAvailability', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      const { companyDomain, companyUserId, startDate, endDate, durationMinutes = 60 } = req.body;
+      if (!companyDomain || !companyUserId || !startDate || !endDate) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      const db = admin.firestore();
+      const query = await db.collection('calendar_integrations')
+        .where('companyDomain', '==', companyDomain)
+        .where('companyUserId', '==', companyUserId)
+        .where('isActive', '==', true)
+        .limit(1)
+        .get();
+
+      if (query.empty) {
+        return res.status(404).json({ error: 'Calendar integration not found' });
+      }
+
+      const integration = query.docs[0].data();
+      const accessToken = decryptToken(integration.accessToken);
+      const refreshToken = integration.refreshToken ? decryptToken(integration.refreshToken) : null;
+
+      const oauth2Client = createOAuth2Client();
+      oauth2Client.setCredentials({ access_token: accessToken, refresh_token: refreshToken });
+
+      if (integration.tokenExpiresAt && integration.tokenExpiresAt.toDate() < new Date()) {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        await query.docs[0].ref.update({
+          accessToken: encryptToken(credentials.access_token),
+          tokenExpiresAt: credentials.expiry_date ? admin.firestore.Timestamp.fromMillis(credentials.expiry_date) : null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        oauth2Client.setCredentials(credentials);
+      }
+
+      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      const eventsResponse = await calendar.events.list({
+        calendarId: integration.calendarId || 'primary',
+        timeMin: new Date(startDate).toISOString(),
+        timeMax: new Date(endDate).toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime'
+      });
+
+      const busySlots = (eventsResponse.data.items || [])
+        .filter(event => event.start && event.end)
+        .map(event => ({ start: event.start.dateTime || event.start.date, end: event.end.dateTime || event.end.date }));
+
+      const availableSlots = calculateAvailableSlots(new Date(startDate), new Date(endDate), busySlots, durationMinutes);
+
+      res.json({ success: true, availableSlots, busySlots });
+
+    } catch (error) {
+      console.error('getCalendarAvailability error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+function calculateAvailableSlots(startDate, endDate, busySlots, durationMinutes) {
+  const slots = [];
+  const businessHourStart = 9;
+  const businessHourEnd = 18;
+  const slotInterval = 30;
+
+  const currentDate = new Date(startDate);
+  currentDate.setHours(0, 0, 0, 0);
+  const lastDate = new Date(endDate);
+  lastDate.setHours(23, 59, 59, 999);
+
+  while (currentDate <= lastDate) {
+    const dayOfWeek = currentDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
+    }
+
+    for (let hour = businessHourStart; hour < businessHourEnd; hour++) {
+      for (let minute = 0; minute < 60; minute += slotInterval) {
+        const slotStart = new Date(currentDate);
+        slotStart.setHours(hour, minute, 0, 0);
+        const slotEnd = new Date(slotStart);
+        slotEnd.setMinutes(slotEnd.getMinutes() + durationMinutes);
+
+        if (slotEnd.getHours() > businessHourEnd || (slotEnd.getHours() === businessHourEnd && slotEnd.getMinutes() > 0)) continue;
+        if (slotStart <= new Date()) continue;
+
+        const isOverlapping = busySlots.some(busy => {
+          const busyStart = new Date(busy.start);
+          const busyEnd = new Date(busy.end);
+          return slotStart < busyEnd && slotEnd > busyStart;
+        });
+
+        if (!isOverlapping) {
+          slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString() });
+        }
+      }
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return slots;
+}
+
+/**
+ * カレンダーに予定を作成
+ */
+functions.http('createCalendarEvent', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      const { companyDomain, companyUserId, applicationId, scheduledAt, durationMinutes = 60, location = '', meetingType = 'in_person', applicantName, applicantEmail, jobTitle, reminders = [] } = req.body;
+
+      if (!companyDomain || !companyUserId || !applicationId || !scheduledAt) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      const db = admin.firestore();
+      const integrationQuery = await db.collection('calendar_integrations')
+        .where('companyDomain', '==', companyDomain)
+        .where('companyUserId', '==', companyUserId)
+        .where('isActive', '==', true)
+        .limit(1)
+        .get();
+
+      if (integrationQuery.empty) {
+        return res.status(404).json({ error: 'Calendar integration not found' });
+      }
+
+      const integration = integrationQuery.docs[0].data();
+      const accessToken = decryptToken(integration.accessToken);
+      const refreshToken = integration.refreshToken ? decryptToken(integration.refreshToken) : null;
+
+      const oauth2Client = createOAuth2Client();
+      oauth2Client.setCredentials({ access_token: accessToken, refresh_token: refreshToken });
+
+      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      const startTime = new Date(scheduledAt);
+      const endTime = new Date(startTime);
+      endTime.setMinutes(endTime.getMinutes() + durationMinutes);
+
+      const event = {
+        summary: `【面談】${applicantName}様`,
+        description: `求人: ${jobTitle || '未設定'}\n応募者: ${applicantName}\nメール: ${applicantEmail || '未設定'}\n\n※ L-SET採用管理システムから自動登録`,
+        start: { dateTime: startTime.toISOString(), timeZone: 'Asia/Tokyo' },
+        end: { dateTime: endTime.toISOString(), timeZone: 'Asia/Tokyo' },
+        location,
+        attendees: applicantEmail ? [{ email: applicantEmail }] : [],
+        reminders: { useDefault: false, overrides: [{ method: 'email', minutes: 24 * 60 }, { method: 'popup', minutes: 60 }] }
+      };
+
+      const createdEvent = await calendar.events.insert({
+        calendarId: integration.calendarId || 'primary',
+        resource: event,
+        sendUpdates: 'all'
+      });
+
+      const interviewData = {
+        companyDomain,
+        applicationId,
+        applicantName,
+        applicantEmail: applicantEmail || '',
+        staffUserId: companyUserId,
+        staffName: integration.staffName || '',
+        scheduledAt: admin.firestore.Timestamp.fromDate(startTime),
+        durationMinutes,
+        location,
+        meetingType,
+        jobTitle: jobTitle || '',
+        googleEventId: createdEvent.data.id,
+        status: 'scheduled',
+        reminders: reminders.map(r => ({
+          ...r,
+          status: 'pending',
+          scheduledAt: admin.firestore.Timestamp.fromDate(new Date(startTime.getTime() - r.offsetMinutes * 60 * 1000)),
+          sentAt: null
+        })),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      const interviewRef = await db.collection('interviews').add(interviewData);
+
+      await db.collection('applications').doc(applicationId).update({
+        interviewId: interviewRef.id,
+        interviewStatus: 'scheduled',
+        status: 'interviewing',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      res.json({ success: true, interviewId: interviewRef.id, googleEventId: createdEvent.data.id });
+
+    } catch (error) {
+      console.error('createCalendarEvent error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
+
+/**
+ * カレンダー連携状態を取得
+ */
+functions.http('getCalendarIntegration', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      const { companyDomain, companyUserId } = req.body;
+      if (!companyDomain || !companyUserId) {
+        return res.status(400).json({ error: 'companyDomain and companyUserId are required' });
+      }
+
+      const db = admin.firestore();
+      const query = await db.collection('calendar_integrations')
+        .where('companyDomain', '==', companyDomain)
+        .where('companyUserId', '==', companyUserId)
+        .limit(1)
+        .get();
+
+      if (query.empty) {
+        return res.json({ success: true, integrated: false });
+      }
+
+      const integration = query.docs[0].data();
+      res.json({
+        success: true,
+        integrated: integration.isActive === true,
+        googleEmail: integration.googleEmail,
+        staffName: integration.staffName
+      });
+
+    } catch (error) {
+      console.error('getCalendarIntegration error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+});

@@ -2,6 +2,7 @@
  * 応募者管理機能モジュール（サイドパネル版）
  */
 import { escapeHtml } from '@shared/utils.js';
+import * as CalendarService from '@features/calendar/calendar-service.js';
 
 // Firebase設定
 const firebaseConfig = {
@@ -19,6 +20,14 @@ let currentPage = 1;
 const itemsPerPage = 20;
 let currentApplicantId = null;
 let assigneesCache = [];
+let duplicateMap = {}; // 重複検出用マップ
+
+// カレンダー連携関連の状態
+let companyUsersCache = [];
+let calendarIntegrationsCache = {};
+let currentWeekStart = null;
+let selectedSlot = null;
+let currentSection = 'applicants'; // 'applicants' or 'settings'
 
 // IDプレフィックス（admin.html埋め込み時は 'jm-'）
 let idPrefix = '';
@@ -37,6 +46,9 @@ const statusLabels = {
   interviewing: '面接調整中',
   interviewed: '面接済み',
   hired: '採用',
+  joined: '入社',
+  pending: '保留',
+  ng: 'NG',
   rejected: '不採用',
   withdrawn: '辞退'
 };
@@ -183,6 +195,585 @@ function initFirebase() {
   return firebase.firestore();
 }
 
+// ========================================
+// カレンダー連携機能
+// ========================================
+
+/**
+ * 会社ユーザー（担当者）一覧を読み込み
+ */
+async function loadCompanyUsers() {
+  try {
+    const db = initFirebase();
+    const snapshot = await db.collection('company_users')
+      .where('companyDomain', '==', companyDomain)
+      .where('isActive', '==', true)
+      .get();
+
+    companyUsersCache = [];
+    snapshot.forEach(doc => {
+      companyUsersCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // カレンダー連携状態も取得
+    await loadCalendarIntegrations();
+
+    return companyUsersCache;
+  } catch (error) {
+    console.error('Failed to load company users:', error);
+    return [];
+  }
+}
+
+/**
+ * カレンダー連携状態を読み込み
+ */
+async function loadCalendarIntegrations() {
+  calendarIntegrationsCache = {};
+
+  for (const user of companyUsersCache) {
+    try {
+      const result = await CalendarService.getCalendarIntegration(companyDomain, user.id);
+      if (result.integration) {
+        calendarIntegrationsCache[user.id] = result.integration;
+      }
+    } catch (error) {
+      console.log(`No calendar integration for user ${user.id}`);
+    }
+  }
+}
+
+/**
+ * セクションを切り替え
+ */
+function showSection(section) {
+  currentSection = section;
+
+  const applicantsContent = document.querySelector('.applicants-content');
+  const settingsSection = getEl('settings-section');
+  const pageTitle = getEl('page-title');
+  const headerActions = document.querySelector('.header-actions');
+
+  if (section === 'settings') {
+    if (applicantsContent) applicantsContent.style.display = 'none';
+    if (settingsSection) settingsSection.style.display = 'block';
+    if (pageTitle) pageTitle.textContent = '設定';
+    if (headerActions) headerActions.style.display = 'none';
+
+    // サイドバーのアクティブ状態を更新
+    document.querySelectorAll('.sidebar-nav li').forEach(li => {
+      li.classList.remove('active');
+    });
+    const settingsNav = document.getElementById('nav-settings');
+    if (settingsNav) settingsNav.closest('li').classList.add('active');
+
+    renderCalendarIntegrationsList();
+  } else {
+    if (applicantsContent) applicantsContent.style.display = 'flex';
+    if (settingsSection) settingsSection.style.display = 'none';
+    if (pageTitle) pageTitle.textContent = '応募者一覧';
+    if (headerActions) headerActions.style.display = 'flex';
+
+    // サイドバーのアクティブ状態を更新
+    document.querySelectorAll('.sidebar-nav li').forEach(li => {
+      li.classList.remove('active');
+    });
+    const applicantsNav = document.querySelector('[data-section="applicants"]');
+    if (applicantsNav) applicantsNav.closest('li').classList.add('active');
+  }
+}
+
+/**
+ * カレンダー連携リストを描画
+ */
+function renderCalendarIntegrationsList() {
+  const container = getEl('calendar-integrations-list');
+  if (!container) return;
+
+  if (companyUsersCache.length === 0) {
+    container.innerHTML = '<p class="no-data">担当者が登録されていません。<br>管理画面から担当者を追加してください。</p>';
+    return;
+  }
+
+  container.innerHTML = companyUsersCache.map(user => {
+    const integration = calendarIntegrationsCache[user.id];
+    const isConnected = integration && integration.isActive;
+
+    return `
+      <div class="calendar-integration-item" data-user-id="${escapeHtml(user.id)}">
+        <div class="calendar-integration-info">
+          <div class="calendar-integration-icon">👤</div>
+          <div class="calendar-integration-details">
+            <h4>${escapeHtml(user.name || user.username)}</h4>
+            <p>${isConnected ? escapeHtml(integration.googleEmail) : '未連携'}</p>
+          </div>
+        </div>
+        <div class="calendar-integration-actions">
+          ${isConnected
+            ? `<span class="calendar-status connected">連携中</span>
+               <button class="btn-disconnect-calendar" data-user-id="${escapeHtml(user.id)}">解除</button>`
+            : `<button class="btn-connect-calendar" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.name || user.username)}">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+                 Googleカレンダーに連携
+               </button>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // イベントリスナーを設定
+  container.querySelectorAll('.btn-connect-calendar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const userId = btn.dataset.userId;
+      const userName = btn.dataset.userName;
+      connectCalendar(userId, userName);
+    });
+  });
+
+  container.querySelectorAll('.btn-disconnect-calendar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const userId = btn.dataset.userId;
+      disconnectCalendar(userId);
+    });
+  });
+}
+
+/**
+ * カレンダー連携を開始
+ */
+async function connectCalendar(userId, userName) {
+  try {
+    const result = await CalendarService.initiateCalendarAuth(companyDomain, userId, userName);
+    // 新しいウィンドウでOAuth認証を開く
+    window.open(result.authUrl, 'calendar-auth', 'width=600,height=700');
+
+    // ポーリングで連携状態を確認（30秒間、3秒ごと）
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = setInterval(async () => {
+      attempts++;
+      try {
+        const checkResult = await CalendarService.getCalendarIntegration(companyDomain, userId);
+        if (checkResult.integration && checkResult.integration.isActive) {
+          clearInterval(checkInterval);
+          calendarIntegrationsCache[userId] = checkResult.integration;
+          renderCalendarIntegrationsList();
+          alert('カレンダー連携が完了しました');
+        }
+      } catch (e) {
+        // 連携未完了、続行
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+      }
+    }, 3000);
+
+  } catch (error) {
+    console.error('Failed to initiate calendar auth:', error);
+    alert('カレンダー連携の開始に失敗しました: ' + error.message);
+  }
+}
+
+/**
+ * カレンダー連携を解除
+ */
+async function disconnectCalendar(userId) {
+  if (!confirm('カレンダー連携を解除しますか？')) return;
+
+  try {
+    await CalendarService.revokeCalendarAuth(companyDomain, userId);
+    delete calendarIntegrationsCache[userId];
+    renderCalendarIntegrationsList();
+    alert('カレンダー連携を解除しました');
+  } catch (error) {
+    console.error('Failed to revoke calendar auth:', error);
+    alert('連携解除に失敗しました: ' + error.message);
+  }
+}
+
+// ========================================
+// 面談設定機能
+// ========================================
+
+/**
+ * 面談設定モーダルを表示
+ */
+async function showInterviewModal() {
+  if (!currentApplicantId) return;
+
+  const modal = getEl('interview-modal');
+  if (!modal) return;
+
+  // 担当者リストを更新
+  const staffSelect = getEl('interview-staff');
+  if (staffSelect) {
+    staffSelect.innerHTML = '<option value="">担当者を選択...</option>' +
+      companyUsersCache.map(user => {
+        const integration = calendarIntegrationsCache[user.id];
+        const suffix = integration?.isActive ? ' (カレンダー連携済)' : '';
+        return `<option value="${escapeHtml(user.id)}" data-has-calendar="${integration?.isActive ? 'true' : 'false'}">${escapeHtml(user.name || user.username)}${suffix}</option>`;
+      }).join('');
+  }
+
+  // リセット
+  selectedSlot = null;
+  currentWeekStart = CalendarService.getWeekStart(new Date());
+
+  getEl('availability-section').style.display = 'none';
+  getEl('selected-slot-section').style.display = 'none';
+  getEl('manual-datetime-section').style.display = 'block';
+  getEl('calendar-status-hint').textContent = '';
+
+  modal.style.display = 'flex';
+}
+
+/**
+ * 面談設定モーダルを閉じる
+ */
+function closeInterviewModal() {
+  const modal = getEl('interview-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+/**
+ * 担当者変更時の処理
+ */
+async function onStaffChange() {
+  const staffSelect = getEl('interview-staff');
+  const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+  const hasCalendar = selectedOption?.dataset?.hasCalendar === 'true';
+  const userId = staffSelect.value;
+
+  const availabilitySection = getEl('availability-section');
+  const manualSection = getEl('manual-datetime-section');
+  const hint = getEl('calendar-status-hint');
+
+  if (!userId) {
+    availabilitySection.style.display = 'none';
+    manualSection.style.display = 'block';
+    hint.textContent = '';
+    return;
+  }
+
+  if (hasCalendar) {
+    availabilitySection.style.display = 'block';
+    manualSection.style.display = 'none';
+    hint.textContent = '担当者のカレンダーから空き時間を取得します';
+    hint.style.color = '#10b981';
+    await loadAvailability(userId);
+  } else {
+    availabilitySection.style.display = 'none';
+    manualSection.style.display = 'block';
+    hint.textContent = 'この担当者はカレンダー未連携です。手動で日時を入力してください。';
+    hint.style.color = '#f59e0b';
+  }
+}
+
+/**
+ * 空き時間を読み込み
+ */
+async function loadAvailability(userId) {
+  const grid = getEl('availability-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '<div class="loading-message">空き時間を取得中...</div>';
+
+  try {
+    const weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const startDate = CalendarService.formatDateISO(currentWeekStart);
+    const endDate = CalendarService.formatDateISO(weekEnd);
+
+    const result = await CalendarService.getCalendarAvailability(companyDomain, userId, startDate, endDate);
+
+    renderAvailabilityGrid(result.availableSlots || []);
+    updateWeekLabel();
+
+  } catch (error) {
+    console.error('Failed to load availability:', error);
+    grid.innerHTML = '<div class="empty-message">空き時間の取得に失敗しました</div>';
+  }
+}
+
+/**
+ * 週ラベルを更新
+ */
+function updateWeekLabel() {
+  const label = getEl('week-label');
+  if (!label || !currentWeekStart) return;
+
+  const weekEnd = new Date(currentWeekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const startStr = `${currentWeekStart.getMonth() + 1}/${currentWeekStart.getDate()}`;
+  const endStr = `${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
+
+  label.textContent = `${currentWeekStart.getFullYear()}年 ${startStr} - ${endStr}`;
+}
+
+/**
+ * 空き時間グリッドを描画
+ */
+function renderAvailabilityGrid(slots) {
+  const grid = getEl('availability-grid');
+  if (!grid) return;
+
+  // 日付ごとにグループ化
+  const slotsByDate = {};
+  const days = [];
+
+  for (let i = 0; i < 5; i++) { // 月〜金
+    const date = new Date(currentWeekStart);
+    date.setDate(date.getDate() + i);
+    const dateStr = CalendarService.formatDateISO(date);
+    days.push({ date, dateStr });
+    slotsByDate[dateStr] = [];
+  }
+
+  slots.forEach(slot => {
+    const dateStr = slot.start.split('T')[0];
+    if (slotsByDate[dateStr]) {
+      slotsByDate[dateStr].push(slot);
+    }
+  });
+
+  grid.innerHTML = days.map(({ date, dateStr }) => {
+    const daySlots = slotsByDate[dateStr] || [];
+    const dayName = CalendarService.getDayOfWeek(date);
+    const dayDate = `${date.getMonth() + 1}/${date.getDate()}`;
+
+    return `
+      <div class="availability-day">
+        <div class="availability-day-header">
+          <span class="day-name">${dayName}</span>
+          <span class="day-date">${dayDate}</span>
+        </div>
+        <div class="availability-slots">
+          ${daySlots.length > 0
+            ? daySlots.map(slot => {
+                const startTime = new Date(slot.start);
+                const timeStr = `${String(startTime.getHours()).padStart(2, '0')}:${String(startTime.getMinutes()).padStart(2, '0')}`;
+                const slotId = slot.start;
+                const isSelected = selectedSlot === slotId;
+                return `<button class="slot-btn ${isSelected ? 'selected' : ''}" data-slot="${escapeHtml(slotId)}">${timeStr}</button>`;
+              }).join('')
+            : '<p class="no-slots">空きなし</p>'
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // スロットボタンのイベントリスナー
+  grid.querySelectorAll('.slot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectSlot(btn.dataset.slot);
+    });
+  });
+}
+
+/**
+ * スロットを選択
+ */
+function selectSlot(slotId) {
+  selectedSlot = slotId;
+
+  // ボタンの選択状態を更新
+  document.querySelectorAll('.slot-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.slot === slotId);
+  });
+
+  // 選択された日時を表示
+  const slotSection = getEl('selected-slot-section');
+  const slotDisplay = getEl('selected-slot');
+
+  if (slotSection && slotDisplay) {
+    const slotDate = new Date(slotId);
+    const dayName = CalendarService.getDayOfWeek(slotDate);
+    const dateStr = `${slotDate.getFullYear()}年${slotDate.getMonth() + 1}月${slotDate.getDate()}日(${dayName})`;
+    const timeStr = `${String(slotDate.getHours()).padStart(2, '0')}:${String(slotDate.getMinutes()).padStart(2, '0')}`;
+
+    slotDisplay.textContent = `${dateStr} ${timeStr}`;
+    slotSection.style.display = 'block';
+  }
+}
+
+/**
+ * 前の週へ
+ */
+function prevWeek() {
+  currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+  const staffSelect = getEl('interview-staff');
+  if (staffSelect?.value) {
+    loadAvailability(staffSelect.value);
+  }
+}
+
+/**
+ * 次の週へ
+ */
+function nextWeek() {
+  currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+  const staffSelect = getEl('interview-staff');
+  if (staffSelect?.value) {
+    loadAvailability(staffSelect.value);
+  }
+}
+
+/**
+ * 面談を登録
+ */
+async function saveInterview() {
+  const staffSelect = getEl('interview-staff');
+  const staffId = staffSelect?.value;
+
+  if (!staffId) {
+    alert('担当者を選択してください');
+    return;
+  }
+
+  const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+  const hasCalendar = selectedOption?.dataset?.hasCalendar === 'true';
+
+  let scheduledAt;
+
+  if (hasCalendar && selectedSlot) {
+    scheduledAt = new Date(selectedSlot);
+  } else {
+    const datetimeInput = getEl('interview-datetime');
+    if (!datetimeInput?.value) {
+      alert('面談日時を選択してください');
+      return;
+    }
+    scheduledAt = new Date(datetimeInput.value);
+  }
+
+  const duration = parseInt(getEl('interview-duration')?.value || '60');
+  const meetingType = document.querySelector('input[name="meeting-type"]:checked')?.value || 'in_person';
+  const location = getEl('interview-location')?.value || '';
+
+  const reminders = [];
+  if (getEl('send-reminder-1day')?.checked) {
+    reminders.push({ offsetMinutes: 24 * 60, sendTime: '10:00' });
+  }
+  if (getEl('send-reminder-1hour')?.checked) {
+    reminders.push({ offsetMinutes: 60 });
+  }
+
+  const applicant = applicantsCache.find(a => a.id === currentApplicantId);
+  if (!applicant) return;
+
+  const staff = companyUsersCache.find(u => u.id === staffId);
+
+  const saveBtn = getEl('interview-modal-save');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '登録中...';
+  }
+
+  try {
+    // カレンダーイベントを作成
+    const result = await CalendarService.createCalendarEvent({
+      companyDomain,
+      companyUserId: staffId,
+      applicationId: currentApplicantId,
+      applicantName: applicant.applicantName || applicant.applicant?.name || '応募者',
+      applicantEmail: applicant.applicantEmail || applicant.applicant?.email || '',
+      staffName: staff?.name || staff?.username || '担当者',
+      scheduledAt: scheduledAt.toISOString(),
+      durationMinutes: duration,
+      meetingType,
+      location,
+      reminders
+    });
+
+    // 応募者のステータスを「面接調整中」に更新
+    const db = initFirebase();
+    await db.collection('applications').doc(currentApplicantId).update({
+      status: 'interviewing',
+      interviewId: result.interviewId,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // キャッシュを更新
+    const index = applicantsCache.findIndex(a => a.id === currentApplicantId);
+    if (index !== -1) {
+      applicantsCache[index].status = 'interviewing';
+      applicantsCache[index].interviewId = result.interviewId;
+    }
+
+    closeInterviewModal();
+    showApplicantDetail(currentApplicantId);
+    applyFilters();
+    updateStats();
+
+    alert('面談を登録しました。担当者のGoogleカレンダーに予定が追加されました。');
+
+  } catch (error) {
+    console.error('Failed to save interview:', error);
+    alert('面談の登録に失敗しました: ' + error.message);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '面談を登録';
+    }
+  }
+}
+
+/**
+ * 面談情報を表示
+ */
+async function loadInterviewInfo(applicationId) {
+  const container = getEl('interview-info');
+  if (!container) return;
+
+  const applicant = applicantsCache.find(a => a.id === applicationId);
+  if (!applicant?.interviewId) {
+    container.innerHTML = '<p class="no-data">面談は設定されていません</p>';
+    return;
+  }
+
+  try {
+    const db = initFirebase();
+    const doc = await db.collection('interviews').doc(applicant.interviewId).get();
+
+    if (!doc.exists) {
+      container.innerHTML = '<p class="no-data">面談は設定されていません</p>';
+      return;
+    }
+
+    const interview = doc.data();
+    const scheduledAt = interview.scheduledAt?.toDate ? interview.scheduledAt.toDate() : new Date(interview.scheduledAt);
+    const dayName = CalendarService.getDayOfWeek(scheduledAt);
+
+    const meetingTypeLabels = {
+      in_person: '対面',
+      online: 'オンライン',
+      phone: '電話'
+    };
+
+    container.innerHTML = `
+      <div class="interview-scheduled">
+        <h4>面談予定</h4>
+        <p><strong>日時:</strong> ${scheduledAt.getFullYear()}年${scheduledAt.getMonth() + 1}月${scheduledAt.getDate()}日(${dayName}) ${String(scheduledAt.getHours()).padStart(2, '0')}:${String(scheduledAt.getMinutes()).padStart(2, '0')}</p>
+        <p><strong>担当者:</strong> ${escapeHtml(interview.staffName || '-')}</p>
+        <p><strong>形式:</strong> ${meetingTypeLabels[interview.meetingType] || interview.meetingType}</p>
+        ${interview.location ? `<p><strong>場所:</strong> ${escapeHtml(interview.location)}</p>` : ''}
+      </div>
+    `;
+
+  } catch (error) {
+    console.error('Failed to load interview info:', error);
+    container.innerHTML = '<p class="no-data">面談情報の取得に失敗しました</p>';
+  }
+}
+
 /**
  * 担当者リストを読み込み
  */
@@ -282,6 +873,79 @@ function closeAssigneeModal() {
 }
 
 /**
+ * 重複検出用マップを構築
+ * 電話番号・メールアドレスをキーに、応募履歴をグループ化
+ */
+function buildDuplicateMap() {
+  duplicateMap = {};
+
+  applicantsCache.forEach(app => {
+    const phone = app.applicantPhone || app.applicant?.phone;
+    const email = app.applicantEmail || app.applicant?.email;
+
+    // 電話番号でグループ化
+    if (phone) {
+      const normalizedPhone = phone.replace(/[-\s]/g, ''); // ハイフン・スペースを除去
+      if (!duplicateMap[normalizedPhone]) {
+        duplicateMap[normalizedPhone] = [];
+      }
+      duplicateMap[normalizedPhone].push(app);
+    }
+
+    // メールアドレスでグループ化
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+      if (!duplicateMap[normalizedEmail]) {
+        duplicateMap[normalizedEmail] = [];
+      }
+      duplicateMap[normalizedEmail].push(app);
+    }
+  });
+}
+
+/**
+ * 応募者の重複情報を取得
+ * @param {Object} app - 応募者データ
+ * @returns {Object} { isReapply: boolean, hasNgHistory: boolean, previousApps: Array }
+ */
+function getDuplicateInfo(app) {
+  const phone = app.applicantPhone || app.applicant?.phone;
+  const email = app.applicantEmail || app.applicant?.email;
+
+  let relatedApps = [];
+
+  // 電話番号で関連応募を検索
+  if (phone) {
+    const normalizedPhone = phone.replace(/[-\s]/g, '');
+    const phoneMatches = duplicateMap[normalizedPhone] || [];
+    relatedApps = relatedApps.concat(phoneMatches);
+  }
+
+  // メールアドレスで関連応募を検索
+  if (email) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const emailMatches = duplicateMap[normalizedEmail] || [];
+    relatedApps = relatedApps.concat(emailMatches);
+  }
+
+  // 重複を除去し、自分自身を除外
+  const uniqueApps = [...new Map(relatedApps.map(a => [a.id, a])).values()]
+    .filter(a => a.id !== app.id);
+
+  // 過去の応募（自分より前の日付）のみを対象
+  const appDate = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.timestamp || app.createdAt);
+  const previousApps = uniqueApps.filter(a => {
+    const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.timestamp || a.createdAt);
+    return aDate < appDate;
+  });
+
+  const isReapply = previousApps.length > 0;
+  const hasNgHistory = previousApps.some(a => a.status === 'ng' || a.status === 'rejected');
+
+  return { isReapply, hasNgHistory, previousApps };
+}
+
+/**
  * 応募者データを読み込み
  */
 async function loadApplicantsData() {
@@ -311,6 +975,7 @@ async function loadApplicantsData() {
       });
     });
 
+    buildDuplicateMap();
     applyFilters();
     updateStats();
 
@@ -362,10 +1027,10 @@ function updateStats() {
   const total = applicantsCache.length;
   const newCount = applicantsCache.filter(a => !a.status || a.status === 'new').length;
   const progressCount = applicantsCache.filter(a =>
-    ['contacted', 'interviewing', 'interviewed'].includes(a.status)
+    ['contacted', 'interviewing', 'interviewed', 'pending'].includes(a.status)
   ).length;
   const completeCount = applicantsCache.filter(a =>
-    ['hired', 'rejected', 'withdrawn'].includes(a.status)
+    ['hired', 'joined', 'ng', 'rejected', 'withdrawn'].includes(a.status)
   ).length;
 
   const statTotal = getEl('stat-total');
@@ -408,12 +1073,22 @@ function renderApplicantsList() {
     if (app.type === 'line') typeClass = 'type-line';
     if (app.type === 'consult') typeClass = 'type-consult';
 
+    // 重複情報を取得
+    const duplicateInfo = getDuplicateInfo(app);
+    let duplicateBadges = '';
+    if (duplicateInfo.hasNgHistory) {
+      duplicateBadges += '<span class="duplicate-badge badge-ng-history">NG履歴</span>';
+    } else if (duplicateInfo.isReapply) {
+      duplicateBadges += '<span class="duplicate-badge badge-reapply">再応募</span>';
+    }
+
     return `
       <div class="applicant-card ${isSelected ? 'selected' : ''}" data-id="${escapeHtml(app.id)}">
         <div class="applicant-card-main">
           <div class="applicant-card-header">
             <span class="applicant-card-name">${escapeHtml(applicantName)}</span>
             <span class="applicant-card-type ${typeClass}">${escapeHtml(typeLabel)}</span>
+            ${duplicateBadges}
           </div>
           <div class="applicant-card-job">${escapeHtml(app.jobTitle || '-')}</div>
           <div class="applicant-card-meta">
@@ -542,6 +1217,9 @@ function showApplicantDetail(id) {
 
   // メッセージを読み込み
   loadMessages(id);
+
+  // 面談情報を読み込み
+  loadInterviewInfo(id);
 }
 
 /**
@@ -1031,6 +1709,67 @@ function setupEventListeners() {
       addAssignee();
     }
   });
+
+  // ========================================
+  // カレンダー連携・面談設定イベント
+  // ========================================
+
+  // 設定ナビゲーション
+  document.getElementById('nav-settings')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showSection('settings');
+  });
+
+  // 応募者一覧に戻る
+  getEl('btn-back-to-applicants')?.addEventListener('click', () => {
+    showSection('applicants');
+  });
+
+  // 面談設定モーダル
+  getEl('btn-schedule-interview')?.addEventListener('click', showInterviewModal);
+  getEl('interview-modal-close')?.addEventListener('click', closeInterviewModal);
+  getEl('interview-modal-cancel')?.addEventListener('click', closeInterviewModal);
+  getEl('interview-modal-save')?.addEventListener('click', saveInterview);
+
+  getEl('interview-modal')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      closeInterviewModal();
+    }
+  });
+
+  // 担当者選択時
+  getEl('interview-staff')?.addEventListener('change', onStaffChange);
+
+  // 週ナビゲーション
+  getEl('btn-prev-week')?.addEventListener('click', prevWeek);
+  getEl('btn-next-week')?.addEventListener('click', nextWeek);
+
+  // リマインダー設定保存
+  getEl('btn-save-reminder-settings')?.addEventListener('click', saveReminderSettings);
+}
+
+/**
+ * リマインダー設定を保存
+ */
+async function saveReminderSettings() {
+  try {
+    const db = initFirebase();
+    const settings = {
+      reminder1Day: getEl('reminder-1day')?.checked || false,
+      reminder1DayTime: getEl('reminder-1day-time')?.value || '10:00',
+      reminder1Hour: getEl('reminder-1hour')?.checked || false,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('settings').doc(companyDomain || 'global').set({
+      reminderSettings: settings
+    }, { merge: true });
+
+    alert('リマインダー設定を保存しました');
+  } catch (error) {
+    console.error('Failed to save reminder settings:', error);
+    alert('設定の保存に失敗しました: ' + error.message);
+  }
 }
 
 /**
@@ -1048,13 +1787,15 @@ export async function initApplicantsManager() {
 
   setupEventListeners();
   await loadAssignees();
+  await loadCompanyUsers(); // 会社ユーザー（担当者）を読み込み
   await loadApplicantsData();
 
   if (typeof window !== 'undefined') {
     window.ApplicantsManager = {
       loadApplicantsData,
       applyFilters,
-      exportCsv
+      exportCsv,
+      showSection
     };
   }
 }
@@ -1072,6 +1813,7 @@ export async function initApplicantsSection(domain, name, prefix = '') {
 
   setupEventListeners();
   await loadAssignees();
+  await loadCompanyUsers(); // 会社ユーザー（担当者）を読み込み
   await loadApplicantsData();
 }
 

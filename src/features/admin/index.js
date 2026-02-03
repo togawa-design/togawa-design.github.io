@@ -815,7 +815,7 @@ async function loadCompanyUsersData() {
   const tbody = document.getElementById('company-users-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">データを読み込み中...</td></tr>';
 
   try {
     // 会社一覧を取得
@@ -837,7 +837,7 @@ async function loadCompanyUsersData() {
     const visibleCompanies = companiesCache.filter(c => JobsLoader.isCompanyVisible(c));
 
     if (visibleCompanies.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">会社データがありません</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">会社データがありません</td></tr>';
       return;
     }
 
@@ -852,6 +852,8 @@ async function loadCompanyUsersData() {
           <tr data-company-domain="${escapeHtml(company.companyDomain)}">
             <td>${escapeHtml(company.company)}</td>
             <td><span class="badge warning">未発行</span></td>
+            <td>-</td>
+            <td>-</td>
             <td><span class="badge">-</span></td>
             <td>-</td>
             <td>-</td>
@@ -868,11 +870,16 @@ async function loadCompanyUsersData() {
           const isActive = user.isActive !== false;
           const createdAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ja-JP') : '-';
           const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString('ja-JP') : '未ログイン';
+          const roleBadge = user.role === 'admin'
+            ? '<span class="badge primary">管理者</span>'
+            : '<span class="badge">担当者</span>';
 
           html += `
             <tr data-user-id="${escapeHtml(user.id)}">
               ${idx === 0 ? `<td rowspan="${users.length}">${escapeHtml(company.company)}</td>` : ''}
               <td><code>${escapeHtml(user.username)}</code></td>
+              <td>${escapeHtml(user.name || '-')}</td>
+              <td>${roleBadge}</td>
               <td>${isActive ? '<span class="badge success">有効</span>' : '<span class="badge">無効</span>'}</td>
               <td>${createdAt}</td>
               <td>${lastLogin}</td>
@@ -897,7 +904,7 @@ async function loadCompanyUsersData() {
 
   } catch (error) {
     console.error('会社ユーザー一覧取得エラー:', error);
-    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データの取得に失敗しました</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">データの取得に失敗しました</td></tr>';
   }
 }
 
@@ -941,6 +948,8 @@ function showCompanyUserModal(user, companyDomain, companyName) {
   const companySelect = document.getElementById('cu-company-select');
   const usernameInput = document.getElementById('cu-username');
   const passwordInput = document.getElementById('cu-password');
+  const nameInput = document.getElementById('cu-name');
+  const roleSelect = document.getElementById('cu-role');
   const isActiveCheckbox = document.getElementById('cu-is-active');
   const deleteBtn = document.getElementById('company-user-delete');
   const credentialsDisplay = document.getElementById('cu-credentials-display');
@@ -962,6 +971,8 @@ function showCompanyUserModal(user, companyDomain, companyName) {
     passwordInput.value = ''; // パスワードは表示しない
     passwordInput.placeholder = '変更する場合のみ入力';
     passwordInput.required = false;
+    if (nameInput) nameInput.value = user.name || '';
+    if (roleSelect) roleSelect.value = user.role || 'staff';
     isActiveCheckbox.checked = user.isActive !== false;
     deleteBtn.style.display = '';
     currentEditingUserId = user.id;
@@ -972,6 +983,8 @@ function showCompanyUserModal(user, companyDomain, companyName) {
     passwordInput.value = generatePassword();
     passwordInput.placeholder = 'パスワード';
     passwordInput.required = true;
+    if (nameInput) nameInput.value = '';
+    if (roleSelect) roleSelect.value = 'staff';
     isActiveCheckbox.checked = true;
     deleteBtn.style.display = 'none';
     currentEditingUserId = null;
@@ -995,6 +1008,8 @@ async function saveCompanyUser() {
   const companyDomain = document.getElementById('cu-company-select')?.value;
   const username = document.getElementById('cu-username')?.value?.trim();
   const password = document.getElementById('cu-password')?.value;
+  const name = document.getElementById('cu-name')?.value?.trim() || '';
+  const role = document.getElementById('cu-role')?.value || 'staff';
   const isActive = document.getElementById('cu-is-active')?.checked;
 
   if (!companyDomain || !username) {
@@ -1011,7 +1026,7 @@ async function saveCompanyUser() {
   try {
     if (currentEditingUserId) {
       // 更新
-      const updateData = { username, isActive };
+      const updateData = { username, name, role, isActive };
       if (password) {
         updateData.password = password;
       }
@@ -1031,7 +1046,7 @@ async function saveCompanyUser() {
         return;
       }
 
-      const result = await addCompanyUser(username, password, companyDomain);
+      const result = await addCompanyUser(username, password, companyDomain, name, role);
       if (!result.success) {
         throw new Error(result.error);
       }

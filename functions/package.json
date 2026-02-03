@@ -9,10 +9,11 @@
     "deploy": "gcloud functions deploy getAnalyticsData --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1",
     "deploy:sendEmail": "gcloud functions deploy sendEmail --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY",
     "deploy:inboundParse": "gcloud functions deploy inboundParse --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1",
-    "deploy:getEmails": "gcloud functions deploy getEmails --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1"
+    "deploy:getEmails": "gcloud functions deploy getEmails --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1",
+    "deploy:calendar": "gcloud functions deploy initiateCalendarAuth --no-gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --set-env-vars GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET && gcloud functions deploy calendarOAuthCallback --no-gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --set-env-vars GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET && gcloud functions deploy getCalendarAvailability --no-gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --set-env-vars GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET && gcloud functions deploy createCalendarEvent --no-gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --set-env-vars GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET && gcloud functions deploy getCalendarIntegration --no-gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 && gcloud functions deploy revokeCalendarAuth --no-gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20"
   },
   "dependencies": {
     "@google-analytics/data": "^4.0.0",
@@ -20,7 +21,8 @@
     "@sendgrid/mail": "^8.1.0",
     "busboy": "^1.6.0",
     "cors": "^2.8.5",
-    "firebase-admin": "^12.0.0"
+    "firebase-admin": "^12.0.0",
+    "googleapis": "^118.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17"

@@ -1,7 +1,9 @@
 /**
  * Applicants ページ エントリーポイント
- * admin.htmlにリダイレクト
  */
+import { initApplicantsManager } from '@features/applicants/index.js';
 
-// admin.htmlにリダイレクト
-window.location.replace('admin.html');
+// DOMが読み込まれたら初期化
+document.addEventListener('DOMContentLoaded', () => {
+  initApplicantsManager();
+});

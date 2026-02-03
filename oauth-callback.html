@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L-SET - カレンダー連携</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      background-color: #f5f7fa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 48px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 400px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e0e0e0;
+      border-top-color: #2c7be5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      color: #333;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .success {
+      display: none;
+      color: #28a745;
+    }
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .error {
+      display: none;
+      color: #dc3545;
+    }
+    .error-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .close-btn {
+      display: none;
+      margin-top: 24px;
+      padding: 12px 32px;
+      background: #2c7be5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .close-btn:hover {
+      background: #1a68d1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading">
+      <div class="spinner"></div>
+      <h1>カレンダーを連携しています...</h1>
+      <p>このウィンドウは自動的に閉じます。<br>しばらくお待ちください。</p>
+    </div>
+    <div id="success" class="success">
+      <div class="success-icon">✓</div>
+      <h1>連携が完了しました</h1>
+      <p>Googleカレンダーとの連携が完了しました。</p>
+      <button class="close-btn" onclick="window.close()">ウィンドウを閉じる</button>
+    </div>
+    <div id="error" class="error">
+      <div class="error-icon">✕</div>
+      <h1>エラーが発生しました</h1>
+      <p id="error-message">連携処理中にエラーが発生しました。</p>
+      <button class="close-btn" onclick="window.close()">ウィンドウを閉じる</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAwu1j__Vp4fgAJP0BPZhLEMw3lVuLpywk",
+      authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
+      projectId: "generated-area-484613-e3-90bd4",
+      storageBucket: "generated-area-484613-e3-90bd4.firebasestorage.app",
+      messagingSenderId: "901344407156",
+      appId: "1:901344407156:web:81de9efbc30fd44ab16649"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const FUNCTIONS_BASE_URL = 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net';
+
+    function showSuccess() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('success').style.display = 'block';
+      document.querySelector('#success .close-btn').style.display = 'inline-block';
+
+      // Notify parent window
+      if (window.opener) {
+        window.opener.postMessage({ type: 'CALENDAR_CONNECTED' }, '*');
+      }
+
+      // Auto close after 3 seconds
+      setTimeout(() => {
+        window.close();
+      }, 3000);
+    }
+
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error-message').textContent = message;
+      document.querySelector('#error .close-btn').style.display = 'inline-block';
+    }
+
+    async function handleCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const error = urlParams.get('error');
+
+      if (error) {
+        showError('Googleからのエラー: ' + error);
+        return;
+      }
+
+      if (!code || !state) {
+        showError('認可コードまたはステートが見つかりません');
+        return;
+      }
+
+      // Parse state
+      let stateData;
+      try {
+        stateData = JSON.parse(atob(state));
+      } catch (e) {
+        showError('ステートの解析に失敗しました');
+        return;
+      }
+
+      const { companyDomain, companyUserId, staffName, csrf } = stateData;
+
+      // Wait for auth state
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          showError('ログインが必要です。メイン画面からやり直してください。');
+          return;
+        }
+
+        try {
+          const idToken = await user.getIdToken();
+
+          // Call the exchange token function
+          const response = await fetch(`${FUNCTIONS_BASE_URL}/exchangeCalendarToken`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({
+              code,
+              companyDomain,
+              companyUserId,
+              staffName
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'トークン交換に失敗しました');
+          }
+
+          showSuccess();
+        } catch (err) {
+          console.error('Token exchange error:', err);
+          showError(err.message || '連携処理中にエラーが発生しました');
+        }
+      });
+    }
+
+    handleCallback();
+  </script>
+</body>
+</html>
