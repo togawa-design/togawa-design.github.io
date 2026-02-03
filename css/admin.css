@@ -353,20 +353,69 @@
 .date-range-picker {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .date-range-picker label {
   font-size: 14px;
   color: #64748b;
+  font-weight: 500;
 }
 
-.date-range-picker select {
+.date-range-picker .date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-range-picker .date-input {
   padding: 8px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   background: #fff;
+  width: 110px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.date-range-picker .date-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.date-range-picker .date-separator {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.date-range-picker .date-range-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.date-range-picker .date-preset-btn {
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-range-picker .date-preset-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.date-range-picker .date-preset-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
 }
 
 .btn-refresh {
@@ -9991,5 +10040,345 @@ body.lp-settings-active #section-lp-settings {
 
   .multi-input-item input {
     min-width: 0;
+  }
+}
+
+/* ========================================
+   ページアナリティクスタブ
+======================================== */
+
+/* フィルターエリア（タブ選択で影響を受ける範囲） */
+.page-analytics-filter-area {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background: #fafbfc;
+  transition: border-color 0.2s;
+}
+
+.page-analytics-filter-area:has(.page-type-btn[data-type="lp"].active) {
+  border-color: #6366f1;
+}
+
+.page-analytics-filter-area:has(.page-type-btn[data-type="recruit"].active) {
+  border-color: #22c55e;
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.page-type-toggle {
+  display: flex;
+  gap: 8px;
+  background: #fff;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.page-type-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-type-btn:hover {
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.page-type-btn.active {
+  background: #6366f1;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+.page-type-btn[data-type="lp"].active {
+  background: #6366f1;
+}
+
+.page-type-btn[data-type="recruit"].active {
+  background: #22c55e;
+}
+
+/* ページタイプ統計カード */
+.page-type-stats {
+  padding: 16px;
+}
+
+.pts-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pts-row:last-child {
+  border-bottom: none;
+}
+
+.pts-label {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pts-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* LP/採用ページ比較セクション */
+.page-comparison-section {
+  margin: 24px 0;
+}
+
+.page-comparison-section .section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.comparison-card {
+  border-top: 3px solid #e2e8f0;
+}
+
+.comparison-card.lp-card {
+  border-top-color: #6366f1;
+}
+
+.comparison-card.lp-card h4 {
+  color: #6366f1;
+}
+
+.comparison-card.recruit-card {
+  border-top-color: #22c55e;
+}
+
+.comparison-card.recruit-card h4 {
+  color: #22c55e;
+}
+
+/* 流入元・デバイスチャート */
+.referrer-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.referrer-label {
+  width: 100px;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.referrer-bar-container {
+  flex: 1;
+  height: 20px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.referrer-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px;
+  min-width: 2px;
+}
+
+.referrer-value {
+  width: 100px;
+  font-size: 12px;
+  color: #1e293b;
+  text-align: right;
+}
+
+.device-pie-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.device-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.device-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.device-label {
+  flex: 1;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.device-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.no-data {
+  text-align: center;
+  padding: 32px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* ========================================
+   flatpickr カスタムスタイル
+======================================== */
+.flatpickr-calendar {
+  font-family: 'Noto Sans JP', sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+}
+
+.flatpickr-months {
+  background: #6366f1;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 0;
+}
+
+.flatpickr-months .flatpickr-month {
+  color: #fff;
+  fill: #fff;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  color: #fff;
+  fill: #fff;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg {
+  fill: #e0e7ff;
+}
+
+.flatpickr-current-month {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.flatpickr-current-month .numInputWrapper {
+  width: 6ch;
+}
+
+.flatpickr-current-month input.cur-year {
+  color: #fff;
+  font-weight: 600;
+}
+
+.flatpickr-weekdays {
+  background: #f8fafc;
+}
+
+.flatpickr-weekday {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.flatpickr-day {
+  color: #334155;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.flatpickr-day:hover {
+  background: #e0e7ff;
+  border-color: #e0e7ff;
+}
+
+.flatpickr-day.today {
+  border-color: #6366f1;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.flatpickr-day.today:hover {
+  background: #6366f1;
+  color: #fff;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+  background: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.flatpickr-day.inRange {
+  background: #e0e7ff;
+  border-color: #e0e7ff;
+  box-shadow: -5px 0 0 #e0e7ff, 5px 0 0 #e0e7ff;
+}
+
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: #cbd5e1;
+}
+
+/* ヘッダー日付ピッカー レスポンシブ */
+@media (max-width: 767px) {
+  .date-range-picker {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .date-range-picker .date-input {
+    width: 100px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .date-range-picker .date-range-presets {
+    flex-wrap: wrap;
+  }
+
+  .date-range-picker .date-preset-btn {
+    padding: 4px 8px;
+    font-size: 11px;
   }
 }

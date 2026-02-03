@@ -11,10 +11,12 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/admin.css">
   <link rel="stylesheet" href="/css/applicants.css">
+  <!-- flatpickr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/js/admin-NvhNyP7v.js"></script>
+  <script type="module" crossorigin src="/js/admin-CBJcZaZ2.js"></script>
   <link rel="modulepreload" crossorigin href="/js/modulepreload-polyfill-YP0FEG5d.js">
   <link rel="modulepreload" crossorigin href="/js/utils-DCR9QUau.js">
   <link rel="modulepreload" crossorigin href="/js/image-uploader-gAKnoYUY.js">
@@ -169,12 +171,12 @@
         <h1 id="page-title">概要</h1>
         <div class="header-actions">
           <div class="date-range-picker">
-            <label for="date-range">期間:</label>
-            <select id="date-range">
-              <option value="7">過去7日間</option>
-              <option value="30" selected>過去30日間</option>
-              <option value="90">過去90日間</option>
-            </select>
+            <label>期間:</label>
+            <div class="date-range-inputs">
+              <input type="text" id="date-range-start" class="date-input flatpickr-input" placeholder="開始日" readonly>
+              <span class="date-separator">〜</span>
+              <input type="text" id="date-range-end" class="date-input flatpickr-input" placeholder="終了日" readonly>
+            </div>
           </div>
           <button id="refresh-btn" class="btn-refresh">更新</button>
         </div>
@@ -246,6 +248,7 @@
         <!-- 分析タブ -->
         <div class="analytics-tabs" id="analytics-tabs">
           <button class="analytics-tab active" data-tab="companies-tab" id="tab-companies">企業別</button>
+          <button class="analytics-tab" data-tab="page-analytics-tab" id="tab-page-analytics">LP/採用ページ</button>
           <button class="analytics-tab" data-tab="conversion-tab" id="tab-conversion">応募・CVR</button>
           <button class="analytics-tab" data-tab="traffic-behavior-tab" id="tab-traffic">流入・行動</button>
           <button class="analytics-tab" data-tab="trends-tab" id="tab-trends">時系列</button>
@@ -437,6 +440,157 @@
                 <tr>
                   <td colspan="5" class="loading-cell">データを読み込み中...</td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- LP/採用ページタブ -->
+        <div id="page-analytics-tab" class="analytics-tab-content">
+          <!-- フィルター付きコンテンツエリア -->
+          <div class="page-analytics-filter-area">
+            <div class="filter-header">
+              <span class="filter-label">表示対象:</span>
+              <div class="page-type-toggle">
+                <button class="page-type-btn active" data-type="all">全体</button>
+                <button class="page-type-btn" data-type="lp">LPのみ</button>
+                <button class="page-type-btn" data-type="recruit">採用ページのみ</button>
+              </div>
+            </div>
+
+            <!-- 概要カード -->
+            <div class="stats-grid stats-grid-4" id="page-analytics-overview">
+              <div class="stat-card">
+                <div class="stat-icon">👁️</div>
+                <div class="stat-content">
+                  <p class="stat-label">ページビュー</p>
+                  <p class="stat-value" id="pa-total-views">-</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">👤</div>
+                <div class="stat-content">
+                  <p class="stat-label">ユニークユーザー</p>
+                  <p class="stat-value" id="pa-unique-visitors">-</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">🖱️</div>
+                <div class="stat-content">
+                  <p class="stat-label">CTAクリック</p>
+                  <p class="stat-value" id="pa-cta-clicks">-</p>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                  <p class="stat-label">平均滞在時間</p>
+                  <p class="stat-value" id="pa-avg-time">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 流入元・デバイス分布 -->
+            <div class="analytics-row">
+              <div class="analytics-col">
+                <div class="analytics-card">
+                  <h4>流入元</h4>
+                  <div class="referrer-chart" id="pa-referrer-chart">
+                    <div class="loading-placeholder">データを読み込み中...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="analytics-col">
+                <div class="analytics-card">
+                  <h4>デバイス</h4>
+                  <div class="device-chart" id="pa-device-chart">
+                    <div class="loading-placeholder">データを読み込み中...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /.page-analytics-filter-area -->
+
+          <!-- LP/採用ページ比較（常に両方表示） -->
+          <div class="page-comparison-section">
+            <h4 class="section-title">LP / 採用ページ 比較</h4>
+            <div class="analytics-row">
+              <div class="analytics-col">
+                <div class="analytics-card comparison-card lp-card">
+                  <h4>LP</h4>
+                  <div class="page-type-stats">
+                    <div class="pts-row">
+                      <span class="pts-label">ページビュー</span>
+                      <span class="pts-value" id="pa-lp-views">-</span>
+                    </div>
+                    <div class="pts-row">
+                      <span class="pts-label">CTAクリック</span>
+                      <span class="pts-value" id="pa-lp-clicks">-</span>
+                    </div>
+                    <div class="pts-row">
+                      <span class="pts-label">CVR</span>
+                      <span class="pts-value" id="pa-lp-cvr">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="analytics-col">
+                <div class="analytics-card comparison-card recruit-card">
+                  <h4>採用ページ</h4>
+                  <div class="page-type-stats">
+                    <div class="pts-row">
+                      <span class="pts-label">ページビュー</span>
+                      <span class="pts-value" id="pa-recruit-views">-</span>
+                    </div>
+                    <div class="pts-row">
+                      <span class="pts-label">CTAクリック</span>
+                      <span class="pts-value" id="pa-recruit-clicks">-</span>
+                    </div>
+                    <div class="pts-row">
+                      <span class="pts-label">CVR</span>
+                      <span class="pts-value" id="pa-recruit-cvr">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LP一覧テーブル -->
+          <div class="analytics-table-container">
+            <h4>LP別アクセス</h4>
+            <table class="analytics-table" id="pa-lp-table">
+              <thead>
+                <tr>
+                  <th>会社名</th>
+                  <th>求人タイトル</th>
+                  <th>PV</th>
+                  <th>UU</th>
+                  <th>クリック</th>
+                  <th>CVR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6" class="loading-cell">データを読み込み中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 採用ページ一覧テーブル -->
+          <div class="analytics-table-container">
+            <h4>採用ページ別アクセス</h4>
+            <table class="analytics-table" id="pa-recruit-table">
+              <thead>
+                <tr>
+                  <th>会社名</th>
+                  <th>PV</th>
+                  <th>UU</th>
+                  <th>クリック</th>
+                  <th>CVR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" class="loading-cell">データを読み込み中...</td></tr>
               </tbody>
             </table>
           </div>
@@ -785,14 +939,9 @@
               <div class="analytics-date-range">
                 <label>期間</label>
                 <div class="date-range-inputs">
-                  <input type="date" id="jm-analytics-start-date" class="date-input">
+                  <input type="text" id="jm-analytics-start-date" class="date-input flatpickr-input" placeholder="開始日" readonly>
                   <span class="date-separator">〜</span>
-                  <input type="date" id="jm-analytics-end-date" class="date-input">
-                </div>
-                <div class="date-range-presets">
-                  <button type="button" class="date-preset-btn" data-preset="7days">7日間</button>
-                  <button type="button" class="date-preset-btn active" data-preset="30days">30日間</button>
-                  <button type="button" class="date-preset-btn" data-preset="90days">90日間</button>
+                  <input type="text" id="jm-analytics-end-date" class="date-input flatpickr-input" placeholder="終了日" readonly>
                 </div>
               </div>
               <button id="jm-btn-load-analytics" class="btn-primary">データ取得</button>
@@ -2923,6 +3072,9 @@
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- flatpickr -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
