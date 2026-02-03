@@ -370,7 +370,17 @@
 .recruit-job-card-location {
   font-size: 0.875rem;
   color: var(--recruit-text-light);
+  margin-bottom: 0.5rem;
+}
+
+.recruit-job-card-access {
+  font-size: 0.8rem;
+  color: var(--recruit-text-light);
   margin-bottom: 0.75rem;
+}
+
+.recruit-job-card-access::before {
+  content: '🚃 ';
 }
 
 .recruit-job-card-highlights {
