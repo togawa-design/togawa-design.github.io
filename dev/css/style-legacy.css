@@ -177,6 +177,11 @@ img {
   white-space: nowrap;
 }
 
+.logo-img {
+  height: 32px;
+  width: auto;
+}
+
 .logo-sub {
   font-size: 10px;
   font-weight: 500;

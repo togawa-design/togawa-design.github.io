@@ -60,6 +60,11 @@
   font-weight: 700;
 }
 
+.recruit-logo .logo-img {
+  height: 28px;
+  width: auto;
+}
+
 .recruit-nav {
   display: flex;
   gap: 1.5rem;

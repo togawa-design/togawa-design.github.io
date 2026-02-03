@@ -52,6 +52,11 @@
   text-decoration: none;
 }
 
+.lp-logo .logo-img {
+  height: 28px;
+  width: auto;
+}
+
 .lp-header-cta {
   display: flex;
   gap: 0.5rem;
