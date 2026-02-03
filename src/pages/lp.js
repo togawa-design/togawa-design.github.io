@@ -191,6 +191,9 @@ class CompanyLPPage {
         this.renderLayoutComponents(contentEl);
 
         this.setupEventListeners(this.company);
+
+        // フッターリンクを採用サイトへ更新
+        this.updateFooterLinks();
       }
 
       // 編集モードの場合
@@ -689,6 +692,30 @@ class CompanyLPPage {
         });
       });
     });
+  }
+
+  /**
+   * フッターリンクを採用サイトへ更新
+   */
+  updateFooterLinks() {
+    const footerLinks = document.querySelector('.lp-footer-links');
+    const companyDomain = this.company?.companyDomain;
+    if (!footerLinks || !companyDomain) return;
+
+    const recruitUrl = `company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
+
+    // トップページリンクを採用サイトTOPに変更
+    const topLink = footerLinks.querySelector('a[href="./"]');
+    if (topLink) {
+      topLink.href = recruitUrl;
+      topLink.textContent = '採用サイトTOP';
+    }
+
+    // 求人一覧リンクを更新
+    const jobsLink = footerLinks.querySelector('a[href="./#jobs"]');
+    if (jobsLink) {
+      jobsLink.href = `${recruitUrl}#jobs`;
+    }
   }
 
   updateSEO(company, jobs, lpSettings = {}) {

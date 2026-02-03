@@ -275,6 +275,32 @@ class CompanyRecruitPage {
 
     // 動画ボタンのイベントリスナーを設定
     this.setupVideoButton();
+
+    // フッターリンクを更新
+    this.updateFooterLinks();
+  }
+
+  /**
+   * フッターリンクを採用サイトへ更新
+   */
+  updateFooterLinks() {
+    const footerLinks = document.querySelector('.recruit-footer-links');
+    if (!footerLinks || !this.companyDomain) return;
+
+    const recruitUrl = `company-recruit.html?id=${encodeURIComponent(this.companyDomain)}`;
+
+    // トップページリンクを採用サイトTOPに変更
+    const topLink = footerLinks.querySelector('a[href="./"]');
+    if (topLink) {
+      topLink.href = recruitUrl;
+      topLink.textContent = '採用サイトTOP';
+    }
+
+    // 求人一覧リンクを更新
+    const jobsLink = footerLinks.querySelector('a[href="./#jobs"]');
+    if (jobsLink) {
+      jobsLink.href = `${recruitUrl}#jobs`;
+    }
   }
 
   /**
