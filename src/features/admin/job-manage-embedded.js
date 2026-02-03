@@ -21,6 +21,12 @@ import { config } from '@features/job-manage/auth.js';
 import { showToast, escapeHtml } from '@shared/utils.js';
 import { generateIndeedXml, generateGoogleJobsJsonLd, generateJobBoxXml, generateCsv, downloadFile } from '@features/admin/job-feed-generator.js';
 
+// 求人編集共通ユーティリティ
+import {
+  updateDisplayedFeaturesContainer as updateDisplayedFeaturesContainerBase,
+  setupFeaturesCheckboxEvents as setupFeaturesCheckboxEventsBase
+} from '@shared/job-edit-utils.js';
+
 // 共通サービス
 import {
   getJobStatus,
@@ -536,91 +542,36 @@ function populateFeaturesCheckboxes(job) {
   updateDisplayedFeaturesContainer(featuresArray, displayedFeaturesArray);
 }
 
+// admin.html用の設定定数
+const DISPLAYED_FEATURES_CONFIG = {
+  containerId: 'jm-displayed-features-container',
+  featuresGridId: 'jm-features-checkbox-grid',
+  checkboxName: 'jm-displayed-features',
+  onWarning: (msg) => showToast(msg, 'warning')
+};
+
 /**
- * 表示する特徴のコンテナを更新
- * @param {Array} checkedFeatures - チェックされた特徴の配列
- * @param {Array} selectedDisplayed - 表示用に選択された特徴の配列
+ * 表示する特徴のコンテナを更新（共通モジュールのラッパー）
  */
 function updateDisplayedFeaturesContainer(checkedFeatures, selectedDisplayed = []) {
-  const container = document.getElementById('jm-displayed-features-container');
-  if (!container) return;
-
-  if (checkedFeatures.length === 0) {
-    container.innerHTML = '<div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>';
-    return;
-  }
-
-  container.innerHTML = checkedFeatures.map(feature => {
-    const isSelected = selectedDisplayed.includes(feature);
-    return `
-      <label class="displayed-feature-item ${isSelected ? 'selected' : ''}" data-feature="${escapeHtml(feature)}">
-        <input type="checkbox" name="jm-displayed-features" value="${escapeHtml(feature)}" ${isSelected ? 'checked' : ''}>
-        <span class="displayed-feature-label">${escapeHtml(feature)}</span>
-        <span class="displayed-feature-badge">${isSelected ? '表示中' : ''}</span>
-      </label>
-    `;
-  }).join('');
-
-  // 表示する特徴のチェックボックスにイベントを設定
-  setupDisplayedFeaturesEvents();
-}
-
-/**
- * 表示する特徴のイベントを設定
- */
-function setupDisplayedFeaturesEvents() {
-  const checkboxes = document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]');
-
-  checkboxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      const checked = document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]:checked');
-
-      // 最大3つまでの制限
-      if (checked.length > 3) {
-        cb.checked = false;
-        showToast('表示する特徴は最大3つまでです', 'warning');
-        return;
-      }
-
-      // UIを更新
-      const item = cb.closest('.displayed-feature-item');
-      const badge = item.querySelector('.displayed-feature-badge');
-
-      if (cb.checked) {
-        item.classList.add('selected');
-        badge.textContent = '表示中';
-      } else {
-        item.classList.remove('selected');
-        badge.textContent = '';
-      }
-    });
+  updateDisplayedFeaturesContainerBase({
+    containerId: DISPLAYED_FEATURES_CONFIG.containerId,
+    checkboxName: DISPLAYED_FEATURES_CONFIG.checkboxName,
+    checkedFeatures,
+    selectedDisplayed,
+    onWarning: DISPLAYED_FEATURES_CONFIG.onWarning
   });
 }
 
 /**
- * 特徴チェックボックスの変更を監視
+ * 特徴チェックボックスの変更を監視（共通モジュールのラッパー）
  */
 function setupFeaturesCheckboxEvents() {
-  const checkboxes = document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]');
-
-  checkboxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      // チェックされた特徴を取得
-      const checkedFeatures = Array.from(
-        document.querySelectorAll('#jm-features-checkbox-grid input[type="checkbox"]:checked')
-      ).map(c => c.value);
-
-      // 現在表示用に選択されている特徴を取得
-      const currentDisplayed = Array.from(
-        document.querySelectorAll('#jm-displayed-features-container input[type="checkbox"]:checked')
-      ).map(c => c.value);
-
-      // チェックが外された特徴は表示用からも削除
-      const validDisplayed = currentDisplayed.filter(f => checkedFeatures.includes(f));
-
-      // コンテナを更新
-      updateDisplayedFeaturesContainer(checkedFeatures, validDisplayed);
-    });
+  setupFeaturesCheckboxEventsBase({
+    featuresGridId: DISPLAYED_FEATURES_CONFIG.featuresGridId,
+    displayedContainerId: DISPLAYED_FEATURES_CONFIG.containerId,
+    checkboxName: DISPLAYED_FEATURES_CONFIG.checkboxName,
+    onWarning: DISPLAYED_FEATURES_CONFIG.onWarning
   });
 }
 

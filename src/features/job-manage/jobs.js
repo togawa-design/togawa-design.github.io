@@ -28,6 +28,12 @@ import {
   formatDateForInput
 } from '@shared/job-service.js';
 
+// 求人編集共通ユーティリティ
+import {
+  updateDisplayedFeaturesContainer as updateDisplayedFeaturesContainerBase,
+  setupFeaturesCheckboxEvents as setupFeaturesCheckboxEventsBase
+} from '@shared/job-edit-utils.js';
+
 /**
  * 求人のステータスを判定（後方互換: 'active' を 'published' として返す）
  */
@@ -501,6 +507,12 @@ function clearSectionForm() {
   document.querySelectorAll('#features-checkbox-grid input[type="checkbox"]').forEach(cb => {
     cb.checked = false;
   });
+
+  // 表示する特徴をクリア
+  const displayedFeaturesContainer = document.getElementById('displayed-features-container');
+  if (displayedFeaturesContainer) {
+    displayedFeaturesContainer.innerHTML = '<div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>';
+  }
 }
 
 /**
@@ -597,6 +609,12 @@ function populateSectionForm(job) {
 
   // hidden フィールドにも設定
   setVal('features', job.features);
+
+  // 表示する特徴を設定
+  const displayedFeaturesData = job.displayedFeatures || '';
+  const displayedFeaturesString = typeof displayedFeaturesData === 'string' ? displayedFeaturesData : String(displayedFeaturesData);
+  const displayedFeaturesArray = displayedFeaturesString.split(',').map(f => f.trim()).filter(f => f);
+  updateDisplayedFeaturesContainer(featuresArray, displayedFeaturesArray);
 
   const visibleEl = document.getElementById('edit-job-visible-section');
   if (visibleEl) {
@@ -755,6 +773,11 @@ export async function saveJobData() {
   const featuresArray = Array.from(featuresCheckboxes).map(cb => cb.value);
   const features = featuresArray.join(',');
 
+  // 表示する特徴の取得
+  const displayedFeaturesCheckboxes = document.querySelectorAll('#displayed-features-container input[type="checkbox"]:checked');
+  const displayedFeaturesArray = Array.from(displayedFeaturesCheckboxes).map(cb => cb.value);
+  const displayedFeatures = displayedFeaturesArray.join(',');
+
   const jobData = {
     id: isNewJob ? '' : (currentEditingJob?.id || ''),
     memo: getVal('memo'),
@@ -768,6 +791,7 @@ export async function saveJobData() {
     order: getVal('order'),
     jobType: getVal('type'),
     features: features,
+    displayedFeatures: displayedFeatures,
     badges: '', // バッジは削除
     jobDescription: getVal('description'),
     requirements: getVal('requirements'),
@@ -973,6 +997,39 @@ function handleSalaryTypeChange() {
   }
 }
 
+// job-manage.html用の設定定数
+const DISPLAYED_FEATURES_CONFIG = {
+  containerId: 'displayed-features-container',
+  featuresGridId: 'features-checkbox-grid',
+  checkboxName: 'displayed-features',
+  onWarning: (msg) => alert(msg)
+};
+
+/**
+ * 表示する特徴のコンテナを更新（共通モジュールのラッパー）
+ */
+function updateDisplayedFeaturesContainer(checkedFeatures, selectedDisplayed = []) {
+  updateDisplayedFeaturesContainerBase({
+    containerId: DISPLAYED_FEATURES_CONFIG.containerId,
+    checkboxName: DISPLAYED_FEATURES_CONFIG.checkboxName,
+    checkedFeatures,
+    selectedDisplayed,
+    onWarning: DISPLAYED_FEATURES_CONFIG.onWarning
+  });
+}
+
+/**
+ * 特徴チェックボックスの変更を監視（共通モジュールのラッパー）
+ */
+function setupFeaturesCheckboxEvents() {
+  setupFeaturesCheckboxEventsBase({
+    featuresGridId: DISPLAYED_FEATURES_CONFIG.featuresGridId,
+    displayedContainerId: DISPLAYED_FEATURES_CONFIG.containerId,
+    checkboxName: DISPLAYED_FEATURES_CONFIG.checkboxName,
+    onWarning: DISPLAYED_FEATURES_CONFIG.onWarning
+  });
+}
+
 /**
  * 求人編集フォームのイベントハンドラを設定
  */
@@ -991,4 +1048,7 @@ export function setupJobEditEventHandlers() {
 
   // 既存の勤務時間削除ボタン
   setupWorkingHoursRemoveButtons();
+
+  // 特徴チェックボックスの変更監視
+  setupFeaturesCheckboxEvents();
 }
