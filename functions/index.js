@@ -2610,7 +2610,8 @@ functions.http('initiateCalendarAuth', (req, res) => {
         access_type: 'offline',
         scope: [
           'https://www.googleapis.com/auth/calendar.readonly',
-          'https://www.googleapis.com/auth/calendar.events'
+          'https://www.googleapis.com/auth/calendar.events',
+          'https://www.googleapis.com/auth/userinfo.email'
         ],
         state,
         prompt: 'consent'
@@ -2868,12 +2869,26 @@ functions.http('getCalendarAvailability', (req, res) => {
       }
 
       const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+      // Convert date strings to JST midnight and end of day
+      const JST_OFFSET = 9 * 60 * 60 * 1000;
+      const startParts = startDate.split('-');
+      const endParts = endDate.split('-');
+      const timeMinJST = new Date(Date.UTC(
+        parseInt(startParts[0]), parseInt(startParts[1]) - 1, parseInt(startParts[2]),
+        0, 0, 0, 0
+      ) - JST_OFFSET);
+      const timeMaxJST = new Date(Date.UTC(
+        parseInt(endParts[0]), parseInt(endParts[1]) - 1, parseInt(endParts[2]),
+        23, 59, 59, 999
+      ) - JST_OFFSET);
+
       const eventsResponse = await calendar.events.list({
         calendarId: integration.calendarId || 'primary',
-        timeMin: new Date(startDate).toISOString(),
-        timeMax: new Date(endDate).toISOString(),
+        timeMin: timeMinJST.toISOString(),
+        timeMax: timeMaxJST.toISOString(),
         singleEvents: true,
-        orderBy: 'startTime'
+        orderBy: 'startTime',
+        timeZone: 'Asia/Tokyo'
       });
 
       const busySlots = (eventsResponse.data.items || [])
@@ -2896,41 +2911,68 @@ function calculateAvailableSlots(startDate, endDate, busySlots, durationMinutes)
   const businessHourStart = 9;
   const businessHourEnd = 18;
   const slotInterval = 30;
+  const JST_OFFSET = 9 * 60 * 60 * 1000; // JST is UTC+9
 
-  const currentDate = new Date(startDate);
-  currentDate.setHours(0, 0, 0, 0);
-  const lastDate = new Date(endDate);
-  lastDate.setHours(23, 59, 59, 999);
+  // Parse dates as JST
+  const startParts = startDate.toISOString().split('T')[0].split('-');
+  const endParts = endDate.toISOString().split('T')[0].split('-');
 
-  while (currentDate <= lastDate) {
-    const dayOfWeek = currentDate.getDay();
+  // Create date at midnight JST (which is 15:00 UTC previous day)
+  let currentDateJST = new Date(Date.UTC(
+    parseInt(startParts[0]),
+    parseInt(startParts[1]) - 1,
+    parseInt(startParts[2]),
+    0, 0, 0, 0
+  ) - JST_OFFSET);
+
+  const lastDateJST = new Date(Date.UTC(
+    parseInt(endParts[0]),
+    parseInt(endParts[1]) - 1,
+    parseInt(endParts[2]),
+    23, 59, 59, 999
+  ) - JST_OFFSET);
+
+  while (currentDateJST <= lastDateJST) {
+    // Get JST day of week
+    const jstTime = new Date(currentDateJST.getTime() + JST_OFFSET);
+    const dayOfWeek = jstTime.getUTCDay();
+
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      currentDate.setDate(currentDate.getDate() + 1);
+      currentDateJST = new Date(currentDateJST.getTime() + 24 * 60 * 60 * 1000);
       continue;
     }
 
     for (let hour = businessHourStart; hour < businessHourEnd; hour++) {
       for (let minute = 0; minute < 60; minute += slotInterval) {
-        const slotStart = new Date(currentDate);
-        slotStart.setHours(hour, minute, 0, 0);
-        const slotEnd = new Date(slotStart);
-        slotEnd.setMinutes(slotEnd.getMinutes() + durationMinutes);
+        // Create slot in JST
+        const slotStartJST = new Date(Date.UTC(
+          jstTime.getUTCFullYear(),
+          jstTime.getUTCMonth(),
+          jstTime.getUTCDate(),
+          hour, minute, 0, 0
+        ) - JST_OFFSET);
 
-        if (slotEnd.getHours() > businessHourEnd || (slotEnd.getHours() === businessHourEnd && slotEnd.getMinutes() > 0)) continue;
-        if (slotStart <= new Date()) continue;
+        const slotEndJST = new Date(slotStartJST.getTime() + durationMinutes * 60 * 1000);
+
+        // Check if slot end is within business hours (in JST)
+        const slotEndHourJST = new Date(slotEndJST.getTime() + JST_OFFSET).getUTCHours();
+        const slotEndMinuteJST = new Date(slotEndJST.getTime() + JST_OFFSET).getUTCMinutes();
+
+        if (slotEndHourJST > businessHourEnd || (slotEndHourJST === businessHourEnd && slotEndMinuteJST > 0)) continue;
+        if (slotStartJST <= new Date()) continue;
 
         const isOverlapping = busySlots.some(busy => {
           const busyStart = new Date(busy.start);
           const busyEnd = new Date(busy.end);
-          return slotStart < busyEnd && slotEnd > busyStart;
+          return slotStartJST < busyEnd && slotEndJST > busyStart;
         });
 
         if (!isOverlapping) {
-          slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString() });
+          slots.push({ start: slotStartJST.toISOString(), end: slotEndJST.toISOString() });
         }
       }
     }
-    currentDate.setDate(currentDate.getDate() + 1);
+    currentDateJST = new Date(currentDateJST.getTime() + 24 * 60 * 60 * 1000);
   }
   return slots;
 }
@@ -2979,16 +3021,35 @@ functions.http('createCalendarEvent', (req, res) => {
         description: `求人: ${jobTitle || '未設定'}\n応募者: ${applicantName}\nメール: ${applicantEmail || '未設定'}\n\n※ L-SET採用管理システムから自動登録`,
         start: { dateTime: startTime.toISOString(), timeZone: 'Asia/Tokyo' },
         end: { dateTime: endTime.toISOString(), timeZone: 'Asia/Tokyo' },
-        location,
+        location: meetingType === 'online' ? '' : location,
         attendees: applicantEmail ? [{ email: applicantEmail }] : [],
         reminders: { useDefault: false, overrides: [{ method: 'email', minutes: 24 * 60 }, { method: 'popup', minutes: 60 }] }
       };
 
+      // オンライン面談の場合はGoogle Meetを自動生成
+      console.log('[createCalendarEvent] meetingType:', meetingType);
+      if (meetingType === 'online') {
+        event.conferenceData = {
+          createRequest: {
+            requestId: `meet-${applicationId}-${Date.now()}`,
+            conferenceSolutionKey: { type: 'hangoutsMeet' }
+          }
+        };
+        console.log('[createCalendarEvent] Adding conferenceData to event');
+      }
+
       const createdEvent = await calendar.events.insert({
         calendarId: integration.calendarId || 'primary',
         resource: event,
-        sendUpdates: 'all'
+        sendUpdates: 'all',
+        conferenceDataVersion: meetingType === 'online' ? 1 : 0
       });
+
+      console.log('[createCalendarEvent] Event created, conferenceData:', JSON.stringify(createdEvent.data.conferenceData));
+
+      // Meetリンクを取得
+      const meetLink = createdEvent.data.conferenceData?.entryPoints?.find(e => e.entryPointType === 'video')?.uri || null;
+      console.log('[createCalendarEvent] meetLink:', meetLink);
 
       const interviewData = {
         companyDomain,
@@ -2999,7 +3060,8 @@ functions.http('createCalendarEvent', (req, res) => {
         staffName: integration.staffName || '',
         scheduledAt: admin.firestore.Timestamp.fromDate(startTime),
         durationMinutes,
-        location,
+        location: meetLink || location,
+        meetLink: meetLink || null,
         meetingType,
         jobTitle: jobTitle || '',
         googleEventId: createdEvent.data.id,
@@ -3023,7 +3085,7 @@ functions.http('createCalendarEvent', (req, res) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      res.json({ success: true, interviewId: interviewRef.id, googleEventId: createdEvent.data.id });
+      res.json({ success: true, interviewId: interviewRef.id, googleEventId: createdEvent.data.id, meetLink });
 
     } catch (error) {
       console.error('createCalendarEvent error:', error);
@@ -3056,15 +3118,17 @@ functions.http('getCalendarIntegration', (req, res) => {
         .get();
 
       if (query.empty) {
-        return res.json({ success: true, integrated: false });
+        return res.json({ success: true, integration: null });
       }
 
-      const integration = query.docs[0].data();
+      const integrationData = query.docs[0].data();
       res.json({
         success: true,
-        integrated: integration.isActive === true,
-        googleEmail: integration.googleEmail,
-        staffName: integration.staffName
+        integration: {
+          isActive: integrationData.isActive === true,
+          email: integrationData.googleEmail,
+          staffName: integrationData.staffName
+        }
       });
 
     } catch (error) {

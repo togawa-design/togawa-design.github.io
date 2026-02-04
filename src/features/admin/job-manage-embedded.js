@@ -1660,12 +1660,17 @@ async function saveJmInterview() {
   const selectedOption = staffSelect.options[staffSelect.selectedIndex];
   const hasCalendar = selectedOption?.dataset?.hasCalendar === 'true';
 
+  console.log('[saveJmInterview] hasCalendar:', hasCalendar);
+  console.log('[saveJmInterview] jmSelectedSlot:', jmSelectedSlot);
+
   // 日時の取得
   let scheduledAt;
   if (hasCalendar && jmSelectedSlot) {
     scheduledAt = new Date(jmSelectedSlot.start);
+    console.log('[saveJmInterview] Using calendar slot:', scheduledAt);
   } else {
     const datetimeInput = document.getElementById('jm-interview-datetime');
+    console.log('[saveJmInterview] Manual datetime value:', datetimeInput?.value);
     if (!datetimeInput.value) {
       showToast('面談日時を入力してください', 'error');
       return;
@@ -1681,6 +1686,8 @@ async function saveJmInterview() {
     const durationMinutes = parseInt(document.getElementById('jm-interview-duration').value);
     const meetingType = document.querySelector('input[name="jm-meeting-type"]:checked')?.value || 'in_person';
     const location = document.getElementById('jm-interview-location').value;
+
+    console.log('[saveJmInterview] meetingType:', meetingType);
 
     const staffName = selectedOption?.textContent?.replace(' (📅連携済)', '') || '';
 
@@ -1702,11 +1709,14 @@ async function saveJmInterview() {
       ]
     });
 
+    console.log('[saveJmInterview] API result:', result);
+
     showToast('面談を登録しました');
     closeJmInterviewModal();
 
-    // 面談情報を更新（UIに反映）
-    updateJmInterviewInfo(scheduledAt, staffName, meetingType, location);
+    // 面談情報を更新（UIに反映）- meetLinkがあればそれを使用
+    const displayLocation = result.meetLink || location;
+    updateJmInterviewInfo(scheduledAt, staffName, meetingType, displayLocation, result.meetLink);
 
   } catch (error) {
     console.error('Failed to save interview:', error);
@@ -1720,12 +1730,20 @@ async function saveJmInterview() {
 /**
  * 面談情報をUIに反映
  */
-function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location) {
+function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location, meetLink = null) {
   const infoContainer = document.getElementById('jm-interview-info');
   if (!infoContainer) return;
 
   const dayName = CalendarService.getDayOfWeek(scheduledAt);
   const typeLabels = { in_person: '対面', online: 'オンライン', phone: '電話' };
+
+  // Meetリンクがある場合はクリック可能なリンクとして表示
+  let locationHtml = '';
+  if (meetLink) {
+    locationHtml = `<span>Meet: <a href="${escapeHtml(meetLink)}" target="_blank" rel="noopener">${escapeHtml(meetLink)}</a></span>`;
+  } else if (location) {
+    locationHtml = `<span>場所: ${escapeHtml(location)}</span>`;
+  }
 
   infoContainer.innerHTML = `
     <div class="interview-scheduled">
@@ -1736,7 +1754,7 @@ function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location) {
       <div class="interview-details">
         <span>担当: ${escapeHtml(staffName)}</span>
         <span>形式: ${typeLabels[meetingType] || meetingType}</span>
-        ${location ? `<span>場所: ${escapeHtml(location)}</span>` : ''}
+        ${locationHtml}
       </div>
     </div>
   `;
