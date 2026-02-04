@@ -1114,11 +1114,40 @@
   padding: 4px;
 }
 
+/* 空き時間週表示（横並び） */
+.availability-week {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px;
+}
+
 .availability-day {
   background: #f8fafc;
   border-radius: 8px;
   padding: 8px;
   min-width: 0;
+  flex: 1;
+  min-width: 80px;
+}
+
+.day-header {
+  text-align: center;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.day-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .availability-day-header {
