@@ -1693,17 +1693,29 @@ async function saveJmInterview() {
 
   // 日時の取得
   let scheduledAt;
-  if (hasCalendar && jmSelectedSlot) {
+  if (hasCalendar) {
+    // カレンダー連携時はスロット選択が必須
+    if (!jmSelectedSlot) {
+      showToast('空き時間から日程を選択してください', 'error');
+      return;
+    }
     scheduledAt = new Date(jmSelectedSlot.start);
     console.log('[saveJmInterview] Using calendar slot:', scheduledAt);
   } else {
+    // 手動入力
     const datetimeInput = document.getElementById('jm-interview-datetime');
     console.log('[saveJmInterview] Manual datetime value:', datetimeInput?.value);
-    if (!datetimeInput.value) {
+    if (!datetimeInput?.value) {
       showToast('面談日時を入力してください', 'error');
       return;
     }
     scheduledAt = new Date(datetimeInput.value);
+  }
+
+  // 日時の有効性チェック
+  if (isNaN(scheduledAt.getTime())) {
+    showToast('日時の形式が正しくありません', 'error');
+    return;
   }
 
   const saveBtn = document.getElementById('jm-interview-modal-save');
