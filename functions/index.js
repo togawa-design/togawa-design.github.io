@@ -2986,7 +2986,7 @@ functions.http('createCalendarEvent', (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-      const { companyDomain, companyUserId, applicationId, scheduledAt, durationMinutes = 60, location = '', meetingType = 'in_person', applicantName, applicantEmail, jobTitle, reminders = [] } = req.body;
+      const { companyDomain, companyUserId, applicationId, scheduledAt, durationMinutes = 60, location = '', meetingType = 'in_person', applicantName, applicantEmail, staffName, jobTitle, reminders = [] } = req.body;
 
       if (!companyDomain || !companyUserId || !applicationId || !scheduledAt) {
         return res.status(400).json({ error: 'Missing required parameters' });
@@ -3057,7 +3057,7 @@ functions.http('createCalendarEvent', (req, res) => {
         applicantName,
         applicantEmail: applicantEmail || '',
         staffUserId: companyUserId,
-        staffName: integration.staffName || '',
+        staffName: staffName || integration.staffName || '',
         scheduledAt: admin.firestore.Timestamp.fromDate(startTime),
         durationMinutes,
         location: meetLink || location,
