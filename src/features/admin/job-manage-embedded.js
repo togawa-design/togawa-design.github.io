@@ -1770,7 +1770,7 @@ async function saveJmInterview() {
     // カレンダーイベントを作成
     // 応募者データのフィールド名を正しく取得
     const applicantName = jmCurrentApplicant?.applicantName || jmCurrentApplicant?.applicant?.name || '';
-    const applicantEmail = jmCurrentApplicant?.email || jmCurrentApplicant?.applicant?.email || '';
+    const applicantEmail = jmCurrentApplicant?.applicantEmail || jmCurrentApplicant?.applicant?.email || '';
     const jobTitle = jmCurrentApplicant?.jobTitle || '';
 
     const apiParams = {
