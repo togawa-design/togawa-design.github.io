@@ -2378,12 +2378,22 @@
   line-height: 1.4;
 }
 
-.preview-content {
+.preview-content,
+.preview-sections-container {
   padding: 16px;
+}
+
+.preview-sections-container {
+  display: flex;
+  flex-direction: column;
 }
 
 .preview-section {
   margin-bottom: 16px;
+}
+
+.preview-reorderable {
+  transition: opacity 0.2s ease;
 }
 
 .preview-section h3 {
@@ -2412,10 +2422,127 @@
 }
 
 .preview-job-card {
-  height: 48px;
+  min-height: 48px;
   background: #f3f4f6;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.preview-job-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-job-info {
+  font-size: 8px;
+  color: #6b7280;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-job-more {
+  font-size: 9px;
+  color: var(--preview-primary, #6366f1);
+  text-align: center;
+  padding: 4px;
+}
+
+.preview-no-jobs {
+  font-size: 9px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 12px;
+}
+
+/* プレビュー職種タブ */
+.preview-job-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 6px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.preview-job-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.preview-job-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-job-tabs::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+.preview-job-tabs::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.preview-job-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 5px 10px;
+  font-size: 9px;
+  font-weight: 500;
+  background: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.preview-job-tab:hover {
+  background: #e5e7eb;
+}
+
+.preview-job-tab.active {
+  background: var(--preview-primary, #6366f1);
+  color: white;
+}
+
+.preview-job-tab .tab-label {
+  line-height: 1;
+}
+
+.preview-job-tab .tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.preview-job-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .preview-cta {
@@ -2442,6 +2569,99 @@
   font-size: 10px;
   font-weight: 600;
   cursor: default;
+}
+
+/* カスタムセクションプレビュー */
+.preview-custom-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.preview-custom-sections:empty {
+  display: none;
+}
+
+.preview-custom-heading {
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.preview-custom-heading h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--preview-text, #1f2937);
+  margin: 0;
+}
+
+.preview-custom-text {
+  padding: 6px 8px;
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+.preview-custom-text p {
+  font-size: 9px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.preview-custom-template {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  position: relative;
+}
+
+.preview-custom-template-header {
+  margin-bottom: 4px;
+}
+
+.preview-custom-template-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  background: var(--preview-primary, #4AA7C0);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 7px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-custom-template[data-type="about"] .preview-custom-template-badge { background: #6366f1; }
+.preview-custom-template[data-type="business"] .preview-custom-template-badge { background: #10b981; }
+.preview-custom-template[data-type="photos"] .preview-custom-template-badge { background: #f59e0b; }
+.preview-custom-template[data-type="text"] .preview-custom-template-badge { background: #8b5cf6; }
+.preview-custom-template[data-type="heading"] .preview-custom-template-badge { background: #ec4899; }
+
+.preview-custom-template h4 {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--preview-text, #1f2937);
+  margin: 0 0 4px;
+}
+
+.preview-custom-template-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 30px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.preview-custom-headline {
+  font-size: 8px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.3;
 }
 
 .preview-note {
@@ -2540,7 +2760,8 @@
   letter-spacing: 1px;
 }
 
-.preview-phone-content[data-layout-style="elegant"] .preview-content {
+.preview-phone-content[data-layout-style="elegant"] .preview-content,
+.preview-phone-content[data-layout-style="elegant"] .preview-sections-container {
   background: #fafaf9;
 }
 
@@ -2558,7 +2779,8 @@
   border-bottom: 2px solid #3b82f6;
 }
 
-.preview-phone-content[data-layout-style="athome"] .preview-content {
+.preview-phone-content[data-layout-style="athome"] .preview-content,
+.preview-phone-content[data-layout-style="athome"] .preview-sections-container {
   background: #fef7ee;
 }
 
@@ -2570,7 +2792,8 @@
   background: linear-gradient(135deg, rgba(120, 53, 15, 0.5) 0%, rgba(146, 64, 14, 0.65) 100%);
 }
 
-.preview-phone-content[data-layout-style="local"] .preview-content {
+.preview-phone-content[data-layout-style="local"] .preview-content,
+.preview-phone-content[data-layout-style="local"] .preview-sections-container {
   background: #f5f5f4;
 }
 
@@ -3167,10 +3390,12 @@
   background: #fff;
   border-radius: 12px;
   width: 100%;
-  max-width: 500px;
+  max-width: 640px;
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
 .modal-content.modal-large {
@@ -3181,40 +3406,46 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 16px 20px;
+  border-bottom: none;
+  background: #4AA7C0;
   color: #fff;
   border-radius: 12px 12px 0 0;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .modal-close {
-  background: rgba(255, 255, 255, 0.2);
+  background: none;
   border: none;
   font-size: 24px;
   cursor: pointer;
   color: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.3);
+  opacity: 1;
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-description {
+  margin: 0 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
 }
 
 .modal-body .form-group {
@@ -3292,35 +3523,36 @@
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
-  border-radius: 0 0 12px 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
 }
 
-.modal-footer .btn-secondary {
-  padding: 10px 20px;
+.modal-footer .btn-secondary,
+.modal-footer .btn-cancel {
+  padding: 10px 32px;
   background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #374151;
+  color: #4AA7C0;
+  border: 1px solid #4AA7C0;
+  border-radius: 20px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.modal-footer .btn-secondary:hover {
-  background: #f3f4f6;
+.modal-footer .btn-secondary:hover,
+.modal-footer .btn-cancel:hover {
+  background: #f0f9fb;
 }
 
 .modal-footer .btn-primary {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  padding: 10px 32px;
+  background: #4AA7C0;
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   color: #fff;
   font-size: 14px;
   font-weight: 500;
@@ -3329,8 +3561,7 @@
 }
 
 .modal-footer .btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background: #3d8fa5;
 }
 
 @media (max-width: 767px) {
@@ -9817,6 +10048,30 @@ body.lp-settings-active #section-lp-settings {
   border-radius: 4px;
 }
 
+.section-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  background: #4AA7C0;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.recruit-section-item.dynamic-section {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
+.recruit-section-item.dynamic-section:hover {
+  background: #ccfbf1;
+}
+
 /* ========================================
    求人編集 - 複数入力リスト（勤務時間など）
    ======================================== */
@@ -10418,4 +10673,1372 @@ body.lp-settings-active #section-lp-settings {
     padding: 4px 8px;
     font-size: 11px;
   }
+}
+
+/* ========================================
+   採用ページ設定 - 追加スタイル
+   ======================================== */
+
+/* トグルスイッチ */
+.toggle-switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  flex-wrap: nowrap;
+}
+
+.toggle-switch-label input {
+  display: none;
+}
+
+.toggle-switch {
+  display: inline-block;
+  position: relative;
+  width: 44px;
+  min-width: 44px;
+  height: 24px;
+  background: #cbd5e1;
+  border-radius: 12px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-switch-label > span:last-child {
+  white-space: nowrap;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-switch-label input:checked + .toggle-switch {
+  background: #6366f1;
+}
+
+.toggle-switch-label input:checked + .toggle-switch::after {
+  transform: translateX(20px);
+}
+
+/* 入力プレフィックス */
+.input-with-prefix {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.input-with-prefix .input-prefix {
+  padding: 10px 12px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  border-right: 1px solid #d1d5db;
+  white-space: nowrap;
+}
+
+.input-with-prefix input {
+  flex: 1;
+  border: none;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+/* フォーム行（2カラム） */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* カスタムリンクリスト */
+.custom-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.custom-link-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.custom-link-inputs {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+}
+
+.custom-link-inputs input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.btn-remove-link {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-remove-link:hover {
+  background: #fecaca;
+}
+
+/* カスタムセクションリスト（採用ページ設定用） */
+.custom-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* カスタムセクション追加ボタン */
+.add-section-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-add-section {
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-section:hover {
+  background: #e2e8f0;
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+/* ========================================
+   求人並び替えモード
+   ======================================== */
+
+.sort-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.sort-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-mode-icon {
+  font-size: 20px;
+  color: #92400e;
+}
+
+.sort-mode-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.sort-mode-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 並び替えモード時の求人カード */
+.job-listings-cards.sort-mode {
+  background: #fffbeb;
+  border: 2px dashed #fbbf24;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.job-listings-cards.sort-mode .job-listing-card {
+  cursor: grab;
+  background: #fff;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.job-listings-cards.sort-mode .job-listing-card:hover {
+  background: #fef9e7;
+}
+
+.job-listings-cards.sort-mode .job-listing-card:active {
+  cursor: grabbing;
+}
+
+.job-listings-cards.sort-mode .job-listing-card.dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.job-listings-cards.sort-mode .job-listing-card.drag-over {
+  border-top: 3px solid #6366f1;
+}
+
+/* ドラッグハンドル */
+.job-card-drag-handle {
+  display: none;
+  width: 24px;
+  height: 24px;
+  color: #94a3b8;
+  cursor: grab;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.sort-mode .job-card-drag-handle {
+  display: flex;
+}
+
+.sort-mode .job-card-drag-handle:hover {
+  color: #6366f1;
+}
+
+/* 順序番号表示 */
+.job-order-badge {
+  display: none;
+  min-width: 24px;
+  height: 24px;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sort-mode .job-order-badge {
+  display: flex;
+}
+
+/* job-manage用の求人一覧カードスタイル */
+#jm-jobs-list.job-listings-cards {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+#jm-jobs-list .job-listing-card {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+#jm-jobs-list .job-listing-card:last-child {
+  border-bottom: none;
+}
+
+/* ========================================
+   テンプレート選択モーダル
+   ======================================== */
+
+.template-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.template-modal {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.template-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #4AA7C0;
+  color: #fff;
+}
+
+.template-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.template-modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.template-modal-close:hover {
+  opacity: 1;
+}
+
+.template-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.template-modal-description {
+  margin: 0 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.template-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.template-item:hover {
+  border-color: #4AA7C0;
+  box-shadow: 0 2px 8px rgba(74, 167, 192, 0.1);
+}
+
+.template-thumbnail {
+  flex-shrink: 0;
+  width: 100px;
+  height: 70px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.template-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.template-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-description {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.btn-add-template {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #fff;
+  color: #4AA7C0;
+  border: 1px solid #4AA7C0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-template:hover {
+  background: #4AA7C0;
+  color: #fff;
+}
+
+.template-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.btn-template-cancel {
+  padding: 10px 32px;
+  background: #fff;
+  color: #4AA7C0;
+  border: 1px solid #4AA7C0;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-template-cancel:hover {
+  background: #f0f9fb;
+}
+
+/* アイコンサムネイル（画像の代わりにアイコンを表示） */
+.template-icon-thumbnail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f9fb 0%, #e0f2f7 100%);
+}
+
+.template-icon-large {
+  font-size: 32px;
+}
+
+/* 無効化されたテンプレートアイテム */
+.template-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.template-item.disabled:hover {
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+.btn-add-template:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #d1d5db;
+}
+
+.btn-add-template:disabled:hover {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+/* コンテンツ追加ボタン */
+.btn-open-template-selector {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  color: #4AA7C0;
+  border: 2px dashed #4AA7C0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-open-template-selector:hover {
+  background: #f0f9fb;
+  border-color: #3a97b0;
+}
+
+/* ========================================
+   カスタムセクションフィールド（採用ページ設定用）
+   ======================================== */
+
+#recruit-custom-sections .custom-section-item {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+#recruit-custom-sections .section-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-type-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #e5e7eb;
+  color: #374151;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.section-type-badge.template-badge {
+  background: #4AA7C0;
+  color: #fff;
+}
+
+.section-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.section-item-actions button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.section-item-actions button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.section-item-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-remove-section {
+  color: #ef4444 !important;
+}
+
+.btn-remove-section:hover:not(:disabled) {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+
+#recruit-custom-sections .section-item-content {
+  padding: 24px;
+}
+
+/* セクションコンテンツ内のフォームを広く */
+#recruit-custom-sections .section-field {
+  max-width: 100%;
+  width: 100%;
+}
+
+/* セクションフィールド */
+.section-field {
+  margin-bottom: 16px;
+}
+
+.section-field:last-child {
+  margin-bottom: 0;
+}
+
+.section-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.section-field-input {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.section-field-input:focus {
+  outline: none;
+  border-color: #4AA7C0;
+}
+
+textarea.section-field-input {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* 画像フィールド */
+.section-image-field {
+  display: flex;
+  gap: 8px;
+}
+
+.section-image-field .section-image-url {
+  flex: 1;
+}
+
+.btn-upload-section-image {
+  padding: 10px 16px;
+  background: #4AA7C0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-upload-section-image:hover {
+  background: #3a97b0;
+}
+
+.section-image-preview {
+  margin-top: 10px;
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+/* 項目リスト（BUSINESS用） */
+#recruit-custom-sections .section-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+#recruit-custom-sections .section-item-entry {
+  padding: 20px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#recruit-custom-sections .section-item-field {
+  margin-bottom: 0;
+}
+
+#recruit-custom-sections .section-item-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+#recruit-custom-sections .section-item-field input,
+#recruit-custom-sections .section-item-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+#recruit-custom-sections .section-item-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+#recruit-custom-sections .btn-remove-item {
+  padding: 10px 20px;
+  background: #fff;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+#recruit-custom-sections .btn-remove-item:hover {
+  background: #fef2f2;
+}
+
+#recruit-custom-sections .btn-add-item {
+  padding: 12px 24px;
+  background: #fff;
+  color: #4AA7C0;
+  border: 2px dashed #4AA7C0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#recruit-custom-sections .btn-add-item:hover {
+  background: #f0f9fb;
+}
+
+/* ギャラリー（PHOTOS用） */
+.section-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-gallery-item {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.section-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-gallery-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.section-gallery-item:hover .btn-remove-gallery-image {
+  opacity: 1;
+}
+
+.btn-add-gallery-image {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #4AA7C0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.btn-add-gallery-image:hover {
+  background: #3a97b0;
+}
+
+.gallery-add-icon {
+  font-size: 14px;
+}
+
+.gallery-add-text {
+  font-size: 13px;
+}
+
+/* モバイル対応 */
+@media (max-width: 640px) {
+  .template-item {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .template-thumbnail {
+    width: 100%;
+    height: 100px;
+  }
+
+  .btn-add-template {
+    width: 100%;
+  }
+
+  .section-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========================================
+   リンク・バナー取得セクション
+   ======================================== */
+
+/* 埋込URLボックス */
+.embed-link-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.embed-link-box .embed-url-input,
+.recruit-settings-form .embed-link-box .embed-url-input,
+.lp-form-section .embed-link-box .embed-url-input {
+  flex: 1 1 auto;
+  min-width: 100px;
+  max-width: calc(100% - 110px) !important;
+  width: auto !important;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #374151;
+}
+
+.embed-link-box .btn-copy-embed,
+.recruit-settings-form .embed-link-box .btn-copy-embed,
+.lp-form-section .embed-link-box .btn-copy-embed {
+  flex: 0 0 auto;
+  width: auto !important;
+  height: auto !important;
+  min-width: 100px;
+  padding: 10px 16px !important;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.btn-copy-embed:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* バナーグリッド */
+.embed-banners-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .embed-banners-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.embed-banner-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.embed-banner-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #fff;
+  border-radius: 6px;
+  min-height: 80px;
+}
+
+.btn-copy-banner {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-end;
+}
+
+.btn-copy-banner:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* バナースタイル: シンプルボタン */
+.banner-style-button a {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #0ea5e9;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* バナースタイル: 大きめボタン */
+.banner-style-button-large a {
+  display: inline-block;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+}
+
+/* バナースタイル: カード型 */
+.banner-style-card .banner-card-inner {
+  display: block;
+  max-width: 200px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.banner-card-label {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.banner-card-title {
+  display: block;
+  font-size: 14px;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.banner-card-arrow {
+  display: block;
+  margin-top: 8px;
+  color: #0ea5e9;
+  font-size: 13px;
+}
+
+/* バナースタイル: 求人募集中 */
+.banner-style-recruiting .banner-recruiting-inner {
+  display: inline-block;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+}
+
+.banner-recruiting-badge {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.banner-recruiting-title {
+  display: block;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* バナースタイル: 特設ページ公開中 */
+.banner-style-special .banner-special-inner {
+  display: inline-block;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+.banner-special-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.banner-special-subtitle {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+/* ========================================
+   共通モーダルコンポーネント
+   src/shared/modal.js で使用
+======================================== */
+
+/* オーバーレイ */
+.common-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+/* モーダル本体 */
+.common-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: commonModalFadeIn 0.2s ease-out;
+}
+
+.common-modal.common-modal-sm {
+  max-width: 400px;
+}
+
+@keyframes commonModalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ヘッダー */
+.common-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #4AA7C0;
+  color: #fff;
+  border-radius: 12px 12px 0 0;
+}
+
+.common-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.common-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #fff;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.common-modal-close:hover {
+  opacity: 1;
+}
+
+/* ボディ */
+.common-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.common-modal-description {
+  margin: 0 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
+
+.common-modal-message {
+  margin: 0;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* リスト形式 */
+.common-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.common-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.common-modal-item:hover:not(.disabled) {
+  background: #f3f4f6;
+}
+
+.common-modal-item.disabled {
+  opacity: 0.6;
+}
+
+.common-modal-item-thumbnail {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.common-modal-item-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.common-modal-item-thumbnail.common-modal-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.common-modal-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.common-modal-item-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.common-modal-item-description {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.common-modal-item-btn {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  background: #4AA7C0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.common-modal-item-btn:hover:not([disabled]) {
+  background: #3d8fa5;
+}
+
+.common-modal-item-btn[disabled] {
+  background: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* グリッド形式 */
+.common-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.common-modal-grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  border: 2px solid transparent;
+}
+
+.common-modal-grid-item:hover:not([disabled]) {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.common-modal-grid-item[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.common-modal-grid-icon {
+  font-size: 28px;
+}
+
+.common-modal-grid-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
+}
+
+.common-modal-grid-limit {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* フッター */
+.common-modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.common-modal-footer-buttons {
+  justify-content: flex-end;
+}
+
+.common-modal-cancel {
+  padding: 10px 24px;
+  background: #fff;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.common-modal-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.common-modal-confirm {
+  padding: 10px 24px;
+  background: #4AA7C0;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.common-modal-confirm:hover {
+  background: #3d8fa5;
+}
+
+.common-modal-confirm.danger {
+  background: #ef4444;
+}
+
+.common-modal-confirm.danger:hover {
+  background: #dc2626;
 }

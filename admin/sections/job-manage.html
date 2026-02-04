@@ -1,0 +1,817 @@
+      <section id="section-job-manage" class="admin-section">
+        <!-- 会社ヘッダー -->
+        <div class="job-manage-header">
+          <button type="button" id="jm-back-btn" class="btn-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            戻る
+          </button>
+          <div class="job-manage-company-info">
+            <h2 id="jm-company-name">-</h2>
+            <span id="jm-company-domain" class="company-domain">-</span>
+          </div>
+          <div class="job-manage-header-actions">
+            <button type="button" id="jm-btn-sort-mode" class="btn-secondary" style="display: none;">並び順変更</button>
+            <button type="button" id="jm-btn-add-job" class="btn-primary">+ 新規求人作成</button>
+            <button type="button" id="jm-btn-refresh" class="btn-refresh">更新</button>
+          </div>
+        </div>
+
+        <!-- サブナビゲーション（タブ） -->
+        <div class="job-manage-tabs" id="jm-tabs">
+          <button type="button" class="jm-tab active" data-tab="jobs">
+            <span class="tab-icon">📋</span>求人一覧
+          </button>
+          <button type="button" class="jm-tab" data-tab="analytics">
+            <span class="tab-icon">📈</span>アクセス解析
+          </button>
+          <button type="button" class="jm-tab" data-tab="reports">
+            <span class="tab-icon">📊</span>レポート
+          </button>
+          <button type="button" class="jm-tab" data-tab="applicants">
+            <span class="tab-icon">👥</span>応募者管理
+          </button>
+          <button type="button" class="jm-tab" data-tab="recruit">
+            <span class="tab-icon">🎨</span>採用ページ設定
+          </button>
+        </div>
+
+        <!-- サブセクションコンテンツ -->
+        <div class="job-manage-content" id="jm-content">
+          <!-- 求人一覧サブセクション -->
+          <div id="jm-jobs" class="jm-subsection active">
+            <!-- 求人フィード出力 -->
+            <div class="feed-export-section">
+              <div class="feed-export-header">
+                <h3>求人フィード出力</h3>
+                <span class="form-description">各求人媒体に掲載するためのフィードをダウンロードできます</span>
+              </div>
+              <div class="feed-export-buttons">
+                <button id="jm-btn-download-indeed" class="btn-feed" title="Indeed用XMLフィード">
+                  <span class="feed-icon">📄</span>
+                  <span class="feed-label">Indeed XML</span>
+                </button>
+                <button id="jm-btn-download-google" class="btn-feed" title="Google しごと検索用JSON-LD">
+                  <span class="feed-icon">📄</span>
+                  <span class="feed-label">Google JSON-LD</span>
+                </button>
+                <button id="jm-btn-download-jobbox" class="btn-feed" title="求人ボックス/スタンバイ用XML">
+                  <span class="feed-icon">📄</span>
+                  <span class="feed-label">求人ボックス XML</span>
+                </button>
+                <button id="jm-btn-download-csv" class="btn-feed" title="CSV形式でエクスポート">
+                  <span class="feed-icon">📊</span>
+                  <span class="feed-label">CSV</span>
+                </button>
+              </div>
+              <div id="jm-feed-status" class="feed-status" style="display: none;">
+                <div class="loading-spinner-small"></div>
+                <span>フィードを生成中...</span>
+              </div>
+            </div>
+
+            <!-- 検索・絞り込み -->
+            <div class="job-filter-section">
+              <div class="job-filter-row">
+                <div class="job-filter-search">
+                  <input type="text" id="jm-job-search" placeholder="求人タイトルで検索..." class="filter-input">
+                </div>
+                <div class="job-filter-selects">
+                  <select id="jm-job-filter-status" class="filter-select">
+                    <option value="">全ステータス</option>
+                    <option value="published">公開中</option>
+                    <option value="draft">非公開</option>
+                    <option value="expired">掲載終了</option>
+                  </select>
+                  <select id="jm-job-filter-area" class="filter-select">
+                    <option value="">全エリア</option>
+                  </select>
+                </div>
+                <button id="jm-btn-clear-filters" class="btn-secondary btn-small">クリア</button>
+              </div>
+            </div>
+
+            <!-- 並び替えモード -->
+            <div id="jm-sort-mode-bar" class="sort-mode-bar" style="display: none;">
+              <div class="sort-mode-info">
+                <span class="sort-mode-icon">↕</span>
+                <span class="sort-mode-text">並び替えモード：ドラッグ&amp;ドロップで求人の表示順を変更できます</span>
+              </div>
+              <div class="sort-mode-actions">
+                <button id="jm-btn-save-sort" class="btn-primary btn-small">順序を保存</button>
+                <button id="jm-btn-cancel-sort" class="btn-secondary btn-small">キャンセル</button>
+              </div>
+            </div>
+
+            <!-- 求人カード一覧 -->
+            <div class="job-listings-count">
+              検索結果: <span id="jm-jobs-count">0</span>件
+            </div>
+            <div class="job-listings-cards" id="jm-jobs-list">
+              <div class="job-cards-loading">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- アクセス解析サブセクション -->
+          <div id="jm-analytics" class="jm-subsection">
+            <div class="analytics-header">
+              <h2>アクセス解析</h2>
+              <p class="section-description">求人ページへのアクセス状況を確認できます</p>
+            </div>
+            <div class="analytics-controls">
+              <div class="analytics-date-range">
+                <label>期間</label>
+                <div class="date-range-inputs">
+                  <input type="text" id="jm-analytics-start-date" class="date-input flatpickr-input" placeholder="開始日" readonly>
+                  <span class="date-separator">〜</span>
+                  <input type="text" id="jm-analytics-end-date" class="date-input flatpickr-input" placeholder="終了日" readonly>
+                </div>
+              </div>
+              <button id="jm-btn-load-analytics" class="btn-primary">データ取得</button>
+            </div>
+            <div class="analytics-summary">
+              <div class="analytics-card">
+                <div class="analytics-icon">👁️</div>
+                <div class="analytics-content">
+                  <span class="analytics-value" id="jm-analytics-pv">-</span>
+                  <span class="analytics-label">総PV数</span>
+                </div>
+              </div>
+              <div class="analytics-card">
+                <div class="analytics-icon">👤</div>
+                <div class="analytics-content">
+                  <span class="analytics-value" id="jm-analytics-users">-</span>
+                  <span class="analytics-label">ユニークユーザー</span>
+                </div>
+              </div>
+              <div class="analytics-card">
+                <div class="analytics-icon">📄</div>
+                <div class="analytics-content">
+                  <span class="analytics-value" id="jm-analytics-pages-per-session">-</span>
+                  <span class="analytics-label">平均閲覧求人数</span>
+                </div>
+              </div>
+              <div class="analytics-card">
+                <div class="analytics-icon">⏱️</div>
+                <div class="analytics-content">
+                  <span class="analytics-value" id="jm-analytics-avg-time">-</span>
+                  <span class="analytics-label">平均滞在時間</span>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-section">
+              <h3>求人別アクセス数</h3>
+              <div class="analytics-table-container">
+                <table class="analytics-table">
+                  <thead>
+                    <tr>
+                      <th>求人タイトル</th>
+                      <th>PV</th>
+                      <th>ユーザー</th>
+                      <th>直帰率</th>
+                      <th>平均滞在時間</th>
+                    </tr>
+                  </thead>
+                  <tbody id="jm-job-analytics-tbody">
+                    <tr><td colspan="5" class="loading-cell">「データ取得」ボタンをクリックしてください</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- レポートサブセクション -->
+          <div id="jm-reports" class="jm-subsection">
+            <div class="report-header">
+              <h2>応募レポート</h2>
+              <p class="section-description">期間を選択してレポートを生成・ダウンロードできます</p>
+            </div>
+            <div class="report-controls">
+              <div class="report-period-select">
+                <label for="jm-report-period">期間</label>
+                <select id="jm-report-period">
+                  <option value="week">今週</option>
+                  <option value="last-week">先週</option>
+                  <option value="month" selected>今月</option>
+                  <option value="last-month">先月</option>
+                  <option value="custom">カスタム</option>
+                </select>
+              </div>
+              <div id="jm-report-custom-dates" class="report-custom-dates" style="display: none;">
+                <div class="date-input">
+                  <label for="jm-report-from">開始日</label>
+                  <input type="date" id="jm-report-from">
+                </div>
+                <span class="date-separator">〜</span>
+                <div class="date-input">
+                  <label for="jm-report-to">終了日</label>
+                  <input type="date" id="jm-report-to">
+                </div>
+              </div>
+              <button id="jm-btn-generate-report" class="btn-primary">レポート生成</button>
+            </div>
+            <div id="jm-report-preview" class="report-preview">
+              <div id="jm-report-empty" class="report-empty">
+                <div class="empty-icon">📊</div>
+                <p>「レポート生成」ボタンをクリックしてレポートを作成してください</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 応募者管理サブセクション -->
+          <div id="jm-applicants" class="jm-subsection">
+            <div class="applicants-header">
+              <div class="header-actions">
+                <button id="jm-btn-export-csv" class="btn-secondary">📥 CSVエクスポート</button>
+                <button id="jm-btn-calendar-settings" class="btn-secondary">⚙️ カレンダー連携</button>
+                <button id="jm-btn-refresh-applicants" class="btn-refresh">更新</button>
+              </div>
+            </div>
+
+            <div class="applicants-content">
+              <!-- 左：応募者一覧 -->
+              <div class="applicants-list-panel">
+                <div class="stats-cards compact">
+                  <div class="stat-card">
+                    <div class="stat-value" id="jm-stat-total">0</div>
+                    <div class="stat-label">総応募</div>
+                  </div>
+                  <div class="stat-card stat-new">
+                    <div class="stat-value" id="jm-stat-new">0</div>
+                    <div class="stat-label">新規</div>
+                  </div>
+                  <div class="stat-card stat-progress">
+                    <div class="stat-value" id="jm-stat-progress">0</div>
+                    <div class="stat-label">対応中</div>
+                  </div>
+                  <div class="stat-card stat-complete">
+                    <div class="stat-value" id="jm-stat-complete">0</div>
+                    <div class="stat-label">完了</div>
+                  </div>
+                </div>
+
+                <div class="filter-section compact">
+                  <div class="filter-row">
+                    <select id="jm-filter-status" class="filter-select">
+                      <option value="">全ステータス</option>
+                      <option value="new">新規</option>
+                      <option value="contacted">連絡済み</option>
+                      <option value="interviewing">面接調整中</option>
+                      <option value="interviewed">面接済み</option>
+                      <option value="hired">採用</option>
+                      <option value="joined">入社</option>
+                      <option value="pending">保留</option>
+                      <option value="ng">NG</option>
+                      <option value="rejected">不採用</option>
+                      <option value="withdrawn">辞退</option>
+                    </select>
+                    <select id="jm-filter-type" class="filter-select">
+                      <option value="">全種別</option>
+                      <option value="apply">応募</option>
+                      <option value="line">LINE相談</option>
+                      <option value="consult">お問い合わせ</option>
+                    </select>
+                    <input type="text" id="jm-filter-search" class="filter-input" placeholder="検索...">
+                  </div>
+                </div>
+
+                <div class="applicants-list" id="jm-applicants-list">
+                  <div class="loading-message">データを読み込み中...</div>
+                </div>
+
+                <div class="pagination" id="jm-pagination"></div>
+              </div>
+
+              <!-- 右：詳細パネル -->
+              <div class="applicants-detail-panel" id="jm-detail-panel">
+                <div class="detail-empty-state" id="jm-detail-empty">
+                  <div class="empty-icon">👆</div>
+                  <p>左の一覧から応募者を選択してください</p>
+                </div>
+
+                <div class="detail-content" id="jm-detail-content" style="display: none;">
+                  <div class="detail-header">
+                    <div class="detail-header-info">
+                      <h2 id="jm-detail-name">-</h2>
+                      <p id="jm-detail-job-title" class="detail-job">-</p>
+                    </div>
+                    <button class="btn-close-detail" id="jm-btn-close-detail" title="閉じる">&times;</button>
+                  </div>
+
+                  <div class="detail-scroll-area">
+                    <div class="detail-card">
+                      <h3>基本情報</h3>
+                      <div class="detail-grid">
+                        <div class="detail-item">
+                          <label>電話番号</label>
+                          <span id="jm-detail-phone">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>メール</label>
+                          <span id="jm-detail-email">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>年齢</label>
+                          <span id="jm-detail-age">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>現住所</label>
+                          <span id="jm-detail-address">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>希望開始日</label>
+                          <span id="jm-detail-start-date">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>応募日時</label>
+                          <span id="jm-detail-datetime">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>種別</label>
+                          <span id="jm-detail-type">-</span>
+                        </div>
+                        <div class="detail-item">
+                          <label>流入元</label>
+                          <span id="jm-detail-source">-</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>ステータス</h3>
+                      <div class="status-buttons" id="jm-status-buttons">
+                        <button class="status-btn" data-status="new">新規</button>
+                        <button class="status-btn" data-status="contacted">連絡済み</button>
+                        <button class="status-btn" data-status="interviewing">面接調整</button>
+                        <button class="status-btn" data-status="interviewed">面接済み</button>
+                        <button class="status-btn status-success" data-status="hired">採用</button>
+                        <button class="status-btn status-joined" data-status="joined">入社</button>
+                        <button class="status-btn status-warning" data-status="pending">保留</button>
+                        <button class="status-btn status-ng" data-status="ng">NG</button>
+                        <button class="status-btn status-danger" data-status="rejected">不採用</button>
+                        <button class="status-btn status-muted" data-status="withdrawn">辞退</button>
+                      </div>
+                      <div class="assignee-row">
+                        <label>担当者</label>
+                        <select id="jm-detail-assignee">
+                          <option value="">未割当</option>
+                        </select>
+                        <button type="button" id="jm-btn-add-assignee" class="btn-icon" title="担当者を追加">+</button>
+                      </div>
+                    </div>
+
+                    <!-- 面談情報 -->
+                    <div class="detail-card">
+                      <h3>面談</h3>
+                      <div id="jm-interview-info" class="interview-info">
+                        <p class="no-data">面談は設定されていません</p>
+                      </div>
+                      <button type="button" id="jm-btn-schedule-interview" class="btn-primary btn-schedule">面談日を設定</button>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>メモ</h3>
+                      <textarea id="jm-detail-notes" rows="3" placeholder="メモを入力..."></textarea>
+                      <button id="jm-btn-save-notes" class="btn-save-small">保存</button>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>対応履歴</h3>
+                      <div id="jm-detail-history" class="history-list">
+                        <p class="no-data">対応履歴はありません</p>
+                      </div>
+                      <div class="add-history-row">
+                        <input type="text" id="jm-new-history-text" placeholder="対応内容を入力...">
+                        <button id="jm-btn-add-history" class="btn-add">追加</button>
+                      </div>
+                    </div>
+
+                    <div class="detail-card">
+                      <h3>メッセージ</h3>
+                      <div id="jm-messages-container" class="messages-container">
+                        <p class="no-data">メッセージはありません</p>
+                      </div>
+                      <div class="message-input-row">
+                        <select id="jm-message-template-select" class="template-select">
+                          <option value="">テンプレート選択...</option>
+                          <option value="first_contact">初回連絡</option>
+                          <option value="schedule_interview">面接日程調整</option>
+                          <option value="interview_reminder">面接リマインダー</option>
+                          <option value="document_request">書類提出依頼</option>
+                          <option value="result_pending">選考結果待ち</option>
+                          <option value="offer">内定通知</option>
+                          <option value="rejection">不採用通知</option>
+                        </select>
+                      </div>
+                      <div class="message-input-row">
+                        <textarea id="jm-new-message-text" rows="4" placeholder="メッセージを入力..."></textarea>
+                      </div>
+                      <div class="message-actions">
+                        <button id="jm-btn-send-message" class="btn-primary btn-send">送信</button>
+                      </div>
+                      <p class="message-hint">応募者がマイページで確認できます</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 担当者追加モーダル -->
+            <div class="modal-overlay" id="jm-assignee-modal" style="display: none;">
+              <div class="modal-content modal-small">
+                <div class="modal-header">
+                  <h3>担当者を追加</h3>
+                  <button class="modal-close" id="jm-assignee-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label for="jm-new-assignee-name">担当者名</label>
+                    <input type="text" id="jm-new-assignee-name" placeholder="例: 山田太郎">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn-secondary" id="jm-assignee-modal-cancel">キャンセル</button>
+                  <button class="btn-primary" id="jm-assignee-modal-save">追加</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- カレンダー連携設定モーダル -->
+            <div class="modal-overlay" id="jm-calendar-settings-modal" style="display: none;">
+              <div class="modal-content modal-medium">
+                <div class="modal-header">
+                  <h3>Googleカレンダー連携</h3>
+                  <button class="modal-close" id="jm-calendar-settings-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <p class="settings-description">担当者ごとにGoogleカレンダーを連携すると、空き時間から面談日を設定できます。</p>
+                  <div class="calendar-integrations-list" id="jm-calendar-integrations-list">
+                    <div class="loading-message">担当者情報を読み込み中...</div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn-secondary" id="jm-calendar-settings-close-btn">閉じる</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 面談設定モーダル -->
+            <div id="jm-interview-modal" class="modal-overlay" style="display: none;">
+              <div class="modal-content modal-large">
+                <div class="modal-header">
+                  <h3>面談日を設定</h3>
+                  <button class="modal-close" id="jm-interview-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <!-- 担当者選択 -->
+                  <div class="form-group">
+                    <label for="jm-interview-staff">担当者 <span class="required">*</span></label>
+                    <select id="jm-interview-staff" required>
+                      <option value="">担当者を選択...</option>
+                    </select>
+                    <p class="form-hint" id="jm-calendar-status-hint"></p>
+                  </div>
+
+                  <!-- 空き時間ピッカー -->
+                  <div class="form-group" id="jm-availability-section" style="display: none;">
+                    <label>空き時間から選択</label>
+                    <div class="week-navigation">
+                      <button type="button" id="jm-btn-prev-week" class="btn-icon">&lt;</button>
+                      <span id="jm-week-label">-</span>
+                      <button type="button" id="jm-btn-next-week" class="btn-icon">&gt;</button>
+                    </div>
+                    <div class="availability-grid" id="jm-availability-grid">
+                      <div class="loading-message">空き時間を取得中...</div>
+                    </div>
+                  </div>
+
+                  <!-- 選択された日時 -->
+                  <div class="form-group" id="jm-selected-slot-section" style="display: none;">
+                    <label>選択された日時</label>
+                    <div class="selected-slot" id="jm-selected-slot">-</div>
+                  </div>
+
+                  <!-- 手動入力（カレンダー未連携時） -->
+                  <div class="form-group" id="jm-manual-datetime-section">
+                    <label for="jm-interview-datetime">面談日時 <span class="required">*</span></label>
+                    <input type="datetime-local" id="jm-interview-datetime" required>
+                  </div>
+
+                  <!-- 面談時間 -->
+                  <div class="form-group">
+                    <label for="jm-interview-duration">面談時間</label>
+                    <select id="jm-interview-duration">
+                      <option value="30">30分</option>
+                      <option value="60" selected>60分</option>
+                      <option value="90">90分</option>
+                      <option value="120">120分</option>
+                    </select>
+                  </div>
+
+                  <!-- 面談形式 -->
+                  <div class="form-group">
+                    <label>面談形式</label>
+                    <div class="radio-group">
+                      <label><input type="radio" name="jm-meeting-type" value="in_person" checked> 対面</label>
+                      <label><input type="radio" name="jm-meeting-type" value="online"> オンライン</label>
+                      <label><input type="radio" name="jm-meeting-type" value="phone"> 電話</label>
+                    </div>
+                  </div>
+
+                  <!-- 場所/URL -->
+                  <div class="form-group">
+                    <label for="jm-interview-location">場所 / URL</label>
+                    <input type="text" id="jm-interview-location" placeholder="例: 本社会議室 / https://meet.google.com/...">
+                  </div>
+
+                  <!-- リマインダー -->
+                  <div class="form-group">
+                    <label>リマインダー</label>
+                    <div class="checkbox-group">
+                      <label><input type="checkbox" id="jm-send-reminder-1day" checked> 1日前 10:00 に送信</label>
+                      <label><input type="checkbox" id="jm-send-reminder-1hour" checked> 1時間前に送信</label>
+                    </div>
+                    <p class="form-hint">担当者と応募者の両方にメールを送信します</p>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn-secondary" id="jm-interview-modal-cancel">キャンセル</button>
+                  <button type="button" class="btn-primary" id="jm-interview-modal-save">面談を登録</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 採用ページ設定サブセクション -->
+          <div id="jm-recruit" class="jm-subsection">
+            <div class="section-header">
+              <h3>採用ページ設定</h3>
+            </div>
+            <div class="info-box">
+              <p>会社専用の採用ページの設定を行います。</p>
+            </div>
+            <div id="jm-recruit-settings-container">
+              <div class="loading-placeholder">
+                <div class="loading-spinner"></div>
+                <p>読み込み中...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 求人編集サブセクション -->
+          <div id="jm-job-edit" class="jm-subsection">
+            <div class="job-edit-header">
+              <button type="button" id="jm-job-edit-back-btn" class="btn-back">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                求人一覧に戻る
+              </button>
+              <div class="job-edit-info">
+                <h2 id="jm-job-edit-title">新規求人作成</h2>
+                <span id="jm-job-edit-badge" class="edit-mode-badge">新規</span>
+              </div>
+            </div>
+
+            <div class="edit-page-main">
+              <form id="jm-job-edit-form" class="edit-form">
+                <!-- 管理メモセクション -->
+                <section class="form-section memo-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 3H4.99c-1.11 0-1.98.9-1.98 2L3 19c0 1.1.88 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19v10z"/>
+                    </svg>
+                    管理メモ
+                  </h2>
+                  <div class="form-group full-width">
+                    <label for="jm-edit-job-memo">社内用メモ（求職者には表示されません）</label>
+                    <textarea id="jm-edit-job-memo" rows="3" placeholder="例: 担当者との連絡事項、採用進捗など"></textarea>
+                  </div>
+                </section>
+
+                <!-- 基本情報セクション -->
+                <section class="form-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                    </svg>
+                    基本情報
+                  </h2>
+                  <div class="form-grid">
+                    <div class="form-group full-width">
+                      <label for="jm-edit-job-title">募集タイトル <span class="required">*</span></label>
+                      <input type="text" id="jm-edit-job-title" required placeholder="例: 製造スタッフ募集！月収32万円以上">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-location">勤務地 <span class="required">*</span></label>
+                      <input type="text" id="jm-edit-job-location" required placeholder="例: 愛知県豊田市">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-access">アクセス</label>
+                      <input type="text" id="jm-edit-job-access" placeholder="例: 名鉄三河線「土橋駅」より徒歩10分">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-type">職種</label>
+                      <select id="jm-edit-job-type">
+                        <option value="">選択してください</option>
+                        <option value="事務・管理・企画">事務・管理・企画</option>
+                        <option value="営業・販売・サービス">営業・販売・サービス</option>
+                        <option value="IT・クリエイティブ">IT・クリエイティブ</option>
+                        <option value="製造・エンジニアリング">製造・エンジニアリング</option>
+                        <option value="医療・福祉・教育">医療・福祉・教育</option>
+                        <option value="物流・運輸">物流・運輸</option>
+                        <option value="その他">その他</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 給与・条件セクション -->
+                <section class="form-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                    </svg>
+                    給与・条件
+                  </h2>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label for="jm-edit-job-salary-type">給与形態</label>
+                      <select id="jm-edit-job-salary-type">
+                        <option value="">選択してください</option>
+                        <option value="時給">時給</option>
+                        <option value="日給">日給</option>
+                        <option value="月給">月給</option>
+                        <option value="その他">その他</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-salary">給与額（円）</label>
+                      <input type="number" id="jm-edit-job-salary" placeholder="例: 320000">
+                    </div>
+                    <div class="form-group full-width" id="jm-salary-other-group" style="display: none;">
+                      <label for="jm-edit-job-salary-other">給与詳細（その他の場合）</label>
+                      <input type="text" id="jm-edit-job-salary-other" placeholder="例: 出来高制 1件あたり5,000円〜">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-bonus">賞与合計（円）</label>
+                      <input type="number" id="jm-edit-job-bonus" placeholder="例: 500000">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-holidays">休日</label>
+                      <input type="text" id="jm-edit-job-holidays" placeholder="例: 土日祝, GW, 年末年始">
+                    </div>
+                    <div class="form-group full-width">
+                      <label>勤務時間</label>
+                      <span class="form-description">シフト制の場合は複数追加できます</span>
+                      <div id="jm-working-hours-list" class="multi-input-list">
+                        <div class="multi-input-item">
+                          <input type="text" class="jm-working-hours-input" placeholder="例: 8:00〜17:00">
+                          <button type="button" class="btn-remove-item" title="削除">×</button>
+                        </div>
+                      </div>
+                      <button type="button" id="jm-btn-add-working-hours" class="btn-add-item">+ 勤務時間を追加</button>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- タグ・特徴セクション -->
+                <section class="form-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+                    </svg>
+                    求人の特徴
+                  </h2>
+                  <div class="form-group full-width">
+                    <span class="form-description">該当するものをすべて選択してください</span>
+                    <div id="jm-features-checkbox-grid" class="features-checkbox-grid">
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="未経験歓迎"><span>未経験歓迎</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="経験者優遇"><span>経験者優遇</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="学歴不問"><span>学歴不問</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="年齢不問"><span>年齢不問</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="シニア歓迎"><span>シニア歓迎</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="外国人歓迎"><span>外国人歓迎</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="寮完備"><span>寮完備</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="社宅あり"><span>社宅あり</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="交通費支給"><span>交通費支給</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="車通勤OK"><span>車通勤OK</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="駅チカ"><span>駅チカ</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="社会保険完備"><span>社会保険完備</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="賞与あり"><span>賞与あり</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="昇給あり"><span>昇給あり</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="残業少なめ"><span>残業少なめ</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="土日休み"><span>土日休み</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="シフト制"><span>シフト制</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="即日勤務OK"><span>即日勤務OK</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="日払いOK"><span>日払いOK</span></label>
+                      <label class="feature-checkbox"><input type="checkbox" name="jm-job-features" value="週払いOK"><span>週払いOK</span></label>
+                    </div>
+                    <input type="hidden" id="jm-edit-job-features">
+                  </div>
+
+                  <!-- 表示する特徴 -->
+                  <div class="form-group full-width displayed-features-group">
+                    <label>表示する特徴 <span class="form-hint">※最大3つまで</span></label>
+                    <span class="form-description">求人一覧やLPに目立つ形で表示される特徴を選択してください</span>
+                    <div id="jm-displayed-features-container" class="displayed-features-container">
+                      <div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>
+                    </div>
+                    <input type="hidden" id="jm-edit-job-displayed-features">
+                  </div>
+                </section>
+
+                <!-- 詳細情報セクション -->
+                <section class="form-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                    </svg>
+                    詳細情報
+                  </h2>
+                  <div class="form-grid">
+                    <div class="form-group full-width">
+                      <label for="jm-edit-job-description">仕事内容</label>
+                      <textarea id="jm-edit-job-description" rows="5" placeholder="仕事内容の詳細を入力..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                      <label for="jm-edit-job-requirements">応募資格</label>
+                      <textarea id="jm-edit-job-requirements" rows="3" placeholder="応募資格を入力..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                      <label for="jm-edit-job-benefits">福利厚生</label>
+                      <textarea id="jm-edit-job-benefits" rows="3" placeholder="福利厚生を入力..."></textarea>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 動画設定セクション -->
+                <section class="form-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
+                    </svg>
+                    動画設定
+                  </h2>
+                  <div class="form-notice warning">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>動画を設定すると、求人カード・LP両方に動画ボタンが表示されます。LP設定画面でも同じ設定が反映されます。</span>
+                  </div>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="jm-edit-job-show-video">
+                        <span>動画ボタンを表示</span>
+                      </label>
+                    </div>
+                    <div class="form-group full-width" id="jm-video-url-group" style="display: none;">
+                      <label for="jm-edit-job-video-url">動画URL（YouTube）</label>
+                      <input type="url" id="jm-edit-job-video-url" placeholder="https://www.youtube.com/watch?v=xxxxx">
+                      <span class="form-description">YouTube動画のURLを入力してください</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- 掲載設定セクション -->
+                <section class="form-section">
+                  <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                    </svg>
+                    掲載設定
+                  </h2>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label for="jm-edit-job-start-date">掲載開始日</label>
+                      <input type="date" id="jm-edit-job-start-date">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-end-date">掲載終了日</label>
+                      <input type="date" id="jm-edit-job-end-date">
+                    </div>
+                    <div class="form-group">
+                      <label for="jm-edit-job-order">表示順</label>
+                      <span class="form-description">数字が小さいほど上に表示</span>
+                      <input type="number" id="jm-edit-job-order" placeholder="1" min="1">
+                    </div>
+                    <div class="form-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="jm-edit-job-visible" checked>
+                        <span>公開する</span>
+                      </label>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- アクションボタン -->
+                <div class="form-actions">
+                  <button type="button" class="btn btn-danger" id="jm-job-edit-delete-btn" style="display: none;">削除</button>
+                  <button type="button" class="btn btn-secondary" id="jm-job-edit-cancel-btn">キャンセル</button>
+                  <button type="submit" class="btn btn-primary" id="jm-job-edit-save-btn">保存</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>

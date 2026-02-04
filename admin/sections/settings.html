@@ -1,0 +1,91 @@
+      <section id="section-settings" class="admin-section">
+        <div class="settings-card">
+          <h3>スプレッドシート連携</h3>
+          <div class="form-group">
+            <label>スプレッドシートID</label>
+            <code class="config-value">1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0</code>
+          </div>
+          <div class="form-group">
+            <label>GAS Web App URL</label>
+            <code class="config-value" style="font-size: 0.75rem; word-break: break-all;">https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec</code>
+          </div>
+          <a href="https://docs.google.com/spreadsheets/d/1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0/edit" target="_blank" class="btn-link">スプレッドシートを開く</a>
+        </div>
+
+        <div class="settings-card">
+          <h3>API設定</h3>
+          <div class="form-group">
+            <label>Cloud Functions エンドポイント</label>
+            <code class="config-value" style="font-size: 0.75rem; word-break: break-all;">https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData</code>
+          </div>
+          <div class="form-group">
+            <label>GA4 プロパティID</label>
+            <code class="config-value">G-E1XC94EG05</code>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>管理者アカウント</h3>
+          <div class="form-group">
+            <label>新しいパスワード</label>
+            <input type="password" id="new-password" placeholder="新しいパスワード">
+          </div>
+          <div class="form-group">
+            <label>パスワード確認</label>
+            <input type="password" id="confirm-password" placeholder="パスワードを再入力">
+          </div>
+          <button class="btn-save" id="save-password">パスワード変更</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>求人フィード出力</h3>
+          <span class="form-description">Indeed、Google しごと検索、求人ボックスなどに求人を掲載するためのフィードを生成します。</span>
+
+          <div class="feed-buttons">
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>Indeed XML フィード</strong>
+                <span class="form-description">Indeedに求人を掲載するためのXMLフィード</span>
+              </div>
+              <button id="btn-download-indeed" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>Google しごと検索 JSON-LD</strong>
+                <span class="form-description">Google検索に求人を表示するための構造化データ</span>
+              </div>
+              <button id="btn-download-google" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>求人ボックス/スタンバイ XML</strong>
+                <span class="form-description">求人ボックス・スタンバイ用のXMLフィード</span>
+              </div>
+              <button id="btn-download-jobbox" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+
+            <div class="feed-item">
+              <div class="feed-info">
+                <strong>CSV エクスポート</strong>
+                <span class="form-description">Excelやスプレッドシートで編集可能なCSV形式</span>
+              </div>
+              <button id="btn-download-csv" class="btn-secondary">
+                <span class="btn-icon">📥</span> ダウンロード
+              </button>
+            </div>
+          </div>
+
+          <div id="feed-status" class="feed-status" style="display: none;">
+            <div class="loading-spinner-small"></div>
+            <span>フィードを生成中...</span>
+          </div>
+        </div>
+      </section>
