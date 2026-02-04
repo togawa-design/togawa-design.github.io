@@ -1724,7 +1724,9 @@ async function saveJmInterview() {
 
   try {
     const durationMinutes = parseInt(document.getElementById('jm-interview-duration').value);
-    const meetingType = document.querySelector('input[name="jm-meeting-type"]:checked')?.value || 'in_person';
+    const checkedRadio = document.querySelector('input[name="jm-meeting-type"]:checked');
+    console.log('[saveJmInterview] checkedRadio:', checkedRadio, 'value:', checkedRadio?.value);
+    const meetingType = checkedRadio?.value || 'in_person';
     const location = document.getElementById('jm-interview-location').value;
 
     console.log('[saveJmInterview] meetingType:', meetingType);
