@@ -1768,13 +1768,19 @@ async function saveJmInterview() {
     }
 
     // カレンダーイベントを作成
+    // 応募者データのフィールド名を正しく取得
+    const applicantName = jmCurrentApplicant?.applicantName || jmCurrentApplicant?.applicant?.name || '';
+    const applicantEmail = jmCurrentApplicant?.email || jmCurrentApplicant?.applicant?.email || '';
+    const jobTitle = jmCurrentApplicant?.jobTitle || '';
+
     const apiParams = {
       companyDomain,
       companyUserId: staffSelect.value,
       applicationId: jmCurrentApplicant?.id || '',
-      applicantName: jmCurrentApplicant?.name || '',
-      applicantEmail: jmCurrentApplicant?.email || '',
+      applicantName,
+      applicantEmail,
       staffName,
+      jobTitle,
       scheduledAt: scheduledAt.toISOString(),
       durationMinutes,
       meetingType,
