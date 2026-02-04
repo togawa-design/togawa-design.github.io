@@ -20,6 +20,7 @@ import { initRecruitSettings } from '@features/job-manage/recruit-settings.js';
 import * as CalendarService from '@features/calendar/calendar-service.js';
 import { config } from '@features/job-manage/auth.js';
 import { showToast, escapeHtml } from '@shared/utils.js';
+import { showConfirmDialog } from '@shared/modal.js';
 import { generateIndeedXml, generateGoogleJobsJsonLd, generateJobBoxXml, generateCsv, downloadFile } from '@features/admin/job-feed-generator.js';
 
 // 求人編集共通ユーティリティ
@@ -33,7 +34,6 @@ import {
   getJobStatus,
   getStatusLabel,
   getStatusClass,
-  formatDateForDisplay,
   populateForm,
   clearForm
 } from '@shared/job-service.js';
@@ -169,6 +169,9 @@ async function loadJobsData() {
     // 求人リストを描画
     renderJobsTable();
 
+    // 採用ページ設定を読み込み、並び替えボタンの表示を制御
+    updateSortButtonVisibility();
+
     // 正常完了時にAbortControllerをクリア
     clearAbortController();
 
@@ -227,6 +230,13 @@ function renderJobsTable() {
     return true;
   });
 
+  // orderでソート（昇順、未設定は末尾）
+  filteredJobs.sort((a, b) => {
+    const orderA = parseInt(a.order) || 999;
+    const orderB = parseInt(b.order) || 999;
+    return orderA - orderB;
+  });
+
   if (jobsCount) {
     jobsCount.textContent = filteredJobs.length.toString();
   }
@@ -243,38 +253,46 @@ function renderJobsTable() {
 }
 
 /**
- * 求人カードを描画
+ * 求人カードを描画（カード形式）
  */
 function renderJobCard(job) {
   const status = getJobStatus(job);
   const statusLabel = getStatusLabel(status);
   const statusClass = getStatusClass(status);
 
+  const orderNum = parseInt(job.order) || 999;
+  const imageUrl = job.imageUrl || '';
+
   return `
-    <div class="job-card-row" data-job-id="${escapeHtml(job.id || '')}">
-      <div class="job-col-image">
-        ${job.imageUrl
-          ? `<img src="${escapeHtml(job.imageUrl)}" alt="" class="job-thumbnail" onerror="this.style.display='none'">`
-          : '<span class="no-image">📄</span>'
+    <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-order="${orderNum}" draggable="false">
+      <span class="job-card-drag-handle" title="ドラッグして並び替え">☰</span>
+      <span class="job-order-badge">${orderNum < 999 ? orderNum : '-'}</span>
+      <div class="job-card-image">
+        ${imageUrl
+          ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(job.title || '')}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">`
+          : '<span class="no-image-icon">📄</span>'
         }
       </div>
-      <div class="job-col-info">
-        <div class="job-title">${escapeHtml(job.title || '無題')}</div>
-        <div class="job-tags">
-          ${(job.badges || '').split(',').filter(Boolean).map(b => `<span class="job-tag">${escapeHtml(b.trim())}</span>`).join('')}
+      <div class="job-card-content">
+        <div class="job-card-header">
+          <h5 class="job-card-title">${escapeHtml(job.title || '求人タイトル未設定')}</h5>
+          <span class="job-card-status ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="job-card-meta">
+          ${job.location || job.area ? `<span class="job-meta-item"><span class="meta-icon">📍</span>${escapeHtml(job.area || job.location)}</span>` : ''}
+          ${job.monthlySalary ? `<span class="job-meta-item"><span class="meta-icon">💰</span>${escapeHtml(job.monthlySalary)}</span>` : ''}
+          ${job.jobType ? `<span class="job-meta-item"><span class="meta-icon">💼</span>${escapeHtml(job.jobType)}</span>` : ''}
+        </div>
+        <div class="job-card-stats">
+          <span class="stat-item" title="応募数">📝 ${job.applicationCount || 0}</span>
+          <span class="stat-item" title="閲覧数">👁 ${job.viewCount || 0}</span>
         </div>
       </div>
-      <div class="job-col-type">${escapeHtml(job.jobType || '-')}</div>
-      <div class="job-col-area">${escapeHtml(job.area || job.location || '-')}</div>
-      <div class="job-col-deadline">${job.deadline ? formatDateForDisplay(job.deadline) : '-'}</div>
-      <div class="job-col-stats">${job.applicationCount || 0}</div>
-      <div class="job-col-stats">${job.viewCount || 0}</div>
-      <div class="job-col-status"><span class="status-badge ${statusClass}">${statusLabel}</span></div>
-      <div class="job-col-actions">
-        <button class="btn-icon btn-edit-job" title="編集">
+      <div class="job-card-actions">
+        <button class="btn-job-action btn-edit-job" title="編集">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
         </button>
-        <button class="btn-icon btn-preview-job" title="プレビュー">
+        <button class="btn-job-action btn-preview-job" title="プレビュー">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         </button>
       </div>
@@ -291,8 +309,8 @@ function setupJobCardEvents() {
   document.querySelectorAll('#jm-jobs-list .btn-edit-job').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const row = btn.closest('.job-card-row');
-      const jobId = row?.dataset.jobId;
+      const card = btn.closest('.job-listing-card');
+      const jobId = card?.dataset.jobId;
       if (jobId) {
         editJob(jobId);
       }
@@ -303,18 +321,22 @@ function setupJobCardEvents() {
   document.querySelectorAll('#jm-jobs-list .btn-preview-job').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const row = btn.closest('.job-card-row');
-      const jobId = row?.dataset.jobId;
+      const card = btn.closest('.job-listing-card');
+      const jobId = card?.dataset.jobId;
       if (jobId) {
         window.open(`lp.html?j=${companyDomain}_${jobId}`, '_blank');
       }
     });
   });
 
-  // 行クリック
-  document.querySelectorAll('#jm-jobs-list .job-card-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const jobId = row.dataset.jobId;
+  // カードクリック
+  document.querySelectorAll('#jm-jobs-list .job-listing-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      // ボタン類のクリックは除外
+      if (e.target.closest('.btn-job-action')) {
+        return;
+      }
+      const jobId = card.dataset.jobId;
       if (jobId) {
         editJob(jobId);
       }
@@ -838,9 +860,14 @@ async function deleteJob() {
     return;
   }
 
-  if (!confirm('この求人を削除してもよろしいですか？')) {
-    return;
-  }
+  const confirmed = await showConfirmDialog({
+    title: '求人の削除',
+    message: 'この求人を削除してもよろしいですか？',
+    confirmText: '削除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
+  if (!confirmed) return;
 
   const gasApiUrl = config.gasApiUrl;
   if (!gasApiUrl) {
@@ -1044,6 +1071,9 @@ function setupEventListeners() {
   // 週ナビゲーション
   document.getElementById('jm-btn-prev-week')?.addEventListener('click', () => navigateJmWeek(-1));
   document.getElementById('jm-btn-next-week')?.addEventListener('click', () => navigateJmWeek(1));
+
+  // 並び替えモード
+  setupSortModeEvents();
 }
 
 /**
@@ -1416,7 +1446,14 @@ async function connectJmCalendar(userId, userName) {
  * カレンダー連携を解除
  */
 async function disconnectJmCalendar(userId) {
-  if (!confirm('カレンダー連携を解除しますか？')) return;
+  const confirmed = await showConfirmDialog({
+    title: 'カレンダー連携の解除',
+    message: 'カレンダー連携を解除しますか？',
+    confirmText: '解除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
+  if (!confirmed) return;
 
   try {
     await CalendarService.revokeCalendarAuth(companyDomain, userId);
@@ -1865,6 +1902,262 @@ function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location, me
       </div>
     </div>
   `;
+}
+
+// ========================================
+// 並び替えモード機能
+// ========================================
+
+/**
+ * 並び替えボタンの表示を更新
+ * 会社が選択されている場合のみ表示
+ */
+function updateSortButtonVisibility() {
+  const sortModeBtn = document.getElementById('jm-btn-sort-mode');
+  if (!sortModeBtn) return;
+
+  // 会社が選択されている場合のみボタンを表示
+  if (companyDomain) {
+    sortModeBtn.style.display = '';
+  } else {
+    sortModeBtn.style.display = 'none';
+  }
+}
+
+let isSortMode = false;
+let originalOrder = []; // 元の順序を保存
+
+/**
+ * 並び替えモードを開始
+ */
+function enterSortMode() {
+  isSortMode = true;
+
+  const sortModeBar = document.getElementById('jm-sort-mode-bar');
+  const jobsList = document.getElementById('jm-jobs-list');
+  const sortModeBtn = document.getElementById('jm-btn-sort-mode');
+
+  if (sortModeBar) sortModeBar.style.display = 'flex';
+  if (jobsList) jobsList.classList.add('sort-mode');
+  if (sortModeBtn) sortModeBtn.style.display = 'none';
+
+  // 元の順序を保存
+  originalOrder = Array.from(jobsList.querySelectorAll('.job-listing-card'))
+    .map(row => row.dataset.jobId);
+
+  // ドラッグ可能にする
+  jobsList.querySelectorAll('.job-listing-card').forEach(row => {
+    row.setAttribute('draggable', 'true');
+  });
+
+  setupDragDropEvents();
+}
+
+/**
+ * 並び替えモードを終了
+ */
+function exitSortMode(revert = false) {
+  isSortMode = false;
+
+  const sortModeBar = document.getElementById('jm-sort-mode-bar');
+  const jobsList = document.getElementById('jm-jobs-list');
+
+  if (sortModeBar) sortModeBar.style.display = 'none';
+  if (jobsList) jobsList.classList.remove('sort-mode');
+  // ボタンの表示は updateSortButtonVisibility で制御
+  updateSortButtonVisibility();
+
+  // ドラッグを無効化
+  jobsList?.querySelectorAll('.job-listing-card').forEach(row => {
+    row.setAttribute('draggable', 'false');
+  });
+
+  // 元に戻す場合
+  if (revert && originalOrder.length > 0) {
+    const rows = Array.from(jobsList.querySelectorAll('.job-listing-card'));
+    originalOrder.forEach(jobId => {
+      const row = rows.find(r => r.dataset.jobId === jobId);
+      if (row) jobsList.appendChild(row);
+    });
+  }
+
+  originalOrder = [];
+}
+
+/**
+ * ドラッグ&ドロップイベントを設定
+ */
+function setupDragDropEvents() {
+  const jobsList = document.getElementById('jm-jobs-list');
+  if (!jobsList) return;
+
+  let draggedItem = null;
+
+  jobsList.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.job-listing-card');
+    if (!row || !isSortMode) return;
+
+    draggedItem = row;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.jobId);
+  });
+
+  jobsList.addEventListener('dragend', (e) => {
+    const row = e.target.closest('.job-listing-card');
+    if (row) row.classList.remove('dragging');
+    jobsList.querySelectorAll('.job-listing-card').forEach(r => r.classList.remove('drag-over'));
+    draggedItem = null;
+    updateOrderBadges();
+  });
+
+  jobsList.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!isSortMode || !draggedItem) return;
+
+    const row = e.target.closest('.job-listing-card');
+    if (!row || row === draggedItem) return;
+
+    // 挿入位置を決定
+    const rect = row.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+
+    jobsList.querySelectorAll('.job-listing-card').forEach(r => r.classList.remove('drag-over'));
+
+    if (e.clientY < midY) {
+      row.classList.add('drag-over');
+      jobsList.insertBefore(draggedItem, row);
+    } else {
+      row.classList.add('drag-over');
+      jobsList.insertBefore(draggedItem, row.nextSibling);
+    }
+  });
+
+  jobsList.addEventListener('drop', (e) => {
+    e.preventDefault();
+    jobsList.querySelectorAll('.job-listing-card').forEach(r => r.classList.remove('drag-over'));
+  });
+}
+
+/**
+ * 順序番号バッジを更新
+ */
+function updateOrderBadges() {
+  const jobsList = document.getElementById('jm-jobs-list');
+  if (!jobsList) return;
+
+  jobsList.querySelectorAll('.job-listing-card').forEach((row, index) => {
+    const badge = row.querySelector('.job-order-badge');
+    if (badge) {
+      badge.textContent = index + 1;
+    }
+  });
+}
+
+/**
+ * 並び替え順序を保存
+ */
+async function saveSortOrder() {
+  const jobsList = document.getElementById('jm-jobs-list');
+  if (!jobsList) return;
+
+  const saveBtn = document.getElementById('jm-btn-save-sort');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
+  }
+
+  try {
+    const rows = jobsList.querySelectorAll('.job-listing-card');
+    const updates = [];
+
+    rows.forEach((row, index) => {
+      const jobId = row.dataset.jobId;
+      const newOrder = index + 1;
+
+      // jobsCacheから該当の求人を見つけて更新
+      const job = jobsCache.find(j => String(j.id) === String(jobId));
+      if (job) {
+        job.order = newOrder;
+        updates.push({ jobId, order: newOrder });
+      }
+    });
+
+    // 各求人のorderを更新（GASに保存）
+    for (const update of updates) {
+      await saveJobOrder(update.jobId, update.order);
+    }
+
+    showToast('並び順を保存しました');
+    exitSortMode();
+
+  } catch (error) {
+    console.error('Failed to save sort order:', error);
+    showToast('並び順の保存に失敗しました', 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '順序を保存';
+    }
+  }
+}
+
+/**
+ * 求人のorderを保存
+ */
+async function saveJobOrder(jobId, order) {
+  const job = jobsCache.find(j => String(j.id) === String(jobId));
+  if (!job) return;
+
+  // 既存のjobDataを取得して、orderのみ更新
+  const jobData = { ...job, order: String(order) };
+  const rowIndex = job._rowIndex;
+  // _rowIndexはGAS側で不要なので除外
+  delete jobData._rowIndex;
+
+  // GASのスプレッドシートAPIを使用して保存（CORS対応: GETリクエスト + Base64エンコード）
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+    action: 'saveJob',
+    companyDomain: companyDomain,
+    job: jobData,
+    rowIndex: rowIndex
+  }))));
+
+  const url = `${config.gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+  const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+  const responseText = await response.text();
+
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    throw new Error('Invalid response from server');
+  }
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to save job order');
+  }
+}
+
+/**
+ * 並び替えモードのイベントリスナーを設定
+ */
+function setupSortModeEvents() {
+  const sortModeBtn = document.getElementById('jm-btn-sort-mode');
+  const saveSortBtn = document.getElementById('jm-btn-save-sort');
+  const cancelSortBtn = document.getElementById('jm-btn-cancel-sort');
+
+  if (sortModeBtn) {
+    sortModeBtn.addEventListener('click', enterSortMode);
+  }
+
+  if (saveSortBtn) {
+    saveSortBtn.addEventListener('click', saveSortOrder);
+  }
+
+  if (cancelSortBtn) {
+    cancelSortBtn.addEventListener('click', () => exitSortMode(true));
+  }
 }
 
 export default {

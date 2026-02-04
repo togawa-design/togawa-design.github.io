@@ -378,6 +378,15 @@
   background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
 }
 
+/* カードボディ（L-SET形式） */
+.recruit-job-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 後方互換性のため残す */
 .recruit-job-card-content {
   padding: 1.25rem;
   display: flex;
@@ -396,7 +405,7 @@
 .recruit-job-card-location {
   font-size: 0.875rem;
   color: var(--recruit-text-light);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .recruit-job-card-access {
@@ -409,6 +418,52 @@
   content: '🚃 ';
 }
 
+/* 給与・特典セクション（L-SET形式） */
+.recruit-job-card-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.recruit-benefit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recruit-benefit-item.highlight {
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 6px;
+  margin: -0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.recruit-benefit-label {
+  font-size: 0.75rem;
+  color: var(--recruit-text-light);
+  font-weight: 500;
+}
+
+.recruit-benefit-item.highlight .recruit-benefit-label {
+  color: #92400e;
+}
+
+.recruit-benefit-value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--recruit-text);
+}
+
+.recruit-benefit-item.highlight .recruit-benefit-value {
+  color: #92400e;
+}
+
+/* 後方互換性のため残す */
 .recruit-job-card-highlights {
   display: flex;
   flex-wrap: wrap;
@@ -443,19 +498,147 @@
 
 .recruit-feature-tag {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
+  padding: 0.25rem 0.625rem;
   background: var(--recruit-bg);
   color: var(--recruit-text-light);
   font-size: 0.75rem;
   border-radius: 4px;
+  border: 1px solid #e5e7eb;
 }
 
+/* 詳細ボタン（L-SET形式） */
+.recruit-job-card-btn {
+  display: block;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  background: var(--recruit-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-top: auto;
+  transition: background 0.2s;
+}
+
+.recruit-job-card-btn:hover {
+  background: var(--recruit-primary-dark);
+}
+
+/* 後方互換性のため残す */
 .recruit-job-card-link {
   display: inline-block;
   color: var(--recruit-primary);
   font-weight: 600;
   font-size: 0.875rem;
   margin-top: auto;
+}
+
+/* ========================================
+   ページネーション
+   ======================================== */
+.recruit-pagination {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--recruit-border);
+}
+
+.recruit-pagination-info {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--recruit-text-light);
+  margin-bottom: 1rem;
+}
+
+.recruit-pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recruit-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--recruit-primary);
+  background: var(--recruit-white);
+  border: 1px solid var(--recruit-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recruit-pagination-btn:hover:not(:disabled) {
+  background: var(--recruit-primary);
+  color: #fff;
+}
+
+.recruit-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.recruit-pagination-pages {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.recruit-pagination-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--recruit-text);
+  background: var(--recruit-white);
+  border: 1px solid var(--recruit-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recruit-pagination-page:hover {
+  border-color: var(--recruit-primary);
+  color: var(--recruit-primary);
+}
+
+.recruit-pagination-page.active {
+  background: var(--recruit-primary);
+  border-color: var(--recruit-primary);
+  color: #fff;
+}
+
+.recruit-pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  color: var(--recruit-text-light);
+}
+
+/* モバイル時のページネーション */
+@media (max-width: 640px) {
+  .recruit-pagination-controls {
+    flex-wrap: wrap;
+  }
+
+  .recruit-pagination-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .recruit-pagination-page {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8125rem;
+  }
 }
 
 /* ========================================
@@ -492,6 +675,245 @@
 .recruit-cta-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
+   カスタムセクション
+   ======================================== */
+.recruit-custom-section {
+  padding: 2rem 1.5rem;
+}
+
+.recruit-custom-heading {
+  background: var(--recruit-bg);
+}
+
+.recruit-custom-text {
+  background: var(--recruit-white);
+}
+
+.recruit-custom-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--recruit-text);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.recruit-custom-image {
+  background: var(--recruit-bg);
+  padding: 1rem 1.5rem;
+}
+
+.recruit-custom-image-content {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: var(--recruit-radius);
+}
+
+/* MESSAGE セクション */
+.recruit-custom-message {
+  background: var(--recruit-white);
+}
+
+.recruit-message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .recruit-message-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+}
+
+.recruit-message-image {
+  flex-shrink: 0;
+}
+
+.recruit-message-image img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: var(--recruit-radius);
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .recruit-message-image img {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+.recruit-message-text {
+  flex: 1;
+}
+
+.recruit-message-headline {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--recruit-primary);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.recruit-message-description {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--recruit-text);
+}
+
+/* ABOUT セクション */
+.recruit-custom-about {
+  background: var(--recruit-bg);
+}
+
+.recruit-about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .recruit-about-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+}
+
+.recruit-about-image {
+  flex-shrink: 0;
+}
+
+.recruit-about-image img {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  border-radius: var(--recruit-radius);
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+}
+
+.recruit-about-description {
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--recruit-text);
+}
+
+/* BUSINESS セクション */
+.recruit-custom-business {
+  background: var(--recruit-white);
+}
+
+.recruit-business-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .recruit-business-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.recruit-business-item {
+  background: var(--recruit-bg);
+  padding: 1.5rem;
+  border-radius: var(--recruit-radius);
+  text-align: center;
+}
+
+.recruit-business-item-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--recruit-primary);
+  margin: 0 0 0.75rem;
+}
+
+.recruit-business-item-description {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--recruit-text);
+  margin: 0;
+}
+
+/* PHOTOS セクション */
+.recruit-custom-photos {
+  background: var(--recruit-bg);
+}
+
+/* モバイル: 横スワイプカルーセル */
+.recruit-photos-grid {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  padding-bottom: 0.5rem;
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.recruit-photos-grid::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+.recruit-photos-item {
+  flex: 0 0 80%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--recruit-radius);
+  scroll-snap-align: center;
+}
+
+.recruit-photos-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.recruit-photos-item:hover img {
+  transform: scale(1.05);
+}
+
+/* PC: グリッド表示 */
+@media (min-width: 640px) {
+  .recruit-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 0;
+  }
+
+  .recruit-photos-item {
+    flex: none;
+    scroll-snap-align: none;
+  }
 }
 
 /* ========================================
@@ -595,8 +1017,33 @@
     font-size: 1.5rem;
   }
 
+  /* 求人一覧（モバイル：横スクロール） */
   .recruit-jobs-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    gap: 0.75rem;
+    max-width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .recruit-jobs-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .recruit-job-card {
+    flex: 0 0 85%;
+    scroll-snap-align: center;
+    min-width: 280px;
+  }
+
+  /* ページネーション（モバイル：非表示） */
+  .recruit-pagination {
+    display: none;
   }
 
   /* 職種タブ（モバイル） */
@@ -722,6 +1169,62 @@
   opacity: 0.6;
   font-size: 0.85rem;
   margin: 0;
+}
+
+/* SNSアイコン */
+.site-footer-sns {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.footer-sns-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.footer-sns-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.footer-sns-twitter:hover { background: #1da1f2; }
+.footer-sns-instagram:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.footer-sns-facebook:hover { background: #1877f2; }
+.footer-sns-youtube:hover { background: #ff0000; }
+.footer-sns-line:hover { background: #00c300; }
+.footer-sns-tiktok:hover { background: #000; }
+
+/* カスタムリンク */
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 2rem;
+  margin: 1rem 0;
+}
+
+.footer-custom-link {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.footer-custom-link:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .has-fixed-cta-bar .site-footer {
@@ -1239,6 +1742,34 @@
   background: #e5e7eb;
 }
 
+/* プレビューモード切り替えボタン */
+.preview-mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  padding: 2px;
+  margin-right: 4px;
+}
+
+.btn-preview-mode {
+  width: 36px !important;
+  height: 28px !important;
+  font-size: 1rem;
+  background: transparent !important;
+  border-radius: 4px !important;
+  transition: all 0.2s;
+}
+
+.btn-preview-mode:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.btn-preview-mode.active {
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 /* タブナビゲーション */
 .recruit-editor-tabs {
   display: flex;
@@ -1310,6 +1841,14 @@
   font-weight: 500;
   color: #6b7280;
   margin-bottom: 0.375rem;
+}
+
+/* toggle-switchはflexレイアウトを維持 */
+.recruit-editor-panel .form-group label.toggle-switch {
+  display: flex;
+  font-size: inherit;
+  color: inherit;
+  margin-bottom: 0;
 }
 
 .recruit-editor-panel .form-group input[type="text"],
@@ -1603,6 +2142,345 @@
   margin-top: 0.5rem;
 }
 
+/* ========================================
+   トグルスイッチ
+   ======================================== */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--recruit-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::after {
+  transform: translateX(20px);
+}
+
+.toggle-label-text {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* ========================================
+   URL入力 (プレフィックス付き)
+   ======================================== */
+.input-with-prefix {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.input-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.input-with-prefix input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.input-with-prefix input:focus {
+  outline: none;
+}
+
+/* ========================================
+   セレクトボックス
+   ======================================== */
+.recruit-editor-panel .form-group select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.recruit-editor-panel .form-group select:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+}
+
+/* ========================================
+   カスタムリンク
+   ======================================== */
+.custom-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.custom-link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-link-inputs {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.custom-link-inputs input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.custom-link-inputs input:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+}
+
+.btn-remove-link {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-remove-link:hover {
+  background: #fecaca;
+}
+
+.btn-add-link {
+  width: 100%;
+  padding: 0.5rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-link:hover {
+  background: #e5e7eb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+/* ========================================
+   SNSアイコン
+   ======================================== */
+.sns-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* ========================================
+   セクション説明文
+   ======================================== */
+.section-description {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* ========================================
+   フォームヒント
+   ======================================== */
+.form-hint {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  line-height: 1.4;
+}
+
+/* ========================================
+   カスタムセクション
+   ======================================== */
+.custom-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.custom-section-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.section-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-type-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.section-item-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.section-item-actions button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-move-section {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.btn-move-section:hover:not(:disabled) {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btn-move-section:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-remove-section {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-remove-section:hover {
+  background: #fecaca;
+}
+
+.section-item-content {
+  padding: 0.75rem;
+}
+
+.section-item-content input,
+.section-item-content textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  transition: border-color 0.2s;
+}
+
+.section-item-content input:focus,
+.section-item-content textarea:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+}
+
+.section-item-content textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* セクション追加ボタン */
+.add-section-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-add-section {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-section:hover {
+  background: #e5e7eb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
 /* モバイル対応 */
 @media (max-width: 768px) {
   .recruit-edit-mode {
@@ -1783,4 +2661,486 @@
     height: 36px;
     font-size: 1.25rem;
   }
+}
+
+/* ========================================
+   編集モード: プレビューモード切り替え
+   ======================================== */
+
+/* モバイルプレビューモード */
+body.preview-mode-mobile .recruit-page-wrapper,
+body.preview-mode-mobile #recruit-content {
+  max-width: 375px;
+  margin: 0 auto;
+  box-shadow: 0 0 0 1px #e5e7eb, 0 8px 30px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  min-height: 100vh;
+}
+
+body.preview-mode-mobile .site-header {
+  max-width: 375px;
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+}
+
+body.preview-mode-mobile .fixed-cta-bar {
+  max-width: 375px;
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+}
+
+body.preview-mode-mobile .site-footer {
+  max-width: 375px;
+  margin: 0 auto;
+  padding: 40px 16px 100px;
+}
+
+/* フッターのモバイルプレビュー */
+body.preview-mode-mobile .site-footer-container {
+  padding: 0;
+}
+
+body.preview-mode-mobile .site-footer-company {
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+body.preview-mode-mobile .site-footer-links {
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 20px;
+}
+
+body.preview-mode-mobile .footer-custom-link {
+  font-size: 0.8125rem;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+  text-align: center;
+}
+
+body.preview-mode-mobile .footer-custom-link:last-child {
+  border-bottom: none;
+}
+
+body.preview-mode-mobile .site-footer-sns {
+  margin: 20px 0;
+  gap: 0.75rem;
+}
+
+body.preview-mode-mobile .footer-sns-link {
+  width: 36px;
+  height: 36px;
+  font-size: 0.875rem;
+}
+
+body.preview-mode-mobile .site-footer-copyright {
+  font-size: 0.75rem;
+  margin-top: 16px;
+}
+
+/* モバイルプレビュー時のコンテンツ調整 */
+body.preview-mode-mobile .recruit-hero {
+  min-height: 60vh;
+}
+
+body.preview-mode-mobile .recruit-hero-title {
+  font-size: 1.5rem;
+}
+
+body.preview-mode-mobile .recruit-hero-subtitle {
+  font-size: 0.875rem;
+}
+
+body.preview-mode-mobile .recruit-section-title {
+  font-size: 1.25rem;
+}
+
+body.preview-mode-mobile .recruit-jobs-grid {
+  grid-template-columns: 1fr;
+}
+
+body.preview-mode-mobile .recruit-job-card-content,
+body.preview-mode-mobile .recruit-job-card-body {
+  padding: 1rem;
+}
+
+body.preview-mode-mobile .recruit-job-card-title {
+  font-size: 1rem;
+}
+
+body.preview-mode-mobile .recruit-job-card-benefits {
+  padding: 0.5rem;
+}
+
+body.preview-mode-mobile .recruit-benefit-value {
+  font-size: 0.875rem;
+}
+
+body.preview-mode-mobile .recruit-job-card-btn {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+/* 働く環境セクションのモバイルプレビュー */
+body.preview-mode-mobile .recruit-photos-grid {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+body.preview-mode-mobile .recruit-photos-grid::-webkit-scrollbar {
+  display: none;
+}
+
+body.preview-mode-mobile .recruit-photos-item {
+  flex: 0 0 80%;
+  scroll-snap-align: center;
+}
+
+/* 私たちについてセクションのモバイルプレビュー */
+body.preview-mode-mobile .recruit-about-content {
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+body.preview-mode-mobile .recruit-about-image img {
+  max-width: 200px;
+}
+
+body.preview-mode-mobile .recruit-about-description {
+  font-size: 0.9rem;
+}
+
+/* 職種タブのモバイルプレビュー（横スクロール） */
+body.preview-mode-mobile .recruit-job-tabs {
+  gap: 0.375rem;
+  padding: 0.375rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+body.preview-mode-mobile .recruit-job-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+body.preview-mode-mobile .recruit-job-tab {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 求人一覧のモバイルプレビュー（横スクロール） */
+body.preview-mode-mobile .recruit-jobs-grid {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+body.preview-mode-mobile .recruit-jobs-grid::-webkit-scrollbar {
+  display: none;
+}
+
+body.preview-mode-mobile .recruit-job-card {
+  flex: 0 0 85%;
+  scroll-snap-align: center;
+  min-width: 280px;
+}
+
+/* モバイルプレビュー時はページネーションを非表示 */
+body.preview-mode-mobile .recruit-pagination {
+  display: none;
+}
+
+/* 編集モード + モバイルプレビュー時のレイアウト修正 */
+/* ヘッダーをプレビュー内に固定（エディタパネル380pxを考慮） */
+body.recruit-edit-mode.preview-mode-mobile .site-header,
+body.recruit-edit-mode.preview-mode-mobile .recruit-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 380px;
+  width: 375px;
+  max-width: 375px;
+  margin: 0 auto;
+  transform: none;
+  z-index: 100;
+}
+
+/* CTAバーをプレビュー内に固定 */
+body.recruit-edit-mode.preview-mode-mobile .fixed-cta-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 380px;
+  width: 375px;
+  max-width: 375px;
+  margin: 0 auto;
+  transform: none;
+  z-index: 100;
+}
+
+/* フッターをプレビュー内に収める */
+body.recruit-edit-mode.preview-mode-mobile .site-footer {
+  display: block !important;
+  width: 375px !important;
+  max-width: 375px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* PCプレビューモード（デフォルト） */
+body.preview-mode-pc .recruit-page-wrapper,
+body.preview-mode-pc #recruit-content {
+  max-width: none;
+}
+
+/* 編集パネルがある場合の調整 */
+body.recruit-edit-mode.preview-mode-mobile {
+  background: #f3f4f6;
+}
+
+/* プレビューコンテンツを375pxに制限（編集モード + モバイル） */
+body.recruit-edit-mode.preview-mode-mobile #recruit-content {
+  overflow: hidden !important;
+}
+
+/* body全体で375px外をマスク */
+body.recruit-edit-mode.preview-mode-mobile::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 380px;
+  width: calc((100vw - 380px - 375px) / 2);
+  background: #f3f4f6;
+  z-index: 50;
+  pointer-events: none;
+}
+
+body.recruit-edit-mode.preview-mode-mobile::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc((100vw - 380px - 375px) / 2);
+  background: #f3f4f6;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ========================================
+   埋込タブ: リンク・バナー取得
+   ======================================== */
+
+/* リンクボックス */
+.embed-link-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.embed-url-input {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.8125rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #374151;
+}
+
+.btn-copy-embed {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.btn-copy-embed:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* バナーリスト */
+.embed-banners-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.embed-banner-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.embed-banner-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #fff;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  min-height: 80px;
+}
+
+.embed-banner-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-copy-banner {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-copy-banner:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* バナースタイル: シンプルボタン */
+.banner-style-button a {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #0ea5e9;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* バナースタイル: 大きめボタン */
+.banner-style-button-large a {
+  display: inline-block;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+}
+
+/* バナースタイル: カード型 */
+.banner-style-card .banner-card-inner {
+  display: block;
+  max-width: 260px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.banner-card-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.banner-card-title {
+  display: block;
+  font-size: 16px;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.banner-card-arrow {
+  display: block;
+  margin-top: 8px;
+  color: #0ea5e9;
+  font-size: 14px;
+}
+
+/* バナースタイル: 求人募集中 */
+.banner-style-recruiting .banner-recruiting-inner {
+  display: inline-block;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+}
+
+.banner-recruiting-badge {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.banner-recruiting-title {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* バナースタイル: 特設ページ公開中 */
+.banner-style-special .banner-special-inner {
+  display: inline-block;
+  padding: 20px 32px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+.banner-special-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.banner-special-subtitle {
+  display: block;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 4px;
 }

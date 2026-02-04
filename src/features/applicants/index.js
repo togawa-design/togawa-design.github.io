@@ -2,6 +2,7 @@
  * 応募者管理機能モジュール（サイドパネル版）
  */
 import { escapeHtml } from '@shared/utils.js';
+import { showConfirmDialog } from '@shared/modal.js';
 import * as CalendarService from '@features/calendar/calendar-service.js';
 
 // Firebase設定
@@ -383,7 +384,14 @@ async function connectCalendar(userId, userName) {
  * カレンダー連携を解除
  */
 async function disconnectCalendar(userId) {
-  if (!confirm('カレンダー連携を解除しますか？')) return;
+  const confirmed = await showConfirmDialog({
+    title: 'カレンダー連携の解除',
+    message: 'カレンダー連携を解除しますか？',
+    confirmText: '解除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
+  if (!confirmed) return;
 
   try {
     await CalendarService.revokeCalendarAuth(companyDomain, userId);

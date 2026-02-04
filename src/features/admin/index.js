@@ -19,6 +19,7 @@ import { initJobListings, setCompanyFilter } from './job-listings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { escapeHtml } from '@shared/utils.js';
+import { showConfirmDialog } from '@shared/modal.js';
 
 // Job-Manage Embedded
 import {
@@ -42,6 +43,7 @@ import {
 } from './admin-state.js';
 import { initJobManageEmbedded } from './job-manage-embedded.js';
 import { initCompanyEditEmbedded } from './company-edit-embedded.js';
+import { loadSectionHTML } from './section-loader.js';
 
 // ログイン画面表示
 function showLogin() {
@@ -75,13 +77,17 @@ function applyRoleBasedUI() {
   const navAdmin = document.getElementById('nav-admin');
   const navCompany = document.getElementById('nav-company');
 
+  // URLハッシュから初期セクションを取得
+  const hash = window.location.hash.slice(1); // '#overview' -> 'overview'
+  let initialSection = null;
+
   if (!isAdmin()) {
     // 会社ユーザー用ナビゲーションを表示
     if (navAdmin) navAdmin.style.display = 'none';
     if (navCompany) navCompany.style.display = 'block';
 
     // 会社ユーザーはデフォルトで求人一覧を表示
-    switchSection('job-listings');
+    initialSection = hash || 'job-listings';
 
     // サイドバーのヘッダーに会社名を表示
     const sidebarHeader = document.querySelector('.sidebar-header p');
@@ -95,7 +101,14 @@ function applyRoleBasedUI() {
     // 管理者用ナビゲーションを表示
     if (navAdmin) navAdmin.style.display = 'block';
     if (navCompany) navCompany.style.display = 'none';
+
+    // 管理者はデフォルトで概要を表示
+    initialSection = hash || 'overview';
   }
+
+  // 初期履歴を設定（replaceStateで現在の履歴エントリを置き換え）
+  history.replaceState({ section: initialSection, company: null }, '', `#${initialSection}`);
+  switchSection(initialSection, { pushState: false });
 }
 
 /**
@@ -145,15 +158,37 @@ function closeMobileMenu() {
   document.body.style.overflow = '';
 }
 
-// セクション切り替え
-function switchSection(sectionName) {
+// セクション切り替え（動的読み込み対応）
+// options.pushState: ブラウザ履歴に追加するか（デフォルト: true）
+// options.company: 会社情報（job-manage用）
+async function switchSection(sectionName, options = {}) {
+  const { pushState: shouldPushState = true, company = null } = options;
+
   // 連打防止: 切り替え中なら無視
   if (isSectionSwitching()) {
     return;
   }
 
+  // 会社ユーザーが「求人管理」をクリックした場合、自社のjob-manage画面に遷移
+  if (sectionName === 'job-manage-company') {
+    const companyDomain = getUserCompanyDomain();
+    if (companyDomain) {
+      navigateToJobManage(companyDomain, companyDomain, 'overview', null, 'jobs');
+      return;
+    }
+  }
+
   // 切り替え開始
   startSectionSwitch();
+
+  // ブラウザ履歴に追加（popstateからの呼び出し時は追加しない）
+  if (shouldPushState) {
+    const state = {
+      section: sectionName,
+      company: company || (sectionName === 'job-manage' ? { domain: currentCompany.domain, name: currentCompany.name } : null)
+    };
+    history.pushState(state, '', `#${sectionName}`);
+  }
 
   // モバイルメニューを閉じる
   closeMobileMenu();
@@ -171,7 +206,28 @@ function switchSection(sectionName) {
   document.querySelectorAll('.admin-section').forEach(section => {
     section.classList.remove('active');
   });
-  const targetSection = document.getElementById(`section-${sectionName}`);
+
+  // セクションがDOMに存在しない場合は動的に読み込む
+  let targetSection = document.getElementById(`section-${sectionName}`);
+  if (!targetSection) {
+    const container = document.getElementById('section-container');
+    if (container) {
+      try {
+        const html = await loadSectionHTML(sectionName);
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        targetSection = temp.firstElementChild;
+        if (targetSection) {
+          container.appendChild(targetSection);
+        }
+      } catch (error) {
+        console.error(`[Admin] Failed to load section: ${sectionName}`, error);
+        endSectionSwitch();
+        return;
+      }
+    }
+  }
+
   if (targetSection) {
     targetSection.classList.add('active');
   }
@@ -242,6 +298,13 @@ function switchSection(sectionName) {
 
   // Job-Manage埋め込みセクションに切り替えた場合は初期化
   if (sectionName === 'job-manage') {
+    // 戻るボタンのイベントハンドラー設定（動的読み込み対応）
+    const jmBackBtn = document.getElementById('jm-back-btn');
+    if (jmBackBtn && !jmBackBtn.hasAttribute('data-listener-attached')) {
+      jmBackBtn.addEventListener('click', navigateBack);
+      jmBackBtn.setAttribute('data-listener-attached', 'true');
+    }
+
     if (currentCompany.domain && currentCompany.name) {
       const jobId = getPendingJobId();
       clearPendingJobId();
@@ -252,6 +315,11 @@ function switchSection(sectionName) {
   // Company-Edit埋め込みセクションに切り替えた場合は初期化
   if (sectionName === 'company-edit') {
     initCompanyEditEmbedded(getEditingCompanyDomain());
+  }
+
+  // Company-Detailセクションに切り替えた場合は初期化（動的読み込み対応）
+  if (sectionName === 'company-detail') {
+    initCompanyDetailSection();
   }
 
   // 切り替え完了（次フレームで解除）
@@ -284,10 +352,8 @@ function navigateToJobManage(domain, name, returnSection = 'job-listings', jobId
  * 前のセクションに戻る
  */
 function navigateBack() {
-  const prev = popHistory();
-  clearCurrentCompany();
-  clearEditingCompanyDomain();
-  switchSection(prev || 'job-listings');
+  // ブラウザ履歴を使って戻る（popstateイベントが発火してセクション切り替えが行われる）
+  history.back();
 }
 
 /**
@@ -304,6 +370,22 @@ function navigateToCompanyEdit(domain, returnSection = 'company-manage') {
 // イベントバインド
 function bindEvents() {
   console.log('bindEvents called');
+
+  // ブラウザの戻る/進むボタン対応
+  window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.section) {
+      // 会社情報を復元
+      if (event.state.company) {
+        setCurrentCompany(event.state.company.domain, event.state.company.name);
+      } else {
+        clearCurrentCompany();
+      }
+      clearEditingCompanyDomain();
+      // pushState: false で履歴に追加しない
+      switchSection(event.state.section, { pushState: false });
+    }
+  });
+
   // モバイルメニュー
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   if (mobileMenuBtn) {
@@ -1090,9 +1172,14 @@ async function saveCompanyUser() {
 async function deleteCompanyUserHandler() {
   if (!currentEditingUserId) return;
 
-  if (!confirm('このユーザーを削除してもよろしいですか？')) {
-    return;
-  }
+  const confirmed = await showConfirmDialog({
+    title: 'ユーザーの削除',
+    message: 'このユーザーを削除してもよろしいですか？',
+    confirmText: '削除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
+  if (!confirmed) return;
 
   try {
     const result = await deleteCompanyUser(currentEditingUserId);
@@ -1112,9 +1199,13 @@ async function deleteCompanyUserHandler() {
 
 // パスワードを再発行
 async function resetPassword(userId, username) {
-  if (!confirm(`${username} のパスワードを再発行しますか？`)) {
-    return;
-  }
+  const confirmed = await showConfirmDialog({
+    title: 'パスワードの再発行',
+    message: `${username} のパスワードを再発行しますか？`,
+    confirmText: '再発行する',
+    cancelText: 'キャンセル'
+  });
+  if (!confirmed) return;
 
   const newPassword = generatePassword();
 
@@ -1143,9 +1234,13 @@ async function resetPassword(userId, username) {
 
 // 未発行の会社に一括発行
 async function bulkGenerateUsers() {
-  if (!confirm('未発行の全会社にユーザーIDを発行しますか？')) {
-    return;
-  }
+  const confirmed = await showConfirmDialog({
+    title: 'ユーザーIDの一括発行',
+    message: '未発行の全会社にユーザーIDを発行しますか？',
+    confirmText: '発行する',
+    cancelText: 'キャンセル'
+  });
+  if (!confirmed) return;
 
   const visibleCompanies = companiesCache.filter(c => JobsLoader.isCompanyVisible(c));
   const results = [];

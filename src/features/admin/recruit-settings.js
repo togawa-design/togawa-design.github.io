@@ -17,7 +17,10 @@ import {
   updateLivePreview,
   initVideoButtonSection,
   renderRecruitSectionsList,
-  setupRecruitSectionDragDrop
+  setupRecruitSectionDragDrop,
+  addCustomLink,
+  showTemplateSelectorModal,
+  setPreviewJobs
 } from '@features/recruit-settings/core.js';
 
 // 現在選択中の会社
@@ -155,11 +158,45 @@ async function selectCompany(company) {
       populateFormWithDefaults(company.company, company.description, company.imageUrl);
     }
 
+    // 求人データを読み込んでプレビューに設定
+    await loadPreviewJobs(company);
+
     // リアルタイムプレビューをセットアップ
     setupLivePreview();
   } finally {
     // 読み込み完了
     setFormLoadingState(false);
+  }
+}
+
+/**
+ * プレビュー用の求人データを読み込み
+ */
+async function loadPreviewJobs(company) {
+  try {
+    // manageSheetUrl または jobsSheet のどちらかを使用
+    const jobsSource = company.manageSheetUrl || company.jobsSheet;
+    if (!jobsSource) {
+      setPreviewJobs([]);
+      return;
+    }
+
+    const allJobs = await window.JobsLoader.fetchCompanyJobs(jobsSource);
+    if (!allJobs?.length) {
+      setPreviewJobs([]);
+      return;
+    }
+
+    // 公開中の求人のみフィルタリング
+    const visibleJobs = allJobs
+      .filter(job => job.visible !== 'false' && job.visible !== 'FALSE')
+      .filter(job => window.JobsLoader.isJobInPublishPeriod(job))
+      .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
+
+    setPreviewJobs(visibleJobs);
+  } catch (error) {
+    console.error('[RecruitSettings] 求人データ読み込みエラー:', error);
+    setPreviewJobs([]);
   }
 }
 
@@ -178,6 +215,12 @@ function updateRecruitUrlDisplay(companyDomain) {
   urlLink.href = fullUrl;
   urlLink.textContent = fullUrl;
   urlDisplay.style.display = 'block';
+
+  // 埋込用URLも設定
+  const embedUrlInput = document.getElementById('recruit-embed-url');
+  if (embedUrlInput) {
+    embedUrlInput.value = fullUrl;
+  }
 }
 
 /**
@@ -232,9 +275,9 @@ function setupEventListeners() {
     });
   }
 
-  // 会社一覧に戻る
+  // 会社一覧に戻る（動的読み込み対応: 重複登録防止）
   const backBtn = document.getElementById('recruit-back-to-companies');
-  if (backBtn) {
+  if (backBtn && !backBtn.hasAttribute('data-listener-attached')) {
     backBtn.addEventListener('click', () => {
       selectedCompany = null;
       recruitSettings = {};
@@ -244,6 +287,7 @@ function setupEventListeners() {
       const urlDisplay = document.getElementById('recruit-url-display');
       if (urlDisplay) urlDisplay.style.display = 'none';
     });
+    backBtn.setAttribute('data-listener-attached', 'true');
   }
 
   // 保存ボタン
@@ -267,6 +311,87 @@ function setupEventListeners() {
         updateLivePreview(); // プレビューも更新
       }
     });
+  }
+
+  // カスタムリンク追加ボタン
+  const addCustomLinkBtn = document.getElementById('btn-add-custom-link');
+  if (addCustomLinkBtn) {
+    addCustomLinkBtn.addEventListener('click', () => {
+      addCustomLink();
+    });
+  }
+
+  // カスタムセクション追加ボタン（テンプレート選択モーダルを開く）
+  const templateSelectorBtn = document.getElementById('btn-open-template-selector');
+  if (templateSelectorBtn) {
+    templateSelectorBtn.addEventListener('click', () => {
+      showTemplateSelectorModal();
+    });
+  }
+
+  // 埋込URL コピーボタン
+  const copyUrlBtn = document.getElementById('btn-copy-recruit-url');
+  if (copyUrlBtn) {
+    copyUrlBtn.addEventListener('click', () => {
+      const urlInput = document.getElementById('recruit-embed-url');
+      if (urlInput && urlInput.value) {
+        copyToClipboard(urlInput.value);
+      }
+    });
+  }
+
+  // バナーコードコピーボタン
+  document.querySelectorAll('#recruit-embed-banners .btn-copy-banner').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!selectedCompany) return;
+      const bannerType = btn.dataset.banner;
+      const code = generateBannerCode(bannerType, selectedCompany.companyDomain, selectedCompany.company);
+      copyToClipboard(code);
+    });
+  });
+}
+
+/**
+ * バナーのHTMLコードを生成
+ */
+function generateBannerCode(bannerType, companyDomain, companyName) {
+  const baseUrl = window.location.origin;
+  const recruitUrl = `${baseUrl}/company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
+  const safeName = escapeHtml(companyName || '');
+
+  switch (bannerType) {
+    case 'button':
+      return `<a href="${recruitUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;background:#0ea5e9;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;">採用情報はこちら</a>`;
+
+    case 'button-large':
+      return `<a href="${recruitUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:16px 32px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;box-shadow:0 4px 14px rgba(14,165,233,0.4);">採用情報はこちら →</a>`;
+
+    case 'card':
+      return `<a href="${recruitUrl}" target="_blank" rel="noopener" style="display:block;max-width:300px;padding:20px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);"><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">採用情報</span><span style="display:block;font-size:16px;font-weight:bold;color:#1f2937;">${safeName} 採用情報はこちら</span><span style="display:block;margin-top:8px;color:#0ea5e9;font-size:14px;">詳しく見る →</span></a>`;
+
+    case 'recruiting':
+      return `<a href="${recruitUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:16px 28px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;text-decoration:none;border-radius:8px;text-align:center;box-shadow:0 4px 14px rgba(249,115,22,0.4);"><span style="display:block;font-size:12px;font-weight:500;">ただいま</span><span style="display:block;font-size:18px;font-weight:bold;">求人募集中！</span></a>`;
+
+    case 'special':
+      return `<a href="${recruitUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:20px 32px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;text-decoration:none;border-radius:12px;text-align:center;box-shadow:0 4px 20px rgba(99,102,241,0.4);"><span style="display:block;font-size:14px;font-weight:500;">採用特設ページ</span><span style="display:block;font-size:20px;font-weight:bold;margin-top:4px;">公開中！！</span></a>`;
+
+    default:
+      return '';
+  }
+}
+
+/**
+ * クリップボードにコピー
+ */
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const { showToast } = await import('@shared/utils.js');
+    showToast('コピーしました', 'success');
+  } catch (error) {
+    console.error('クリップボードへのコピーに失敗:', error);
+    const { showToast } = await import('@shared/utils.js');
+    showToast('コピーに失敗しました', 'error');
   }
 }
 

@@ -14,6 +14,7 @@ import {
   getTemplateById
 } from './lp-templates.js';
 import { LAYOUT_STYLES } from '../lp/LPEditor.js';
+import { showSelectorModal, showConfirmDialog } from '@shared/modal.js';
 
 // 現在のセクション配列
 let currentSections = [];
@@ -126,16 +127,18 @@ function setupLayoutStyleEvents(container) {
  * テンプレートを適用
  * @param {Object} template - テンプレートオブジェクト
  */
-export function applyTemplate(template) {
+export async function applyTemplate(template) {
   if (!template) return;
 
   // 確認ダイアログ
   if (currentSections.length > 0) {
-    const confirmed = confirm(
-      `テンプレート「${template.name}」を適用しますか？\n\n` +
-      '現在のセクション構成は置き換えられます。\n' +
-      'この操作は取り消せません。'
-    );
+    const confirmed = await showConfirmDialog({
+      title: 'テンプレートの適用',
+      message: `テンプレート「${template.name}」を適用しますか？\n\n現在のセクション構成は置き換えられます。\nこの操作は取り消せません。`,
+      confirmText: '適用する',
+      cancelText: 'キャンセル',
+      danger: true
+    });
     if (!confirmed) return;
   }
 
@@ -445,6 +448,12 @@ function setupEventListeners() {
     closeAddModal.addEventListener('click', closeAddSectionModal);
   }
 
+  // キャンセルボタン
+  const cancelAddModal = document.getElementById('add-section-modal-cancel');
+  if (cancelAddModal) {
+    cancelAddModal.addEventListener('click', closeAddSectionModal);
+  }
+
   const closeEditorModal = document.getElementById('section-editor-close');
   if (closeEditorModal) {
     closeEditorModal.addEventListener('click', closeSectionEditor);
@@ -603,34 +612,56 @@ function updateSectionOrder() {
 }
 
 /**
- * セクション追加モーダルを開く
+ * セクションタイプの説明マッピング
+ */
+const SECTION_TYPE_DESCRIPTIONS = {
+  heroCta: 'ファーストビュー内にCTAボタン（応募ボタン・動画ボタン）を追加',
+  hero: 'メインビジュアルとキャッチコピーを表示するセクション',
+  points: '求人の特徴やポイントを箇条書きで表示',
+  jobs: '求人一覧を表示するセクション',
+  details: '給与・勤務地など募集要項の詳細を表示',
+  faq: 'よくある質問と回答を表示',
+  apply: '応募フォームや応募ボタンを表示',
+  video: '動画（YouTube、Vimeo、TikTok）を埋め込み表示',
+  carousel: '複数の画像をスライドショー形式で表示',
+  gallery: '複数の画像をグリッド形式で表示',
+  testimonial: '社員の声やインタビューを掲載',
+  custom: '自由なテキストと画像でオリジナルセクションを作成'
+};
+
+/**
+ * セクション追加モーダルを開く（共通モーダルコンポーネント使用）
  */
 function openAddSectionModal() {
-  const modal = document.getElementById('add-section-modal');
-  const grid = document.getElementById('section-type-grid');
-
-  if (!modal || !grid) return;
-
-  // セクションタイプグリッドを生成
-  grid.innerHTML = Object.entries(SECTION_TYPES)
+  // モーダル用のアイテムを生成
+  const items = Object.entries(SECTION_TYPES)
     .filter(([type]) => !SECTION_TYPES[type].required || canAddSection(type, currentSections))
-    .map(([type, config]) => `
-      <div class="section-type-card" data-type="${type}" ${!canAddSection(type, currentSections) ? 'disabled' : ''}>
-        <span class="type-icon">${config.icon}</span>
-        <span class="type-name">${config.name}</span>
-        ${config.maxInstances === 1 && !canAddSection(type, currentSections) ? '<span class="type-limit">追加済み</span>' : ''}
-      </div>
-    `).join('');
-
-  // クリックイベント
-  grid.querySelectorAll('.section-type-card:not([disabled])').forEach(card => {
-    card.addEventListener('click', () => {
-      addSection(card.dataset.type);
-      closeAddSectionModal();
+    .map(([type, config]) => {
+      const isDisabled = !canAddSection(type, currentSections);
+      const description = SECTION_TYPE_DESCRIPTIONS[type] || '';
+      return {
+        id: type,
+        name: config.name,
+        description: description,
+        icon: config.icon,
+        iconBgColor: '#4AA7C0',
+        disabled: isDisabled,
+        disabledText: '追加済み'
+      };
     });
-  });
 
-  modal.style.display = 'flex';
+  // 共通リストモーダルコンポーネントを使用
+  showSelectorModal({
+    id: 'lp-add-section-modal',
+    title: 'セクションを追加',
+    description: '追加したいセクションタイプを選択してください',
+    items: items,
+    buttonText: '追加する',
+    cancelText: 'キャンセル',
+    onSelect: (type) => {
+      addSection(type);
+    }
+  });
 }
 
 /**
@@ -644,37 +675,53 @@ function closeAddSectionModal() {
 }
 
 /**
- * カスタムセクション追加モーダルを開く（動画・カルーセル等のみ）
+ * カスタムセクションの説明マッピング
+ */
+const SECTION_DESCRIPTIONS = {
+  video: '動画（YouTube、Vimeo、TikTok）を埋め込んで、求人や会社の魅力を伝えることができます。',
+  carousel: '複数の画像をスライドショー形式で表示できます。職場の様子や仕事風景をアピールできます。',
+  gallery: '複数の画像をグリッド形式で表示できます。職場環境や仕事の様子を見せられます。',
+  testimonial: '社員の声やインタビューを掲載できます。実際に働いている人の声を届けられます。',
+  custom: '自由なテキストと画像でオリジナルのセクションを作成できます。',
+  heroCta: 'ファーストビュー内にCTAボタン（応募ボタン・動画ボタン）を追加できます。'
+};
+
+/**
+ * カスタムセクション追加モーダルを開く（共通モーダルコンポーネント使用）
  */
 function openAddCustomSectionModal() {
-  const modal = document.getElementById('add-section-modal');
-  const grid = document.getElementById('section-type-grid');
-
-  if (!modal || !grid) return;
-
   // カスタムセクションタイプのみ表示
   const coreTypes = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
   const customTypes = Object.entries(SECTION_TYPES)
     .filter(([type]) => !coreTypes.includes(type));
 
-  grid.innerHTML = customTypes
-    .map(([type, config]) => `
-      <div class="section-type-card" data-type="${type}" ${!canAddSection(type, currentSections) ? 'disabled' : ''}>
-        <span class="type-icon">${config.icon}</span>
-        <span class="type-name">${config.name}</span>
-        ${config.maxInstances === 1 && !canAddSection(type, currentSections) ? '<span class="type-limit">追加済み</span>' : ''}
-      </div>
-    `).join('');
-
-  // クリックイベント
-  grid.querySelectorAll('.section-type-card:not([disabled])').forEach(card => {
-    card.addEventListener('click', () => {
-      addSection(card.dataset.type);
-      closeAddSectionModal();
-    });
+  // モーダル用のアイテムを生成
+  const items = customTypes.map(([type, config]) => {
+    const isDisabled = !canAddSection(type, currentSections);
+    const description = SECTION_DESCRIPTIONS[type] || '';
+    return {
+      id: type,
+      name: config.name,
+      description: description,
+      icon: config.icon,
+      iconBgColor: '#4AA7C0',
+      disabled: isDisabled,
+      disabledText: '追加済み'
+    };
   });
 
-  modal.style.display = 'flex';
+  // 共通モーダルコンポーネントを使用
+  showSelectorModal({
+    id: 'lp-add-section-modal',
+    title: 'コンテンツを追加する',
+    description: '追加するコンテンツを選択してください。',
+    items: items,
+    buttonText: '追加する',
+    cancelText: 'キャンセル',
+    onSelect: (type) => {
+      addSection(type);
+    }
+  });
 }
 
 /**
@@ -759,7 +806,7 @@ export function duplicateSection(sectionId) {
  * セクションを削除
  * @param {string} sectionId - セクションID
  */
-export function deleteSection(sectionId) {
+export async function deleteSection(sectionId) {
   if (!canDeleteSection(sectionId, currentSections)) {
     alert('このセクションは削除できません');
     return;
@@ -768,7 +815,14 @@ export function deleteSection(sectionId) {
   const section = currentSections.find(s => s.id === sectionId);
   const typeName = SECTION_TYPES[section?.type]?.name || section?.type;
 
-  if (!confirm(`「${typeName}」セクションを削除しますか？`)) return;
+  const confirmed = await showConfirmDialog({
+    title: 'セクションの削除',
+    message: `「${typeName}」セクションを削除しますか？`,
+    confirmText: '削除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
+  if (!confirmed) return;
 
   currentSections = currentSections.filter(s => s.id !== sectionId);
   reorderSections();

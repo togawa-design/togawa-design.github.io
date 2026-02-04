@@ -60,19 +60,57 @@ export function renderSiteHeader(options = {}) {
  * @param {Object} options - オプション
  * @param {string} options.companyName - 会社名
  * @param {string} options.designPattern - デザインパターン
+ * @param {Object} options.sns - SNSリンク設定
+ * @param {Array} options.customLinks - カスタムリンク配列
  */
 export function renderSiteFooter(options = {}) {
   const {
     companyName = '',
-    designPattern = 'standard'
+    designPattern = 'standard',
+    sns = {},
+    customLinks = []
   } = options;
 
   const year = new Date().getFullYear();
+
+  // SNSアイコンを生成
+  const snsIcons = [];
+  if (sns.twitter) {
+    snsIcons.push(`<a href="${escapeHtml(sns.twitter)}" target="_blank" rel="noopener" class="footer-sns-link footer-sns-twitter" aria-label="X (Twitter)">𝕏</a>`);
+  }
+  if (sns.instagram) {
+    snsIcons.push(`<a href="${escapeHtml(sns.instagram)}" target="_blank" rel="noopener" class="footer-sns-link footer-sns-instagram" aria-label="Instagram">📷</a>`);
+  }
+  if (sns.facebook) {
+    snsIcons.push(`<a href="${escapeHtml(sns.facebook)}" target="_blank" rel="noopener" class="footer-sns-link footer-sns-facebook" aria-label="Facebook">f</a>`);
+  }
+  if (sns.youtube) {
+    snsIcons.push(`<a href="${escapeHtml(sns.youtube)}" target="_blank" rel="noopener" class="footer-sns-link footer-sns-youtube" aria-label="YouTube">▶</a>`);
+  }
+  if (sns.line) {
+    snsIcons.push(`<a href="${escapeHtml(sns.line)}" target="_blank" rel="noopener" class="footer-sns-link footer-sns-line" aria-label="LINE">💬</a>`);
+  }
+  if (sns.tiktok) {
+    snsIcons.push(`<a href="${escapeHtml(sns.tiktok)}" target="_blank" rel="noopener" class="footer-sns-link footer-sns-tiktok" aria-label="TikTok">♪</a>`);
+  }
+
+  const snsSection = snsIcons.length > 0
+    ? `<div class="site-footer-sns">${snsIcons.join('')}</div>`
+    : '';
+
+  // カスタムリンクを生成
+  const linksSection = customLinks.length > 0
+    ? `<div class="site-footer-links">${customLinks.map(link =>
+        link.url ? `<a href="${escapeHtml(link.url)}" target="_blank" rel="noopener" class="footer-custom-link">${escapeHtml(link.label || link.url)}</a>` : ''
+      ).join('')}</div>`
+    : '';
 
   return `
     <footer class="site-footer" data-pattern="${escapeHtml(designPattern)}">
       <div class="site-footer-container">
         <p class="site-footer-company">${escapeHtml(companyName)} 採用情報</p>
+        ${snsSection}
+        ${linksSection}
         <p class="site-footer-copyright">&copy; ${year} ${escapeHtml(companyName)}</p>
       </div>
     </footer>

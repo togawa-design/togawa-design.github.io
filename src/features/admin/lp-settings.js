@@ -76,9 +76,9 @@ export async function loadJobListForLP() {
       });
     }
 
-    // 戻るボタンのイベント
+    // 戻るボタンのイベント（動的読み込み対応: 重複登録防止）
     const backBtn = document.getElementById('lp-back-to-companies');
-    if (backBtn) {
+    if (backBtn && !backBtn.hasAttribute('data-listener-attached')) {
       backBtn.addEventListener('click', () => {
         if (companySelectGroup) companySelectGroup.style.display = 'block';
         if (jobSelectGroup) jobSelectGroup.style.display = 'none';
@@ -86,6 +86,7 @@ export async function loadJobListForLP() {
         if (editor) editor.style.display = 'none';
         updateStepIndicator('company');
       });
+      backBtn.setAttribute('data-listener-attached', 'true');
     }
   } else {
     // 会社ユーザー: 自社の求人のみ表示

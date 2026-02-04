@@ -11,6 +11,7 @@ import {
   getFirestore
 } from '@features/user-auth/auth-service.js';
 import { showAuthModal } from '@features/user-auth/auth-modal.js';
+import { showConfirmDialog } from '@shared/modal.js';
 
 let currentSection = 'profile';
 let userProfile = null;
@@ -330,13 +331,22 @@ async function handlePasswordChange(e) {
  * アカウント削除
  */
 async function handleDeleteAccount() {
-  const confirmed = confirm(
-    'アカウントを削除すると、すべてのデータが削除されます。\nこの操作は取り消せません。\n\n本当に削除しますか？'
-  );
-
+  const confirmed = await showConfirmDialog({
+    title: 'アカウントの削除',
+    message: 'アカウントを削除すると、すべてのデータが削除されます。\nこの操作は取り消せません。\n\n本当に削除しますか？',
+    confirmText: '削除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
   if (!confirmed) return;
 
-  const doubleConfirmed = confirm('本当に削除してよろしいですか？');
+  const doubleConfirmed = await showConfirmDialog({
+    title: '最終確認',
+    message: '本当に削除してよろしいですか？',
+    confirmText: '削除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
   if (!doubleConfirmed) return;
 
   try {
@@ -905,7 +915,14 @@ function renderFavorites(container, favorites) {
   container.querySelectorAll('.btn-remove-favorite').forEach(btn => {
     btn.addEventListener('click', async () => {
       const favoriteId = btn.dataset.favoriteId;
-      if (confirm('お気に入りから削除しますか？')) {
+      const confirmed = await showConfirmDialog({
+        title: 'お気に入りの削除',
+        message: 'お気に入りから削除しますか？',
+        confirmText: '削除する',
+        cancelText: 'キャンセル',
+        danger: true
+      });
+      if (confirmed) {
         await removeFavorite(favoriteId);
       }
     });

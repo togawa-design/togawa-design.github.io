@@ -1656,10 +1656,11 @@ function renderDetailRecentApplications(data) {
 
 // 企業詳細セクションのイベント初期化
 export function initCompanyDetailSection() {
-  // 戻るボタン
+  // 戻るボタン（動的読み込み対応: 重複登録防止）
   const backBtn = document.getElementById('btn-back-to-companies');
-  if (backBtn) {
+  if (backBtn && !backBtn.hasAttribute('data-listener-attached')) {
     backBtn.addEventListener('click', backToCompanies);
+    backBtn.setAttribute('data-listener-attached', 'true');
   }
 }
 

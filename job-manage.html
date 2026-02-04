@@ -118,6 +118,7 @@
       <header class="admin-header">
         <h1 id="page-title">求人一覧</h1>
         <div class="header-actions">
+          <button id="btn-sort-mode" class="btn-secondary">並び順変更</button>
           <button id="btn-add-job" class="btn-primary">+ 新規求人作成</button>
           <button id="btn-refresh" class="btn-refresh">更新</button>
         </div>
@@ -178,6 +179,18 @@
               </select>
             </div>
             <button id="btn-clear-filters" class="btn-secondary btn-small">クリア</button>
+          </div>
+        </div>
+
+        <!-- 並び替えモード -->
+        <div id="sort-mode-bar" class="sort-mode-bar" style="display: none;">
+          <div class="sort-mode-info">
+            <span class="sort-mode-icon">↕</span>
+            <span class="sort-mode-text">並び替えモード：ドラッグ&amp;ドロップで求人の表示順を変更できます</span>
+          </div>
+          <div class="sort-mode-actions">
+            <button id="btn-save-sort" class="btn-primary btn-small">順序を保存</button>
+            <button id="btn-cancel-sort" class="btn-secondary btn-small">キャンセル</button>
           </div>
         </div>
 
@@ -1014,6 +1027,9 @@
                   <option value="interviewing">面接調整中</option>
                   <option value="interviewed">面接済み</option>
                   <option value="hired">採用</option>
+                  <option value="joined">入社</option>
+                  <option value="pending">保留</option>
+                  <option value="ng">NG</option>
                   <option value="rejected">不採用</option>
                   <option value="withdrawn">辞退</option>
                 </select>
@@ -1103,6 +1119,9 @@
                     <button class="status-btn" data-status="interviewing">面接調整</button>
                     <button class="status-btn" data-status="interviewed">面接済み</button>
                     <button class="status-btn status-success" data-status="hired">採用</button>
+                    <button class="status-btn status-joined" data-status="joined">入社</button>
+                    <button class="status-btn status-warning" data-status="pending">保留</button>
+                    <button class="status-btn status-ng" data-status="ng">NG</button>
                     <button class="status-btn status-danger" data-status="rejected">不採用</button>
                     <button class="status-btn status-muted" data-status="withdrawn">辞退</button>
                   </div>
@@ -2130,10 +2149,13 @@
         <button class="modal-close" id="add-section-modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <span class="form-description">追加したいセクションタイプを選択してください</span>
+        <p class="modal-description">追加したいセクションタイプを選択してください</p>
         <div class="section-type-grid" id="section-type-grid">
           <!-- JSで動的に生成 -->
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" id="add-section-modal-cancel">キャンセル</button>
       </div>
     </div>
   </div>

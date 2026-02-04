@@ -3,6 +3,7 @@
  * Wixライクなビジュアルエディタ
  */
 import { escapeHtml } from '@shared/utils.js';
+import { showConfirmDialog } from '@shared/modal.js';
 import { SECTION_TYPES, generateSectionId, canAddSection } from './sectionTypes.js';
 import { renderPointsSection } from '@components/organisms/PointsSection.js';
 import { renderHeroSection } from '@components/organisms/HeroSection.js';
@@ -2299,9 +2300,16 @@ export class LPEditor {
   /**
    * セクションを削除
    */
-  deleteSection(section) {
+  async deleteSection(section) {
     const sectionType = this.detectSectionType(section);
-    if (confirm(`「${this.getSectionLabel(sectionType)}」セクションを削除しますか？\n\n実際の削除は管理画面から行ってください。`)) {
+    const confirmed = await showConfirmDialog({
+      title: 'セクションの削除',
+      message: `「${this.getSectionLabel(sectionType)}」セクションを削除しますか？\n\n実際の削除は管理画面から行ってください。`,
+      confirmText: '削除する',
+      cancelText: 'キャンセル',
+      danger: true
+    });
+    if (confirmed) {
       // プレビュー用に一時的に非表示
       section.style.display = 'none';
       this.removeFloatingMenu();
@@ -2786,7 +2794,12 @@ export class LPEditor {
       }
 
       // ローカルストレージにフォールバック
-      const useLocal = confirm(`スプレッドシートへの保存に失敗しました。\n\nエラー: ${error.message}\n\nローカルに保存しますか？`);
+      const useLocal = await showConfirmDialog({
+        title: '保存エラー',
+        message: `スプレッドシートへの保存に失敗しました。\n\nエラー: ${error.message}\n\nローカルに保存しますか？`,
+        confirmText: 'ローカルに保存',
+        cancelText: 'キャンセル'
+      });
       if (useLocal) {
         this.saveToLocalStorage();
         modal.remove();
@@ -2967,8 +2980,15 @@ export class LPEditor {
     }, 3000);
   }
 
-  cancelEdit() {
-    if (confirm('編集内容を破棄してよろしいですか？')) {
+  async cancelEdit() {
+    const confirmed = await showConfirmDialog({
+      title: '編集のキャンセル',
+      message: '編集内容を破棄してよろしいですか？',
+      confirmText: '破棄する',
+      cancelText: '編集を続ける',
+      danger: true
+    });
+    if (confirmed) {
       // editパラメータを除いてリロード
       const url = new URL(window.location.href);
       url.searchParams.delete('edit');

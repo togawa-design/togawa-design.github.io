@@ -192,6 +192,9 @@ class CompanyLPPage {
 
         this.setupEventListeners(this.company);
 
+        // 応募モーダルのイベントを設定
+        this.setupApplyModal();
+
         // フッターリンクを採用サイトへ更新
         this.updateFooterLinks();
       }
@@ -645,10 +648,13 @@ class CompanyLPPage {
       });
     });
 
-    // 応募ボタントラッキング
-    document.querySelectorAll('.lp-btn-apply-hero, .lp-btn-apply-main, .lp-btn-apply-footer, .lp-btn-apply-header').forEach(btn => {
-      btn.addEventListener('click', () => {
+    // 応募ボタンクリック（モーダルを表示）
+    document.querySelectorAll('.lp-btn-apply-hero, .lp-btn-apply-main, .lp-btn-apply-footer, .lp-btn-apply-header, .lp-hero-cta-btn--apply').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+
         const buttonLocation = btn.classList.contains('lp-btn-apply-hero') ? 'hero' :
+                              btn.classList.contains('lp-hero-cta-btn--apply') ? 'hero_cta' :
                               btn.classList.contains('lp-btn-apply-main') ? 'main' :
                               btn.classList.contains('lp-btn-apply-header') ? 'header' : 'footer';
 
@@ -660,13 +666,14 @@ class CompanyLPPage {
           ...this.utmParams
         });
 
-        // 広告コンバージョントラッキング
-        this.trackConversion('SubmitForm', {
-          content_name: company.company,
-          content_category: 'job_application',
-          button_location: buttonLocation,
-          ...this.utmParams
-        });
+        // 応募モーダルを表示
+        const jobData = {
+          company_domain: company.companyDomain,
+          company_name: company.company,
+          job_id: this.mainJob?.id || this.mainJob?.jobId || this.jobId || '',
+          job_title: this.mainJob?.title || ''
+        };
+        this.showApplyModal(jobData);
       });
     });
 
@@ -1018,6 +1025,234 @@ class CompanyLPPage {
       jobId: this.mainJob?.id || this.mainJob?.jobId || null,
       buttonText
     });
+  }
+
+  // ========================================
+  // 応募モーダル機能
+  // ========================================
+
+  // Firebase Firestoreを初期化
+  initFirestore() {
+    if (typeof firebase === 'undefined') {
+      console.warn('[Firestore] Firebase not loaded');
+      return false;
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
+      authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
+      projectId: "generated-area-484613-e3-90bd4"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    window.firebaseDb = firebase.firestore();
+    return true;
+  }
+
+  // 生年月日から年齢を計算
+  calculateAge(birthdate) {
+    if (!birthdate) return '';
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  // 応募モーダルを表示
+  showApplyModal(jobData) {
+    this.currentJobData = jobData;
+    const modal = document.getElementById('apply-modal');
+    if (!modal) return;
+
+    // 求人情報を設定
+    const jobInfo = document.getElementById('apply-job-info');
+    if (jobInfo) {
+      jobInfo.textContent = `${jobData.company_name} - ${jobData.job_title}`;
+    }
+
+    // フォームをリセット
+    const form = document.getElementById('apply-form');
+    if (form) {
+      form.reset();
+    }
+
+    // 直接フォームを表示
+    this.showApplyStep('form');
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  // 応募モーダルを閉じる
+  hideApplyModal() {
+    const modal = document.getElementById('apply-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+    document.body.style.overflow = '';
+    this.currentJobData = null;
+  }
+
+  // 応募ステップを表示
+  showApplyStep(step) {
+    const steps = ['form', 'complete'];
+    steps.forEach(s => {
+      const el = document.getElementById(`apply-step-${s}`);
+      if (el) {
+        el.style.display = s === step ? 'block' : 'none';
+      }
+    });
+  }
+
+  // エラーメッセージを表示
+  showFormError(elementId, message) {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+  }
+
+  // エラーメッセージを非表示
+  hideFormError(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.style.display = 'none';
+    }
+  }
+
+  // 応募モーダルのイベントを設定
+  setupApplyModal() {
+    this.initFirestore();
+    this.currentJobData = null;
+
+    const modal = document.getElementById('apply-modal');
+    if (!modal) return;
+
+    // 閉じるボタン
+    modal.querySelectorAll('.modal-close, .modal-close-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.hideApplyModal());
+    });
+
+    // 背景クリックで閉じる
+    modal.querySelector('.modal-backdrop')?.addEventListener('click', () => this.hideApplyModal());
+
+    // 応募フォーム送信
+    document.getElementById('apply-form')?.addEventListener('submit', (e) => this.handleApplySubmit(e));
+  }
+
+  // Firestoreに応募データを保存
+  async saveApplicationToFirestore(data) {
+    try {
+      if (!window.firebaseDb) {
+        console.warn('[Application] Firestore not initialized');
+        return null;
+      }
+
+      const applicationData = {
+        companyDomain: data.company_domain,
+        companyName: data.company_name,
+        jobId: data.job_id,
+        jobTitle: data.job_title,
+        applicantName: data.name,
+        applicantNameKana: data.nameKana,
+        applicantBirthdate: data.birthdate,
+        applicantAge: data.age,
+        applicantGender: data.gender || '',
+        applicantPhone: data.phone,
+        applicantEmail: data.email,
+        applicantAddress: data.address,
+        applicantMessage: data.message || '',
+        userId: null,
+        status: 'new',
+        type: 'apply',
+        source: document.referrer || 'direct',
+        userAgent: navigator.userAgent,
+        timestamp: new Date(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const docRef = await window.firebaseDb.collection('applications').add(applicationData);
+      console.log('[Application] Saved to Firestore:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('[Application] Failed to save:', error);
+      return null;
+    }
+  }
+
+  // 応募フォーム送信処理
+  async handleApplySubmit(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('apply-name')?.value?.trim();
+    const nameKana = document.getElementById('apply-name-kana')?.value?.trim();
+    const birthdate = document.getElementById('apply-birthdate')?.value;
+    const gender = document.getElementById('apply-gender')?.value;
+    const phone = document.getElementById('apply-phone')?.value?.trim();
+    const email = document.getElementById('apply-email')?.value?.trim();
+    const address = document.getElementById('apply-address')?.value?.trim();
+    const message = document.getElementById('apply-message')?.value?.trim();
+
+    this.hideFormError('apply-form-error');
+
+    // 必須項目のバリデーション
+    if (!name || !nameKana || !birthdate || !phone || !email || !address) {
+      this.showFormError('apply-form-error', '必須項目を入力してください');
+      return;
+    }
+
+    if (!this.currentJobData) {
+      this.showFormError('apply-form-error', 'エラーが発生しました。再度お試しください');
+      return;
+    }
+
+    // 年齢を計算
+    const age = this.calculateAge(birthdate);
+
+    try {
+      // 応募データを保存
+      const applicationId = await this.saveApplicationToFirestore({
+        ...this.currentJobData,
+        name,
+        nameKana,
+        birthdate,
+        age,
+        gender,
+        phone,
+        email,
+        address,
+        message
+      });
+
+      if (!applicationId) {
+        throw new Error('Failed to save application');
+      }
+
+      // GA4にイベント送信
+      trackEvent('submit_application', this.currentJobData);
+
+      // 広告コンバージョントラッキング
+      this.trackConversion('SubmitForm', {
+        content_name: this.currentJobData.company_name,
+        content_category: 'job_application',
+        ...this.utmParams
+      });
+
+      // 完了画面を表示
+      this.showApplyStep('complete');
+
+    } catch (error) {
+      console.error('[Apply] Submit error:', error);
+      this.showFormError('apply-form-error', '応募の送信に失敗しました。もう一度お試しください');
+    }
   }
 }
 

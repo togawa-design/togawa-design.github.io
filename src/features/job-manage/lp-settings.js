@@ -2,6 +2,7 @@
  * 求人管理 - LP設定モジュール
  */
 import { escapeHtml } from '@shared/utils.js';
+import { showConfirmDialog } from '@shared/modal.js';
 import { parseCSVLine } from '@features/admin/csv-utils.js';
 import {
   saveLPSettings,
@@ -95,8 +96,15 @@ export function initCompanyLPSettings() {
 
   const resetBtn = document.getElementById('btn-reset-lp-settings');
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      if (confirm('LP設定をリセットしますか？')) {
+    resetBtn.addEventListener('click', async () => {
+      const confirmed = await showConfirmDialog({
+        title: 'LP設定のリセット',
+        message: 'LP設定をリセットしますか？',
+        confirmText: 'リセット',
+        cancelText: 'キャンセル',
+        danger: true
+      });
+      if (confirmed) {
         clearLPForm();
       }
     });

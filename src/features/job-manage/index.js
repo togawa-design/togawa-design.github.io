@@ -36,7 +36,8 @@ import {
   closeJobModal,
   saveJobData,
   deleteJob,
-  setupJobEditEventHandlers
+  setupJobEditEventHandlers,
+  setupSortModeEvents
 } from './jobs.js';
 
 // フィード生成
@@ -272,6 +273,9 @@ function setupEventListeners() {
 
   // 求人編集フォームのイベントハンドラ
   setupJobEditEventHandlers();
+
+  // 並び替えモード
+  setupSortModeEvents();
 }
 
 /**

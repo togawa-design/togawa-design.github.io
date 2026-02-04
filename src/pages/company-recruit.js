@@ -36,6 +36,8 @@ class CompanyRecruitPage {
     this.isEditMode = hasUrlParam('edit'); // 編集モード判定
     this.editor = null;
     this.selectedJobType = 'all'; // 現在選択中の職種タブ
+    this.currentPage = 1; // 現在のページ
+    this.jobsPerPage = 6; // 1ページあたりの求人数
   }
 
   async init() {
@@ -66,6 +68,12 @@ class CompanyRecruitPage {
 
       if (!this.company) {
         this.showError('指定された会社は見つかりませんでした。');
+        return;
+      }
+
+      // 非公開チェック（編集モード以外）
+      if (!this.isEditMode && this.recruitSettings.isPublished === false) {
+        this.showError('このページは現在非公開です。');
         return;
       }
 
@@ -243,10 +251,22 @@ class CompanyRecruitPage {
     const sectionOrder = this.getSectionOrder();
     const sectionVisibility = this.getSectionVisibility();
 
+    // カスタムセクションを取得
+    const customSections = this.getCustomSectionsArray();
+
     // 順序に従ってセクションをレンダリング
     const sectionsHtml = sectionOrder.map(sectionId => {
       // 非表示の場合はスキップ（必須セクション以外）
       if (sectionVisibility[sectionId] === false) return '';
+
+      // 個別カスタムセクション (custom-0, custom-1, ...)
+      if (sectionId.startsWith('custom-')) {
+        const index = parseInt(sectionId.replace('custom-', ''), 10);
+        if (!isNaN(index) && customSections[index]) {
+          return this.renderSingleCustomSection(customSections[index], index);
+        }
+        return '';
+      }
 
       switch (sectionId) {
         case 'hero':
@@ -262,7 +282,19 @@ class CompanyRecruitPage {
       }
     }).join('');
 
-    contentEl.innerHTML = sectionsHtml;
+    // セクション順序に含まれていないカスタムセクションを末尾に追加
+    const renderedCustomIndices = new Set(
+      sectionOrder
+        .filter(id => id.startsWith('custom-'))
+        .map(id => parseInt(id.replace('custom-', ''), 10))
+    );
+    const remainingCustomSections = customSections
+      .map((section, index) => ({ section, index }))
+      .filter(({ index }) => !renderedCustomIndices.has(index) && sectionVisibility[`custom-${index}`] !== false)
+      .map(({ section, index }) => this.renderSingleCustomSection(section, index))
+      .join('');
+
+    contentEl.innerHTML = sectionsHtml + remainingCustomSections;
 
     // ヘッダーロゴに会社名を設定
     const logoEl = document.getElementById('header-logo');
@@ -272,6 +304,9 @@ class CompanyRecruitPage {
 
     // 職種タブのイベントリスナーを設定
     this.setupJobTypeTabs();
+
+    // ページネーションのイベントリスナーを設定
+    this.setupPagination();
 
     // 動画ボタンのイベントリスナーを設定
     this.setupVideoButton();
@@ -311,7 +346,28 @@ class CompanyRecruitPage {
     if (rs.sectionOrder) {
       return rs.sectionOrder.split(',').map(s => s.trim()).filter(s => s);
     }
+    // デフォルトは基本セクションのみ（カスタムセクションは末尾に自動追加される）
     return ['hero', 'company-intro', 'jobs', 'cta'];
+  }
+
+  /**
+   * カスタムセクション配列を取得
+   */
+  getCustomSectionsArray() {
+    const rs = this.recruitSettings || {};
+    let customSections = rs.customSections || [];
+
+    // JSON文字列の場合はパース
+    if (typeof customSections === 'string') {
+      try {
+        customSections = JSON.parse(customSections);
+      } catch (e) {
+        console.error('[RecruitPage] customSectionsのパースエラー:', e);
+        customSections = [];
+      }
+    }
+
+    return Array.isArray(customSections) ? customSections : [];
   }
 
   /**
@@ -339,7 +395,7 @@ class CompanyRecruitPage {
     // 採用ページ設定があればそちらを優先
     const heroImage = rs.heroImage || company.imageUrl || '';
     const heroTitle = rs.heroTitle || `${escapeHtml(company.company)}で働こう`;
-    const heroSubtitle = rs.heroSubtitle || (company.description ? this.truncateText(company.description, 100) : '私たちと一緒に働きませんか？');
+    const heroSubtitle = (rs.heroSubtitle || (company.description ? this.truncateText(company.description, 100) : '私たちと一緒に働きませんか？')).replace(/&nbsp;/g, ' ');
 
     // 動画ボタン設定
     const showVideoButton = String(rs.showVideoButton).toLowerCase() === 'true';
@@ -420,6 +476,33 @@ class CompanyRecruitPage {
       `;
     }
 
+    // ソートを適用
+    let displayJobs = [...this.jobs];
+    const jobsSort = rs.jobsSort || 'newest';
+    displayJobs = this.sortJobs(displayJobs, jobsSort);
+
+    // 件数制限を適用（全件表示の場合は制限なし）
+    const jobsLimit = parseInt(rs.jobsLimit) || 0;
+    if (jobsLimit > 0 && displayJobs.length > jobsLimit) {
+      displayJobs = displayJobs.slice(0, jobsLimit);
+    }
+
+    // モバイル判定（768px以下またはモバイルプレビューモード）
+    const isMobile = window.innerWidth < 768 || document.body.classList.contains('preview-mode-mobile');
+
+    // ページネーション計算（モバイルでは全件表示）
+    const totalJobs = displayJobs.length;
+    let pageJobs = displayJobs;
+    let paginationHtml = '';
+
+    if (!isMobile && totalJobs > this.jobsPerPage) {
+      const totalPages = Math.ceil(totalJobs / this.jobsPerPage);
+      const startIndex = (this.currentPage - 1) * this.jobsPerPage;
+      const endIndex = Math.min(startIndex + this.jobsPerPage, totalJobs);
+      pageJobs = displayJobs.slice(startIndex, endIndex);
+      paginationHtml = this.renderPagination(totalPages, totalJobs);
+    }
+
     // 職種タブを生成
     const jobTypeTabs = this.renderJobTypeTabs();
 
@@ -429,11 +512,109 @@ class CompanyRecruitPage {
           <h2 class="recruit-section-title">${escapeHtml(jobsTitle)}</h2>
           ${jobTypeTabs}
           <div class="recruit-jobs-grid" id="recruit-jobs-grid">
-            ${this.jobs.map(job => this.renderJobCard(job)).join('')}
+            ${pageJobs.map(job => this.renderJobCard(job)).join('')}
           </div>
+          ${paginationHtml}
         </div>
       </section>
     `;
+  }
+
+  /**
+   * ページネーションを描画
+   */
+  renderPagination(totalPages, totalJobs) {
+    const pages = [];
+
+    // ページ番号を生成
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= this.currentPage - 1 && i <= this.currentPage + 1)
+      ) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...');
+      }
+    }
+
+    return `
+      <div class="recruit-pagination" id="recruit-pagination">
+        <div class="recruit-pagination-info">
+          全${totalJobs}件中 ${(this.currentPage - 1) * this.jobsPerPage + 1}〜${Math.min(this.currentPage * this.jobsPerPage, totalJobs)}件を表示
+        </div>
+        <div class="recruit-pagination-controls">
+          <button class="recruit-pagination-btn prev" ${this.currentPage === 1 ? 'disabled' : ''} data-page="${this.currentPage - 1}">
+            ← 前へ
+          </button>
+          <div class="recruit-pagination-pages">
+            ${pages.map(p => {
+              if (p === '...') {
+                return '<span class="recruit-pagination-ellipsis">...</span>';
+              }
+              return `<button class="recruit-pagination-page ${p === this.currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+            }).join('')}
+          </div>
+          <button class="recruit-pagination-btn next" ${this.currentPage === totalPages ? 'disabled' : ''} data-page="${this.currentPage + 1}">
+            次へ →
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 求人をソート
+   */
+  sortJobs(jobs, sortType) {
+    switch (sortType) {
+      case 'newest':
+        return jobs.sort((a, b) => {
+          const dateA = new Date(a.publishStartDate || 0);
+          const dateB = new Date(b.publishStartDate || 0);
+          return dateB - dateA;
+        });
+      case 'oldest':
+        return jobs.sort((a, b) => {
+          const dateA = new Date(a.publishStartDate || 0);
+          const dateB = new Date(b.publishStartDate || 0);
+          return dateA - dateB;
+        });
+      case 'salary-high':
+        return jobs.sort((a, b) => {
+          const salaryA = this.parseSalary(a.monthlySalary);
+          const salaryB = this.parseSalary(b.monthlySalary);
+          return salaryB - salaryA;
+        });
+      case 'salary-low':
+        return jobs.sort((a, b) => {
+          const salaryA = this.parseSalary(a.monthlySalary);
+          const salaryB = this.parseSalary(b.monthlySalary);
+          return salaryA - salaryB;
+        });
+      case 'custom':
+        // orderフィールドで並び替え（手動設定順）
+        return jobs.sort((a, b) => {
+          const orderA = parseInt(a.order) || 999;
+          const orderB = parseInt(b.order) || 999;
+          return orderA - orderB;
+        });
+      default:
+        return jobs;
+    }
+  }
+
+  /**
+   * 給与文字列から数値を抽出
+   */
+  parseSalary(salaryStr) {
+    if (!salaryStr) return 0;
+    const match = salaryStr.match(/(\d+(?:,\d{3})*)/);
+    if (match) {
+      return parseInt(match[1].replace(/,/g, ''), 10);
+    }
+    return 0;
   }
 
   /**
@@ -509,7 +690,50 @@ class CompanyRecruitPage {
   }
 
   /**
-   * 求人カードを描画
+   * ページネーションのイベントリスナーを設定
+   */
+  setupPagination() {
+    const paginationContainer = document.getElementById('recruit-pagination');
+    if (!paginationContainer) return;
+
+    paginationContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-page]');
+      if (!btn || btn.disabled) return;
+
+      const page = parseInt(btn.dataset.page);
+      if (page && page !== this.currentPage) {
+        this.goToPage(page);
+      }
+    });
+  }
+
+  /**
+   * 指定ページに移動
+   */
+  goToPage(page) {
+    this.currentPage = page;
+
+    // 求人セクションを再描画
+    const jobsSection = document.getElementById('recruit-jobs');
+    if (jobsSection) {
+      const newJobsSection = document.createElement('div');
+      newJobsSection.innerHTML = this.renderJobsSection();
+      jobsSection.replaceWith(newJobsSection.firstElementChild);
+
+      // イベントリスナーを再設定
+      this.setupJobTypeTabs();
+      this.setupPagination();
+
+      // 求人セクションまでスクロール
+      const newSection = document.getElementById('recruit-jobs');
+      if (newSection) {
+        newSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+
+  /**
+   * 求人カードを描画（L-SET注目の求人と同じフォーマット）
    */
   renderJobCard(job) {
     const jobId = job.jobId || job['求人ID'] || job.id || '';
@@ -517,30 +741,42 @@ class CompanyRecruitPage {
     const imageUrl = job.imageUrl || this.company?.imageUrl || '';
     const jobType = job.jobType || '';
     const isNew = isWithinOneWeek(job.publishStartDate);
+    const totalBonus = job._displayTotalBonus || job.totalBonus || '';
+    const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
+    const location = job.companyAddress || job.location || '';
 
     return `
-      <a href="${lpUrl}" class="recruit-job-card${isNew ? ' is-new' : ''}" data-job-type="${escapeHtml(jobType)}">
+      <article class="recruit-job-card${isNew ? ' is-new' : ''}" data-job-type="${escapeHtml(jobType)}">
         ${isNew ? '<span class="recruit-job-new-tag">✨ NEW</span>' : ''}
         <div class="recruit-job-card-image" style="${imageUrl ? `background-image: url('${escapeHtml(imageUrl)}')` : ''}">
           ${!imageUrl ? '<div class="recruit-job-card-placeholder"></div>' : ''}
         </div>
-        <div class="recruit-job-card-content">
-          ${jobType ? `<span class="recruit-job-card-type">${escapeHtml(jobType)}</span>` : ''}
+        <div class="recruit-job-card-body">
           <h3 class="recruit-job-card-title">${escapeHtml(job.title || '求人情報')}</h3>
-          ${job.location ? `<p class="recruit-job-card-location">${escapeHtml(job.location)}</p>` : ''}
+          ${location ? `<p class="recruit-job-card-location">${escapeHtml(location)}</p>` : ''}
           ${job.access ? `<p class="recruit-job-card-access">${escapeHtml(job.access)}</p>` : ''}
-          <div class="recruit-job-card-highlights">
-            ${job.monthlySalary ? `<span class="recruit-highlight salary">${escapeHtml(job.monthlySalary)}</span>` : ''}
-            ${job.totalBonus ? `<span class="recruit-highlight bonus">${escapeHtml(job.totalBonus)}</span>` : ''}
+          <div class="recruit-job-card-benefits">
+            ${totalBonus ? `
+              <div class="recruit-benefit-item highlight">
+                <span class="recruit-benefit-label">特典総額</span>
+                <span class="recruit-benefit-value">${escapeHtml(totalBonus)}</span>
+              </div>
+            ` : ''}
+            ${monthlySalary ? `
+              <div class="recruit-benefit-item">
+                <span class="recruit-benefit-label">月収例</span>
+                <span class="recruit-benefit-value">${escapeHtml(monthlySalary)}</span>
+              </div>
+            ` : ''}
           </div>
           ${job.features || job.displayedFeatures ? `
             <div class="recruit-job-card-features">
               ${this.renderFeatures(job.features, job.displayedFeatures)}
             </div>
           ` : ''}
-          <span class="recruit-job-card-link">詳細を見る →</span>
+          <a href="${lpUrl}" class="recruit-job-card-btn">詳細を見る</a>
         </div>
-      </a>
+      </article>
     `;
   }
 
@@ -582,6 +818,109 @@ class CompanyRecruitPage {
         </div>
       </section>
     `;
+  }
+
+  /**
+   * 単一のカスタムセクションを描画
+   */
+  renderSingleCustomSection(section, index) {
+    switch (section.type) {
+      case 'heading':
+        return `
+          <section class="recruit-section recruit-custom-section recruit-custom-heading" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              <h2 class="recruit-section-title">${escapeHtml(section.content || '')}</h2>
+            </div>
+          </section>
+        `;
+      case 'text':
+        return `
+          <section class="recruit-section recruit-custom-section recruit-custom-text" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              <div class="recruit-custom-content">${this.formatText(section.content || '')}</div>
+            </div>
+          </section>
+        `;
+      case 'image':
+        return section.content ? `
+          <section class="recruit-section recruit-custom-section recruit-custom-image" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              <img src="${escapeHtml(section.content)}" alt="" class="recruit-custom-image-content" loading="lazy">
+            </div>
+          </section>
+        ` : '';
+      case 'message':
+        return `
+          <section class="recruit-section recruit-custom-section recruit-custom-message" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              ${section.title ? `<h2 class="recruit-section-title">${escapeHtml(section.title)}</h2>` : ''}
+              <div class="recruit-message-content">
+                ${section.image ? `<div class="recruit-message-image"><img src="${escapeHtml(section.image)}" alt="" loading="lazy"></div>` : ''}
+                <div class="recruit-message-text">
+                  ${section.headline ? `<p class="recruit-message-headline">${escapeHtml(section.headline)}</p>` : ''}
+                  ${section.description ? `<div class="recruit-message-description">${this.formatText(section.description)}</div>` : ''}
+                </div>
+              </div>
+            </div>
+          </section>
+        `;
+      case 'about':
+        return `
+          <section class="recruit-section recruit-custom-section recruit-custom-about" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              ${section.title ? `<h2 class="recruit-section-title">${escapeHtml(section.title)}</h2>` : ''}
+              <div class="recruit-about-content">
+                ${section.image ? `<div class="recruit-about-image"><img src="${escapeHtml(section.image)}" alt="" loading="lazy"></div>` : ''}
+                ${section.description ? `<div class="recruit-about-description">${this.formatText(section.description)}</div>` : ''}
+              </div>
+            </div>
+          </section>
+        `;
+      case 'business':
+        const items = Array.isArray(section.items) ? section.items : [];
+        return `
+          <section class="recruit-section recruit-custom-section recruit-custom-business" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              ${section.title ? `<h2 class="recruit-section-title">${escapeHtml(section.title)}</h2>` : ''}
+              <div class="recruit-business-grid">
+                ${items.map(item => `
+                  <div class="recruit-business-item">
+                    <h3 class="recruit-business-item-title">${escapeHtml(item.name || '')}</h3>
+                    ${item.description ? `<p class="recruit-business-item-description">${escapeHtml(item.description)}</p>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </section>
+        `;
+      case 'photos':
+        const images = Array.isArray(section.images) ? section.images : [];
+        return images.length > 0 ? `
+          <section class="recruit-section recruit-custom-section recruit-custom-photos" id="custom-section-${index}">
+            <div class="recruit-section-inner">
+              ${section.title ? `<h2 class="recruit-section-title">${escapeHtml(section.title)}</h2>` : ''}
+              <div class="recruit-photos-grid">
+                ${images.map(img => `
+                  <div class="recruit-photos-item">
+                    <img src="${escapeHtml(img)}" alt="" loading="lazy">
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </section>
+        ` : '';
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * カスタムセクションを描画（後方互換性のため残す）
+   */
+  renderCustomSections() {
+    const customSections = this.getCustomSectionsArray();
+    if (!customSections.length) return '';
+    return customSections.map((section, index) => this.renderSingleCustomSection(section, index)).join('');
   }
 
   /**
@@ -698,9 +1037,32 @@ class CompanyRecruitPage {
 
     // フッターを追加
     if (contentEl) {
+      // customLinksがJSON文字列の場合はパース
+      let customLinks = rs.customLinks || [];
+      if (typeof customLinks === 'string') {
+        try {
+          customLinks = JSON.parse(customLinks);
+        } catch (e) {
+          console.error('[RecruitPage] customLinksのパースエラー:', e);
+          customLinks = [];
+        }
+      }
+      if (!Array.isArray(customLinks)) {
+        customLinks = [];
+      }
+
       const footerHtml = renderSiteFooter({
         companyName: rs.companyNameDisplay || this.company?.company || '',
-        designPattern: designPattern
+        designPattern: designPattern,
+        sns: {
+          twitter: rs.snsTwitter || '',
+          instagram: rs.snsInstagram || '',
+          facebook: rs.snsFacebook || '',
+          youtube: rs.snsYoutube || '',
+          line: rs.snsLine || '',
+          tiktok: rs.snsTiktok || ''
+        },
+        customLinks: customLinks
       });
       contentEl.insertAdjacentHTML('afterend', footerHtml);
     }

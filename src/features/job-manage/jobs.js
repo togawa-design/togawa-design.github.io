@@ -2,6 +2,7 @@
  * 求人管理 - 求人CRUD操作モジュール
  */
 import { escapeHtml } from '@shared/utils.js';
+import { showConfirmDialog } from '@shared/modal.js';
 import { fetchCompanyDetailData } from '@shared/analytics-utils.js';
 import { config } from './auth.js';
 import {
@@ -876,9 +877,14 @@ export async function deleteJob() {
     return;
   }
 
-  if (!confirm('この求人を削除してもよろしいですか？')) {
-    return;
-  }
+  const confirmed = await showConfirmDialog({
+    title: '求人の削除',
+    message: 'この求人を削除してもよろしいですか？',
+    confirmText: '削除する',
+    cancelText: 'キャンセル',
+    danger: true
+  });
+  if (!confirmed) return;
 
   const gasApiUrl = config.gasApiUrl;
   if (!gasApiUrl) {
@@ -1053,4 +1059,240 @@ export function setupJobEditEventHandlers() {
 
   // 特徴チェックボックスの変更監視
   setupFeaturesCheckboxEvents();
+}
+
+// ========================================
+// 並び替えモード機能
+// ========================================
+
+let isSortMode = false;
+let originalOrder = [];
+
+/**
+ * 並び替えモードを開始
+ */
+export function enterSortMode() {
+  isSortMode = true;
+
+  const sortModeBar = document.getElementById('sort-mode-bar');
+  const jobsList = document.getElementById('jobs-list');
+  const sortModeBtn = document.getElementById('btn-sort-mode');
+
+  if (sortModeBar) sortModeBar.style.display = 'flex';
+  if (jobsList) jobsList.classList.add('sort-mode');
+  if (sortModeBtn) sortModeBtn.style.display = 'none';
+
+  // 元の順序を保存
+  originalOrder = Array.from(jobsList?.querySelectorAll('.job-card-row') || [])
+    .map(row => row.dataset.row);
+
+  // ドラッグ可能にする
+  jobsList?.querySelectorAll('.job-card-row').forEach(row => {
+    row.setAttribute('draggable', 'true');
+  });
+
+  setupSortDragDropEvents();
+}
+
+/**
+ * 並び替えモードを終了
+ */
+export function exitSortMode(revert = false) {
+  isSortMode = false;
+
+  const sortModeBar = document.getElementById('sort-mode-bar');
+  const jobsList = document.getElementById('jobs-list');
+  const sortModeBtn = document.getElementById('btn-sort-mode');
+
+  if (sortModeBar) sortModeBar.style.display = 'none';
+  if (jobsList) jobsList.classList.remove('sort-mode');
+  if (sortModeBtn) sortModeBtn.style.display = '';
+
+  // ドラッグを無効化
+  jobsList?.querySelectorAll('.job-card-row').forEach(row => {
+    row.setAttribute('draggable', 'false');
+  });
+
+  // 元に戻す場合
+  if (revert && originalOrder.length > 0 && jobsList) {
+    const rows = Array.from(jobsList.querySelectorAll('.job-card-row'));
+    originalOrder.forEach(rowIndex => {
+      const row = rows.find(r => r.dataset.row === rowIndex);
+      if (row) jobsList.appendChild(row);
+    });
+  }
+
+  originalOrder = [];
+}
+
+/**
+ * ドラッグ&ドロップイベントを設定
+ */
+function setupSortDragDropEvents() {
+  const jobsList = document.getElementById('jobs-list');
+  if (!jobsList) return;
+
+  let draggedItem = null;
+
+  const handleDragStart = (e) => {
+    const row = e.target.closest('.job-card-row');
+    if (!row || !isSortMode) return;
+
+    draggedItem = row;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.row);
+  };
+
+  const handleDragEnd = (e) => {
+    const row = e.target.closest('.job-card-row');
+    if (row) row.classList.remove('dragging');
+    jobsList.querySelectorAll('.job-card-row').forEach(r => r.classList.remove('drag-over'));
+    draggedItem = null;
+    updateSortOrderBadges();
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!isSortMode || !draggedItem) return;
+
+    const row = e.target.closest('.job-card-row');
+    if (!row || row === draggedItem) return;
+
+    const rect = row.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+
+    jobsList.querySelectorAll('.job-card-row').forEach(r => r.classList.remove('drag-over'));
+
+    if (e.clientY < midY) {
+      row.classList.add('drag-over');
+      jobsList.insertBefore(draggedItem, row);
+    } else {
+      row.classList.add('drag-over');
+      jobsList.insertBefore(draggedItem, row.nextSibling);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    jobsList.querySelectorAll('.job-card-row').forEach(r => r.classList.remove('drag-over'));
+  };
+
+  // イベントリスナーを削除して再追加（重複防止）
+  const newJobsList = jobsList.cloneNode(true);
+  jobsList.parentNode.replaceChild(newJobsList, jobsList);
+
+  newJobsList.addEventListener('dragstart', handleDragStart);
+  newJobsList.addEventListener('dragend', handleDragEnd);
+  newJobsList.addEventListener('dragover', handleDragOver);
+  newJobsList.addEventListener('drop', handleDrop);
+}
+
+/**
+ * 順序番号バッジを更新
+ */
+function updateSortOrderBadges() {
+  const jobsList = document.getElementById('jobs-list');
+  if (!jobsList) return;
+
+  jobsList.querySelectorAll('.job-card-row').forEach((row, index) => {
+    const badge = row.querySelector('.job-order-badge');
+    if (badge) {
+      badge.textContent = index + 1;
+    }
+  });
+}
+
+/**
+ * 並び替え順序を保存
+ */
+export async function saveSortOrder() {
+  const jobsList = document.getElementById('jobs-list');
+  if (!jobsList) return;
+
+  const saveBtn = document.getElementById('btn-save-sort');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
+  }
+
+  try {
+    const rows = jobsList.querySelectorAll('.job-card-row');
+    const updates = [];
+
+    rows.forEach((row, index) => {
+      const rowIndex = row.dataset.row;
+      const newOrder = index + 1;
+
+      // jobsCacheから該当の求人を見つけて更新
+      const job = jobsCache.find(j => j._rowIndex === parseInt(rowIndex));
+      if (job) {
+        job.order = newOrder;
+        updates.push({ jobId: job.id, order: newOrder, job });
+      }
+    });
+
+    // 各求人のorderを更新（GASに保存）
+    for (const update of updates) {
+      await saveJobOrderToSheet(update.job, update.order);
+    }
+
+    alert('並び順を保存しました');
+    exitSortMode();
+
+  } catch (error) {
+    console.error('Failed to save sort order:', error);
+    alert('並び順の保存に失敗しました');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '順序を保存';
+    }
+  }
+}
+
+/**
+ * 求人のorderをGASに保存
+ */
+async function saveJobOrderToSheet(job, order) {
+  const jobData = { ...job, order: String(order) };
+  const rowIndex = job._rowIndex;
+  // _rowIndexはGAS側で不要なので除外
+  delete jobData._rowIndex;
+
+  const response = await fetch(config.gasApiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'saveJob',
+      companyDomain: companyDomain,
+      job: jobData,
+      rowIndex: rowIndex
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save job order: ${response.status}`);
+  }
+}
+
+/**
+ * 並び替えモードのイベントリスナーを設定
+ */
+export function setupSortModeEvents() {
+  const sortModeBtn = document.getElementById('btn-sort-mode');
+  const saveSortBtn = document.getElementById('btn-save-sort');
+  const cancelSortBtn = document.getElementById('btn-cancel-sort');
+
+  if (sortModeBtn) {
+    sortModeBtn.addEventListener('click', enterSortMode);
+  }
+
+  if (saveSortBtn) {
+    saveSortBtn.addEventListener('click', saveSortOrder);
+  }
+
+  if (cancelSortBtn) {
+    cancelSortBtn.addEventListener('click', () => exitSortMode(true));
+  }
 }
