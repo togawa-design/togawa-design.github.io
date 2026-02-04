@@ -1430,30 +1430,46 @@ async function disconnectJmCalendar(userId) {
 }
 
 /**
+ * ローカル開発環境かどうかを判定
+ */
+function isLocalDev() {
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
+
+/**
  * 面談設定モーダルを表示
  */
 async function showJmInterviewModal() {
   const modal = document.getElementById('jm-interview-modal');
   if (!modal) return;
 
-  // 担当者一覧を取得（キャッシュがなければ取得）
-  if (jmAssigneesCache.length === 0) {
-    try {
-      const db = firebase.firestore();
-      const snapshot = await db.collection('company_users')
-        .where('companyDomain', '==', companyDomain)
-        .where('isActive', '==', true)
-        .get();
+  // ローカル開発環境の場合はダミーデータを使用
+  if (isLocalDev()) {
+    jmAssigneesCache = [
+      { id: 'local-user-1', name: 'テスト担当者1', username: 'test1' },
+      { id: 'local-user-2', name: 'テスト担当者2', username: 'test2' }
+    ];
+    jmCalendarIntegrationsCache = {};
+  } else {
+    // 担当者一覧を取得（キャッシュがなければ取得）
+    if (jmAssigneesCache.length === 0) {
+      try {
+        const db = firebase.firestore();
+        const snapshot = await db.collection('company_users')
+          .where('companyDomain', '==', companyDomain)
+          .where('isActive', '==', true)
+          .get();
 
-      jmAssigneesCache = [];
-      snapshot.forEach(doc => {
-        jmAssigneesCache.push({
-          id: doc.id,
-          ...doc.data()
+        jmAssigneesCache = [];
+        snapshot.forEach(doc => {
+          jmAssigneesCache.push({
+            id: doc.id,
+            ...doc.data()
+          });
         });
-      });
-    } catch (error) {
-      console.error('Failed to load assignees:', error);
+      } catch (error) {
+        console.error('Failed to load assignees:', error);
+      }
     }
   }
 
@@ -1476,7 +1492,7 @@ async function showJmInterviewModal() {
   document.getElementById('jm-availability-section').style.display = 'none';
   document.getElementById('jm-selected-slot-section').style.display = 'none';
   document.getElementById('jm-manual-datetime-section').style.display = 'block';
-  document.getElementById('jm-calendar-status-hint').textContent = '';
+  document.getElementById('jm-calendar-status-hint').textContent = isLocalDev() ? 'ローカル環境: 手動入力のみ利用可能' : '';
   document.getElementById('jm-interview-datetime').value = '';
 
   modal.style.display = 'flex';
@@ -1690,6 +1706,15 @@ async function saveJmInterview() {
     console.log('[saveJmInterview] meetingType:', meetingType);
 
     const staffName = selectedOption?.textContent?.replace(' (📅連携済)', '') || '';
+
+    // ローカル環境ではAPIを呼ばずにUIのみ更新
+    if (isLocalDev()) {
+      console.log('[saveJmInterview] ローカル環境: APIスキップ');
+      showToast('面談を登録しました（ローカルモード）');
+      closeJmInterviewModal();
+      updateJmInterviewInfo(scheduledAt, staffName, meetingType, location, null);
+      return;
+    }
 
     // カレンダーイベントを作成
     const result = await CalendarService.createCalendarEvent({
