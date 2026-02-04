@@ -543,18 +543,15 @@ function renderAvailabilityGrid(slots) {
     }
   });
 
-  grid.innerHTML = days.map(({ date, dateStr }) => {
+  const daysHtml = days.map(({ date, dateStr }) => {
     const daySlots = slotsByDate[dateStr] || [];
     const dayName = CalendarService.getDayOfWeek(date);
     const dayDate = `${date.getMonth() + 1}/${date.getDate()}`;
 
     return `
       <div class="availability-day">
-        <div class="availability-day-header">
-          <span class="day-name">${dayName}</span>
-          <span class="day-date">${dayDate}</span>
-        </div>
-        <div class="availability-slots">
+        <div class="day-header">${dayDate} (${dayName})</div>
+        <div class="day-slots">
           ${daySlots.length > 0
             ? daySlots.map(slot => {
                 const startTime = new Date(slot.start);
@@ -563,12 +560,14 @@ function renderAvailabilityGrid(slots) {
                 const isSelected = selectedSlot === slotId;
                 return `<button class="slot-btn ${isSelected ? 'selected' : ''}" data-slot="${escapeHtml(slotId)}">${timeStr}</button>`;
               }).join('')
-            : '<p class="no-slots">空きなし</p>'
+            : '<span class="no-slots">-</span>'
           }
         </div>
       </div>
     `;
   }).join('');
+
+  grid.innerHTML = `<div class="availability-week">${daysHtml}</div>`;
 
   // スロットボタンのイベントリスナー
   grid.querySelectorAll('.slot-btn').forEach(btn => {
