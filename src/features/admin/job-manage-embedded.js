@@ -1622,10 +1622,13 @@ function renderJmAvailabilityGrid(slots) {
         <div class="day-slots">
           ${daySlots.length === 0
             ? '<span class="no-slots">-</span>'
-            : daySlots.map(slot => {
+            : daySlots.map((slot, idx) => {
+                console.log(`[renderSlot] Slot ${idx}:`, slot);
                 const startTime = new Date(slot.start);
                 const timeStr = `${startTime.getHours()}:${String(startTime.getMinutes()).padStart(2, '0')}`;
-                return `<button type="button" class="slot-btn" data-start="${slot.start}" data-end="${slot.end}">${timeStr}</button>`;
+                const btnHtml = `<button type="button" class="slot-btn" data-start="${slot.start}" data-end="${slot.end}">${timeStr}</button>`;
+                if (idx === 0) console.log('[renderSlot] First button HTML:', btnHtml);
+                return btnHtml;
               }).join('')
           }
         </div>
@@ -1647,6 +1650,8 @@ function renderJmAvailabilityGrid(slots) {
 
     e.preventDefault();
     e.stopPropagation();
+    console.log('[slotClick] Button HTML:', btn.outerHTML);
+    console.log('[slotClick] Button attributes:', btn.attributes);
     console.log('[slotClick] Clicked slot:', btn.dataset.start, btn.dataset.end);
 
     newGrid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
