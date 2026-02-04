@@ -1743,7 +1743,7 @@ async function saveJmInterview() {
     }
 
     // カレンダーイベントを作成
-    const result = await CalendarService.createCalendarEvent({
+    const apiParams = {
       companyDomain,
       companyUserId: staffSelect.value,
       applicationId: jmCurrentApplicant?.id || '',
@@ -1758,9 +1758,13 @@ async function saveJmInterview() {
         { offsetMinutes: 1440 }, // 1日前
         { offsetMinutes: 60 }   // 1時間前
       ]
-    });
+    };
+    console.log('[saveJmInterview] Sending API params:', JSON.stringify(apiParams));
+
+    const result = await CalendarService.createCalendarEvent(apiParams);
 
     console.log('[saveJmInterview] API result:', result);
+    console.log('[saveJmInterview] result.meetLink:', result.meetLink);
 
     showToast('面談を登録しました');
     closeJmInterviewModal();
@@ -1782,11 +1786,15 @@ async function saveJmInterview() {
  * 面談情報をUIに反映
  */
 function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location, meetLink = null) {
+  console.log('[updateJmInterviewInfo] Called with:', { scheduledAt, staffName, meetingType, location, meetLink });
+
   const infoContainer = document.getElementById('jm-interview-info');
   if (!infoContainer) return;
 
   const dayName = CalendarService.getDayOfWeek(scheduledAt);
   const typeLabels = { in_person: '対面', online: 'オンライン', phone: '電話' };
+  const displayType = typeLabels[meetingType] || meetingType;
+  console.log('[updateJmInterviewInfo] meetingType:', meetingType, '-> displayType:', displayType);
 
   // Meetリンクがある場合はクリック可能なリンクとして表示
   let locationHtml = '';
