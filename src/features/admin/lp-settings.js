@@ -1496,20 +1496,36 @@ function saveLPSettingsLocal(settings, jobId, jobData) {
 
 // セクションの順番を取得
 export function getSectionOrder() {
-  const orderList = document.getElementById('lp-section-order');
-  if (!orderList) {
-    return ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
+  // lp-section-managerからセクション順序を取得
+  const lpContent = getCurrentLPContent();
+  if (lpContent?.sections?.length > 0) {
+    return lpContent.sections
+      .slice()
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map(s => s.type);
   }
-  return Array.from(orderList.querySelectorAll('li')).map(li => li.dataset.section);
+  return ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
 }
 
 // セクションの表示状態を取得
 export function getSectionVisibility() {
+  // lp-section-managerからセクション表示状態を取得
+  const lpContent = getCurrentLPContent();
+  if (lpContent?.sections?.length > 0) {
+    const visibility = {};
+    lpContent.sections.forEach(s => {
+      visibility[s.type] = s.visible !== false;
+    });
+    return visibility;
+  }
+  // フォールバック：デフォルト値
   return {
-    points: document.getElementById('section-points-visible')?.checked ?? true,
-    jobs: document.getElementById('section-jobs-visible')?.checked ?? true,
-    details: document.getElementById('section-details-visible')?.checked ?? true,
-    faq: document.getElementById('section-faq-visible')?.checked ?? true
+    hero: true,
+    points: true,
+    jobs: true,
+    details: true,
+    faq: true,
+    apply: true
   };
 }
 
@@ -1610,6 +1626,10 @@ function getCurrentLPSettings() {
   // カスタムカラーを取得
   const customColors = getLPCustomColors();
 
+  // v2セクションデータを取得
+  const lpContent = getCurrentLPContent();
+  const v2Sections = lpContent?.sections || [];
+
   const settings = {
     designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'standard',
     layoutStyle: layoutStyle,
@@ -1624,7 +1644,9 @@ function getCurrentLPSettings() {
     customPrimary: customColors.primary,
     customAccent: customColors.accent,
     customBg: customColors.bg,
-    customText: customColors.text
+    customText: customColors.text,
+    // v2セクションデータ
+    v2Sections: v2Sections
   };
 
   // ポイントデータを設定に追加
@@ -1669,21 +1691,40 @@ function generatePreviewHtml(company, lpSettings) {
     }
   }
 
+  // v2セクションをマップに変換（IDでアクセス可能に）
+  const v2SectionsMap = {};
+  (lpSettings.v2Sections || []).forEach(s => {
+    v2SectionsMap[s.type] = s;
+  });
+
   // 各セクションをレンダリング
   const sectionsHtml = sectionOrder.map(section => {
+    // 非表示の場合はスキップ
+    if (sectionVisibility[section] === false) return '';
+
     switch (section) {
       case 'hero':
         return renderPreviewHero(company, lpSettings);
       case 'points':
-        return sectionVisibility.points ? renderPreviewPoints(lpSettings) : '';
+        return renderPreviewPoints(lpSettings);
       case 'jobs':
-        return sectionVisibility.jobs ? renderPreviewJobs(company) : '';
+        return renderPreviewJobs(company);
       case 'details':
-        return sectionVisibility.details ? renderPreviewDetails(company) : '';
+        return renderPreviewDetails(company);
       case 'faq':
-        return (sectionVisibility.faq && lpSettings.faq) ? renderPreviewFAQ(lpSettings.faq) : '';
+        return lpSettings.faq ? renderPreviewFAQ(lpSettings.faq) : '';
       case 'apply':
         return renderPreviewApply(company, lpSettings);
+      case 'video':
+        return renderPreviewVideo(v2SectionsMap.video);
+      case 'carousel':
+        return renderPreviewCarousel(v2SectionsMap.carousel);
+      case 'gallery':
+        return renderPreviewGallery(v2SectionsMap.gallery);
+      case 'testimonial':
+        return renderPreviewTestimonial(v2SectionsMap.testimonial);
+      case 'custom':
+        return renderPreviewCustom(v2SectionsMap.custom);
       default:
         return '';
     }
@@ -1857,6 +1898,139 @@ function renderPreviewApply(company, lpSettings) {
   `;
 }
 
+// 動画セクション
+function renderPreviewVideo(sectionData) {
+  if (!sectionData || sectionData.visible === false) return '';
+  const data = sectionData.data || {};
+  const title = data.sectionTitle || '';
+  const videoUrl = data.videoUrl || '';
+
+  if (!videoUrl) return '';
+
+  // YouTubeのIDを抽出
+  let embedHtml = '';
+  const ytMatch = videoUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^?&]+)/);
+  if (ytMatch) {
+    embedHtml = `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:8px;"></iframe>`;
+  } else {
+    embedHtml = `<div class="lp-video-placeholder">動画: ${escapeHtml(videoUrl)}</div>`;
+  }
+
+  return `
+    <section class="lp-video">
+      <div class="lp-section-inner">
+        ${title ? `<h2 class="lp-section-title">${escapeHtml(title)}</h2>` : ''}
+        <div class="lp-video-container">${embedHtml}</div>
+      </div>
+    </section>
+  `;
+}
+
+// カルーセルセクション
+function renderPreviewCarousel(sectionData) {
+  if (!sectionData || sectionData.visible === false) return '';
+  const data = sectionData.data || {};
+  const title = data.sectionTitle || '';
+  const images = data.images || [];
+
+  if (images.length === 0) return '';
+
+  return `
+    <section class="lp-carousel">
+      <div class="lp-section-inner">
+        ${title ? `<h2 class="lp-section-title">${escapeHtml(title)}</h2>` : ''}
+        <div class="lp-carousel-preview">
+          ${images.slice(0, 3).map((img, i) => {
+            const url = typeof img === 'string' ? img : img.url;
+            return url ? `<img src="${escapeHtml(url)}" alt="画像${i + 1}" style="width:100%;max-width:200px;height:120px;object-fit:cover;border-radius:8px;">` : '';
+          }).join('')}
+          ${images.length > 3 ? `<span style="color:#888;">他${images.length - 3}枚</span>` : ''}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+// ギャラリーセクション
+function renderPreviewGallery(sectionData) {
+  if (!sectionData || sectionData.visible === false) return '';
+  const data = sectionData.data || {};
+  const title = data.sectionTitle || '';
+  const images = data.images || [];
+
+  if (images.length === 0) return '';
+
+  const columns = sectionData.layout?.columns || 3;
+
+  return `
+    <section class="lp-gallery">
+      <div class="lp-section-inner">
+        ${title ? `<h2 class="lp-section-title">${escapeHtml(title)}</h2>` : ''}
+        <div class="lp-gallery-grid" style="display:grid;grid-template-columns:repeat(${columns}, 1fr);gap:8px;">
+          ${images.slice(0, 6).map((img, i) => {
+            const url = typeof img === 'string' ? img : img.url;
+            return url ? `<img src="${escapeHtml(url)}" alt="画像${i + 1}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;">` : '';
+          }).join('')}
+        </div>
+        ${images.length > 6 ? `<p style="text-align:center;color:#888;margin-top:10px;">他${images.length - 6}枚</p>` : ''}
+      </div>
+    </section>
+  `;
+}
+
+// 社員の声セクション
+function renderPreviewTestimonial(sectionData) {
+  if (!sectionData || sectionData.visible === false) return '';
+  const data = sectionData.data || {};
+  const title = data.sectionTitle || '社員の声';
+  const testimonials = data.testimonials || [];
+
+  if (testimonials.length === 0) return '';
+
+  return `
+    <section class="lp-testimonial">
+      <div class="lp-section-inner">
+        <h2 class="lp-section-title">${escapeHtml(title)}</h2>
+        <div class="lp-testimonial-list" style="display:flex;flex-direction:column;gap:20px;">
+          ${testimonials.slice(0, 3).map(t => `
+            <div class="lp-testimonial-card" style="background:#f8f9fa;padding:20px;border-radius:12px;">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                ${t.avatar ? `<img src="${escapeHtml(t.avatar)}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">` : '<div style="width:48px;height:48px;border-radius:50%;background:#ddd;"></div>'}
+                <div>
+                  <div style="font-weight:700;">${escapeHtml(t.name || '社員')}</div>
+                  ${t.role ? `<div style="font-size:12px;color:#666;">${escapeHtml(t.role)}</div>` : ''}
+                </div>
+              </div>
+              <p style="font-size:14px;color:#444;">${escapeHtml(t.quote || '')}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+// カスタムセクション
+function renderPreviewCustom(sectionData) {
+  if (!sectionData || sectionData.visible === false) return '';
+  const data = sectionData.data || {};
+  const title = data.title || '';
+  const content = data.content || '';
+  const image = data.image || '';
+
+  if (!title && !content && !image) return '';
+
+  return `
+    <section class="lp-custom">
+      <div class="lp-section-inner">
+        ${title ? `<h2 class="lp-section-title">${escapeHtml(title)}</h2>` : ''}
+        ${image ? `<img src="${escapeHtml(image)}" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;margin-bottom:20px;">` : ''}
+        ${content ? `<div class="lp-custom-content">${content}</div>` : ''}
+      </div>
+    </section>
+  `;
+}
+
 // プレビュー用スタイル
 function getPreviewStyles() {
   return `
@@ -1920,6 +2094,21 @@ function getPreviewStyles() {
     .lp-pattern-colorful .lp-btn-apply-hero, .lp-pattern-colorful .lp-btn-apply-main { background: linear-gradient(90deg, var(--lp-primary, #ec4899), var(--lp-accent, #8b5cf6)); }
     .lp-pattern-colorful .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #ec4899) 0%, var(--lp-accent, #8b5cf6) 100%); }
     .lp-pattern-colorful .lp-faq-q { background: var(--lp-primary, #ec4899); }
+
+    /* カスタムセクション */
+    .lp-video { background: var(--lp-bg, #fff); }
+    .lp-video-container { max-width: 600px; margin: 0 auto; }
+    .lp-video-placeholder { text-align: center; padding: 40px; background: #f0f0f0; border-radius: 8px; color: #888; }
+
+    .lp-carousel { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
+    .lp-carousel-preview { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+
+    .lp-gallery { background: var(--lp-bg, #fff); }
+
+    .lp-testimonial { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
+
+    .lp-custom { background: var(--lp-bg, #fff); }
+    .lp-custom-content { font-size: 14px; line-height: 1.8; color: var(--lp-text, #333); }
   `;
 }
 

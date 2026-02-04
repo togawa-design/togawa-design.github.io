@@ -211,46 +211,57 @@ function updateJobsPreview() {
 
 /**
  * カスタムセクションのプレビューを更新
+ * 各カスタムセクションを個別のpreview-reorderable要素として追加
  */
 function updateCustomSectionsPreview() {
-  const container = document.getElementById('preview-custom-sections');
-  if (!container) return;
+  const mainContainer = document.getElementById('preview-sections-container');
+  if (!mainContainer) return;
+
+  // 既存のカスタムセクションプレビューを削除
+  mainContainer.querySelectorAll('.preview-custom-section').forEach(el => el.remove());
+
+  // 旧コンテナを削除（reorderableクラスを持っているため並び替えに干渉する）
+  const oldContainer = document.getElementById('preview-custom-sections');
+  if (oldContainer) {
+    oldContainer.remove();
+  }
 
   // 現在のカスタムセクションを取得
   const sections = getCustomSections();
 
   if (!sections || sections.length === 0) {
-    container.innerHTML = '';
     return;
   }
 
-  container.innerHTML = sections.map(section => {
+  // 各カスタムセクションを個別の要素として作成
+  sections.forEach((section, index) => {
     const template = sectionTemplates.find(t => t.id === section.type);
+    let innerHtml = '';
 
     if (section.type === 'heading' || (template && template.id === 'heading')) {
       const content = section.content || '';
-      return content ? `
-        <div class="preview-custom-heading">
-          <h3>${escapeHtml(truncateText(content, 15))}</h3>
-        </div>
-      ` : '';
-    }
-
-    if (section.type === 'text' || (template && template.id === 'text')) {
+      if (content) {
+        innerHtml = `
+          <div class="preview-custom-heading">
+            <h3>${escapeHtml(truncateText(content, 15))}</h3>
+          </div>
+        `;
+      }
+    } else if (section.type === 'text' || (template && template.id === 'text')) {
       const content = section.content || '';
-      return content ? `
-        <div class="preview-custom-text">
-          <p>${escapeHtml(truncateText(content, 40))}</p>
-        </div>
-      ` : '';
-    }
-
-    if (template) {
+      if (content) {
+        innerHtml = `
+          <div class="preview-custom-text">
+            <p>${escapeHtml(truncateText(content, 40))}</p>
+          </div>
+        `;
+      }
+    } else if (template) {
       // テンプレート型セクション
       const title = section.title || template.label;
       const hasImage = section.image || (section.images && section.images.length > 0);
 
-      return `
+      innerHtml = `
         <div class="preview-custom-template" data-type="${template.id}">
           <div class="preview-custom-template-header">
             <span class="preview-custom-template-badge">${escapeHtml(template.name)}</span>
@@ -262,8 +273,14 @@ function updateCustomSectionsPreview() {
       `;
     }
 
-    return '';
-  }).join('');
+    if (innerHtml) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'preview-section preview-reorderable preview-custom-section';
+      wrapper.dataset.section = `custom-${index}`;
+      wrapper.innerHTML = innerHtml;
+      mainContainer.appendChild(wrapper);
+    }
+  });
 }
 
 /**
