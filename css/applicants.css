@@ -1104,13 +1104,10 @@
   text-align: center;
 }
 
-/* 空き時間グリッド */
+/* 空き時間グリッド（コンテナ） */
 .availability-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
   max-height: 300px;
-  overflow-y: auto;
+  overflow: auto;
   padding: 4px;
 }
 
@@ -1118,17 +1115,15 @@
 .availability-week {
   display: flex;
   gap: 8px;
-  overflow-x: auto;
-  padding: 4px;
+  min-width: max-content;
 }
 
 .availability-day {
   background: #f8fafc;
   border-radius: 8px;
   padding: 8px;
-  min-width: 0;
-  flex: 1;
-  min-width: 80px;
+  min-width: 100px;
+  flex-shrink: 0;
 }
 
 .day-header {
