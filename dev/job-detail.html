@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E1XC94EG05"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
+    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
+  </script>
+
+  <!-- 基本SEO（動的に更新） -->
+  <title>求人詳細 | L-SET</title>
+  <meta name="description" content="求人詳細ページ。あなたの希望に合った高待遇求人が見つかります。">
+  <meta name="robots" content="index, follow">
+
+  <!-- OGP -->
+  <meta property="og:title" content="求人詳細 | L-SET">
+  <meta property="og:description" content="求人詳細ページ。あなたの希望に合った高待遇求人が見つかります。">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="L-SET">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/dev/favicon.ico" sizes="any">
+  <link rel="icon" href="/images/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/dev/assets/apple-touch-icon-BzAbfiIz.png">
+
+  <!-- テーマカラー -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/dev/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/dev/js/jobDetail-1c7Z-Hio.js"></script>
+  <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/utils-DCR9QUau.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-B-Q2mOFQ.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/index-DxoBw2ek.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/layout-HC3mTLrQ.js">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="logo">
+        <a href="./">
+          <img src="/dev/assets/logo-DTIMJJ5W.png" alt="L-SET" class="logo-img">
+          <span class="logo-sub">あなたの仕事探しをサポート</span>
+        </a>
+      </div>
+      <nav class="main-nav" aria-label="メインナビゲーション">
+        <ul class="nav-list">
+          <li><a href="./#jobs">お仕事紹介</a></li>
+          <li><a href="./#content">コンテンツ</a></li>
+          <li><a href="./#about">当サイトについて</a></li>
+          <li><a href="./#contact">お問い合わせ</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+      </div>
+      <button class="mobile-menu-btn" aria-label="メニュー">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main role="main">
+    <!-- パンくずリスト -->
+    <nav class="breadcrumb" aria-label="パンくずリスト">
+      <div class="container">
+        <ol>
+          <li><a href="./">ホーム</a></li>
+          <li><a href="./#jobs">求人一覧</a></li>
+          <li id="breadcrumb-company"><a href="#">企業名</a></li>
+          <li id="breadcrumb-current">求人詳細</li>
+        </ol>
+      </div>
+    </nav>
+
+    <!-- 求人詳細コンテンツ -->
+    <section class="job-detail-section">
+      <div class="container">
+        <div id="job-detail-container">
+          <div class="job-detail-loading">
+            <div class="job-detail-loading-inner">
+              <div class="loading-spinner large"></div>
+              <p class="loading-text">求人情報を読み込んでいます...</p>
+              <p class="loading-subtext">しばらくお待ちください</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 他の求人セクション -->
+    <section class="related-jobs-section">
+      <div class="container">
+        <h2 class="section-title">その他の求人</h2>
+        <div class="jobs-grid" id="related-jobs-container">
+        </div>
+        <div class="jobs-more">
+          <a href="./#jobs" class="btn-more">すべての求人を見る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- フッター -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3>サイトについて</h3>
+          <ul>
+            <li><a href="about.html">当サイトについて</a></li>
+            <li><a href="https://www.receco.co.jp/" target="_blank" rel="noopener noreferrer">運営会社</a></li>
+            <li><a href="privacy.html">プライバシーポリシー</a></li>
+            <li><a href="terms.html">利用規約</a></li>
+            <li><a href="admin.html">管理画面</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>勤務地から探す</h3>
+          <ul id="footer-locations">
+            <li><a href="location.html">すべてのエリア</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>職種名から探す</h3>
+          <ul id="footer-job-types">
+            <li><a href="jobs.html">すべての求人</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>お問い合わせ</h3>
+          <ul>
+            <li><a href="#contact">お問い合わせフォーム</a></li>
+            <li><a href="#">よくある質問</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p><small>&copy; 2025 L-SET All Rights Reserved.</small></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 応募モーダル -->
+  <div id="apply-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content apply-modal-content">
+      <button class="modal-close" aria-label="閉じる">&times;</button>
+
+      <!-- 応募フォーム -->
+      <div id="apply-step-form" class="apply-step">
+        <h2 class="modal-title">応募フォーム</h2>
+        <p class="modal-subtitle" id="apply-job-info"></p>
+        <form id="apply-form" class="apply-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>お名前 <span class="required">*</span></label>
+              <input type="text" id="apply-name" placeholder="山田 太郎" required>
+            </div>
+            <div class="form-group">
+              <label>ふりがな <span class="required">*</span></label>
+              <input type="text" id="apply-name-kana" placeholder="やまだ たろう" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>生年月日 <span class="required">*</span></label>
+              <input type="date" id="apply-birthdate" required>
+            </div>
+            <div class="form-group">
+              <label>性別</label>
+              <select id="apply-gender">
+                <option value="">選択しない</option>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>電話番号 <span class="required">*</span></label>
+            <input type="tel" id="apply-phone" placeholder="090-1234-5678" required>
+          </div>
+          <div class="form-group">
+            <label>メールアドレス <span class="required">*</span></label>
+            <input type="email" id="apply-email" placeholder="example@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>現在の住所（市区町村まで） <span class="required">*</span></label>
+            <input type="text" id="apply-address" placeholder="東京都渋谷区" required>
+          </div>
+          <div class="form-group">
+            <label>備考・質問（任意）</label>
+            <textarea id="apply-message" rows="3" placeholder="企業へのメッセージや質問があればご記入ください"></textarea>
+          </div>
+          <button type="submit" class="btn-primary btn-full">応募する</button>
+        </form>
+        <div id="apply-form-error" class="form-error" style="display: none;"></div>
+      </div>
+
+      <!-- 完了画面 -->
+      <div id="apply-step-complete" class="apply-step" style="display: none;">
+        <div class="apply-complete">
+          <div class="apply-complete-icon">&#10003;</div>
+          <h2 class="modal-title">応募が完了しました</h2>
+          <p class="modal-text">ご応募ありがとうございます。<br>企業からメールまたは電話でご連絡いたします。</p>
+          <div class="apply-complete-actions">
+            <button type="button" class="btn-primary modal-close-btn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</body>
+</html>
