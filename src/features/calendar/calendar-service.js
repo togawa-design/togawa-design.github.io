@@ -7,6 +7,37 @@
 const FUNCTIONS_BASE_URL = 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net';
 
 /**
+ * Firebase IDトークンを取得
+ * @returns {Promise<string|null>}
+ */
+async function getIdToken() {
+  try {
+    const user = firebase.auth().currentUser;
+    if (user) {
+      return await user.getIdToken();
+    }
+  } catch (error) {
+    console.warn('Failed to get ID token:', error);
+  }
+  return null;
+}
+
+/**
+ * 認証ヘッダーを取得
+ * @returns {Promise<Object>}
+ */
+async function getAuthHeaders() {
+  const token = await getIdToken();
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+/**
  * カレンダー認証を開始（OAuth URLを取得）
  * @param {string} companyDomain - 会社ドメイン
  * @param {string} companyUserId - 会社ユーザーID
@@ -14,11 +45,15 @@ const FUNCTIONS_BASE_URL = 'https://asia-northeast1-generated-area-484613-e3-90b
  * @returns {Promise<{authUrl: string}>}
  */
 export async function initiateCalendarAuth(companyDomain, companyUserId, staffName) {
+  // ローカル開発時はスキップ
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    throw new Error('ローカル開発環境ではカレンダー連携は利用できません。本番環境でお試しください。');
+  }
+
+  const headers = await getAuthHeaders();
   const response = await fetch(`${FUNCTIONS_BASE_URL}/initiateCalendarAuth`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify({
       companyDomain,
       companyUserId,
@@ -41,8 +76,15 @@ export async function initiateCalendarAuth(companyDomain, companyUserId, staffNa
  * @returns {Promise<{integration: Object|null}>}
  */
 export async function getCalendarIntegration(companyDomain, companyUserId) {
+  // ローカル開発時はスキップ（組織ポリシーでallUsersが禁止されているため）
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('[Calendar] ローカル開発環境ではカレンダー連携は利用できません');
+    return { success: true, integration: null };
+  }
+
+  const headers = await getAuthHeaders();
   const params = new URLSearchParams({ companyDomain, companyUserId });
-  const response = await fetch(`${FUNCTIONS_BASE_URL}/getCalendarIntegration?${params}`);
+  const response = await fetch(`${FUNCTIONS_BASE_URL}/getCalendarIntegration?${params}`, { headers });
 
   if (!response.ok) {
     const error = await response.json();
@@ -59,11 +101,10 @@ export async function getCalendarIntegration(companyDomain, companyUserId) {
  * @returns {Promise<{success: boolean}>}
  */
 export async function revokeCalendarAuth(companyDomain, companyUserId) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${FUNCTIONS_BASE_URL}/revokeCalendarAuth`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify({
       companyDomain,
       companyUserId
@@ -87,6 +128,7 @@ export async function revokeCalendarAuth(companyDomain, companyUserId) {
  * @returns {Promise<{availableSlots: Array}>}
  */
 export async function getCalendarAvailability(companyDomain, companyUserId, startDate, endDate) {
+  const headers = await getAuthHeaders();
   const params = new URLSearchParams({
     companyDomain,
     companyUserId,
@@ -94,7 +136,7 @@ export async function getCalendarAvailability(companyDomain, companyUserId, star
     endDate
   });
 
-  const response = await fetch(`${FUNCTIONS_BASE_URL}/getCalendarAvailability?${params}`);
+  const response = await fetch(`${FUNCTIONS_BASE_URL}/getCalendarAvailability?${params}`, { headers });
 
   if (!response.ok) {
     const error = await response.json();
@@ -121,11 +163,10 @@ export async function getCalendarAvailability(companyDomain, companyUserId, star
  * @returns {Promise<{interviewId: string, googleEventId: string}>}
  */
 export async function createCalendarEvent(params) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${FUNCTIONS_BASE_URL}/createCalendarEvent`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify(params)
   });
 

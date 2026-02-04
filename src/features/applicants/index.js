@@ -1746,6 +1746,26 @@ function setupEventListeners() {
 
   // リマインダー設定保存
   getEl('btn-save-reminder-settings')?.addEventListener('click', saveReminderSettings);
+
+  // モバイルメニューボタン
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.querySelector('.admin-sidebar');
+  if (mobileMenuBtn && sidebar) {
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      mobileMenuBtn.classList.toggle('active');
+    });
+
+    // サイドバー外クリックで閉じる
+    document.addEventListener('click', (e) => {
+      if (sidebar.classList.contains('open') &&
+          !sidebar.contains(e.target) &&
+          !mobileMenuBtn.contains(e.target)) {
+        sidebar.classList.remove('open');
+        mobileMenuBtn.classList.remove('active');
+      }
+    });
+  }
 }
 
 /**

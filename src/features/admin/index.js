@@ -303,6 +303,7 @@ function navigateToCompanyEdit(domain, returnSection = 'company-manage') {
 
 // イベントバインド
 function bindEvents() {
+  console.log('bindEvents called');
   // モバイルメニュー
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   if (mobileMenuBtn) {
@@ -329,8 +330,10 @@ function bindEvents() {
   }
 
   // ログインタブ切り替え
+  console.log('Setting up login tabs, found:', document.querySelectorAll('.login-tab').length);
   document.querySelectorAll('.login-tab').forEach(tab => {
     tab.addEventListener('click', () => {
+      console.log('Tab clicked:', tab.dataset.tab);
       const tabType = tab.dataset.tab;
 
       // タブのアクティブ状態を切り替え

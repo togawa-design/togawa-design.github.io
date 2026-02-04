@@ -2825,10 +2825,15 @@ functions.http('revokeCalendarAuth', (req, res) => {
 functions.http('getCalendarAvailability', (req, res) => {
   corsHandler(req, res, async () => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-      const { companyDomain, companyUserId, startDate, endDate, durationMinutes = 60 } = req.body;
+      // GET または POST に対応
+      const companyDomain = req.query.companyDomain || req.body?.companyDomain;
+      const companyUserId = req.query.companyUserId || req.body?.companyUserId;
+      const startDate = req.query.startDate || req.body?.startDate;
+      const endDate = req.query.endDate || req.body?.endDate;
+      const durationMinutes = parseInt(req.query.durationMinutes || req.body?.durationMinutes) || 60;
       if (!companyDomain || !companyUserId || !startDate || !endDate) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
@@ -3033,10 +3038,12 @@ functions.http('createCalendarEvent', (req, res) => {
 functions.http('getCalendarIntegration', (req, res) => {
   corsHandler(req, res, async () => {
     if (req.method === 'OPTIONS') return res.status(204).send('');
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-      const { companyDomain, companyUserId } = req.body;
+      // GET または POST に対応
+      const companyDomain = req.query.companyDomain || req.body?.companyDomain;
+      const companyUserId = req.query.companyUserId || req.body?.companyUserId;
       if (!companyDomain || !companyUserId) {
         return res.status(400).json({ error: 'companyDomain and companyUserId are required' });
       }

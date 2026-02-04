@@ -17,6 +17,7 @@ import {
 
 import { initApplicantsSection } from '@features/applicants/index.js';
 import { initRecruitSettings } from '@features/job-manage/recruit-settings.js';
+import * as CalendarService from '@features/calendar/calendar-service.js';
 import { config } from '@features/job-manage/auth.js';
 import { showToast, escapeHtml } from '@shared/utils.js';
 import { generateIndeedXml, generateGoogleJobsJsonLd, generateJobBoxXml, generateCsv, downloadFile } from '@features/admin/job-feed-generator.js';
@@ -46,6 +47,13 @@ let isInitializing = false;
 // 求人編集用の状態
 let currentEditingJob = null;
 let isNewJob = false;
+
+// カレンダー連携用の状態
+let jmCalendarIntegrationsCache = {};
+let jmCurrentWeekStart = null;
+let jmSelectedSlot = null;
+let jmCurrentApplicant = null;
+let jmAssigneesCache = [];
 
 /**
  * job-manage埋め込みセクションを初期化
@@ -1008,6 +1016,34 @@ function setupEventListeners() {
 
   // アナリティクス日付範囲の初期化
   initJmDateRangePicker();
+
+  // カレンダー連携設定ボタン
+  document.getElementById('jm-btn-calendar-settings')?.addEventListener('click', showJmCalendarSettingsModal);
+  document.getElementById('jm-calendar-settings-close')?.addEventListener('click', closeJmCalendarSettingsModal);
+  document.getElementById('jm-calendar-settings-close-btn')?.addEventListener('click', closeJmCalendarSettingsModal);
+  document.getElementById('jm-calendar-settings-modal')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      closeJmCalendarSettingsModal();
+    }
+  });
+
+  // 面談設定モーダル
+  document.getElementById('jm-btn-schedule-interview')?.addEventListener('click', showJmInterviewModal);
+  document.getElementById('jm-interview-modal-close')?.addEventListener('click', closeJmInterviewModal);
+  document.getElementById('jm-interview-modal-cancel')?.addEventListener('click', closeJmInterviewModal);
+  document.getElementById('jm-interview-modal-save')?.addEventListener('click', saveJmInterview);
+  document.getElementById('jm-interview-modal')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      closeJmInterviewModal();
+    }
+  });
+
+  // 担当者選択変更時
+  document.getElementById('jm-interview-staff')?.addEventListener('change', handleJmStaffChange);
+
+  // 週ナビゲーション
+  document.getElementById('jm-btn-prev-week')?.addEventListener('click', () => navigateJmWeek(-1));
+  document.getElementById('jm-btn-next-week')?.addEventListener('click', () => navigateJmWeek(1));
 }
 
 /**
@@ -1222,6 +1258,488 @@ async function downloadFeed(type) {
   } finally {
     if (statusEl) statusEl.style.display = 'none';
   }
+}
+
+// ========================================
+// カレンダー連携関連
+// ========================================
+
+/**
+ * カレンダー連携設定モーダルを表示
+ */
+async function showJmCalendarSettingsModal() {
+  const modal = document.getElementById('jm-calendar-settings-modal');
+  if (!modal) return;
+
+  modal.style.display = 'flex';
+  await loadJmCalendarIntegrations();
+}
+
+/**
+ * カレンダー連携設定モーダルを閉じる
+ */
+function closeJmCalendarSettingsModal() {
+  const modal = document.getElementById('jm-calendar-settings-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+/**
+ * カレンダー連携情報を読み込み
+ */
+async function loadJmCalendarIntegrations() {
+  jmCalendarIntegrationsCache = {};
+
+  try {
+    // Firestoreから担当者（会社ユーザー）一覧を取得
+    const db = firebase.firestore();
+    const snapshot = await db.collection('company_users')
+      .where('companyDomain', '==', companyDomain)
+      .where('isActive', '==', true)
+      .get();
+
+    jmAssigneesCache = [];
+    snapshot.forEach(doc => {
+      jmAssigneesCache.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // 各担当者のカレンダー連携情報を取得
+    for (const user of jmAssigneesCache) {
+      try {
+        const result = await CalendarService.getCalendarIntegration(companyDomain, user.id);
+        if (result.integration) {
+          jmCalendarIntegrationsCache[user.id] = result.integration;
+        }
+      } catch (e) {
+        console.log(`No calendar integration for user ${user.id}`);
+      }
+    }
+
+    renderJmCalendarIntegrationsList();
+  } catch (error) {
+    console.error('Failed to load calendar integrations:', error);
+    showToast('カレンダー連携情報の取得に失敗しました', 'error');
+  }
+}
+
+/**
+ * カレンダー連携一覧を描画
+ */
+function renderJmCalendarIntegrationsList() {
+  const container = document.getElementById('jm-calendar-integrations-list');
+  if (!container) return;
+
+  if (jmAssigneesCache.length === 0) {
+    container.innerHTML = '<p class="no-data">担当者が登録されていません</p>';
+    return;
+  }
+
+  container.innerHTML = jmAssigneesCache.map(user => {
+    const integration = jmCalendarIntegrationsCache[user.id];
+    const isConnected = integration?.isActive;
+
+    return `
+      <div class="calendar-integration-item" data-user-id="${escapeHtml(user.id)}">
+        <div class="calendar-integration-info">
+          <div class="calendar-integration-icon">👤</div>
+          <div class="calendar-integration-details">
+            <strong>${escapeHtml(user.name || user.username)}</strong>
+            ${isConnected ? `<small>${escapeHtml(integration.email || '')}</small>` : ''}
+          </div>
+        </div>
+        <div class="calendar-integration-actions">
+          ${isConnected
+            ? `<span class="calendar-status connected">連携中</span>
+               <button class="btn-disconnect-calendar" data-user-id="${escapeHtml(user.id)}">解除</button>`
+            : `<button class="btn-connect-calendar" data-user-id="${escapeHtml(user.id)}" data-user-name="${escapeHtml(user.name || user.username)}">
+                 Googleカレンダーと連携
+               </button>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // イベントリスナーを設定
+  container.querySelectorAll('.btn-connect-calendar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const userId = btn.dataset.userId;
+      const userName = btn.dataset.userName;
+      connectJmCalendar(userId, userName);
+    });
+  });
+
+  container.querySelectorAll('.btn-disconnect-calendar').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const userId = btn.dataset.userId;
+      disconnectJmCalendar(userId);
+    });
+  });
+}
+
+/**
+ * カレンダー連携を開始
+ */
+async function connectJmCalendar(userId, userName) {
+  try {
+    const result = await CalendarService.initiateCalendarAuth(companyDomain, userId, userName);
+
+    window.open(result.authUrl, 'calendar-auth', 'width=600,height=700');
+
+    // ポーリングで連携完了を検知
+    const checkInterval = setInterval(async () => {
+      try {
+        const checkResult = await CalendarService.getCalendarIntegration(companyDomain, userId);
+        if (checkResult.integration?.isActive) {
+          clearInterval(checkInterval);
+          jmCalendarIntegrationsCache[userId] = checkResult.integration;
+          renderJmCalendarIntegrationsList();
+          showToast('カレンダー連携が完了しました');
+        }
+      } catch (e) {
+        // 連携未完了の場合は継続
+      }
+    }, 2000);
+
+    // 60秒後にポーリング停止
+    setTimeout(() => clearInterval(checkInterval), 60000);
+
+  } catch (error) {
+    console.error('Failed to initiate calendar auth:', error);
+    showToast('カレンダー連携の開始に失敗しました', 'error');
+  }
+}
+
+/**
+ * カレンダー連携を解除
+ */
+async function disconnectJmCalendar(userId) {
+  if (!confirm('カレンダー連携を解除しますか？')) return;
+
+  try {
+    await CalendarService.revokeCalendarAuth(companyDomain, userId);
+    delete jmCalendarIntegrationsCache[userId];
+    renderJmCalendarIntegrationsList();
+    showToast('カレンダー連携を解除しました');
+  } catch (error) {
+    console.error('Failed to revoke calendar auth:', error);
+    showToast('連携解除に失敗しました', 'error');
+  }
+}
+
+/**
+ * 面談設定モーダルを表示
+ */
+async function showJmInterviewModal() {
+  const modal = document.getElementById('jm-interview-modal');
+  if (!modal) return;
+
+  // 担当者一覧を取得（キャッシュがなければ取得）
+  if (jmAssigneesCache.length === 0) {
+    try {
+      const db = firebase.firestore();
+      const snapshot = await db.collection('company_users')
+        .where('companyDomain', '==', companyDomain)
+        .where('isActive', '==', true)
+        .get();
+
+      jmAssigneesCache = [];
+      snapshot.forEach(doc => {
+        jmAssigneesCache.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+    } catch (error) {
+      console.error('Failed to load assignees:', error);
+    }
+  }
+
+  // 担当者セレクトを更新
+  const staffSelect = document.getElementById('jm-interview-staff');
+  if (staffSelect) {
+    staffSelect.innerHTML = '<option value="">担当者を選択...</option>' +
+      jmAssigneesCache.map(user => {
+        const integration = jmCalendarIntegrationsCache[user.id];
+        const suffix = integration?.isActive ? ' (📅連携済)' : '';
+        return `<option value="${escapeHtml(user.id)}" data-has-calendar="${integration?.isActive ? 'true' : 'false'}">${escapeHtml(user.name || user.username)}${suffix}</option>`;
+      }).join('');
+  }
+
+  // 初期化
+  jmCurrentWeekStart = CalendarService.getWeekStart(new Date());
+  jmSelectedSlot = null;
+
+  // UIリセット
+  document.getElementById('jm-availability-section').style.display = 'none';
+  document.getElementById('jm-selected-slot-section').style.display = 'none';
+  document.getElementById('jm-manual-datetime-section').style.display = 'block';
+  document.getElementById('jm-calendar-status-hint').textContent = '';
+  document.getElementById('jm-interview-datetime').value = '';
+
+  modal.style.display = 'flex';
+}
+
+/**
+ * 面談設定モーダルを閉じる
+ */
+function closeJmInterviewModal() {
+  const modal = document.getElementById('jm-interview-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+/**
+ * 担当者選択変更時の処理
+ */
+function handleJmStaffChange() {
+  const staffSelect = document.getElementById('jm-interview-staff');
+  const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+  const hasCalendar = selectedOption?.dataset?.hasCalendar === 'true';
+
+  const availabilitySection = document.getElementById('jm-availability-section');
+  const manualSection = document.getElementById('jm-manual-datetime-section');
+  const selectedSlotSection = document.getElementById('jm-selected-slot-section');
+  const hint = document.getElementById('jm-calendar-status-hint');
+
+  jmSelectedSlot = null;
+  selectedSlotSection.style.display = 'none';
+
+  if (hasCalendar) {
+    hint.textContent = 'カレンダー連携済み - 空き時間から選択できます';
+    hint.className = 'form-hint hint-success';
+    availabilitySection.style.display = 'block';
+    manualSection.style.display = 'none';
+    loadJmAvailability();
+  } else {
+    hint.textContent = staffSelect.value ? 'カレンダー未連携 - 日時を手動で入力してください' : '';
+    hint.className = 'form-hint';
+    availabilitySection.style.display = 'none';
+    manualSection.style.display = 'block';
+  }
+}
+
+/**
+ * 空き時間を読み込み
+ */
+async function loadJmAvailability() {
+  const staffSelect = document.getElementById('jm-interview-staff');
+  const userId = staffSelect.value;
+  if (!userId) return;
+
+  const grid = document.getElementById('jm-availability-grid');
+  grid.innerHTML = '<div class="loading-message">空き時間を取得中...</div>';
+
+  try {
+    const weekEnd = new Date(jmCurrentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const startDate = CalendarService.formatDateISO(jmCurrentWeekStart);
+    const endDate = CalendarService.formatDateISO(weekEnd);
+
+    const result = await CalendarService.getCalendarAvailability(companyDomain, userId, startDate, endDate);
+
+    updateJmWeekLabel();
+    renderJmAvailabilityGrid(result.availableSlots || []);
+  } catch (error) {
+    console.error('Failed to load availability:', error);
+    grid.innerHTML = '<p class="error-message">空き時間の取得に失敗しました</p>';
+  }
+}
+
+/**
+ * 週ラベルを更新
+ */
+function updateJmWeekLabel() {
+  const weekEnd = new Date(jmCurrentWeekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const label = document.getElementById('jm-week-label');
+  if (label) {
+    label.textContent = `${CalendarService.formatDateISO(jmCurrentWeekStart)} 〜 ${CalendarService.formatDateISO(weekEnd)}`;
+  }
+}
+
+/**
+ * 空き時間グリッドを描画
+ */
+function renderJmAvailabilityGrid(slots) {
+  const grid = document.getElementById('jm-availability-grid');
+  if (!grid) return;
+
+  if (!slots || slots.length === 0) {
+    grid.innerHTML = '<p class="no-data">この週に空き時間はありません</p>';
+    return;
+  }
+
+  // 日付ごとにグループ化
+  const slotsByDate = {};
+  for (const slot of slots) {
+    const dateStr = CalendarService.formatDateISO(new Date(slot.start));
+    if (!slotsByDate[dateStr]) {
+      slotsByDate[dateStr] = [];
+    }
+    slotsByDate[dateStr].push(slot);
+  }
+
+  // 週の各日を生成
+  let html = '<div class="availability-week">';
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(jmCurrentWeekStart);
+    date.setDate(date.getDate() + i);
+    const dateStr = CalendarService.formatDateISO(date);
+    const dayName = CalendarService.getDayOfWeek(date);
+    const daySlots = slotsByDate[dateStr] || [];
+
+    html += `
+      <div class="availability-day">
+        <div class="day-header">${date.getMonth() + 1}/${date.getDate()} (${dayName})</div>
+        <div class="day-slots">
+          ${daySlots.length === 0
+            ? '<span class="no-slots">-</span>'
+            : daySlots.map(slot => {
+                const startTime = new Date(slot.start);
+                const timeStr = `${startTime.getHours()}:${String(startTime.getMinutes()).padStart(2, '0')}`;
+                return `<button type="button" class="slot-btn" data-start="${slot.start}" data-end="${slot.end}">${timeStr}</button>`;
+              }).join('')
+          }
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
+
+  grid.innerHTML = html;
+
+  // スロットボタンのイベント設定
+  grid.querySelectorAll('.slot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      jmSelectedSlot = {
+        start: btn.dataset.start,
+        end: btn.dataset.end
+      };
+      showJmSelectedSlot();
+    });
+  });
+}
+
+/**
+ * 選択されたスロットを表示
+ */
+function showJmSelectedSlot() {
+  const section = document.getElementById('jm-selected-slot-section');
+  const display = document.getElementById('jm-selected-slot');
+
+  if (jmSelectedSlot && section && display) {
+    const slotDate = new Date(jmSelectedSlot.start);
+    const dayName = CalendarService.getDayOfWeek(slotDate);
+    const timeStr = `${slotDate.getHours()}:${String(slotDate.getMinutes()).padStart(2, '0')}`;
+    display.textContent = `${slotDate.getFullYear()}/${slotDate.getMonth() + 1}/${slotDate.getDate()} (${dayName}) ${timeStr}〜`;
+    section.style.display = 'block';
+  }
+}
+
+/**
+ * 週を移動
+ */
+function navigateJmWeek(direction) {
+  jmCurrentWeekStart.setDate(jmCurrentWeekStart.getDate() + (direction * 7));
+  jmSelectedSlot = null;
+  document.getElementById('jm-selected-slot-section').style.display = 'none';
+  loadJmAvailability();
+}
+
+/**
+ * 面談を保存
+ */
+async function saveJmInterview() {
+  const staffSelect = document.getElementById('jm-interview-staff');
+  const selectedOption = staffSelect.options[staffSelect.selectedIndex];
+  const hasCalendar = selectedOption?.dataset?.hasCalendar === 'true';
+
+  // 日時の取得
+  let scheduledAt;
+  if (hasCalendar && jmSelectedSlot) {
+    scheduledAt = new Date(jmSelectedSlot.start);
+  } else {
+    const datetimeInput = document.getElementById('jm-interview-datetime');
+    if (!datetimeInput.value) {
+      showToast('面談日時を入力してください', 'error');
+      return;
+    }
+    scheduledAt = new Date(datetimeInput.value);
+  }
+
+  const saveBtn = document.getElementById('jm-interview-modal-save');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '保存中...';
+
+  try {
+    const durationMinutes = parseInt(document.getElementById('jm-interview-duration').value);
+    const meetingType = document.querySelector('input[name="jm-meeting-type"]:checked')?.value || 'in_person';
+    const location = document.getElementById('jm-interview-location').value;
+
+    const staffName = selectedOption?.textContent?.replace(' (📅連携済)', '') || '';
+
+    // カレンダーイベントを作成
+    const result = await CalendarService.createCalendarEvent({
+      companyDomain,
+      companyUserId: staffSelect.value,
+      applicationId: jmCurrentApplicant?.id || '',
+      applicantName: jmCurrentApplicant?.name || '',
+      applicantEmail: jmCurrentApplicant?.email || '',
+      staffName,
+      scheduledAt: scheduledAt.toISOString(),
+      durationMinutes,
+      meetingType,
+      location,
+      reminders: [
+        { offsetMinutes: 1440 }, // 1日前
+        { offsetMinutes: 60 }   // 1時間前
+      ]
+    });
+
+    showToast('面談を登録しました');
+    closeJmInterviewModal();
+
+    // 面談情報を更新（UIに反映）
+    updateJmInterviewInfo(scheduledAt, staffName, meetingType, location);
+
+  } catch (error) {
+    console.error('Failed to save interview:', error);
+    showToast('面談の登録に失敗しました', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = '面談を登録';
+  }
+}
+
+/**
+ * 面談情報をUIに反映
+ */
+function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location) {
+  const infoContainer = document.getElementById('jm-interview-info');
+  if (!infoContainer) return;
+
+  const dayName = CalendarService.getDayOfWeek(scheduledAt);
+  const typeLabels = { in_person: '対面', online: 'オンライン', phone: '電話' };
+
+  infoContainer.innerHTML = `
+    <div class="interview-scheduled">
+      <div class="interview-date">
+        <strong>${scheduledAt.getFullYear()}/${scheduledAt.getMonth() + 1}/${scheduledAt.getDate()} (${dayName})</strong>
+        <span>${scheduledAt.getHours()}:${String(scheduledAt.getMinutes()).padStart(2, '0')}〜</span>
+      </div>
+      <div class="interview-details">
+        <span>担当: ${escapeHtml(staffName)}</span>
+        <span>形式: ${typeLabels[meetingType] || meetingType}</span>
+        ${location ? `<span>場所: ${escapeHtml(location)}</span>` : ''}
+      </div>
+    </div>
+  `;
 }
 
 export default {
