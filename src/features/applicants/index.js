@@ -1842,8 +1842,18 @@ export async function initApplicantsSection(domain, name, prefix = '') {
  */
 export { loadApplicantsData };
 
+/**
+ * 現在選択中の応募者を取得
+ * @returns {Object|null} 応募者オブジェクト or null
+ */
+export function getCurrentApplicant() {
+  if (!currentApplicantId) return null;
+  return applicantsCache.find(a => a.id === currentApplicantId) || null;
+}
+
 export default {
   initApplicantsManager,
   initApplicantsSection,
-  loadApplicantsData
+  loadApplicantsData,
+  getCurrentApplicant
 };

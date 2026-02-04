@@ -15,7 +15,7 @@ import {
   jobFilters
 } from '@features/job-manage/state.js';
 
-import { initApplicantsSection } from '@features/applicants/index.js';
+import { initApplicantsSection, getCurrentApplicant } from '@features/applicants/index.js';
 import { initRecruitSettings } from '@features/job-manage/recruit-settings.js';
 import * as CalendarService from '@features/calendar/calendar-service.js';
 import { config } from '@features/job-manage/auth.js';
@@ -1442,6 +1442,14 @@ function isLocalDev() {
 async function showJmInterviewModal() {
   const modal = document.getElementById('jm-interview-modal');
   if (!modal) return;
+
+  // 現在選択中の応募者を取得
+  jmCurrentApplicant = getCurrentApplicant();
+  if (!jmCurrentApplicant) {
+    showToast('応募者を選択してください', 'error');
+    return;
+  }
+  console.log('[showJmInterviewModal] jmCurrentApplicant:', jmCurrentApplicant);
 
   // ローカル開発環境の場合はダミーデータを使用
   if (isLocalDev()) {
