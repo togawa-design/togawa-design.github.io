@@ -1612,18 +1612,30 @@ function renderJmAvailabilityGrid(slots) {
 
   grid.innerHTML = html;
 
-  // スロットボタンのイベント設定
-  grid.querySelectorAll('.slot-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      jmSelectedSlot = {
-        start: btn.dataset.start,
-        end: btn.dataset.end
-      };
-      showJmSelectedSlot();
-    });
+  // イベント委譲でスロットボタンのクリックを処理
+  // （既存のリスナーを削除してから追加）
+  const newGrid = grid.cloneNode(true);
+  grid.parentNode.replaceChild(newGrid, grid);
+
+  newGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.slot-btn');
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[slotClick] Clicked slot:', btn.dataset.start, btn.dataset.end);
+
+    newGrid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    jmSelectedSlot = {
+      start: btn.dataset.start,
+      end: btn.dataset.end
+    };
+    console.log('[slotClick] jmSelectedSlot set to:', jmSelectedSlot);
+    showJmSelectedSlot();
   });
+
+  console.log('[renderAvailability] Grid setup complete, slots:', newGrid.querySelectorAll('.slot-btn').length);
 }
 
 /**
