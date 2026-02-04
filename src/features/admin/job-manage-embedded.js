@@ -1669,11 +1669,20 @@ function showJmSelectedSlot() {
   const section = document.getElementById('jm-selected-slot-section');
   const display = document.getElementById('jm-selected-slot');
 
+  console.log('[showJmSelectedSlot] jmSelectedSlot:', jmSelectedSlot);
+
   if (jmSelectedSlot && section && display) {
+    console.log('[showJmSelectedSlot] start value:', jmSelectedSlot.start, 'type:', typeof jmSelectedSlot.start);
     const slotDate = new Date(jmSelectedSlot.start);
-    const dayName = CalendarService.getDayOfWeek(slotDate);
-    const timeStr = `${slotDate.getHours()}:${String(slotDate.getMinutes()).padStart(2, '0')}`;
-    display.textContent = `${slotDate.getFullYear()}/${slotDate.getMonth() + 1}/${slotDate.getDate()} (${dayName}) ${timeStr}〜`;
+    console.log('[showJmSelectedSlot] parsed slotDate:', slotDate, 'isValid:', !isNaN(slotDate.getTime()));
+
+    if (isNaN(slotDate.getTime())) {
+      display.textContent = `選択: ${jmSelectedSlot.start}`;
+    } else {
+      const dayName = CalendarService.getDayOfWeek(slotDate);
+      const timeStr = `${slotDate.getHours()}:${String(slotDate.getMinutes()).padStart(2, '0')}`;
+      display.textContent = `${slotDate.getFullYear()}/${slotDate.getMonth() + 1}/${slotDate.getDate()} (${dayName}) ${timeStr}〜`;
+    }
     section.style.display = 'block';
   }
 }
