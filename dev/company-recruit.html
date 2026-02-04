@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E1XC94EG05"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
+    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
+  </script>
+
+  <!-- 基本SEO（動的に更新） -->
+  <title>採用情報 | L-SET</title>
+  <meta name="description" content="採用情報ページ。私たちと一緒に働きませんか？">
+  <meta name="robots" content="index, follow">
+
+  <!-- OGP -->
+  <meta property="og:title" content="採用情報 | L-SET">
+  <meta property="og:description" content="採用情報ページ。私たちと一緒に働きませんか？">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="L-SET">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/dev/favicon.ico" sizes="any">
+  <link rel="icon" href="/images/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/dev/assets/apple-touch-icon-BzAbfiIz.png">
+
+  <!-- テーマカラー -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/dev/css/style.css">
+  <link rel="stylesheet" href="/dev/css/lp.css">
+  <link rel="stylesheet" href="/dev/css/recruit.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/dev/js/companyRecruit-CE0mJRyd.js"></script>
+  <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/api-Dk4Kctww.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/utils-DCR9QUau.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/page-analytics-DSSwcKPY.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-B-Q2mOFQ.js">
+</head>
+<body class="recruit-body">
+  <!-- 採用ページ専用ヘッダー -->
+  <header class="recruit-header" role="banner">
+    <div class="recruit-header-inner">
+      <div class="recruit-logo">
+        <a href="./" id="header-logo">
+          <img src="/dev/assets/logo-DTIMJJ5W.png" alt="L-SET" class="logo-img">
+        </a>
+      </div>
+      <nav class="recruit-nav">
+        <a href="#recruit-jobs" class="recruit-nav-link">求人一覧</a>
+        <a href="#recruit-about" class="recruit-nav-link">会社について</a>
+      </nav>
+    </div>
+  </header>
+
+  <main role="main" id="recruit-main">
+    <!-- ローディング表示 -->
+    <div id="recruit-loading" class="recruit-loading">
+      <div class="loading-spinner"></div>
+      <p>読み込み中...</p>
+    </div>
+
+    <!-- 採用ページコンテンツがここに動的に挿入される -->
+    <div id="recruit-content"></div>
+  </main>
+
+  <!-- 採用ページ専用フッター -->
+  <footer class="recruit-footer" role="contentinfo">
+    <div class="recruit-footer-inner">
+      <div class="recruit-footer-links">
+        <a href="./">トップページ</a>
+        <a href="./#jobs">求人一覧</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+      </div>
+      <p class="recruit-footer-copyright"><small>&copy; 2025 L-SET All Rights Reserved.</small></p>
+    </div>
+  </footer>
+
+</body>
+</html>

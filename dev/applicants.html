@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>応募者管理 | L-SET</title>
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/dev/css/style.css">
+  <link rel="stylesheet" href="/dev/css/admin.css">
+  <link rel="stylesheet" href="/dev/css/applicants.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/dev/js/applicants-DEXaleya.js"></script>
+  <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/utils-DCR9QUau.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/index-BML4pSnv.js">
+</head>
+<body class="admin-body">
+  <!-- 応募者管理ダッシュボード -->
+  <div id="applicants-dashboard" class="admin-dashboard">
+    <!-- サイドバー -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <h2>L-SET</h2>
+        <p>応募者管理</p>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li><a href="admin.html" data-section="back"><span class="nav-icon">←</span>管理画面に戻る</a></li>
+          <li><a href="#" id="nav-jobs" data-section="jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
+          <li><a href="#" id="nav-analytics" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
+          <li><a href="#" id="nav-reports" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
+          <li class="active"><a href="#" data-section="applicants"><span class="nav-icon">👥</span>応募者管理</a></li>
+          <li><a href="#" id="nav-settings" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="admin.html" class="btn-logout">管理画面へ戻る</a>
+      </div>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="admin-main">
+      <!-- ヘッダー -->
+      <header class="admin-header">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="メニューを開く">
+          <span class="hamburger-icon"></span>
+        </button>
+        <h1 id="page-title">応募者一覧</h1>
+        <div class="header-actions">
+          <button id="btn-export-csv" class="btn-secondary">📥 CSVエクスポート</button>
+          <button id="btn-refresh" class="btn-refresh">更新</button>
+        </div>
+      </header>
+
+      <!-- 2カラムレイアウト -->
+      <div class="applicants-content">
+        <!-- 左：応募者一覧 (60%) -->
+        <div class="applicants-list-panel">
+          <!-- 会社情報 -->
+          <div class="info-box">
+            <p id="company-info">会社: <strong id="company-name">-</strong></p>
+          </div>
+
+          <!-- 統計カード -->
+          <div class="stats-cards compact">
+            <div class="stat-card">
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-label">総応募</div>
+            </div>
+            <div class="stat-card stat-new">
+              <div class="stat-value" id="stat-new">0</div>
+              <div class="stat-label">新規</div>
+            </div>
+            <div class="stat-card stat-progress">
+              <div class="stat-value" id="stat-progress">0</div>
+              <div class="stat-label">対応中</div>
+            </div>
+            <div class="stat-card stat-complete">
+              <div class="stat-value" id="stat-complete">0</div>
+              <div class="stat-label">完了</div>
+            </div>
+          </div>
+
+          <!-- フィルター -->
+          <div class="filter-section compact">
+            <div class="filter-row">
+              <select id="filter-status" class="filter-select">
+                <option value="">全ステータス</option>
+                <option value="new">新規</option>
+                <option value="contacted">連絡済み</option>
+                <option value="interviewing">面接調整中</option>
+                <option value="interviewed">面接済み</option>
+                <option value="hired">採用</option>
+                <option value="joined">入社</option>
+                <option value="pending">保留</option>
+                <option value="ng">NG</option>
+                <option value="rejected">不採用</option>
+                <option value="withdrawn">辞退</option>
+              </select>
+              <select id="filter-type" class="filter-select">
+                <option value="">全種別</option>
+                <option value="apply">応募</option>
+                <option value="line">LINE相談</option>
+                <option value="consult">お問い合わせ</option>
+              </select>
+              <input type="text" id="filter-search" class="filter-input" placeholder="検索...">
+            </div>
+          </div>
+
+          <!-- 応募者リスト -->
+          <div class="applicants-list" id="applicants-list">
+            <div class="loading-message">データを読み込み中...</div>
+          </div>
+
+          <!-- ページネーション -->
+          <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- 右：詳細パネル (40%) -->
+        <div class="applicants-detail-panel" id="detail-panel">
+          <div class="detail-empty-state" id="detail-empty">
+            <div class="empty-icon">👆</div>
+            <p>左の一覧から応募者を選択してください</p>
+          </div>
+
+          <div class="detail-content" id="detail-content" style="display: none;">
+            <!-- 詳細ヘッダー -->
+            <div class="detail-header">
+              <div class="detail-header-info">
+                <h2 id="detail-name">-</h2>
+                <p id="detail-job-title" class="detail-job">-</p>
+              </div>
+              <button class="btn-close-detail" id="btn-close-detail" title="閉じる">&times;</button>
+            </div>
+
+            <!-- スクロール可能な詳細エリア -->
+            <div class="detail-scroll-area">
+              <!-- 基本情報カード -->
+              <div class="detail-card">
+                <h3>基本情報</h3>
+                <div class="detail-grid">
+                  <div class="detail-item">
+                    <label>電話番号</label>
+                    <span id="detail-phone">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>メール</label>
+                    <span id="detail-email">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>年齢</label>
+                    <span id="detail-age">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>現住所</label>
+                    <span id="detail-address">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>希望開始日</label>
+                    <span id="detail-start-date">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>応募日時</label>
+                    <span id="detail-datetime">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>種別</label>
+                    <span id="detail-type">-</span>
+                  </div>
+                  <div class="detail-item">
+                    <label>流入元</label>
+                    <span id="detail-source">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ステータス・担当者 -->
+              <div class="detail-card">
+                <h3>ステータス</h3>
+                <div class="status-buttons" id="status-buttons">
+                  <button class="status-btn" data-status="new">新規</button>
+                  <button class="status-btn" data-status="contacted">連絡済み</button>
+                  <button class="status-btn" data-status="interviewing">面接調整</button>
+                  <button class="status-btn" data-status="interviewed">面接済み</button>
+                  <button class="status-btn status-success" data-status="hired">採用</button>
+                  <button class="status-btn status-joined" data-status="joined">入社</button>
+                  <button class="status-btn status-warning" data-status="pending">保留</button>
+                  <button class="status-btn status-ng" data-status="ng">NG</button>
+                  <button class="status-btn status-danger" data-status="rejected">不採用</button>
+                  <button class="status-btn status-muted" data-status="withdrawn">辞退</button>
+                </div>
+                <div class="assignee-row">
+                  <label>担当者</label>
+                  <select id="detail-assignee">
+                    <option value="">未割当</option>
+                  </select>
+                  <button type="button" id="btn-add-assignee" class="btn-icon" title="担当者を追加">+</button>
+                </div>
+              </div>
+
+              <!-- 面談情報 -->
+              <div class="detail-card">
+                <h3>面談</h3>
+                <div id="interview-info" class="interview-info">
+                  <p class="no-data">面談は設定されていません</p>
+                </div>
+                <button type="button" id="btn-schedule-interview" class="btn-primary btn-schedule">面談日を設定</button>
+              </div>
+
+              <!-- メモ -->
+              <div class="detail-card">
+                <h3>メモ</h3>
+                <textarea id="detail-notes" rows="3" placeholder="メモを入力..."></textarea>
+                <button id="btn-save-notes" class="btn-save-small">保存</button>
+              </div>
+
+              <!-- 対応履歴 -->
+              <div class="detail-card">
+                <h3>対応履歴</h3>
+                <div id="detail-history" class="history-list">
+                  <p class="no-data">対応履歴はありません</p>
+                </div>
+                <div class="add-history-row">
+                  <input type="text" id="new-history-text" placeholder="対応内容を入力...">
+                  <button id="btn-add-history" class="btn-add">追加</button>
+                </div>
+              </div>
+
+              <!-- メッセージ -->
+              <div class="detail-card">
+                <h3>メッセージ</h3>
+                <div id="messages-container" class="messages-container">
+                  <p class="no-data">メッセージはありません</p>
+                </div>
+                <div class="message-input-row">
+                  <select id="message-template-select" class="template-select">
+                    <option value="">テンプレート選択...</option>
+                    <option value="first_contact">初回連絡</option>
+                    <option value="schedule_interview">面接日程調整</option>
+                    <option value="interview_reminder">面接リマインダー</option>
+                    <option value="document_request">書類提出依頼</option>
+                    <option value="result_pending">選考結果待ち</option>
+                    <option value="offer">内定通知</option>
+                    <option value="rejection">不採用通知</option>
+                  </select>
+                </div>
+                <div class="message-input-row">
+                  <textarea id="new-message-text" rows="4" placeholder="メッセージを入力..."></textarea>
+                </div>
+                <div class="message-actions">
+                  <button id="btn-send-message" class="btn-primary btn-send">送信</button>
+                </div>
+                <p class="message-hint">応募者がマイページで確認できます</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 設定セクション（非表示時） -->
+  <div id="settings-section" class="settings-section" style="display: none;">
+    <div class="settings-header">
+      <h2>設定</h2>
+      <button id="btn-back-to-applicants" class="btn-secondary">応募者一覧に戻る</button>
+    </div>
+
+    <!-- カレンダー連携設定 -->
+    <div class="settings-card">
+      <h3>Googleカレンダー連携</h3>
+      <p class="settings-description">担当者ごとにGoogleカレンダーを連携すると、空き時間から面談日を設定できます。</p>
+      <div class="calendar-integrations-list" id="calendar-integrations-list">
+        <div class="loading-message">担当者情報を読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- リマインダー設定 -->
+    <div class="settings-card">
+      <h3>リマインダー設定</h3>
+      <p class="settings-description">面談前にリマインダーメールを送信します。</p>
+      <div class="reminder-settings">
+        <div class="reminder-option">
+          <label>
+            <input type="checkbox" id="reminder-1day" checked>
+            1日前
+            <input type="time" id="reminder-1day-time" value="10:00" class="time-input">
+            に送信
+          </label>
+        </div>
+        <div class="reminder-option">
+          <label>
+            <input type="checkbox" id="reminder-1hour" checked>
+            1時間前に送信
+          </label>
+        </div>
+        <button id="btn-save-reminder-settings" class="btn-primary">リマインダー設定を保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 面談設定モーダル -->
+  <div id="interview-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>面談日を設定</h3>
+        <button class="modal-close" id="interview-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 担当者選択 -->
+        <div class="form-group">
+          <label for="interview-staff">担当者 <span class="required">*</span></label>
+          <select id="interview-staff" required>
+            <option value="">担当者を選択...</option>
+          </select>
+          <p class="form-hint" id="calendar-status-hint"></p>
+        </div>
+
+        <!-- 空き時間ピッカー -->
+        <div class="form-group" id="availability-section" style="display: none;">
+          <label>空き時間から選択</label>
+          <div class="week-navigation">
+            <button type="button" id="btn-prev-week" class="btn-icon">&lt;</button>
+            <span id="week-label">-</span>
+            <button type="button" id="btn-next-week" class="btn-icon">&gt;</button>
+          </div>
+          <div class="availability-grid" id="availability-grid">
+            <div class="loading-message">空き時間を取得中...</div>
+          </div>
+        </div>
+
+        <!-- 選択された日時 -->
+        <div class="form-group" id="selected-slot-section" style="display: none;">
+          <label>選択された日時</label>
+          <div class="selected-slot" id="selected-slot">-</div>
+        </div>
+
+        <!-- 手動入力（カレンダー未連携時） -->
+        <div class="form-group" id="manual-datetime-section">
+          <label for="interview-datetime">面談日時 <span class="required">*</span></label>
+          <input type="datetime-local" id="interview-datetime" required>
+        </div>
+
+        <!-- 面談時間 -->
+        <div class="form-group">
+          <label for="interview-duration">面談時間</label>
+          <select id="interview-duration">
+            <option value="30">30分</option>
+            <option value="60" selected>60分</option>
+            <option value="90">90分</option>
+            <option value="120">120分</option>
+          </select>
+        </div>
+
+        <!-- 面談形式 -->
+        <div class="form-group">
+          <label>面談形式</label>
+          <div class="radio-group">
+            <label><input type="radio" name="meeting-type" value="in_person" checked> 対面</label>
+            <label><input type="radio" name="meeting-type" value="online"> オンライン</label>
+            <label><input type="radio" name="meeting-type" value="phone"> 電話</label>
+          </div>
+        </div>
+
+        <!-- 場所/URL -->
+        <div class="form-group">
+          <label for="interview-location">場所 / URL</label>
+          <input type="text" id="interview-location" placeholder="例: 本社会議室 / https://meet.google.com/...">
+        </div>
+
+        <!-- リマインダー -->
+        <div class="form-group">
+          <label>リマインダー</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="send-reminder-1day" checked> 1日前 10:00 に送信</label>
+            <label><input type="checkbox" id="send-reminder-1hour" checked> 1時間前に送信</label>
+          </div>
+          <p class="form-hint">担当者と応募者の両方にメールを送信します</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="interview-modal-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="interview-modal-save">面談を登録</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 担当者追加モーダル -->
+  <div id="assignee-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>担当者を追加</h3>
+        <button class="modal-close" id="assignee-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-assignee-name">担当者名</label>
+          <input type="text" id="new-assignee-name" placeholder="例: 山田太郎">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="assignee-modal-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="assignee-modal-save">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</body>
+</html>
