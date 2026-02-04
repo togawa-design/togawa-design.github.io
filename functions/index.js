@@ -2597,7 +2597,7 @@ functions.http('initiateCalendarAuth', (req, res) => {
       }
 
       // フロントエンドのコールバックURLを使用（GitHub Pages上）
-      const frontendRedirectUri = process.env.FRONTEND_CALLBACK_URL || 'https://togawa-design.github.io/kikanko/oauth-callback.html';
+      const frontendRedirectUri = process.env.FRONTEND_CALLBACK_URL || 'https://togawa-design.github.io/oauth-callback.html';
       const oauth2Client = new google.auth.OAuth2(
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
@@ -2727,7 +2727,7 @@ functions.http('exchangeCalendarToken', (req, res) => {
       }
 
       // フロントエンドコールバック用のOAuth2クライアントを作成
-      const frontendRedirectUri = process.env.FRONTEND_CALLBACK_URL || 'https://togawa-design.github.io/kikanko/oauth-callback.html';
+      const frontendRedirectUri = process.env.FRONTEND_CALLBACK_URL || 'https://togawa-design.github.io/oauth-callback.html';
       const oauth2Client = new google.auth.OAuth2(
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,

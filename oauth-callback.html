@@ -103,21 +103,6 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAwu1j__Vp4fgAJP0BPZhLEMw3lVuLpywk",
-      authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
-      projectId: "generated-area-484613-e3-90bd4",
-      storageBucket: "generated-area-484613-e3-90bd4.firebasestorage.app",
-      messagingSenderId: "901344407156",
-      appId: "1:901344407156:web:81de9efbc30fd44ab16649"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
     const FUNCTIONS_BASE_URL = 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net';
 
     function showSuccess() {
@@ -168,44 +153,33 @@
         return;
       }
 
-      const { companyDomain, companyUserId, staffName, csrf } = stateData;
+      const { companyDomain, companyUserId, staffName } = stateData;
 
-      // Wait for auth state
-      onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          showError('ログインが必要です。メイン画面からやり直してください。');
-          return;
+      try {
+        // Call the exchange token function (no auth required - state contains all needed info)
+        const response = await fetch(`${FUNCTIONS_BASE_URL}/exchangeCalendarToken`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            code,
+            companyDomain,
+            companyUserId,
+            staffName
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'トークン交換に失敗しました');
         }
 
-        try {
-          const idToken = await user.getIdToken();
-
-          // Call the exchange token function
-          const response = await fetch(`${FUNCTIONS_BASE_URL}/exchangeCalendarToken`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`
-            },
-            body: JSON.stringify({
-              code,
-              companyDomain,
-              companyUserId,
-              staffName
-            })
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'トークン交換に失敗しました');
-          }
-
-          showSuccess();
-        } catch (err) {
-          console.error('Token exchange error:', err);
-          showError(err.message || '連携処理中にエラーが発生しました');
-        }
-      });
+        showSuccess();
+      } catch (err) {
+        console.error('Token exchange error:', err);
+        showError(err.message || '連携処理中にエラーが発生しました');
+      }
     }
 
     handleCallback();
