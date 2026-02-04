@@ -1724,24 +1724,26 @@ function setupEventListeners() {
     showSection('applicants');
   });
 
-  // 面談設定モーダル
-  getEl('btn-schedule-interview')?.addEventListener('click', showInterviewModal);
-  getEl('interview-modal-close')?.addEventListener('click', closeInterviewModal);
-  getEl('interview-modal-cancel')?.addEventListener('click', closeInterviewModal);
-  getEl('interview-modal-save')?.addEventListener('click', saveInterview);
+  // 面談設定モーダル（埋め込みモード時はjob-manage-embedded.jsで処理するためスキップ）
+  if (!idPrefix) {
+    getEl('btn-schedule-interview')?.addEventListener('click', showInterviewModal);
+    getEl('interview-modal-close')?.addEventListener('click', closeInterviewModal);
+    getEl('interview-modal-cancel')?.addEventListener('click', closeInterviewModal);
+    getEl('interview-modal-save')?.addEventListener('click', saveInterview);
 
-  getEl('interview-modal')?.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal-overlay')) {
-      closeInterviewModal();
-    }
-  });
+    getEl('interview-modal')?.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        closeInterviewModal();
+      }
+    });
 
-  // 担当者選択時
-  getEl('interview-staff')?.addEventListener('change', onStaffChange);
+    // 担当者選択時
+    getEl('interview-staff')?.addEventListener('change', onStaffChange);
 
-  // 週ナビゲーション
-  getEl('btn-prev-week')?.addEventListener('click', prevWeek);
-  getEl('btn-next-week')?.addEventListener('click', nextWeek);
+    // 週ナビゲーション
+    getEl('btn-prev-week')?.addEventListener('click', prevWeek);
+    getEl('btn-next-week')?.addEventListener('click', nextWeek);
+  }
 
   // リマインダー設定保存
   getEl('btn-save-reminder-settings')?.addEventListener('click', saveReminderSettings);

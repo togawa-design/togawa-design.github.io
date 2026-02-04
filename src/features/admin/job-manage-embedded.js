@@ -1821,23 +1821,40 @@ function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location, me
   const displayType = typeLabels[meetingType] || meetingType;
   console.log('[updateJmInterviewInfo] meetingType:', meetingType, '-> displayType:', displayType);
 
+  // 時刻フォーマット
+  const timeStr = `${scheduledAt.getHours()}:${String(scheduledAt.getMinutes()).padStart(2, '0')}`;
+
   // Meetリンクがある場合はクリック可能なリンクとして表示
   let locationHtml = '';
   if (meetLink) {
-    locationHtml = `<span>Meet: <a href="${escapeHtml(meetLink)}" target="_blank" rel="noopener">${escapeHtml(meetLink)}</a></span>`;
+    locationHtml = `
+      <div class="interview-info-row interview-meet">
+        <span class="info-label">📹 Meet</span>
+        <a href="${escapeHtml(meetLink)}" target="_blank" rel="noopener" class="meet-link">${escapeHtml(meetLink)}</a>
+      </div>`;
   } else if (location) {
-    locationHtml = `<span>場所: ${escapeHtml(location)}</span>`;
+    locationHtml = `
+      <div class="interview-info-row">
+        <span class="info-label">📍 場所</span>
+        <span class="info-value">${escapeHtml(location)}</span>
+      </div>`;
   }
 
   infoContainer.innerHTML = `
     <div class="interview-scheduled">
-      <div class="interview-date">
-        <strong>${scheduledAt.getFullYear()}/${scheduledAt.getMonth() + 1}/${scheduledAt.getDate()} (${dayName})</strong>
-        <span>${scheduledAt.getHours()}:${String(scheduledAt.getMinutes()).padStart(2, '0')}〜</span>
+      <div class="interview-datetime">
+        <span class="interview-date-text">${scheduledAt.getFullYear()}/${scheduledAt.getMonth() + 1}/${scheduledAt.getDate()} (${dayName})</span>
+        <span class="interview-time-text">${timeStr}〜</span>
       </div>
-      <div class="interview-details">
-        <span>担当: ${escapeHtml(staffName)}</span>
-        <span>形式: ${typeLabels[meetingType] || meetingType}</span>
+      <div class="interview-info-grid">
+        <div class="interview-info-row">
+          <span class="info-label">👤 担当</span>
+          <span class="info-value">${escapeHtml(staffName)}</span>
+        </div>
+        <div class="interview-info-row">
+          <span class="info-label">📋 形式</span>
+          <span class="info-value">${displayType}</span>
+        </div>
         ${locationHtml}
       </div>
     </div>
