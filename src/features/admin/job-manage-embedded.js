@@ -1650,15 +1650,18 @@ function renderJmAvailabilityGrid(slots) {
 
     e.preventDefault();
     e.stopPropagation();
-    console.log('[slotClick] Button HTML:', btn.outerHTML);
-    console.log('[slotClick] Button attributes:', btn.attributes);
-    console.log('[slotClick] Clicked slot:', btn.dataset.start, btn.dataset.end);
+
+    // data-start/data-end または data-slot のどちらかから値を取得
+    const startValue = btn.dataset.start || btn.dataset.slot;
+    const endValue = btn.dataset.end;
+
+    console.log('[slotClick] startValue:', startValue, 'endValue:', endValue);
 
     newGrid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     jmSelectedSlot = {
-      start: btn.dataset.start,
-      end: btn.dataset.end
+      start: startValue,
+      end: endValue
     };
     console.log('[slotClick] jmSelectedSlot set to:', jmSelectedSlot);
     showJmSelectedSlot();
