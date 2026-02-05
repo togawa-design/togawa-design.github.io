@@ -102,9 +102,47 @@ export function normalizeHeader(header) {
   return parts[0] || cleanHeader;
 }
 
+// CSVテキストを行に分割（クォート内の改行を考慮）
+export function splitCSVLines(csvText) {
+  const lines = [];
+  let currentLine = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+
+    if (char === '"') {
+      // エスケープされた引用符（""）をチェック
+      if (inQuotes && csvText[i + 1] === '"') {
+        currentLine += '""';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+        currentLine += char;
+      }
+    } else if (char === '\n' && !inQuotes) {
+      // クォート外の改行は行の区切り
+      lines.push(currentLine);
+      currentLine = '';
+    } else if (char === '\r') {
+      // CRは無視（CRLF対応）
+      continue;
+    } else {
+      currentLine += char;
+    }
+  }
+
+  // 最後の行を追加
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
 // CSVをパース
 export function parseCSV(csvText, headerRow = 0, dataStartRow = 1) {
-  const lines = csvText.split('\n');
+  const lines = splitCSVLines(csvText);
   const headers = parseCSVLine(lines[headerRow] || '');
   const items = [];
 

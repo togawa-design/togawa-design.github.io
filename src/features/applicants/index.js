@@ -983,6 +983,7 @@ async function loadApplicantsData() {
     });
 
     buildDuplicateMap();
+    updateJobFilterOptions();
     applyFilters();
     updateStats();
 
@@ -995,22 +996,135 @@ async function loadApplicantsData() {
 }
 
 /**
+ * 生年月日から年齢を計算
+ */
+function calculateAgeFromBirthdate(birthdate) {
+  if (!birthdate) return null;
+  const today = new Date();
+  const birth = new Date(birthdate);
+  if (isNaN(birth.getTime())) return null;
+
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
+ * 応募者の年齢を取得（applicantAge または 生年月日から計算）
+ */
+function getApplicantAge(app) {
+  // 既に計算済みの年齢があればそれを使用
+  if (app.applicantAge) return app.applicantAge;
+  if (app.applicant?.age) return app.applicant.age;
+  if (app.age) return app.age;
+
+  // 生年月日から計算
+  const birthdate = app.applicantBirthdate || app.applicant?.birthdate || app.birthdate;
+  if (birthdate) {
+    return calculateAgeFromBirthdate(birthdate);
+  }
+
+  return null;
+}
+
+/**
+ * 年齢から年代を取得
+ */
+function getAgeGroup(age) {
+  if (!age || age === '-') return null;
+  const ageNum = parseInt(age);
+  if (isNaN(ageNum)) return null;
+  if (ageNum < 20) return '10';
+  if (ageNum < 30) return '20';
+  if (ageNum < 40) return '30';
+  if (ageNum < 50) return '40';
+  if (ageNum < 60) return '50';
+  return '60';
+}
+
+/**
+ * 完了ステータスかどうか判定
+ */
+function isCompleteStatus(status) {
+  return ['hired', 'joined', 'ng', 'rejected', 'withdrawn'].includes(status);
+}
+
+/**
+ * フィルター選択状態のスタイルを更新
+ */
+function updateFilterStyles() {
+  const filterIds = ['filter-status', 'filter-job', 'filter-age', 'filter-date'];
+  filterIds.forEach(id => {
+    const el = getEl(id);
+    if (el) {
+      if (el.value) {
+        el.classList.add('filter-active');
+      } else {
+        el.classList.remove('filter-active');
+      }
+    }
+  });
+}
+
+/**
  * フィルターを適用
  */
 function applyFilters() {
   const statusFilter = getEl('filter-status')?.value || '';
-  const typeFilter = getEl('filter-type')?.value || '';
+  const jobFilter = getEl('filter-job')?.value || '';
+  const ageFilter = getEl('filter-age')?.value || '';
+  const dateFilter = getEl('filter-date')?.value || '';
   const searchText = getEl('filter-search')?.value?.toLowerCase() || '';
+  const excludeComplete = getEl('filter-exclude-complete')?.checked ?? true;
+
+  // フィルタースタイル更新
+  updateFilterStyles();
+
+  const now = new Date();
 
   filteredApplicants = applicantsCache.filter(app => {
-    if (statusFilter && (app.status || 'new') !== statusFilter) {
+    const status = app.status || 'new';
+
+    // 完了以外フィルター
+    if (excludeComplete && isCompleteStatus(status)) {
       return false;
     }
 
-    if (typeFilter && app.type !== typeFilter) {
+    // ステータスフィルター
+    if (statusFilter && status !== statusFilter) {
       return false;
     }
 
+    // 求人フィルター
+    if (jobFilter && (app.jobTitle || '') !== jobFilter) {
+      return false;
+    }
+
+    // 年齢フィルター
+    if (ageFilter) {
+      const age = getApplicantAge(app);
+      const ageGroup = getAgeGroup(age);
+      if (ageGroup !== ageFilter) {
+        return false;
+      }
+    }
+
+    // 応募日フィルター
+    if (dateFilter) {
+      const appDate = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.timestamp || app.createdAt);
+      const diffMs = now - appDate;
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      if (dateFilter === 'today' && diffDays > 1) return false;
+      if (dateFilter === 'week' && diffDays > 7) return false;
+      if (dateFilter === 'month' && diffDays > 30) return false;
+      if (dateFilter === '3months' && diffDays > 90) return false;
+    }
+
+    // テキスト検索
     if (searchText) {
       const jobTitle = (app.jobTitle || '').toLowerCase();
       const applicantName = (app.applicantName || app.applicant?.name || '').toLowerCase();
@@ -1025,6 +1139,23 @@ function applyFilters() {
   currentPage = 1;
   renderApplicantsList();
   renderPagination();
+}
+
+/**
+ * 求人フィルター選択肢を更新
+ */
+function updateJobFilterOptions() {
+  const jobSelect = getEl('filter-job');
+  if (!jobSelect) return;
+
+  // ユニークな求人タイトルを取得
+  const uniqueJobs = [...new Set(applicantsCache.map(app => app.jobTitle).filter(Boolean))];
+  uniqueJobs.sort();
+
+  const currentValue = jobSelect.value;
+  jobSelect.innerHTML = '<option value="">全求人</option>' +
+    uniqueJobs.map(job => `<option value="${escapeHtml(job)}">${escapeHtml(job)}</option>`).join('');
+  jobSelect.value = currentValue;
 }
 
 /**
@@ -1183,15 +1314,18 @@ function showApplicantDetail(id) {
   const applicantName = applicant.applicantName || applicant.applicant?.name || '-';
   const applicantPhone = applicant.applicantPhone || applicant.applicant?.phone || '-';
   const applicantEmail = applicant.applicantEmail || applicant.applicant?.email || '-';
-  const applicantAge = applicant.applicant?.age || '-';
-  const applicantAddress = applicant.applicant?.address || '-';
+  const applicantAddress = applicant.applicantAddress || applicant.applicant?.address || '-';
   const startDate = applicant.applicant?.startDate || '-';
+
+  // 年齢を取得（生年月日から計算）
+  const age = getApplicantAge(applicant);
+  const ageDisplay = age !== null ? `${age}歳` : '-';
 
   getEl('detail-name').textContent = applicantName;
   getEl('detail-job-title').textContent = applicant.jobTitle || '-';
   getEl('detail-phone').textContent = applicantPhone;
   getEl('detail-email').textContent = applicantEmail;
-  getEl('detail-age').textContent = applicantAge;
+  getEl('detail-age').textContent = ageDisplay;
   getEl('detail-address').textContent = applicantAddress;
   getEl('detail-start-date').textContent = startDateLabels[startDate] || startDate;
 
@@ -1547,8 +1681,9 @@ function exportCsv() {
     const applicantName = app.applicantName || app.applicant?.name || '';
     const applicantPhone = app.applicantPhone || app.applicant?.phone || '';
     const applicantEmail = app.applicantEmail || app.applicant?.email || '';
-    const applicantAge = app.applicant?.age || '';
-    const applicantAddress = app.applicant?.address || '';
+    const age = getApplicantAge(app);
+    const applicantAge = age !== null ? `${age}歳` : '';
+    const applicantAddress = app.applicantAddress || app.applicant?.address || '';
     const startDate = app.applicant?.startDate || '';
 
     return [
@@ -1653,6 +1788,10 @@ function setupEventListeners() {
   // フィルター
   getEl('filter-status')?.addEventListener('change', applyFilters);
   getEl('filter-type')?.addEventListener('change', applyFilters);
+  getEl('filter-job')?.addEventListener('change', applyFilters);
+  getEl('filter-age')?.addEventListener('change', applyFilters);
+  getEl('filter-date')?.addEventListener('change', applyFilters);
+  getEl('filter-exclude-complete')?.addEventListener('change', applyFilters);
 
   // 検索（デバウンス付き）
   let searchTimeout;

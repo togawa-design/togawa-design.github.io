@@ -96,7 +96,9 @@ function handlePostAction(data) {
     case "deleteJob":
       return deleteJob(data.companyDomain, data.rowIndex);
     case "updateRecruitSettings":
-      return updateRecruitSettings(data.settings || JSON.parse(data.data || "{}"));
+      return updateRecruitSettings(
+        data.settings || JSON.parse(data.data || "{}"),
+      );
     default:
       return { success: false, error: "Unknown action" };
   }
@@ -447,8 +449,9 @@ function getCompany(domain) {
   const headers = data[0];
 
   // company_domain列のインデックスを取得
-  const domainColIndex = headers.findIndex(h =>
-    h === "company_domain" || h === "companyDomain" || h === "会社ドメイン"
+  const domainColIndex = headers.findIndex(
+    (h) =>
+      h === "company_domain" || h === "companyDomain" || h === "会社ドメイン",
   );
 
   if (domainColIndex < 0) {
@@ -710,10 +713,17 @@ function saveLPSettings(settingsData) {
         videoFields.forEach((field) => {
           const colIndex = headers.indexOf(field);
           if (colIndex >= 0 && settingsData[field] !== undefined) {
-            sheet.getRange(rowIndex, colIndex + 1).setValue(settingsData[field]);
+            sheet
+              .getRange(rowIndex, colIndex + 1)
+              .setValue(settingsData[field]);
           }
         });
-        return { success: true, message: "動画設定を同期しました", isNew: false, syncVideoOnly: true };
+        return {
+          success: true,
+          message: "動画設定を同期しました",
+          isNew: false,
+          syncVideoOnly: true,
+        };
       }
       sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
       return { success: true, message: "LP設定を更新しました", isNew: false };
@@ -778,7 +788,7 @@ function normalizeHeader(header) {
     職種: "jobType",
     jobType: "jobType",
     // 表示する特徴
-    "表示する特徴": "displayedFeatures",
+    表示する特徴: "displayedFeatures",
     displayedFeatures: "displayedFeatures",
     // アクセス
     アクセス: "access",
@@ -906,7 +916,17 @@ function saveJob(companyDomain, jobData, rowIndex) {
     let headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
     // 必要な列が存在しなければ追加
-    const requiredCols = ["memo", "employmentType", "jobType", "salaryType", "salaryOther", "displayedFeatures", "access", "showVideoButton", "videoUrl"];
+    const requiredCols = [
+      "memo",
+      "employmentType",
+      "jobType",
+      "salaryType",
+      "salaryOther",
+      "displayedFeatures",
+      "access",
+      "showVideoButton",
+      "videoUrl",
+    ];
     for (const col of requiredCols) {
       if (!headers.includes(col)) {
         const newColIndex = sheet.getLastColumn() + 1;
@@ -921,7 +941,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
           displayedFeatures: "表示する特徴",
           access: "アクセス",
           showVideoButton: "動画表示",
-          videoUrl: "動画URL"
+          videoUrl: "動画URL",
         };
         if (japaneseHeaders[col]) {
           sheet.getRange(2, newColIndex).setValue(japaneseHeaders[col]);
@@ -974,12 +994,18 @@ function saveJob(companyDomain, jobData, rowIndex) {
         success: true,
         message: "求人情報を更新しました",
         rowIndex: rowIndex,
+        jobId: rowData[0],
       };
     } else {
       // 新規行を追加
-      // 新しいIDを生成
-      const lastRow = sheet.getLastRow();
-      const newId = lastRow > 2 ? lastRow - 1 : 1;
+      // 既存の最大IDを取得してユニークなIDを生成
+      const data = sheet.getDataRange().getValues();
+      let maxId = 0;
+      for (let i = 2; i < data.length; i++) {
+        const id = parseInt(data[i][0]) || 0;
+        if (id > maxId) maxId = id;
+      }
+      const newId = maxId + 1;
       rowData[0] = newId; // A列にID
 
       sheet.appendRow(rowData);
@@ -1087,6 +1113,12 @@ function updateRecruitSettings(settingsData) {
       sheet = companySs.insertSheet(RECRUIT_SETTINGS_SHEET_NAME);
       const headers = [
         "companyDomain",
+        "isPublished",
+        "customSlug",
+        "jobsLimit",
+        "jobsSort",
+        "customLinks",
+        "customSections",
         "layoutStyle",
         "designPattern",
         "customPrimary",
@@ -1115,7 +1147,8 @@ function updateRecruitSettings(settingsData) {
         "snsInstagram",
         "snsFacebook",
         "snsYoutube",
-        "snsLine"
+        "snsLine",
+        "snsTiktok",
       ];
       sheet.appendRow(headers);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -1124,9 +1157,17 @@ function updateRecruitSettings(settingsData) {
     }
 
     // 既存シートに必要な列がなければ追加
-    let existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    let existingHeaders = sheet
+      .getRange(1, 1, 1, sheet.getLastColumn())
+      .getValues()[0];
     const requiredCols = [
       "companyDomain",
+      "isPublished",
+      "customSlug",
+      "jobsLimit",
+      "jobsSort",
+      "customLinks",
+      "customSections",
       "layoutStyle",
       "designPattern",
       "customPrimary",
@@ -1155,18 +1196,23 @@ function updateRecruitSettings(settingsData) {
       "snsInstagram",
       "snsFacebook",
       "snsYoutube",
-      "snsLine"
+      "snsLine",
+      "snsTiktok",
     ];
 
     for (const col of requiredCols) {
       if (!existingHeaders.includes(col)) {
         const newCol = sheet.getLastColumn() + 1;
         sheet.getRange(1, newCol).setValue(col);
-        existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        existingHeaders = sheet
+          .getRange(1, 1, 1, sheet.getLastColumn())
+          .getValues()[0];
       }
     }
 
-    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const headers = sheet
+      .getRange(1, 1, 1, sheet.getLastColumn())
+      .getValues()[0];
 
     // 行データを作成
     const rowData = headers.map((header) => {
@@ -1177,10 +1223,18 @@ function updateRecruitSettings(settingsData) {
     const data = sheet.getDataRange().getValues();
     if (data.length >= 2) {
       sheet.getRange(2, 1, 1, rowData.length).setValues([rowData]);
-      return { success: true, message: "採用ページ設定を更新しました", isNew: false };
+      return {
+        success: true,
+        message: "採用ページ設定を更新しました",
+        isNew: false,
+      };
     } else {
       sheet.appendRow(rowData);
-      return { success: true, message: "採用ページ設定を登録しました", isNew: true };
+      return {
+        success: true,
+        message: "採用ページ設定を登録しました",
+        isNew: true,
+      };
     }
   } catch (error) {
     console.error("updateRecruitSettings error:", error.message);

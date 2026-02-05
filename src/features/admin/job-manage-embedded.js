@@ -806,23 +806,31 @@ async function saveJob() {
       saveBtn.textContent = '保存中...';
     }
 
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+    const requestData = {
       action: 'saveJob',
       companyDomain: companyDomain,
       job: jobData,
       rowIndex: isNewJob ? null : currentEditingJob?._rowIndex
-    }))));
+    };
+    console.log('[JobManageEmbedded] 保存リクエスト:', requestData);
+
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify(requestData))));
 
     const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+    console.log('[JobManageEmbedded] GAS URL:', gasApiUrl);
+
     const response = await fetch(url, { method: 'GET', redirect: 'follow' });
     const responseText = await response.text();
+    console.log('[JobManageEmbedded] GASレスポンス:', responseText);
 
     let result;
     try {
       result = JSON.parse(responseText);
     } catch {
-      throw new Error('GASからの応答が不正です');
+      throw new Error('GASからの応答が不正です: ' + responseText.substring(0, 200));
     }
+
+    console.log('[JobManageEmbedded] パース結果:', result);
 
     if (!result.success) {
       throw new Error(result.error || '保存に失敗しました');
