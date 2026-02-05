@@ -264,13 +264,32 @@
                       <option value="rejected">不採用</option>
                       <option value="withdrawn">辞退</option>
                     </select>
-                    <select id="jm-filter-type" class="filter-select">
-                      <option value="">全種別</option>
-                      <option value="apply">応募</option>
-                      <option value="line">LINE相談</option>
-                      <option value="consult">お問い合わせ</option>
+                    <select id="jm-filter-job" class="filter-select">
+                      <option value="">全求人</option>
                     </select>
-                    <input type="text" id="jm-filter-search" class="filter-input" placeholder="検索...">
+                    <select id="jm-filter-age" class="filter-select">
+                      <option value="">全年齢</option>
+                      <option value="10">10代</option>
+                      <option value="20">20代</option>
+                      <option value="30">30代</option>
+                      <option value="40">40代</option>
+                      <option value="50">50代</option>
+                      <option value="60">60代以上</option>
+                    </select>
+                    <select id="jm-filter-date" class="filter-select">
+                      <option value="">全期間</option>
+                      <option value="today">今日</option>
+                      <option value="week">過去7日間</option>
+                      <option value="month">過去30日間</option>
+                      <option value="3months">過去3ヶ月</option>
+                    </select>
+                    <input type="text" id="jm-filter-search" class="filter-input" placeholder="名前・求人で検索...">
+                  </div>
+                  <div class="filter-row filter-row-checkbox">
+                    <label class="filter-checkbox">
+                      <input type="checkbox" id="jm-filter-exclude-complete" checked>
+                      <span>完了以外を表示</span>
+                    </label>
                   </div>
                 </div>
 
