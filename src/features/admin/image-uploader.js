@@ -198,6 +198,24 @@ export async function uploadJobImage(file, companyDomain, jobId) {
 }
 
 /**
+ * 求人ロゴをアップロードする
+ * @param {File} file - 画像ファイル
+ * @param {string} companyDomain - 企業ドメイン
+ * @returns {Promise<string>} - 画像URL
+ */
+export async function uploadJobLogo(file, companyDomain) {
+  // ロゴ用に小さめに圧縮
+  const compressed = await compressLogo(file);
+
+  // Cloudinaryにアップロード（タイムスタンプ付きでキャッシュ問題回避）
+  const folder = `jobs/${companyDomain}/logos`;
+  const timestamp = Date.now();
+  const url = await uploadToCloudinary(compressed, folder, `logo_${timestamp}`);
+
+  return url;
+}
+
+/**
  * LP用の画像をアップロードする
  * @param {File} file - 画像ファイル
  * @param {string} companyDomain - 企業ドメイン
@@ -407,6 +425,7 @@ export default {
   uploadRecruitLogo,
   uploadCompanyImage,
   uploadJobImage,
+  uploadJobLogo,
   uploadLPImage,
   selectImageFile,
   setupDropZone,
