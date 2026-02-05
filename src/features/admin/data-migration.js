@@ -179,7 +179,8 @@ async function migrateJob(companyDomain, job) {
     publishEndDate: job.publishEndDate || '',
     memo: job.memo || '',
     access: job.access || '',
-    jobLogo: job.jobLogo || '',
+    imageUrl: job.imageUrl || '',
+    jobLogo: job.jobLogo || job.imageUrl || '',
     showVideoButton: job.showVideoButton === true || job.showVideoButton === 'true',
     videoUrl: job.videoUrl || ''
   };
