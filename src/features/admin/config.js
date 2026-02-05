@@ -33,6 +33,11 @@ export const spreadsheetConfig = {
   gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
 };
 
+// Firestoreを使用するかどうかのフラグ
+// true: Firestoreを使用（新方式）
+// false: GAS APIを使用（旧方式）
+export const useFirestore = true; // Firestore使用中
+
 // パターンラベル取得
 export function getPatternLabel(pattern) {
   const labels = {

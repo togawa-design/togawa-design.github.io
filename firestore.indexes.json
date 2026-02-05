@@ -1,6 +1,22 @@
 {
   "indexes": [
     {
+      "collectionGroup": "jobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "visible", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "visible", "order": "ASCENDING" },
+        { "fieldPath": "publishEndDate", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "applications",
       "queryScope": "COLLECTION",
       "fields": [

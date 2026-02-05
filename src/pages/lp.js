@@ -11,6 +11,8 @@ import {
 } from '@components/organisms/LayoutComponents.js';
 import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
 import '@shared/jobs-loader.js';
+import { useFirestore } from '@features/admin/config.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 
 // UTMパラメータのキー一覧
 const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
@@ -329,8 +331,34 @@ class CompanyLPPage {
   }
 
   // LP設定を取得（求人ID単位・新形式）
-  // 会社の管理シート内のLP設定シートから取得
+  // Firestoreまたは会社の管理シート内のLP設定シートから取得
   async fetchLPSettings(jobId) {
+    // Firestoreから読み込み
+    if (useFirestore) {
+      try {
+        FirestoreService.initFirestore();
+        // jobIdは「companyDomain_actualJobId」形式
+        const parts = jobId.split('_');
+        const companyDomain = parts[0];
+        const actualJobId = parts.slice(1).join('_'); // 複数のアンダースコアがある場合も対応
+
+        console.log('[LP] Firestore LP設定取得:', companyDomain, actualJobId);
+        const result = await FirestoreService.getLPSettings(companyDomain, actualJobId);
+
+        if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+          console.log('[LP] Firestore LP設定を発見:', result.settings);
+          return result.settings;
+        }
+        console.log('[LP] Firestore LP設定が見つかりません（デフォルト設定を使用）');
+        return null;
+      } catch (e) {
+        console.log('[LP] Firestore LP設定取得エラー:', e.message);
+        // Firestoreエラー時はフォールバックしない（データ不整合を防ぐ）
+        return null;
+      }
+    }
+
+    // GAS API（フォールバック）: 会社の管理シート内のLP設定シートから取得
     try {
       // 会社の管理シートURLからスプレッドシートIDを抽出
       // manageSheetUrl または jobsSheet（管理シート）を使用
@@ -392,8 +420,32 @@ class CompanyLPPage {
   }
 
   // LP設定を取得（会社ドメイン単位・旧形式・後方互換）
-  // 会社の管理シート内のLP設定シートから取得
+  // Firestoreでは会社の最初の求人のLP設定を取得、または管理シート内のLP設定シートから取得
   async fetchLPSettingsLegacy(companyDomain) {
+    // Firestoreから読み込み（最初の求人のLP設定を取得）
+    if (useFirestore) {
+      try {
+        FirestoreService.initFirestore();
+        // 会社の求人一覧を取得して最初の求人のLP設定を使用
+        const jobsResult = await FirestoreService.getJobs(companyDomain);
+        if (jobsResult.success && jobsResult.jobs && jobsResult.jobs.length > 0) {
+          const firstJob = jobsResult.jobs[0];
+          console.log('[LP Legacy] Firestore 最初の求人ID:', firstJob.id);
+          const result = await FirestoreService.getLPSettings(companyDomain, firstJob.id);
+          if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+            console.log('[LP Legacy] Firestore LP設定を発見:', result.settings);
+            return result.settings;
+          }
+        }
+        console.log('[LP Legacy] Firestore LP設定が見つかりません（デフォルト設定を使用）');
+        return null;
+      } catch (e) {
+        console.log('[LP Legacy] Firestore LP設定取得エラー:', e.message);
+        return null;
+      }
+    }
+
+    // GAS API（フォールバック）: 会社の管理シート内のLP設定シートから取得
     try {
       // 会社の管理シートURLからスプレッドシートIDを抽出
       // manageSheetUrl または jobsSheet（管理シート）を使用

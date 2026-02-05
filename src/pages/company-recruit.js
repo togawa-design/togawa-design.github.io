@@ -738,7 +738,7 @@ class CompanyRecruitPage {
   renderJobCard(job) {
     const jobId = job.jobId || job['求人ID'] || job.id || '';
     const lpUrl = `lp.html?j=${this.companyDomain}_${jobId}`;
-    const imageUrl = job.imageUrl || this.company?.imageUrl || '';
+    const imageUrl = job.jobLogo || job.imageUrl || this.company?.imageUrl || '';
     const jobType = job.jobType || '';
     const isNew = isWithinOneWeek(job.publishStartDate);
     const totalBonus = job._displayTotalBonus || job.totalBonus || '';

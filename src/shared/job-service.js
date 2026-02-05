@@ -4,6 +4,8 @@
  */
 
 import { escapeHtml, showToast } from './utils.js';
+import { useFirestore } from '@features/admin/config.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 
 // GAS API URL
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
@@ -99,6 +101,32 @@ export async function loadJobs(companyDomain, options = {}) {
     return { success: false, error: '会社ドメインが指定されていません' };
   }
 
+  // Firestoreから読み込み
+  if (useFirestore) {
+    try {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.getJobs(companyDomain);
+
+      if (result.success) {
+        // 行インデックスを追加（互換性のため）
+        const jobs = (result.jobs || []).map((job, index) => ({
+          ...job,
+          _rowIndex: index
+        }));
+        return { success: true, jobs };
+      }
+      throw new Error(result.error || '求人データの取得に失敗しました');
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('[JobService] リクエストがキャンセルされました');
+        return { success: false, aborted: true };
+      }
+      console.error('[JobService] Firestore読み込みエラー:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // GAS APIから読み込み（フォールバック）
   try {
     const url = `${GAS_API_URL}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
     const fetchOptions = options.signal ? { signal: options.signal } : {};
@@ -130,10 +158,10 @@ export async function loadJobs(companyDomain, options = {}) {
  * 求人を保存する
  * @param {string} companyDomain - 会社ドメイン
  * @param {Object} jobData - 求人データ
- * @param {number|null} rowIndex - 行インデックス（新規の場合はnull）
+ * @param {number|string|null} rowIndexOrJobId - 行インデックスまたはジョブID（新規の場合はnull）
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function saveJob(companyDomain, jobData, rowIndex = null) {
+export async function saveJob(companyDomain, jobData, rowIndexOrJobId = null) {
   if (!companyDomain) {
     return { success: false, error: '会社ドメインが指定されていません' };
   }
@@ -142,12 +170,34 @@ export async function saveJob(companyDomain, jobData, rowIndex = null) {
     return { success: false, error: '募集タイトルと勤務地は必須です' };
   }
 
+  // Firestoreに保存
+  if (useFirestore) {
+    try {
+      FirestoreService.initFirestore();
+
+      // jobIdを決定（既存のjobData.idまたはrowIndexOrJobIdを使用）
+      const jobId = jobData.id || (typeof rowIndexOrJobId === 'string' ? rowIndexOrJobId : null);
+
+      const result = await FirestoreService.saveJob(companyDomain, jobData, jobId);
+
+      if (!result.success) {
+        throw new Error(result.error || '保存に失敗しました');
+      }
+
+      return { success: true, jobId: result.jobId };
+    } catch (error) {
+      console.error('[JobService] Firestore保存エラー:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // GAS APIに保存（フォールバック）
   try {
     const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
       action: 'saveJob',
       companyDomain: companyDomain,
       job: jobData,
-      rowIndex: rowIndex
+      rowIndex: rowIndexOrJobId
     }))));
 
     const url = `${GAS_API_URL}?action=post&data=${encodeURIComponent(payload)}`;
@@ -180,23 +230,44 @@ export async function saveJob(companyDomain, jobData, rowIndex = null) {
 /**
  * 求人を削除する
  * @param {string} companyDomain - 会社ドメイン
- * @param {number} rowIndex - 行インデックス
+ * @param {number|string} rowIndexOrJobId - 行インデックスまたはジョブID
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function deleteJob(companyDomain, rowIndex) {
+export async function deleteJob(companyDomain, rowIndexOrJobId) {
   if (!companyDomain) {
     return { success: false, error: '会社ドメインが指定されていません' };
   }
 
-  if (rowIndex == null) {
+  if (rowIndexOrJobId == null) {
     return { success: false, error: '削除対象が指定されていません' };
   }
 
+  // Firestoreから削除
+  if (useFirestore) {
+    try {
+      FirestoreService.initFirestore();
+
+      // rowIndexOrJobIdがジョブIDの場合はそのまま使用
+      const jobId = String(rowIndexOrJobId);
+      const result = await FirestoreService.deleteJob(companyDomain, jobId);
+
+      if (!result.success) {
+        throw new Error(result.error || '削除に失敗しました');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('[JobService] Firestore削除エラー:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // GAS APIで削除（フォールバック）
   try {
     const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
       action: 'deleteJob',
       companyDomain: companyDomain,
-      rowIndex: rowIndex
+      rowIndex: rowIndexOrJobId
     }))));
 
     const url = `${GAS_API_URL}?action=post&data=${encodeURIComponent(payload)}`;
@@ -316,8 +387,8 @@ export function renderJobCardHtml(job, options = {}) {
   return `
     <div class="job-card-row" ${idAttr}>
       <div class="job-col-image">
-        ${job.imageUrl
-          ? `<img src="${escapeHtml(job.imageUrl)}" alt="" class="job-thumbnail" loading="lazy" onerror="this.style.display='none'">`
+        ${job.jobLogo || job.imageUrl
+          ? `<img src="${escapeHtml(job.jobLogo || job.imageUrl)}" alt="" class="job-thumbnail" loading="lazy" onerror="this.style.display='none'">`
           : '<span class="no-image">📄</span>'
         }
       </div>

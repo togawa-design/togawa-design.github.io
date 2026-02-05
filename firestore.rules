@@ -28,11 +28,33 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // companies コレクション - 会社別設定
+    // companies コレクション - 会社情報・設定
     match /companies/{companyDomain} {
-      allow read, write: if true;
+      // 公開会社は誰でも読める、書き込みは認証ユーザー
+      allow read: if true;
+      allow write: if request.auth != null;
 
-      // サブコレクション: assignees
+      // サブコレクション: jobs - 求人データ
+      match /jobs/{jobId} {
+        // 公開求人は誰でも読める
+        allow read: if true;
+        // 書き込みは認証ユーザーのみ
+        allow write: if request.auth != null;
+      }
+
+      // サブコレクション: lpSettings - LP設定
+      match /lpSettings/{settingsId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+
+      // サブコレクション: recruitSettings - 採用ページ設定
+      match /recruitSettings/{settingsId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+
+      // サブコレクション: assignees - 担当者
       match /assignees/{assigneeId} {
         allow read, write: if true;
       }

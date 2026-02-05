@@ -3,6 +3,8 @@
  */
 import { escapeHtml } from '@shared/utils.js';
 import { uploadCompanyLogo, uploadCompanyImage, compressContentImage } from '@features/admin/image-uploader.js';
+import { useFirestore } from '@features/admin/config.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 
 // 設定
 const config = {
@@ -234,20 +236,44 @@ async function loadCompanyData() {
     sessionStorage.removeItem('editing_company_data');
   }
 
-  // 2. localStorageから取得（更新データがある場合）
-  const localData = localStorage.getItem(`company_data_${companyDomain}`);
-  if (localData) {
-    try {
-      const company = JSON.parse(localData);
-      originalData = company;
-      populateForm(company);
-      return;
-    } catch (e) {
-      console.error('localStorageデータのパースエラー:', e);
+  // 2. localStorageから取得（更新データがある場合）- Firestoreモード以外
+  if (!useFirestore) {
+    const localData = localStorage.getItem(`company_data_${companyDomain}`);
+    if (localData) {
+      try {
+        const company = JSON.parse(localData);
+        originalData = company;
+        populateForm(company);
+        return;
+      } catch (e) {
+        console.error('localStorageデータのパースエラー:', e);
+      }
     }
   }
 
-  // 3. APIから取得（個別会社取得API使用）
+  // 3. Firestoreから取得
+  if (useFirestore) {
+    try {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.getCompany(companyDomain);
+
+      if (!result.success || !result.company) {
+        alert('会社データが見つかりません');
+        window.location.href = 'admin.html';
+        return;
+      }
+
+      originalData = result.company;
+      populateForm(result.company);
+      return;
+    } catch (error) {
+      console.error('Firestore読み込みエラー:', error);
+      alert('データの読み込みに失敗しました: ' + error.message);
+      return;
+    }
+  }
+
+  // 4. GAS APIから取得（フォールバック）
   const gasApiUrl = config.gasApiUrl;
   if (!gasApiUrl) {
     alert('会社データが見つかりません');
@@ -332,9 +358,39 @@ async function saveCompany() {
     saveBtn.innerHTML = '<span class="loading-spinner-small"></span> 保存中...';
   }
 
-  const gasApiUrl = config.gasApiUrl;
-
   try {
+    // Firestoreに保存
+    if (useFirestore) {
+      FirestoreService.initFirestore();
+
+      // Firestore用にデータを整形
+      const firestoreData = {
+        company: companyData.company,
+        companyAddress: companyData.companyAddress || '',
+        description: companyData.description,
+        jobDescription: companyData.jobDescription,
+        workingHours: companyData.workingHours,
+        workLocation: companyData.workLocation,
+        logoUrl: companyData.logoUrl,
+        imageUrl: companyData.imageUrl,
+        designPattern: companyData.designPattern,
+        order: parseInt(companyData.order) || 0,
+        showCompany: companyData.showCompany === '○' || companyData.showCompany === '◯'
+      };
+
+      const result = await FirestoreService.saveCompany(companyData.companyDomain, firestoreData);
+
+      if (!result.success) {
+        throw new Error(result.error || '保存に失敗しました');
+      }
+
+      alert(isNewMode ? '会社を登録しました' : '会社情報を更新しました');
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    // GAS APIに保存（フォールバック）
+    const gasApiUrl = config.gasApiUrl;
     if (gasApiUrl) {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
         action: 'saveCompany',
@@ -389,7 +445,6 @@ function hideDeleteConfirm() {
  * 会社を削除
  */
 async function deleteCompany() {
-  const gasApiUrl = config.gasApiUrl;
   const deleteBtn = document.getElementById('delete-confirm');
 
   if (deleteBtn) {
@@ -398,6 +453,22 @@ async function deleteCompany() {
   }
 
   try {
+    // Firestoreから削除
+    if (useFirestore) {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.deleteCompany(companyDomain);
+
+      if (!result.success) {
+        throw new Error(result.error || '削除に失敗しました');
+      }
+
+      alert('会社を削除しました');
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    // GAS APIで削除（フォールバック）
+    const gasApiUrl = config.gasApiUrl;
     if (gasApiUrl) {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
         action: 'deleteCompany',

@@ -13,7 +13,7 @@ import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, i
 import { initPageAnalyticsTab, loadPageAnalyticsData } from './page-analytics.js';
 import { initDatePicker, getDateRange } from './date-picker.js';
 import { loadCompanyManageData, editCompany, showCompanyModal, closeCompanyModal, saveCompanyData, renderCompanyTable, openJobsArea } from './company-manager.js';
-import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection, initVideoButtonSection } from './lp-settings.js';
+import { loadCompanyListForLP, loadLPSettings, saveLPSettings, renderHeroImagePresets, toggleLPPreview, closeLPPreview, debouncedUpdatePreview, initSectionSortable, updateLPPreview, initPointsSection, initFAQSection, initVideoButtonSection, resetLPLivePreviewState } from './lp-settings.js';
 import { initRecruitSettings, setPendingCompany } from './recruit-settings.js';
 import { initJobListings, setCompanyFilter } from './job-listings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
@@ -44,6 +44,9 @@ import {
 import { initJobManageEmbedded } from './job-manage-embedded.js';
 import { initCompanyEditEmbedded } from './company-edit-embedded.js';
 import { loadSectionHTML } from './section-loader.js';
+
+// データ移行モジュール
+import * as DataMigration from './data-migration.js';
 
 // ログイン画面表示
 function showLogin() {
@@ -262,8 +265,28 @@ async function switchSection(sectionName, options = {}) {
 
   // LP設定セクションに切り替えた場合は会社リストを読み込む
   if (sectionName === 'lp-settings') {
+    // 動的読み込み時にプレビュー初期化フラグをリセット
+    resetLPLivePreviewState();
+
     loadCompanyListForLP();
     renderHeroImagePresets();
+
+    // 動的読み込み対応: 保存ボタンのイベントハンドラー設定
+    const lpSaveBtn = document.getElementById('btn-save-lp-settings');
+    if (lpSaveBtn && !lpSaveBtn.hasAttribute('data-listener-attached')) {
+      lpSaveBtn.addEventListener('click', () => saveLPSettings());
+      lpSaveBtn.setAttribute('data-listener-attached', 'true');
+    }
+
+    // 動的読み込み対応: リセットボタンのイベントハンドラー設定
+    const lpResetBtn = document.getElementById('btn-reset-lp-settings');
+    if (lpResetBtn && !lpResetBtn.hasAttribute('data-listener-attached')) {
+      lpResetBtn.addEventListener('click', () => {
+        const jobId = document.getElementById('lp-job-select')?.value;
+        if (jobId) loadLPSettings(jobId);
+      });
+      lpResetBtn.setAttribute('data-listener-attached', 'true');
+    }
   }
 
   // 採用ページ設定セクションに切り替えた場合は初期化
@@ -1412,6 +1435,14 @@ if (typeof window !== 'undefined') {
       const labels = { standard: 'スタンダード', modern: 'モダン', classic: 'クラシック', minimal: 'ミニマル', colorful: 'カラフル' };
       return labels[pattern] || 'スタンダード';
     }
+  };
+
+  // データ移行モジュール（Firestore移行用）
+  window.DataMigration = {
+    migrateAllData: DataMigration.migrateAllData,
+    migrateTestCompany: DataMigration.migrateTestCompany,
+    migrateAllLPSettings: DataMigration.migrateAllLPSettings,
+    getMigrationProgress: DataMigration.getMigrationProgress
   };
 }
 

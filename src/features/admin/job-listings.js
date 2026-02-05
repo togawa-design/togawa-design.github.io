@@ -337,7 +337,7 @@ function renderJobCard(job) {
     expired: 'status-expired'
   }[status];
 
-  const imageUrl = job.imageUrl || '';
+  const imageUrl = job.jobLogo || job.imageUrl || '';
 
   return `
     <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-company-domain="${escapeHtml(job.companyDomain || '')}">

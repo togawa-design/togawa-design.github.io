@@ -22,6 +22,7 @@ import { config } from '@features/job-manage/auth.js';
 import { showToast, escapeHtml } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
 import { generateIndeedXml, generateGoogleJobsJsonLd, generateJobBoxXml, generateCsv, downloadFile } from '@features/admin/job-feed-generator.js';
+import { selectImageFile, uploadJobLogo } from '@features/admin/image-uploader.js';
 
 // 求人編集共通ユーティリティ
 import {
@@ -37,6 +38,10 @@ import {
   populateForm,
   clearForm
 } from '@shared/job-service.js';
+
+// Firestoreサービス
+import { useFirestore } from '@features/admin/config.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 
 // 初期化状態
 let isInitialized = false;
@@ -136,26 +141,35 @@ async function loadJobsData() {
     jobsList.innerHTML = '<div class="job-cards-loading">データを読み込み中...</div>';
   }
 
-  const gasApiUrl = config.gasApiUrl;
-  if (!gasApiUrl) {
-    if (jobsList) {
-      jobsList.innerHTML = '<div class="error-message">GAS API URLが設定されていません</div>';
-    }
-    return;
-  }
-
   // 前のリクエストをキャンセルして新しいAbortControllerを取得
   const abortController = getNewAbortController();
 
   try {
-    const url = `${gasApiUrl}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
-    const response = await fetch(url, { signal: abortController.signal });
+    let result;
 
-    if (!response.ok) {
-      throw new Error('データの取得に失敗しました');
+    if (useFirestore) {
+      // Firestoreから取得
+      FirestoreService.initFirestore();
+      result = await FirestoreService.getJobs(companyDomain);
+    } else {
+      // GAS APIから取得（旧方式）
+      const gasApiUrl = config.gasApiUrl;
+      if (!gasApiUrl) {
+        if (jobsList) {
+          jobsList.innerHTML = '<div class="error-message">GAS API URLが設定されていません</div>';
+        }
+        return;
+      }
+
+      const url = `${gasApiUrl}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
+      const response = await fetch(url, { signal: abortController.signal });
+
+      if (!response.ok) {
+        throw new Error('データの取得に失敗しました');
+      }
+
+      result = await response.json();
     }
-
-    const result = await response.json();
 
     if (!result.success) {
       throw new Error(result.error || '求人データの取得に失敗しました');
@@ -261,7 +275,7 @@ function renderJobCard(job) {
   const statusClass = getStatusClass(status);
 
   const orderNum = parseInt(job.order) || 999;
-  const imageUrl = job.imageUrl || '';
+  const imageUrl = job.jobLogo || job.imageUrl || '';
 
   return `
     <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-order="${orderNum}" draggable="false">
@@ -420,6 +434,14 @@ function showJobEditNew() {
     displayedFeaturesContainer.innerHTML = '<div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>';
   }
 
+  // ロゴ設定をクリア
+  const logoInput = document.getElementById('jm-edit-job-logo');
+  if (logoInput) logoInput.value = '';
+  const logoPreview = document.getElementById('jm-job-logo-preview');
+  if (logoPreview) logoPreview.style.display = 'none';
+  const logoPreviewImg = document.getElementById('jm-job-logo-preview-img');
+  if (logoPreviewImg) logoPreviewImg.src = '';
+
   // 動画設定をクリア
   const showVideoCheckbox = document.getElementById('jm-edit-job-show-video');
   if (showVideoCheckbox) showVideoCheckbox.checked = false;
@@ -478,6 +500,9 @@ function editJob(jobId) {
 
   // 特徴チェックボックスを設定
   populateFeaturesCheckboxes(job);
+
+  // ロゴ設定を設定
+  populateLogoFields(job);
 
   // 動画設定を設定
   populateVideoFields(job);
@@ -555,6 +580,31 @@ function populateWorkingHoursFields(job) {
   `).join('');
 
   setupJmWorkingHoursRemoveButtons();
+}
+
+/**
+ * ロゴ設定フィールドを設定
+ */
+function populateLogoFields(job) {
+  const logoInput = document.getElementById('jm-edit-job-logo');
+  const logoPreview = document.getElementById('jm-job-logo-preview');
+  const logoPreviewImg = document.getElementById('jm-job-logo-preview-img');
+
+  const logoUrl = job.jobLogo || job.imageUrl || '';
+
+  if (logoInput) {
+    logoInput.value = logoUrl;
+  }
+
+  if (logoPreview && logoPreviewImg) {
+    if (logoUrl) {
+      logoPreviewImg.src = logoUrl;
+      logoPreview.style.display = 'block';
+    } else {
+      logoPreviewImg.src = '';
+      logoPreview.style.display = 'none';
+    }
+  }
 }
 
 /**
@@ -756,6 +806,9 @@ async function saveJob() {
   const displayedFeaturesArray = Array.from(displayedFeaturesCheckboxes).map(cb => cb.value);
   const displayedFeatures = displayedFeaturesArray.join(',');
 
+  // ロゴ設定の取得
+  const jobLogo = getVal('logo');
+
   // 動画設定の取得
   const showVideoButton = document.getElementById('jm-edit-job-show-video')?.checked ? 'true' : 'false';
   const videoUrl = getVal('video-url');
@@ -783,18 +836,13 @@ async function saveJob() {
     publishStartDate: getVal('start-date'),
     publishEndDate: getVal('end-date'),
     visible: document.getElementById('jm-edit-job-visible')?.checked ? 'true' : 'false',
+    jobLogo: jobLogo,
     showVideoButton: showVideoButton,
     videoUrl: videoUrl
   };
 
   if (!jobData.title || !jobData.location) {
     showToast('募集タイトルと勤務地は必須です', 'error');
-    return;
-  }
-
-  const gasApiUrl = config.gasApiUrl;
-  if (!gasApiUrl) {
-    showToast('GAS API URLが設定されていません', 'error');
     return;
   }
 
@@ -806,31 +854,65 @@ async function saveJob() {
       saveBtn.textContent = '保存中...';
     }
 
-    const requestData = {
-      action: 'saveJob',
-      companyDomain: companyDomain,
-      job: jobData,
-      rowIndex: isNewJob ? null : currentEditingJob?._rowIndex
-    };
-    console.log('[JobManageEmbedded] 保存リクエスト:', requestData);
-
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify(requestData))));
-
-    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-    console.log('[JobManageEmbedded] GAS URL:', gasApiUrl);
-
-    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-    const responseText = await response.text();
-    console.log('[JobManageEmbedded] GASレスポンス:', responseText);
-
     let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      throw new Error('GASからの応答が不正です: ' + responseText.substring(0, 200));
-    }
 
-    console.log('[JobManageEmbedded] パース結果:', result);
+    if (useFirestore) {
+      // Firestoreに保存
+      FirestoreService.initFirestore();
+      const existingDocId = isNewJob ? null : (currentEditingJob?._docId || currentEditingJob?.id);
+      result = await FirestoreService.saveJob(companyDomain, jobData, existingDocId);
+      console.log('[JobManageEmbedded] Firestore保存結果:', result);
+    } else {
+      // GAS APIに保存（旧方式）
+      const gasApiUrl = config.gasApiUrl;
+      if (!gasApiUrl) {
+        showToast('GAS API URLが設定されていません', 'error');
+        return;
+      }
+
+      // 空の値を除去してペイロードサイズを削減（GAS URL長制限対策）
+      const filteredJobData = Object.fromEntries(
+        Object.entries(jobData).filter(([key, value]) => {
+          if (value === null || value === undefined || value === '') return false;
+          if (key === 'badges') return false; // バッジは常に空なので除外
+          return true;
+        })
+      );
+
+      const requestData = {
+        action: 'saveJob',
+        companyDomain: companyDomain,
+        job: filteredJobData,
+        rowIndex: isNewJob ? null : currentEditingJob?._rowIndex
+      };
+      console.log('[JobManageEmbedded] 保存リクエスト:', requestData);
+
+      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(requestData))));
+      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+      console.log('[JobManageEmbedded] URL長:', url.length, 'bytes');
+
+      // URL長制限をチェック（GASは約8KB程度まで対応可能）
+      if (url.length > 8000) {
+        throw new Error(`データが大きすぎます。求人説明などのテキストを短くしてください。（URL長: ${url.length}文字）`);
+      }
+
+      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error(`リクエストが大きすぎます。求人説明などのテキストを短くしてください。`);
+        }
+        throw new Error(`サーバーエラー: ${response.status} ${response.statusText}`);
+      }
+
+      const responseText = await response.text();
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        throw new Error('GASからの応答が不正です: ' + responseText.substring(0, 200));
+      }
+      console.log('[JobManageEmbedded] GAS保存結果:', result);
+    }
 
     if (!result.success) {
       throw new Error(result.error || '保存に失敗しました');
@@ -877,12 +959,6 @@ async function deleteJob() {
   });
   if (!confirmed) return;
 
-  const gasApiUrl = config.gasApiUrl;
-  if (!gasApiUrl) {
-    showToast('GAS API URLが設定されていません', 'error');
-    return;
-  }
-
   const deleteBtn = document.getElementById('jm-job-edit-delete-btn');
 
   try {
@@ -891,21 +967,36 @@ async function deleteJob() {
       deleteBtn.textContent = '削除中...';
     }
 
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-      action: 'deleteJob',
-      companyDomain: companyDomain,
-      rowIndex: currentEditingJob._rowIndex
-    }))));
-
-    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-    const responseText = await response.text();
-
     let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      throw new Error('GASからの応答が不正です');
+
+    if (useFirestore) {
+      // Firestoreから削除
+      FirestoreService.initFirestore();
+      const jobId = currentEditingJob._docId || currentEditingJob.id;
+      result = await FirestoreService.deleteJob(companyDomain, jobId);
+    } else {
+      // GAS APIで削除（旧方式）
+      const gasApiUrl = config.gasApiUrl;
+      if (!gasApiUrl) {
+        showToast('GAS API URLが設定されていません', 'error');
+        return;
+      }
+
+      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
+        action: 'deleteJob',
+        companyDomain: companyDomain,
+        rowIndex: currentEditingJob._rowIndex
+      }))));
+
+      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
+      const responseText = await response.text();
+
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        throw new Error('GASからの応答が不正です');
+      }
     }
 
     if (!result.success) {
@@ -1046,6 +1137,11 @@ function setupEventListeners() {
   // 特徴チェックボックスの変更監視
   setupFeaturesCheckboxEvents();
 
+  // ロゴURL入力の変更監視（プレビュー表示）
+  document.getElementById('jm-edit-job-logo')?.addEventListener('input', handleJmLogoInputChange);
+  document.getElementById('jm-btn-clear-logo')?.addEventListener('click', handleJmClearLogo);
+  document.getElementById('jm-btn-upload-logo')?.addEventListener('click', handleJmLogoUpload);
+
   // 動画表示チェックボックスの変更監視
   document.getElementById('jm-edit-job-show-video')?.addEventListener('change', handleJmShowVideoChange);
 
@@ -1170,6 +1266,90 @@ function getJmPresetDates(preset) {
   }
 
   return { start, end };
+}
+
+/**
+ * ロゴURL入力変更時の処理（プレビュー表示）
+ */
+function handleJmLogoInputChange() {
+  const logoInput = document.getElementById('jm-edit-job-logo');
+  const logoPreview = document.getElementById('jm-job-logo-preview');
+  const logoPreviewImg = document.getElementById('jm-job-logo-preview-img');
+
+  if (!logoInput || !logoPreview || !logoPreviewImg) return;
+
+  const url = logoInput.value.trim();
+
+  if (url) {
+    logoPreviewImg.src = url;
+    logoPreviewImg.onerror = () => {
+      logoPreview.style.display = 'none';
+    };
+    logoPreviewImg.onload = () => {
+      logoPreview.style.display = 'block';
+    };
+  } else {
+    logoPreview.style.display = 'none';
+    logoPreviewImg.src = '';
+  }
+}
+
+/**
+ * ロゴクリアボタンの処理
+ */
+function handleJmClearLogo() {
+  const logoInput = document.getElementById('jm-edit-job-logo');
+  const logoPreview = document.getElementById('jm-job-logo-preview');
+  const logoPreviewImg = document.getElementById('jm-job-logo-preview-img');
+
+  if (logoInput) logoInput.value = '';
+  if (logoPreview) logoPreview.style.display = 'none';
+  if (logoPreviewImg) logoPreviewImg.src = '';
+}
+
+/**
+ * ロゴアップロードボタンの処理
+ */
+async function handleJmLogoUpload() {
+  const logoInput = document.getElementById('jm-edit-job-logo');
+  const logoPreview = document.getElementById('jm-job-logo-preview');
+  const logoPreviewImg = document.getElementById('jm-job-logo-preview-img');
+  const uploadProgress = document.getElementById('jm-logo-upload-progress');
+  const uploadBtn = document.getElementById('jm-btn-upload-logo');
+
+  try {
+    // ファイル選択ダイアログを表示
+    const file = await selectImageFile({ accept: 'image/*' });
+
+    // アップロード中表示
+    if (uploadProgress) uploadProgress.style.display = 'flex';
+    if (uploadBtn) uploadBtn.disabled = true;
+
+    // Cloudinaryにアップロード
+    const url = await uploadJobLogo(file, companyDomain);
+
+    // URLをインプットにセット
+    if (logoInput) logoInput.value = url;
+
+    // プレビュー表示
+    if (logoPreviewImg) {
+      logoPreviewImg.src = url;
+      logoPreviewImg.onload = () => {
+        if (logoPreview) logoPreview.style.display = 'block';
+      };
+    }
+
+    showToast('画像をアップロードしました');
+
+  } catch (error) {
+    if (error.message !== 'ファイルが選択されませんでした') {
+      console.error('[JobManageEmbedded] ロゴアップロードエラー:', error);
+      showToast('画像のアップロードに失敗しました: ' + error.message, 'error');
+    }
+  } finally {
+    if (uploadProgress) uploadProgress.style.display = 'none';
+    if (uploadBtn) uploadBtn.disabled = false;
+  }
 }
 
 /**

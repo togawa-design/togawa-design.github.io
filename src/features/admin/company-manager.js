@@ -3,8 +3,9 @@
  */
 
 import { escapeHtml } from '@shared/utils.js';
-import { spreadsheetConfig, getPatternLabel, heroImagePresets } from './config.js';
+import { spreadsheetConfig, getPatternLabel, heroImagePresets, useFirestore } from './config.js';
 import { parseCSVLine, normalizeHeader } from './csv-utils.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 
 // キャッシュ
 let companiesCache = [];
@@ -24,28 +25,43 @@ export async function loadCompanyManageData() {
   }
 
   try {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetConfig.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(spreadsheetConfig.companySheetName)}`;
-    const response = await fetch(csvUrl);
-    if (!response.ok) throw new Error('データの取得に失敗しました');
+    let companies = [];
 
-    const csvText = await response.text();
-    let companies = parseCompanyCSV(csvText);
+    // Firestoreから読み込み
+    if (useFirestore) {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.getCompanies();
 
-    // ローカルストレージの更新データをマージ
-    companies = companies.map(company => {
-      if (company.companyDomain) {
-        const storedData = localStorage.getItem(`company_data_${company.companyDomain}`);
-        if (storedData) {
-          try {
-            const updatedData = JSON.parse(storedData);
-            return { ...company, ...updatedData };
-          } catch (e) {
-            console.error('ローカルストレージのパースエラー:', e);
+      if (result.success) {
+        companies = result.companies || [];
+      } else {
+        throw new Error(result.error || '会社データの取得に失敗しました');
+      }
+    } else {
+      // CSVから読み込み（フォールバック）
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetConfig.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(spreadsheetConfig.companySheetName)}`;
+      const response = await fetch(csvUrl);
+      if (!response.ok) throw new Error('データの取得に失敗しました');
+
+      const csvText = await response.text();
+      companies = parseCompanyCSV(csvText);
+
+      // ローカルストレージの更新データをマージ
+      companies = companies.map(company => {
+        if (company.companyDomain) {
+          const storedData = localStorage.getItem(`company_data_${company.companyDomain}`);
+          if (storedData) {
+            try {
+              const updatedData = JSON.parse(storedData);
+              return { ...company, ...updatedData };
+            } catch (e) {
+              console.error('ローカルストレージのパースエラー:', e);
+            }
           }
         }
-      }
-      return company;
-    });
+        return company;
+      });
+    }
 
     companiesCache = companies;
 
@@ -158,6 +174,64 @@ export async function saveCompanyData() {
     }
   }
 
+  // Firestoreに保存
+  if (useFirestore) {
+    try {
+      const saveBtn = document.getElementById('company-modal-save');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中...';
+      }
+
+      FirestoreService.initFirestore();
+
+      // Firestore用にデータを整形
+      const firestoreData = {
+        company: companyData.company,
+        companyAddress: companyData.companyAddress || '',
+        description: companyData.description,
+        imageUrl: companyData.imageUrl,
+        designPattern: companyData.designPattern,
+        order: parseInt(companyData.order) || 0,
+        showCompany: companyData.showCompany === '○' || companyData.showCompany === '◯'
+      };
+
+      const result = await FirestoreService.saveCompany(companyDomain, firestoreData);
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存';
+      }
+
+      if (!result.success) {
+        alert('Firestoreへの保存に失敗しました: ' + (result.error || '不明なエラー'));
+        return;
+      }
+
+      localStorage.removeItem(`company_data_${companyData.companyDomain}`);
+
+      if (isNewCompany) {
+        companiesCache.push(companyData);
+      } else {
+        const idx = companiesCache.findIndex(c => c.companyDomain === companyData.companyDomain);
+        if (idx !== -1) {
+          companiesCache[idx] = companyData;
+        }
+      }
+
+      closeCompanyModal();
+      renderCompanyTable();
+
+      alert(`会社情報を保存しました。\n\n会社名: ${companyData.company}\nドメイン: ${companyData.companyDomain}`);
+
+    } catch (error) {
+      console.error('Firestore保存エラー:', error);
+      alert('Firestoreへの保存中にエラーが発生しました: ' + error.message);
+    }
+    return;
+  }
+
+  // GAS APIに保存（フォールバック）
   const gasApiUrl = spreadsheetConfig.gasApiUrl;
   if (gasApiUrl) {
     try {

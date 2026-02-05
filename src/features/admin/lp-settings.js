@@ -3,7 +3,8 @@
  */
 
 import { escapeHtml, showToast } from '@shared/utils.js';
-import { spreadsheetConfig, heroImagePresets } from './config.js';
+import { spreadsheetConfig, heroImagePresets, useFirestore } from './config.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 import { uploadLPImage, selectImageFile } from './image-uploader.js';
 import { parseCSVLine } from './csv-utils.js';
 import { getCompaniesCache, loadCompanyManageData } from './company-manager.js';
@@ -197,17 +198,60 @@ async function loadJobsForCompany(companyDomain) {
     jobGrid.innerHTML = '<div class="lp-loading-placeholder">求人を読み込み中...</div>';
   }
 
-  // 求人シートの情報を取得
+  // Firestoreから求人を読み込む
+  if (useFirestore) {
+    try {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.getJobs(companyDomain);
+
+      if (!result.success) {
+        console.warn(`[LP設定] Firestore求人読み込みエラー: ${result.error}`);
+        if (jobGrid) {
+          jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込みに失敗しました</p></div>';
+        }
+        return;
+      }
+
+      const jobs = (result.jobs || []).map(job => ({
+        id: `${companyDomain}_${job.id}`,
+        jobId: job.id,
+        title: job.title || '(タイトルなし)',
+        company: company.company,
+        companyDomain: companyDomain,
+        manageSheetUrl: company.manageSheetUrl,
+        rawData: job
+      }));
+
+      allJobsCache = jobs;
+      renderJobCards(jobs);
+
+      // 互換性のため非表示のselectも更新
+      if (jobSelect) {
+        let html = '<option value="">-- 求人を選択 --</option>';
+        for (const job of jobs) {
+          html += `<option value="${escapeHtml(job.id)}">${escapeHtml(job.title)}</option>`;
+        }
+        jobSelect.innerHTML = html;
+      }
+
+    } catch (e) {
+      console.warn(`[LP設定] Firestore求人読み込みエラー: ${companyDomain}`, e);
+      if (jobGrid) {
+        jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込み中にエラーが発生しました</p></div>';
+      }
+    }
+    return;
+  }
+
+  // 従来のCSV読み込み
   const sheetName = company.jobsSheet?.trim();
   const manageSheetUrl = company.manageSheetUrl?.trim();
 
   let csvUrl = '';
 
   if (sheetName) {
-    // シート名が指定されている場合は同じスプレッドシート内のシートを参照
     csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetConfig.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   } else if (manageSheetUrl) {
-    // URLが指定されている場合はスプレッドシートIDを抽出
     const sheetIdMatch = manageSheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (sheetIdMatch) {
       const externalSheetId = sheetIdMatch[1];
@@ -237,10 +281,8 @@ async function loadJobsForCompany(companyDomain) {
     const jobs = parseJobsCSV(csvText, company);
     allJobsCache = jobs;
 
-    // 求人カードグリッドをレンダリング
     renderJobCards(jobs);
 
-    // 互換性のため非表示のselectも更新
     if (jobSelect) {
       let html = '<option value="">-- 求人を選択 --</option>';
       for (const job of jobs) {
@@ -426,7 +468,28 @@ export async function loadLPSettings(jobId) {
   if (patternRadio) patternRadio.checked = true;
 
   try {
-    // 会社の管理シートからLP設定を読み込む
+    // Firestoreから読み込み
+    if (useFirestore) {
+      const companyDomain = currentJobData?.companyDomain || selectedCompanyDomain;
+      console.log('[LP設定] Firestoreから読み込み:', companyDomain, jobId);
+
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.getLPSettings(companyDomain, jobId);
+
+      if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+        const settings = result.settings;
+        applyLPSettingsToForm(settings);
+        console.log('[LP設定] Firestoreから設定を読み込みました');
+      } else {
+        console.log('[LP設定] Firestoreに設定がありません、デフォルト表示');
+        clearLPForm();
+      }
+
+      setFormLoadingState(false);
+      return;
+    }
+
+    // 従来の方法: 会社の管理シートからLP設定を読み込む
     // manageSheetUrl または jobsSheet（管理シート）を使用
     const sheetUrl = currentJobData.manageSheetUrl?.trim() || currentJobData.jobsSheet?.trim();
     console.log('[LP設定] 管理シートURL:', sheetUrl);
@@ -561,6 +624,89 @@ export async function loadLPSettings(jobId) {
 function setInputValue(id, value) {
   const el = document.getElementById(id);
   if (el) el.value = value || '';
+}
+
+/**
+ * LP設定をフォームに反映する共通関数
+ */
+function applyLPSettingsToForm(settings) {
+  setInputValue('lp-hero-title', settings.heroTitle);
+  setInputValue('lp-hero-subtitle', settings.heroSubtitle);
+  setInputValue('lp-hero-image', settings.heroImage);
+
+  // ポイントを動的にレンダリング
+  const points = [];
+  for (let i = 1; i <= 6; i++) {
+    const title = settings[`pointTitle${i}`] || '';
+    const desc = settings[`pointDesc${i}`] || '';
+    if (title || desc) {
+      points.push({ title, desc });
+    }
+  }
+  renderPointInputs(points.length > 0 ? points : [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]);
+
+  setInputValue('lp-cta-text', settings.ctaText || '今すぐ応募する');
+  setInputValue('lp-faq', settings.faq);
+
+  // FAQエディターをレンダリング
+  const faqs = parseFAQString(settings.faq);
+  renderFAQInputs(faqs);
+
+  if (settings.designPattern) {
+    const patternRadio = document.querySelector(`input[name="design-pattern"][value="${settings.designPattern}"]`);
+    if (patternRadio) patternRadio.checked = true;
+  }
+
+  if (settings.sectionOrder) {
+    applySectionOrder(settings.sectionOrder);
+  }
+
+  if (settings.sectionVisibility) {
+    applySectionVisibility(settings.sectionVisibility);
+  }
+
+  // 広告トラッキング設定
+  setInputValue('lp-tiktok-pixel', settings.tiktokPixelId);
+  setInputValue('lp-google-ads-id', settings.googleAdsId);
+  setInputValue('lp-google-ads-label', settings.googleAdsLabel);
+  setInputValue('lp-meta-pixel', settings.metaPixelId);
+  setInputValue('lp-line-tag', settings.lineTagId);
+  setInputValue('lp-clarity', settings.clarityProjectId);
+
+  // OGP設定
+  setInputValue('lp-ogp-title', settings.ogpTitle);
+  setInputValue('lp-ogp-description', settings.ogpDescription);
+  setInputValue('lp-ogp-image', settings.ogpImage);
+
+  // 動画ボタン設定
+  const showVideoCheckbox = document.getElementById('lp-show-video-button');
+  const videoUrlGroup = document.getElementById('video-url-group');
+  if (showVideoCheckbox) {
+    showVideoCheckbox.checked = String(settings.showVideoButton).toLowerCase() === 'true' || settings.showVideoButton === true;
+    if (videoUrlGroup) {
+      videoUrlGroup.style.display = showVideoCheckbox.checked ? 'block' : 'none';
+    }
+  }
+  setInputValue('lp-video-url', settings.videoUrl);
+
+  // カスタムカラー設定を反映
+  setLPCustomColors({
+    primary: settings.customPrimary || '',
+    accent: settings.customAccent || '',
+    bg: settings.customBg || '',
+    text: settings.customText || ''
+  });
+
+  updateHeroImagePresetSelection(settings.heroImage || '');
+  updateHeroImageUploadPreview(settings.heroImage || '');
+
+  // セクションマネージャーを初期化してデータを読み込み
+  initSectionManagerIfNeeded();
+  loadSectionsFromSettings(settings);
+  renderSectionsList();
+
+  // リアルタイムプレビューをセットアップ
+  setupLPLivePreview();
 }
 
 /**
@@ -1428,6 +1574,44 @@ export async function saveLPSettings() {
   console.log('[LP保存] showVideoButton:', settings.showVideoButton);
   console.log('[LP保存] videoUrl:', settings.videoUrl);
 
+  // Firestoreに保存
+  if (useFirestore) {
+    try {
+      const saveBtn = document.getElementById('btn-save-lp-settings');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中...';
+      }
+
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.saveLPSettings(settings.companyDomain, jobId, settings);
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'LP設定を保存';
+      }
+
+      if (!result.success) {
+        alert('Firestoreへの保存に失敗しました: ' + (result.error || '不明なエラー'));
+        return;
+      }
+
+      // 動画設定を求人にも同期
+      if (settings.showVideoButton || settings.videoUrl) {
+        await syncVideoToJob(jobId, settings.showVideoButton, settings.videoUrl, jobData);
+      }
+
+      localStorage.removeItem(`lp_settings_${jobId}`);
+      showToast('LP設定を保存しました', 'success');
+
+    } catch (error) {
+      console.error('Firestore保存エラー:', error);
+      alert('Firestoreへの保存中にエラーが発生しました: ' + error.message);
+    }
+    return;
+  }
+
+  // 従来のGAS API保存
   const gasApiUrl = spreadsheetConfig.gasApiUrl;
   if (gasApiUrl) {
     try {
@@ -1609,8 +1793,11 @@ export function updateLPPreview() {
   // 現在のフォームデータからLP設定を構築
   const lpSettings = getCurrentLPSettings();
 
+  // 求人データを取得（rawDataから詳細情報を取得）
+  const jobData = currentJobData?.rawData || currentJobData || null;
+
   // プレビューHTMLを生成
-  const previewHtml = generatePreviewHtml(company, lpSettings);
+  const previewHtml = generatePreviewHtml(company, lpSettings, jobData);
 
   // iframeに注入
   iframe.srcdoc = previewHtml;
@@ -1659,7 +1846,7 @@ function getCurrentLPSettings() {
 }
 
 // プレビューHTML生成
-function generatePreviewHtml(company, lpSettings) {
+function generatePreviewHtml(company, lpSettings, jobData = null) {
   const patternClass = `lp-pattern-${lpSettings.designPattern || 'standard'}`;
   const layoutStyle = lpSettings.layoutStyle || 'default';
 
@@ -1704,13 +1891,13 @@ function generatePreviewHtml(company, lpSettings) {
 
     switch (section) {
       case 'hero':
-        return renderPreviewHero(company, lpSettings);
+        return renderPreviewHero(company, lpSettings, jobData);
       case 'points':
         return renderPreviewPoints(lpSettings);
       case 'jobs':
-        return renderPreviewJobs(company);
+        return renderPreviewJobs(company, jobData);
       case 'details':
-        return renderPreviewDetails(company);
+        return renderPreviewDetails(company, jobData);
       case 'faq':
         return lpSettings.faq ? renderPreviewFAQ(lpSettings.faq) : '';
       case 'apply':
@@ -1759,8 +1946,9 @@ function generatePreviewHtml(company, lpSettings) {
 }
 
 // ヒーローセクション
-function renderPreviewHero(company, lpSettings) {
-  const heroTitle = lpSettings.heroTitle || `${company.company || '会社名'}で働こう`;
+function renderPreviewHero(company, lpSettings, jobData = null) {
+  const jobTitle = jobData?.title || '';
+  const heroTitle = lpSettings.heroTitle || jobTitle || `${company.company || '会社名'}で働こう`;
   const heroSubtitle = lpSettings.heroSubtitle || '';
   const heroImage = lpSettings.heroImage || '';
 
@@ -1811,28 +1999,96 @@ function renderPreviewPoints(lpSettings) {
   `;
 }
 
-// 求人セクション（プレースホルダー）
-function renderPreviewJobs(company) {
+// 求人セクション
+function renderPreviewJobs(company, jobData = null) {
+  if (!jobData) {
+    return `
+      <section class="lp-jobs">
+        <div class="lp-section-inner">
+          <h2 class="lp-section-title">募集中の求人</h2>
+          <div class="lp-jobs-placeholder">
+            <p>求人情報は実際のページでご確認ください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  const title = jobData.title || '求人タイトル';
+  const location = jobData.location || jobData.workLocation || '';
+  const salary = jobData.monthlySalary || jobData.totalBonus || '';
+  const jobType = jobData.jobType || '';
+  const employmentType = jobData.employmentType || '';
+
   return `
     <section class="lp-jobs">
       <div class="lp-section-inner">
         <h2 class="lp-section-title">募集中の求人</h2>
-        <div class="lp-jobs-placeholder">
-          <p>求人情報は実際のページでご確認ください</p>
+        <div class="lp-job-card-preview">
+          <h3 class="lp-job-title-preview">${escapeHtml(title)}</h3>
+          <div class="lp-job-meta-preview">
+            ${location ? `<span class="lp-job-meta-item"><span class="lp-meta-icon">📍</span>${escapeHtml(location)}</span>` : ''}
+            ${salary ? `<span class="lp-job-meta-item"><span class="lp-meta-icon">💰</span>${escapeHtml(salary)}</span>` : ''}
+            ${jobType ? `<span class="lp-job-meta-item"><span class="lp-meta-icon">💼</span>${escapeHtml(jobType)}</span>` : ''}
+            ${employmentType ? `<span class="lp-job-meta-item"><span class="lp-meta-icon">📋</span>${escapeHtml(employmentType)}</span>` : ''}
+          </div>
         </div>
       </div>
     </section>
   `;
 }
 
-// 募集要項セクション（プレースホルダー）
-function renderPreviewDetails(company) {
+// 募集要項セクション
+function renderPreviewDetails(company, jobData = null) {
+  if (!jobData) {
+    return `
+      <section class="lp-details">
+        <div class="lp-section-inner">
+          <h2 class="lp-section-title">募集要項</h2>
+          <div class="lp-details-placeholder">
+            <p>詳細な募集要項は実際のページでご確認ください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  // 表示する項目を定義
+  const detailItems = [
+    { label: '仕事内容', value: jobData.jobDescription },
+    { label: '勤務地', value: jobData.location || jobData.workLocation },
+    { label: '給与', value: jobData.monthlySalary || jobData.totalBonus },
+    { label: '勤務時間', value: jobData.workingHours },
+    { label: '休日・休暇', value: jobData.holidays },
+    { label: '応募資格', value: jobData.requirements },
+    { label: '福利厚生', value: jobData.benefits },
+    { label: 'アクセス', value: jobData.access }
+  ].filter(item => item.value);
+
+  if (detailItems.length === 0) {
+    return `
+      <section class="lp-details">
+        <div class="lp-section-inner">
+          <h2 class="lp-section-title">募集要項</h2>
+          <div class="lp-details-placeholder">
+            <p>詳細な募集要項は実際のページでご確認ください</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
   return `
     <section class="lp-details">
       <div class="lp-section-inner">
         <h2 class="lp-section-title">募集要項</h2>
-        <div class="lp-details-placeholder">
-          <p>詳細な募集要項は実際のページでご確認ください</p>
+        <div class="lp-details-table">
+          ${detailItems.map(item => `
+            <div class="lp-details-row">
+              <div class="lp-details-label">${escapeHtml(item.label)}</div>
+              <div class="lp-details-value">${escapeHtml(item.value).replace(/\n/g, '<br>')}</div>
+            </div>
+          `).join('')}
         </div>
       </div>
     </section>
@@ -2060,6 +2316,20 @@ function getPreviewStyles() {
     .lp-jobs, .lp-details { background: var(--lp-bg, #fff); }
     .lp-jobs-placeholder, .lp-details-placeholder { text-align: center; padding: 40px; background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); border-radius: 8px; color: color-mix(in srgb, var(--lp-text, #888) 60%, transparent); }
 
+    /* 求人カードプレビュー */
+    .lp-job-card-preview { background: var(--lp-bg, #fff); border: 1px solid color-mix(in srgb, var(--lp-text, #ddd) 20%, transparent); border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .lp-job-title-preview { font-size: 18px; font-weight: 700; margin-bottom: 15px; color: var(--lp-text, #333); }
+    .lp-job-meta-preview { display: flex; flex-wrap: wrap; gap: 12px; }
+    .lp-job-meta-item { display: flex; align-items: center; gap: 6px; font-size: 14px; color: color-mix(in srgb, var(--lp-text, #666) 80%, transparent); background: color-mix(in srgb, var(--lp-bg, #f3f4f6) 95%, var(--lp-primary, #667eea) 5%); padding: 6px 12px; border-radius: 20px; }
+    .lp-meta-icon { font-size: 14px; }
+
+    /* 募集要項テーブル */
+    .lp-details-table { display: flex; flex-direction: column; gap: 0; border: 1px solid color-mix(in srgb, var(--lp-text, #ddd) 20%, transparent); border-radius: 12px; overflow: hidden; }
+    .lp-details-row { display: flex; border-bottom: 1px solid color-mix(in srgb, var(--lp-text, #eee) 15%, transparent); }
+    .lp-details-row:last-child { border-bottom: none; }
+    .lp-details-label { width: 120px; flex-shrink: 0; padding: 15px; background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); font-weight: 600; font-size: 13px; color: var(--lp-text, #333); }
+    .lp-details-value { flex: 1; padding: 15px; font-size: 14px; color: color-mix(in srgb, var(--lp-text, #333) 90%, transparent); line-height: 1.7; white-space: pre-wrap; }
+
     .lp-faq { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
     .lp-faq-list { display: flex; flex-direction: column; gap: 15px; }
     .lp-faq-item { background: var(--lp-bg, #fff); border-radius: 8px; padding: 20px; }
@@ -2237,9 +2507,10 @@ function getDragAfterElement(container, y) {
 // セクションマネージャー初期化をエクスポート
 export { initSectionManagerIfNeeded };
 
-// リアルタイムプレビュー初期化フラグをリセット（求人切り替え時に使用）
+// LP設定セクションの初期化フラグをリセット（セクション再読み込み時に使用）
 export function resetLPLivePreviewState() {
   lpLivePreviewInitialized = false;
+  sectionManagerInitialized = false;
 }
 
 // カラーピッカー関連の関数をエクスポート
