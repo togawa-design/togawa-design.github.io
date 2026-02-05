@@ -49,7 +49,7 @@ export async function loadJobListForLP() {
   }
 
   visibleCompaniesCache = companiesCache.filter(c =>
-    c.companyDomain && (c.showCompany === '○' || c.showCompany === '◯')
+    c.companyDomain && (c.showCompany === true || c.showCompany === '○' || c.showCompany === '◯')
   );
 
   // 権限に応じた表示

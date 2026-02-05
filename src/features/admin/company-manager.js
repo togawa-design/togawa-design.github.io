@@ -323,7 +323,7 @@ export function renderCompanyTable() {
       <td>${escapeHtml(company.company || '')}</td>
       <td><code>${escapeHtml(company.companyDomain || '')}</code></td>
       <td><span class="badge ${company.designPattern || 'standard'}">${getPatternLabel(company.designPattern || 'standard')}</span></td>
-      <td>${company.showCompany === '○' || company.showCompany === '◯' ? '<span class="badge success">表示</span>' : '<span class="badge">非表示</span>'}</td>
+      <td>${company.showCompany === true || company.showCompany === '○' || company.showCompany === '◯' ? '<span class="badge success">表示</span>' : '<span class="badge">非表示</span>'}</td>
       <td>
         <div class="action-buttons">
           <button class="btn-small btn-edit" data-action="edit" data-domain="${escapeHtml(company.companyDomain || '')}">編集</button>
