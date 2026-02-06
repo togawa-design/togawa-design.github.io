@@ -176,10 +176,9 @@ class CompanyRecruitPage {
     // フッターを削除
     document.querySelector('.site-footer')?.remove();
 
-    // bodyのクラスをリセット
+    // bodyのクラスとテンプレート属性をリセット
     document.body.classList.remove('has-fixed-header', 'has-fixed-cta-bar');
-    document.body.className = document.body.className.replace(/lp-pattern-\S+/g, '').trim();
-    document.body.removeAttribute('data-layout-style');
+    document.body.removeAttribute('data-template');
   }
 
   /**
@@ -995,8 +994,13 @@ class CompanyRecruitPage {
    */
   renderLayoutComponents() {
     const rs = this.recruitSettings || {};
-    const designPattern = rs.designPattern || 'standard';
-    const layoutStyle = rs.layoutStyle || 'default';
+    // テンプレート（modern, athome, cute, trust）
+    const validTemplates = ['modern', 'athome', 'cute', 'trust'];
+    let template = rs.template || 'modern';
+    // 古いテンプレート名は'modern'にフォールバック
+    if (!validTemplates.includes(template)) {
+      template = 'modern';
+    }
     const contentEl = document.getElementById('recruit-content');
 
     // ロゴまたは会社名がある場合のみヘッダーを追加
@@ -1019,9 +1023,8 @@ class CompanyRecruitPage {
       document.body.classList.add('has-fixed-cta-bar');
     }
 
-    // レイアウトスタイルをbodyに設定
-    document.body.setAttribute('data-layout-style', layoutStyle);
-    document.body.classList.add(`lp-pattern-${designPattern}`);
+    // テンプレートをbodyに設定
+    document.body.setAttribute('data-template', template);
 
     // ヘッダーを追加
     if (hasHeader) {
@@ -1030,7 +1033,7 @@ class CompanyRecruitPage {
         companyName: rs.companyNameDisplay || this.company?.company || '',
         recruitPageUrl: '', // 採用ページ自体なのでリンクなし
         showBackLink: false,
-        designPattern: designPattern
+        designPattern: template
       });
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
@@ -1053,7 +1056,7 @@ class CompanyRecruitPage {
 
       const footerHtml = renderSiteFooter({
         companyName: rs.companyNameDisplay || this.company?.company || '',
-        designPattern: designPattern,
+        designPattern: template,
         sns: {
           twitter: rs.snsTwitter || '',
           instagram: rs.snsInstagram || '',
@@ -1073,7 +1076,7 @@ class CompanyRecruitPage {
         phoneNumber: rs.phoneNumber || '',
         ctaButtonText: rs.ctaButtonText || '今すぐ応募する',
         ctaUrl: '#recruit-jobs',
-        designPattern: designPattern
+        designPattern: template
       });
       document.body.insertAdjacentHTML('beforeend', ctaBarHtml);
     }

@@ -12,6 +12,7 @@ import {
   updatePreviewLink,
   renderHeroImagePresets,
   setupLogoUpload,
+  setupHeroUpload,
   setupLivePreview,
   updateLivePreview,
   initVideoButtonSection,
@@ -52,6 +53,9 @@ export async function initRecruitSettings(domain) {
 
   // ロゴアップロード機能を設定
   setupLogoUpload(domain);
+
+  // ヒーロー画像アップロード機能を設定
+  setupHeroUpload(domain);
 
   // 動画ボタンセクションを初期化
   initVideoButtonSection();

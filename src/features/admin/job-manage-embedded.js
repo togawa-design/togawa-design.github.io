@@ -296,6 +296,7 @@ function renderJobCard(job) {
           ${job.location || job.area ? `<span class="job-meta-item"><span class="meta-icon">📍</span>${escapeHtml(job.area || job.location)}</span>` : ''}
           ${job.monthlySalary ? `<span class="job-meta-item"><span class="meta-icon">💰</span>${escapeHtml(job.monthlySalary)}</span>` : ''}
           ${job.jobType ? `<span class="job-meta-item"><span class="meta-icon">💼</span>${escapeHtml(job.jobType)}</span>` : ''}
+          ${job.employmentType ? `<span class="job-meta-item"><span class="meta-icon">👤</span>${escapeHtml(job.employmentType)}</span>` : ''}
         </div>
         <div class="job-card-stats">
           <span class="stat-item" title="応募数">📝 ${job.applicationCount || 0}</span>
@@ -817,6 +818,7 @@ async function saveJob() {
     id: isNewJob ? '' : (currentEditingJob?.id || ''),
     memo: getVal('memo'),
     title: getVal('title'),
+    employmentType: getVal('employment-type'),
     location: getVal('location'),
     access: getVal('access'),
     salaryType: salaryType,

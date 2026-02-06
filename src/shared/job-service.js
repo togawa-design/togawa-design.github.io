@@ -397,6 +397,7 @@ export function renderJobCardHtml(job, options = {}) {
         <div class="job-tags">${tagsHtml}</div>
       </div>
       <div class="job-col-type">${escapeHtml(job.jobType || '-')}</div>
+      <div class="job-col-employment-type">${escapeHtml(job.employmentType || '-')}</div>
       <div class="job-col-area">${escapeHtml(job.area || job.location || '-')}</div>
       <div class="job-col-deadline">${deadline}</div>
       <div class="job-col-stats">${applications}</div>
@@ -462,6 +463,7 @@ export function populateForm(job, prefix = 'edit-job') {
   };
 
   setVal('title', job.title);
+  setVal('employment-type', job.employmentType);
   setVal('location', job.location);
   setVal('access', job.access);
   setVal('salary', job.monthlySalary);
@@ -489,7 +491,7 @@ export function populateForm(job, prefix = 'edit-job') {
  * @param {string} prefix - フォーム要素IDのプレフィックス
  */
 export function clearForm(prefix = 'edit-job') {
-  const fields = ['title', 'location', 'access', 'salary', 'bonus', 'order', 'type', 'features',
+  const fields = ['title', 'employment-type', 'location', 'access', 'salary', 'bonus', 'order', 'type', 'features',
                   'badges', 'description', 'requirements', 'benefits', 'hours',
                   'holidays', 'start-date', 'end-date'];
 

@@ -13,6 +13,7 @@ import {
   updatePreviewLink,
   renderHeroImagePresets,
   setupLogoUpload,
+  setupHeroUpload,
   setupLivePreview,
   updateLivePreview,
   initVideoButtonSection,
@@ -20,8 +21,10 @@ import {
   setupRecruitSectionDragDrop,
   addCustomLink,
   showTemplateSelectorModal,
-  setPreviewJobs
+  setPreviewJobs,
+  designTemplates
 } from '@features/recruit-settings/core.js';
+import { escapeHtml as escapeHtmlUtil } from '@shared/utils.js';
 
 // 現在選択中の会社
 let selectedCompany = null;
@@ -39,6 +42,8 @@ export async function initRecruitSettings(companyDomain = null) {
   }
   await loadCompanyGrid();
   setupEventListeners();
+  // テンプレートグリッドをレンダリング
+  renderDesignTemplateGrid();
   // ヒーロー画像プリセットをレンダリング
   renderHeroImagePresets();
   // 動画ボタンセクションを初期化
@@ -46,6 +51,43 @@ export async function initRecruitSettings(companyDomain = null) {
   // セクション管理リストを初期化
   renderRecruitSectionsList();
   setupRecruitSectionDragDrop();
+}
+
+/**
+ * デザインテンプレートグリッドをレンダリング
+ */
+function renderDesignTemplateGrid() {
+  const gridEl = document.getElementById('recruit-layout-style-grid');
+  if (!gridEl) return;
+
+  gridEl.innerHTML = designTemplates.map((template, index) => `
+    <label class="layout-option">
+      <input type="radio" name="recruit-layout-style" value="${escapeHtmlUtil(template.id)}" ${index === 0 ? 'checked' : ''}>
+      <div class="layout-preview" style="position: relative;">
+        <div class="template-color-preview" style="
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          background: ${template.color};
+          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        "></div>
+        <span class="layout-name">${escapeHtmlUtil(template.name)}</span>
+        <span class="layout-desc">${escapeHtmlUtil(template.description)}</span>
+        <span class="layout-industries" style="font-size: 11px; color: #6b7280; margin-top: 4px; display: block;">${template.industries.join(' / ')}</span>
+      </div>
+    </label>
+  `).join('');
+
+  // テンプレート選択時にプレビューを更新するイベントリスナーを追加
+  gridEl.querySelectorAll('input[name="recruit-layout-style"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      updateLivePreview();
+    });
+  });
 }
 
 /**
@@ -144,6 +186,9 @@ async function selectCompany(company) {
 
   // ロゴアップロード機能を設定
   setupLogoUpload(company.companyDomain);
+
+  // ヒーロー画像アップロード機能を設定
+  setupHeroUpload(company.companyDomain);
 
   // 読み込み中状態を設定
   setFormLoadingState(true);

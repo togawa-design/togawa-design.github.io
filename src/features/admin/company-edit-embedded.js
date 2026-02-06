@@ -5,10 +5,12 @@
 
 import { escapeHtml, showToast } from '@shared/utils.js';
 import { uploadCompanyLogo, uploadCompanyImage } from './image-uploader.js';
+import { useFirestore, spreadsheetConfig } from './config.js';
+import * as FirestoreService from '@shared/firestore-service.js';
 
 // 設定
 const config = {
-  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
+  gasApiUrl: spreadsheetConfig.gasApiUrl
 };
 
 // 状態
@@ -310,7 +312,29 @@ async function loadCompanyData() {
     }
   }
 
-  // 3. APIから取得
+  // 3. Firestoreから取得
+  if (useFirestore) {
+    try {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.getCompany(editingCompanyDomain);
+
+      if (!result.success || !result.company) {
+        showToast('会社データが見つかりません', 'error');
+        navigateBack();
+        return;
+      }
+
+      originalData = result.company;
+      populateForm(result.company);
+
+    } catch (error) {
+      console.error('Firestore読み込みエラー:', error);
+      showToast('データの読み込みに失敗しました: ' + error.message, 'error');
+    }
+    return;
+  }
+
+  // 4. GAS APIから取得（フォールバック）
   const gasApiUrl = config.gasApiUrl;
   if (!gasApiUrl) {
     showToast('会社データが見つかりません', 'error');
@@ -397,9 +421,24 @@ async function saveCompany() {
     saveBtn.innerHTML = '<span class="loading-spinner-small"></span> 保存中...';
   }
 
-  const gasApiUrl = config.gasApiUrl;
-
   try {
+    // Firestoreに保存
+    if (useFirestore) {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.saveCompany(companyData.companyDomain, companyData);
+
+      if (!result.success) {
+        throw new Error(result.error || '保存に失敗しました');
+      }
+
+      localStorage.setItem(`company_data_${companyData.companyDomain}`, JSON.stringify(companyData));
+      showToast(isNewMode ? '会社を登録しました' : '会社情報を更新しました');
+      navigateBack();
+      return;
+    }
+
+    // GAS APIに保存（フォールバック）
+    const gasApiUrl = config.gasApiUrl;
     if (gasApiUrl) {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
         action: 'saveCompany',
@@ -454,7 +493,6 @@ function hideDeleteConfirm() {
  * 会社を削除
  */
 async function deleteCompany() {
-  const gasApiUrl = config.gasApiUrl;
   const deleteBtn = document.getElementById('ce-delete-confirm');
 
   if (deleteBtn) {
@@ -463,6 +501,24 @@ async function deleteCompany() {
   }
 
   try {
+    // Firestoreから削除
+    if (useFirestore) {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.deleteCompany(editingCompanyDomain);
+
+      if (!result.success) {
+        throw new Error(result.error || '削除に失敗しました');
+      }
+
+      localStorage.removeItem(`company_data_${editingCompanyDomain}`);
+      showToast('会社を削除しました');
+      hideDeleteConfirm();
+      navigateBack();
+      return;
+    }
+
+    // GAS APIで削除（フォールバック）
+    const gasApiUrl = config.gasApiUrl;
     if (gasApiUrl) {
       const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
         action: 'deleteCompany',

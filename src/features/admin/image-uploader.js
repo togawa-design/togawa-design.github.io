@@ -163,6 +163,29 @@ export async function uploadRecruitLogo(file, companyDomain) {
 }
 
 /**
+ * 採用ページ用ヒーロー画像をアップロードする
+ * @param {File} file - 画像ファイル
+ * @param {string} companyDomain - 企業ドメイン
+ * @returns {Promise<string>} - 画像URL
+ */
+export async function uploadRecruitHeroImage(file, companyDomain) {
+  // ヒーロー画像用に大きめサイズで圧縮
+  const compressed = await compressImage(file, {
+    maxWidth: 1920,
+    maxHeight: 1080,
+    quality: 0.85,
+    outputType: 'image/webp'
+  });
+
+  // Cloudinaryにアップロード（採用ページ専用パス）
+  const folder = `recruit/${companyDomain}`;
+  const timestamp = Date.now();
+  const url = await uploadToCloudinary(compressed, folder, `hero_${timestamp}`);
+
+  return url;
+}
+
+/**
  * 企業説明用の画像をアップロードする
  * @param {File} file - 画像ファイル
  * @param {string} companyDomain - 企業ドメイン
@@ -423,6 +446,7 @@ export default {
   uploadToCloudinary,
   uploadCompanyLogo,
   uploadRecruitLogo,
+  uploadRecruitHeroImage,
   uploadCompanyImage,
   uploadJobImage,
   uploadJobLogo,

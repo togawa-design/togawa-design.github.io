@@ -30,7 +30,7 @@ export async function loadRecruitSettings(companyDomain) {
   // Firestoreから読み込み
   if (useFirestore) {
     try {
-      FirestoreService.initFirestore();
+      // getRecruitSettings内でFirestoreが初期化される
       const result = await FirestoreService.getRecruitSettings(companyDomain);
 
       if (result.success && result.settings && Object.keys(result.settings).length > 0) {
@@ -71,7 +71,7 @@ export async function saveRecruitSettings(settings) {
   // Firestoreに保存
   if (useFirestore) {
     try {
-      FirestoreService.initFirestore();
+      // saveRecruitSettings内でFirestoreが初期化される
       const result = await FirestoreService.saveRecruitSettings(settings.companyDomain, settings);
 
       if (!result.success) {

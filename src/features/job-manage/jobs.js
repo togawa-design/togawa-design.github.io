@@ -205,6 +205,7 @@ export function renderJobsTable() {
           <div class="job-card-tags">${tagsHtml}</div>
         </div>
         <div class="job-card-type">${escapeHtml(job.jobType || '-')}</div>
+        <div class="job-card-employment-type">${escapeHtml(job.employmentType || '-')}</div>
         <div class="job-card-area">${escapeHtml(job.location || '-')}</div>
         <div class="job-card-deadline${deadlineClass}">${deadlineHtml}</div>
         <div class="job-card-stats">${applications}</div>

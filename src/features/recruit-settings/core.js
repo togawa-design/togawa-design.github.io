@@ -3,7 +3,7 @@
  * admin版とjob-manage版で共通のロジックを提供
  */
 import { showToast, escapeHtml } from '@shared/utils.js';
-import { uploadRecruitLogo, selectImageFile } from '@features/admin/image-uploader.js';
+import { uploadRecruitLogo, uploadRecruitHeroImage, selectImageFile } from '@features/admin/image-uploader.js';
 // API関数をインポート（内部使用 & re-export）
 import { loadRecruitSettings, saveRecruitSettings } from './api.js';
 export { loadRecruitSettings, saveRecruitSettings };
@@ -97,6 +97,47 @@ export const sectionTemplates = [
     fields: [
       { key: 'content', type: 'text', label: '見出しテキスト', placeholder: '見出しを入力' }
     ]
+  }
+];
+
+/**
+ * デザインテンプレート定義（カラーテーマ・業界別）
+ */
+export const designTemplates = [
+  {
+    id: 'modern',
+    name: 'モダン',
+    description: '洗練されたダークグレー + 青。信頼感と先進性',
+    color: 'linear-gradient(135deg, #2d3436, #0984e3)',
+    industries: ['製造', 'IT', 'オフィスワーク']
+  },
+  {
+    id: 'athome',
+    name: 'アットホーム',
+    description: '温かみのあるオレンジ系。親しみやすさ重視',
+    color: 'linear-gradient(135deg, #e67e22, #f39c12)',
+    industries: ['飲食', '介護', 'サービス']
+  },
+  {
+    id: 'cute',
+    name: 'キュート',
+    description: 'ポップで可愛いパステル調。女性向けに最適',
+    color: 'linear-gradient(135deg, #ff8fa3, #fab1a0)',
+    industries: ['保育', '美容', 'アパレル']
+  },
+  {
+    id: 'trust',
+    name: '信頼',
+    description: '誠実で堅実な印象。ビジネス・企業向け',
+    color: 'linear-gradient(135deg, #1a2a3a, #0077c2)',
+    industries: ['製造', '金融', 'コンサル']
+  },
+  {
+    id: 'kenchiku',
+    name: '建築',
+    description: '力強いオレンジ + ダーク。建設・土木業界向け',
+    color: 'linear-gradient(135deg, #2c3e50, #f39c12)',
+    industries: ['建設', '土木', '施工管理']
   }
 ];
 
@@ -358,6 +399,9 @@ export function populateForm(settings, companyName = '') {
   // ロゴプレビューを更新
   updateLogoPreview(settings.logoUrl || '');
 
+  // ヒーロー画像プレビューを更新
+  updateHeroPreview(settings.heroImage || '');
+
   // 動画ボタン設定
   const showVideoCheckbox = document.getElementById('recruit-show-video-button');
   const videoUrlGroup = document.getElementById('recruit-video-url-group');
@@ -430,6 +474,9 @@ export function populateFormWithDefaults(companyName = '', companyDescription = 
 
   // ロゴプレビューをクリア
   updateLogoPreview('');
+
+  // ヒーロー画像プレビューを更新
+  updateHeroPreview(companyImageUrl || '');
 
   // 動画ボタン設定をリセット
   const showVideoCheckbox = document.getElementById('recruit-show-video-button');
@@ -836,6 +883,103 @@ export function setupLogoUpload(companyDomain) {
 }
 
 /**
+ * ヒーロー画像プレビューを更新
+ */
+export function updateHeroPreview(url) {
+  const previewEl = document.getElementById('recruit-hero-preview');
+  if (!previewEl) return;
+
+  if (url) {
+    previewEl.innerHTML = `<img src="${escapeHtml(url)}" alt="ヒーロー画像プレビュー">`;
+    previewEl.classList.add('has-image');
+  } else {
+    previewEl.innerHTML = '<span class="hero-placeholder">ヒーロー画像未設定</span>';
+    previewEl.classList.remove('has-image');
+  }
+}
+
+/**
+ * ヒーロー画像アップロードボタンを設定
+ */
+export function setupHeroUpload(companyDomain) {
+  let uploadBtn = document.getElementById('btn-upload-hero');
+  let urlInput = document.getElementById('recruit-hero-image');
+  const previewEl = document.getElementById('recruit-hero-preview');
+
+  if (!uploadBtn || !urlInput) return;
+
+  // 既存のイベントリスナーを削除するために要素を複製して置き換え
+  const newUploadBtn = uploadBtn.cloneNode(true);
+  uploadBtn.parentNode.replaceChild(newUploadBtn, uploadBtn);
+  uploadBtn = newUploadBtn;
+
+  const newUrlInput = urlInput.cloneNode(true);
+  urlInput.parentNode.replaceChild(newUrlInput, urlInput);
+  urlInput = newUrlInput;
+
+  // URL入力時のプレビュー更新
+  urlInput.addEventListener('input', () => {
+    updateHeroPreview(urlInput.value);
+    updateHeroImagePresetSelection(urlInput.value);
+  });
+
+  // アップロードボタンクリック
+  uploadBtn.addEventListener('click', async () => {
+    if (!companyDomain) {
+      showToast('会社情報が設定されていません', 'error');
+      return;
+    }
+
+    try {
+      // ファイル選択
+      const file = await selectImageFile({ accept: 'image/png,image/jpeg,image/webp' });
+
+      // アップロード中の表示
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="upload-spinner"></span> アップロード中...';
+      if (previewEl) {
+        previewEl.classList.add('uploading');
+        previewEl.innerHTML = '<div class="upload-spinner"></div>';
+      }
+
+      // Cloudinaryにアップロード
+      const url = await uploadRecruitHeroImage(file, companyDomain);
+
+      // キャッシュ回避のためタイムスタンプを追加
+      const timestamp = Date.now();
+      const urlWithCache = url.includes('?') ? `${url}&t=${timestamp}` : `${url}?t=${timestamp}`;
+
+      // URLを入力欄に設定
+      urlInput.value = urlWithCache;
+
+      // プレビューを更新
+      updateHeroPreview(urlWithCache);
+
+      // プリセット選択状態をクリア（カスタム画像なので）
+      updateHeroImagePresetSelection('');
+
+      // inputイベントを発火してリアルタイムプレビューに反映
+      urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+      showToast('ヒーロー画像をアップロードしました', 'success');
+    } catch (error) {
+      console.error('[RecruitSettings] ヒーロー画像アップロードエラー:', error);
+      if (error.message !== 'ファイルが選択されませんでした') {
+        showToast('アップロードに失敗しました: ' + error.message, 'error');
+      }
+      // プレビューを元に戻す
+      updateHeroPreview(urlInput.value);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.innerHTML = '<span class="upload-icon">📷</span> アップロード';
+      if (previewEl) {
+        previewEl.classList.remove('uploading');
+      }
+    }
+  });
+}
+
+/**
  * 採用ページ情報パネルを初期化
  */
 export function setupRecruitInfoPanel(companyDomain) {
@@ -951,14 +1095,21 @@ export function updatePublishStatus(isPublished) {
 
 /**
  * レイアウトスタイルごとのデフォルトカラー
+ * designTemplatesと連携
  */
 const layoutStyleColors = {
-  default: { primary: '#6366f1', accent: '#818cf8', bg: '#ffffff', text: '#1f2937' },
-  modern: { primary: '#3b82f6', accent: '#60a5fa', bg: '#f8fafc', text: '#1e293b' },
-  yellow: { primary: '#f59e0b', accent: '#fbbf24', bg: '#fffbeb', text: '#78350f' },
-  impact: { primary: '#111827', accent: '#374151', bg: '#f9fafb', text: '#111827' },
-  local: { primary: '#92400e', accent: '#b45309', bg: '#fef3c7', text: '#78350f' },
-  zen: { primary: '#059669', accent: '#10b981', bg: '#f0fdf4', text: '#1f2937' }
+  // デフォルト（モダンと同じ）
+  default: { primary: '#0984e3', accent: '#74b9ff', bg: '#f8fafc', text: '#2d3436' },
+  // モダン: 洗練されたダークグレー + 青
+  modern: { primary: '#0984e3', accent: '#74b9ff', bg: '#f8fafc', text: '#2d3436' },
+  // アットホーム: 温かみのあるオレンジ系
+  athome: { primary: '#e67e22', accent: '#f39c12', bg: '#fef9f3', text: '#5d4037' },
+  // キュート: ポップで可愛いパステル調
+  cute: { primary: '#ff8fa3', accent: '#fab1a0', bg: '#fff5f7', text: '#6d4c41' },
+  // 信頼: 誠実で堅実な印象
+  trust: { primary: '#0077c2', accent: '#4ea8de', bg: '#f0f8ff', text: '#1a2a3a' },
+  // 建築: 力強いオレンジ + ダーク
+  kenchiku: { primary: '#f39c12', accent: '#e67e22', bg: '#f5f5f5', text: '#2c3e50' }
 };
 
 /**
@@ -1975,6 +2126,8 @@ export default {
   updateHeroImagePresetSelection,
   updateLogoPreview,
   setupLogoUpload,
+  updateHeroPreview,
+  setupHeroUpload,
   setupLivePreview,
   updateLivePreview,
   applyPreviewColorTheme,

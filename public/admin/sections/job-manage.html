@@ -629,6 +629,19 @@
                       <input type="text" id="jm-edit-job-access" placeholder="例: 名鉄三河線「土橋駅」より徒歩10分">
                     </div>
                     <div class="form-group">
+                      <label for="jm-edit-job-employment-type">雇用形態</label>
+                      <select id="jm-edit-job-employment-type">
+                        <option value="">選択してください</option>
+                        <option value="正社員">正社員</option>
+                        <option value="契約社員">契約社員</option>
+                        <option value="派遣社員">派遣社員</option>
+                        <option value="アルバイト・パート">アルバイト・パート</option>
+                        <option value="業務委託">業務委託</option>
+                        <option value="新卒">新卒</option>
+                        <option value="インターン">インターン</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
                       <label for="jm-edit-job-type">職種</label>
                       <select id="jm-edit-job-type">
                         <option value="">選択してください</option>
@@ -636,10 +649,32 @@
                         <option value="営業・販売・サービス">営業・販売・サービス</option>
                         <option value="IT・クリエイティブ">IT・クリエイティブ</option>
                         <option value="製造・エンジニアリング">製造・エンジニアリング</option>
+                        <option value="建築・建設">建築・建設</option>
                         <option value="医療・福祉・教育">医療・福祉・教育</option>
                         <option value="物流・運輸">物流・運輸</option>
                         <option value="その他">その他</option>
                       </select>
+                    </div>
+                    <div class="form-group full-width">
+                      <label for="jm-edit-job-logo">求人ロゴ画像</label>
+                      <div class="logo-input-container">
+                        <div class="logo-input-row">
+                          <input type="url" id="jm-edit-job-logo" placeholder="URLを入力 または 画像をアップロード">
+                          <button type="button" id="jm-btn-upload-logo" class="btn-upload-logo" title="画像をアップロード">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                            アップロード
+                          </button>
+                        </div>
+                        <div id="jm-job-logo-preview" class="logo-preview" style="display: none;">
+                          <img id="jm-job-logo-preview-img" src="" alt="ロゴプレビュー">
+                          <button type="button" id="jm-btn-clear-logo" class="btn-clear-logo" title="クリア">×</button>
+                        </div>
+                        <div id="jm-logo-upload-progress" class="upload-progress" style="display: none;">
+                          <div class="upload-spinner"></div>
+                          <span>アップロード中...</span>
+                        </div>
+                      </div>
+                      <span class="form-description">求人カードや詳細ページに表示されるロゴ画像</span>
                     </div>
                   </div>
                 </section>

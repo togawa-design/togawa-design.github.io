@@ -34,7 +34,7 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
   // displayedFeaturesがあればそれを使用、なければallFeaturesの最初の3つ
   const features = displayedFeatures.length > 0 ? displayedFeatures.slice(0, 3) : allFeatures.slice(0, 3);
 
-  const imageSrc = job.imageUrl?.trim() || 'images/default-job.svg';
+  const imageSrc = job.jobLogo?.trim() || job.imageUrl?.trim() || 'images/default-job.svg';
   const totalBonus = job._displayTotalBonus || job.totalBonus || '';
   const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
 

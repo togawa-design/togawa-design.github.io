@@ -8,6 +8,39 @@ import { config } from '../features/admin/config.js';
 
 let db = null;
 let firebase = null;
+let initPromise = null;
+
+/**
+ * Firebase SDKが読み込まれるまで待機
+ */
+function waitForFirebase(maxWait = 5000) {
+  return new Promise((resolve, reject) => {
+    // 既に読み込まれている場合
+    if (typeof window !== 'undefined' && window.firebase) {
+      resolve(window.firebase);
+      return;
+    }
+
+    const startTime = Date.now();
+    const checkInterval = 50;
+
+    const check = () => {
+      if (typeof window !== 'undefined' && window.firebase) {
+        resolve(window.firebase);
+        return;
+      }
+
+      if (Date.now() - startTime >= maxWait) {
+        reject(new Error('Firebase SDK load timeout'));
+        return;
+      }
+
+      setTimeout(check, checkInterval);
+    };
+
+    check();
+  });
+}
 
 /**
  * Firestoreを初期化
@@ -31,11 +64,51 @@ export function initFirestore() {
 }
 
 /**
- * Firestoreインスタンスを取得
+ * Firestoreを非同期で初期化（Firebase SDK読み込み待機あり）
+ */
+export async function initFirestoreAsync() {
+  if (db) return db;
+
+  // 既に初期化中の場合は同じPromiseを返す
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
+      firebase = await waitForFirebase();
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config.firebaseConfig);
+      }
+
+      db = firebase.firestore();
+      console.log('[FirestoreService] Firestore initialized successfully');
+      return db;
+    } catch (error) {
+      console.error('[FirestoreService] Firebase initialization error:', error);
+      initPromise = null;
+      throw error;
+    }
+  })();
+
+  return initPromise;
+}
+
+/**
+ * Firestoreインスタンスを取得（同期版）
  */
 export function getFirestore() {
   if (!db) {
     initFirestore();
+  }
+  return db;
+}
+
+/**
+ * Firestoreインスタンスを取得（非同期版、SDK待機あり）
+ */
+export async function getFirestoreAsync() {
+  if (!db) {
+    await initFirestoreAsync();
   }
   return db;
 }
@@ -48,7 +121,7 @@ export function getFirestore() {
  * 全会社を取得
  */
 export async function getCompanies() {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -76,7 +149,7 @@ export async function getCompanies() {
  * 単一会社を取得
  */
 export async function getCompany(companyDomain) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -104,7 +177,7 @@ export async function getCompany(companyDomain) {
  * 会社を保存（作成/更新）
  */
 export async function saveCompany(companyDomain, companyData) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -138,7 +211,7 @@ export async function saveCompany(companyDomain, companyData) {
  * 会社を削除
  */
 export async function deleteCompany(companyDomain) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -183,7 +256,7 @@ export async function deleteCompany(companyDomain) {
  * 会社の全求人を取得
  */
 export async function getJobs(companyDomain) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -216,7 +289,7 @@ export async function getJobs(companyDomain) {
  * 単一求人を取得
  */
 export async function getJob(companyDomain, jobId) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -246,7 +319,7 @@ export async function getJob(companyDomain, jobId) {
  * 求人を保存（作成/更新）
  */
 export async function saveJob(companyDomain, jobData, existingDocId = null) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -311,7 +384,7 @@ export async function saveJob(companyDomain, jobData, existingDocId = null) {
  * 求人を削除
  */
 export async function deleteJob(companyDomain, jobId) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -335,7 +408,7 @@ export async function deleteJob(companyDomain, jobId) {
  * LP設定を取得
  */
 export async function getLPSettings(companyDomain, jobId = 'default') {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -362,7 +435,7 @@ export async function getLPSettings(companyDomain, jobId = 'default') {
  * LP設定を保存
  */
 export async function saveLPSettings(companyDomain, jobId, settingsData) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -394,7 +467,7 @@ export async function saveLPSettings(companyDomain, jobId, settingsData) {
  * 採用ページ設定を取得
  */
 export async function getRecruitSettings(companyDomain) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -421,7 +494,7 @@ export async function getRecruitSettings(companyDomain) {
  * 採用ページ設定を保存
  */
 export async function saveRecruitSettings(companyDomain, settingsData) {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -452,7 +525,7 @@ export async function saveRecruitSettings(companyDomain, settingsData) {
  * 全会社の公開求人を取得（コレクショングループクエリ）
  */
 export async function getAllVisibleJobs() {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -485,7 +558,7 @@ export async function getAllVisibleJobs() {
  * 求人統計を計算
  */
 export async function getJobStats() {
-  const firestore = getFirestore();
+  const firestore = await getFirestoreAsync();
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
@@ -550,7 +623,9 @@ function parseSalary(salaryStr) {
 // デフォルトエクスポート
 export default {
   initFirestore,
+  initFirestoreAsync,
   getFirestore,
+  getFirestoreAsync,
   getCompanies,
   getCompany,
   saveCompany,

@@ -4,37 +4,17 @@
  */
 import { escapeHtml, showToast } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
-import { uploadRecruitLogo, selectImageFile } from '@features/admin/image-uploader.js';
+import { uploadRecruitLogo, uploadRecruitHeroImage, selectImageFile } from '@features/admin/image-uploader.js';
 import {
   loadRecruitSettings,
   saveRecruitSettings,
-  heroImagePresets
+  heroImagePresets,
+  sectionTemplates,
+  designTemplates
 } from './core.js';
 
-// デザインパターン定義（カラーテーマ）
-const DESIGN_PATTERNS = [
-  { id: 'standard', name: 'スタンダード', description: 'バランスの取れた標準デザイン' },
-  { id: 'modern', name: 'モダン', description: 'グリーン系のフレッシュなデザイン' },
-  { id: 'classic', name: 'クラシック', description: 'ブラウン系の落ち着いたデザイン' },
-  { id: 'minimal', name: 'ミニマル', description: 'モノトーンのシンプルなデザイン' },
-  { id: 'colorful', name: 'カラフル', description: 'ピンク〜パープルの華やかなデザイン' },
-  { id: 'blue', name: 'ブルー', description: '信頼感のあるブルー系デザイン' },
-  { id: 'orange', name: 'オレンジ', description: '活気のあるオレンジ系デザイン' }
-];
-
-// レイアウトスタイル定義
-const LAYOUT_STYLES = [
-  { id: 'default', name: 'デフォルト', description: '標準的なレイアウト' },
-  { id: 'yellow', name: 'イエロー', description: '親しみやすい明るいデザイン' },
-  { id: 'impact', name: 'インパクト', description: '黒背景の強烈なデザイン' },
-  { id: 'trust', name: '信頼', description: 'ビジネス向けの信頼感' },
-  { id: 'bold', name: 'ボールド', description: '大きな文字で印象的に' },
-  { id: 'elegant', name: 'エレガント', description: '洗練された上品なデザイン' },
-  { id: 'playful', name: 'ポップ', description: '明るく楽しい雰囲気' },
-  { id: 'corporate', name: 'コーポレート', description: 'ビジネス向けの信頼感' },
-  { id: 'athome', name: 'アットホーム', description: '丸みのあるフレンドリーなデザイン' },
-  { id: 'local', name: '地域密着', description: '和風モダンの落ち着いたデザイン' }
-];
+// TEMPLATES は core.js からインポートした designTemplates を使用
+const TEMPLATES = designTemplates;
 
 /**
  * 採用ページエディタクラス
@@ -48,6 +28,7 @@ export class RecruitEditor {
     this.hasChanges = false;
     this.onSettingsChange = null; // 設定変更時のコールバック
     this.previewDebounceTimer = null; // プレビュー更新のデバウンス用
+    this.draggedSection = null; // ドラッグ中のセクション
   }
 
   /**
@@ -83,6 +64,11 @@ export class RecruitEditor {
 
     // bodyに編集モードクラスを追加
     document.body.classList.add('recruit-edit-mode');
+
+    // プレビューのセクション並び替えを設定
+    requestAnimationFrame(() => {
+      this.setupPreviewSortable();
+    });
 
     console.log('[RecruitEditor] 編集モード有効化');
   }
@@ -192,26 +178,18 @@ export class RecruitEditor {
         <!-- デザインタブ -->
         <div class="recruit-editor-tab-content" data-tab-content="design">
           <div class="editor-section">
-            <h3 class="editor-section-title">レイアウトスタイル</h3>
-            <div class="layout-style-grid" id="layout-style-grid">
-              ${LAYOUT_STYLES.map(style => `
-                <label class="layout-style-item" data-style="${style.id}">
-                  <input type="radio" name="layoutStyle" value="${style.id}" ${this.settings.layoutStyle === style.id ? 'checked' : ''}>
-                  <span class="layout-style-name">${escapeHtml(style.name)}</span>
-                  <span class="layout-style-desc">${escapeHtml(style.description)}</span>
-                </label>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="editor-section">
-            <h3 class="editor-section-title">カラーテーマ</h3>
-            <div class="design-pattern-grid" id="design-pattern-grid">
-              ${DESIGN_PATTERNS.map(pattern => `
-                <label class="design-pattern-item" data-pattern="${pattern.id}">
-                  <input type="radio" name="designPattern" value="${pattern.id}" ${this.settings.designPattern === pattern.id ? 'checked' : ''}>
-                  <span class="design-pattern-preview pattern-${pattern.id}"></span>
-                  <span class="design-pattern-name">${escapeHtml(pattern.name)}</span>
+            <h3 class="editor-section-title">テンプレートを選択</h3>
+            <p class="section-description">業種やイメージに合わせて最適なデザインを選べます</p>
+            <div class="template-grid" id="template-grid">
+              ${TEMPLATES.map(tpl => `
+                <label class="template-item ${this.settings.template === tpl.id ? 'selected' : ''}" data-template="${tpl.id}">
+                  <input type="radio" name="template" value="${tpl.id}" ${this.settings.template === tpl.id ? 'checked' : ''}>
+                  <div class="template-preview" style="background: ${tpl.color}"></div>
+                  <div class="template-info">
+                    <span class="template-name">${escapeHtml(tpl.name)}</span>
+                    <span class="template-desc">${escapeHtml(tpl.description)}</span>
+                    <span class="template-industries">${tpl.industries.join(' / ')}</span>
+                  </div>
                 </label>
               `).join('')}
             </div>
@@ -239,7 +217,10 @@ export class RecruitEditor {
                   </div>
                 `).join('')}
               </div>
-              <input type="text" id="edit-hero-image" placeholder="または画像URLを入力" class="mt-2">
+              <div class="input-with-button mt-2">
+                <input type="text" id="edit-hero-image" placeholder="または画像URLを入力">
+                <button type="button" id="btn-upload-hero-edit" class="btn-upload-small">📷</button>
+              </div>
             </div>
           </div>
 
@@ -270,9 +251,7 @@ export class RecruitEditor {
               <!-- 動的に追加 -->
             </div>
             <div class="add-section-buttons">
-              <button type="button" class="btn-add-section" data-type="text">+ テキスト</button>
-              <button type="button" class="btn-add-section" data-type="heading">+ 見出し</button>
-              <button type="button" class="btn-add-section" data-type="image">+ 画像</button>
+              <button type="button" class="btn-open-template-selector" id="btn-open-template-selector-edit">+ コンテンツを追加</button>
             </div>
           </div>
         </div>
@@ -481,9 +460,15 @@ export class RecruitEditor {
     }
     this.renderCustomLinks(customLinks);
 
-    // デザイン設定
-    this.setRadioValue('layoutStyle', s.layoutStyle || 'default');
-    this.setRadioValue('designPattern', s.designPattern || 'standard');
+    // デザイン設定（統合テンプレート）
+    const validTemplates = ['modern', 'athome', 'cute', 'trust'];
+    let template = s.template || s.designPattern || 'modern';
+    // 古いテンプレート名は'modern'にフォールバック
+    if (!validTemplates.includes(template)) {
+      template = 'modern';
+    }
+    this.setRadioValue('template', template);
+    this.updateTemplateSelection(template);
 
     // コンテンツ
     this.setInputValue('edit-hero-title', s.heroTitle || `${companyName}で働こう`);
@@ -555,20 +540,12 @@ export class RecruitEditor {
       this.save();
     });
 
-    // レイアウトスタイル変更
-    document.querySelectorAll('input[name="layoutStyle"]').forEach(input => {
+    // テンプレート変更
+    document.querySelectorAll('input[name="template"]').forEach(input => {
       input.addEventListener('change', () => {
-        this.settings.layoutStyle = input.value;
+        this.settings.template = input.value;
         this.hasChanges = true;
-        this.applyPreview();
-      });
-    });
-
-    // デザインパターン変更
-    document.querySelectorAll('input[name="designPattern"]').forEach(input => {
-      input.addEventListener('change', () => {
-        this.settings.designPattern = input.value;
-        this.hasChanges = true;
+        this.updateTemplateSelection(input.value);
         this.applyPreview();
       });
     });
@@ -618,12 +595,9 @@ export class RecruitEditor {
       this.addCustomLink();
     });
 
-    // カスタムセクション追加ボタン
-    document.querySelectorAll('.btn-add-section').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const type = btn.dataset.type;
-        this.addCustomSection(type);
-      });
+    // カスタムセクション追加ボタン（テンプレートセレクター）
+    document.getElementById('btn-open-template-selector-edit')?.addEventListener('click', () => {
+      this.showTemplateSelectorModal();
     });
 
     // ヒーロー画像プリセット
@@ -641,6 +615,11 @@ export class RecruitEditor {
     // ロゴアップロード
     document.getElementById('btn-upload-logo-edit')?.addEventListener('click', async () => {
       await this.uploadLogo();
+    });
+
+    // ヒーロー画像アップロード
+    document.getElementById('btn-upload-hero-edit')?.addEventListener('click', async () => {
+      await this.uploadHeroImage();
     });
 
     // ロゴURL入力時のプレビュー更新
@@ -694,9 +673,8 @@ export class RecruitEditor {
       jobsLimit: document.getElementById('edit-jobs-limit')?.value || '0',
       jobsSort: document.getElementById('edit-jobs-sort')?.value || 'newest',
       customLinks: JSON.stringify(this.getCustomLinks()),
-      // デザイン
-      layoutStyle: this.getRadioValue('layoutStyle') || 'default',
-      designPattern: this.getRadioValue('designPattern') || 'standard',
+      // デザインテンプレート
+      template: this.getRadioValue('template') || 'modern',
       // コンテンツ
       heroTitle: document.getElementById('edit-hero-title')?.value || '',
       heroSubtitle: document.getElementById('edit-hero-subtitle')?.value || '',
@@ -734,6 +712,11 @@ export class RecruitEditor {
     if (this.onSettingsChange) {
       this.onSettingsChange(this.settings);
     }
+
+    // プレビューのセクション並び替えを設定（DOM更新後）
+    requestAnimationFrame(() => {
+      this.setupPreviewSortable();
+    });
   }
 
   /**
@@ -814,6 +797,40 @@ export class RecruitEditor {
   }
 
   /**
+   * ヒーロー画像をアップロード
+   */
+  async uploadHeroImage() {
+    const uploadBtn = document.getElementById('btn-upload-hero-edit');
+    if (!uploadBtn || !this.companyDomain) return;
+
+    try {
+      const file = await selectImageFile({ accept: 'image/png,image/jpeg,image/webp' });
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '...';
+
+      const url = await uploadRecruitHeroImage(file, this.companyDomain);
+
+      this.setInputValue('edit-hero-image', url);
+      this.updateHeroPresetSelection(url);
+      this.hasChanges = true;
+      this.updateSettingsFromForm();
+      this.applyPreview();
+
+      showToast('ヒーロー画像をアップロードしました', 'success');
+    } catch (error) {
+      if (error.message !== 'ファイルが選択されませんでした') {
+        showToast('アップロードに失敗しました: ' + error.message, 'error');
+      }
+    } finally {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = '📷';
+      }
+    }
+  }
+
+  /**
    * ロゴプレビューを更新
    */
   updateLogoPreview(url) {
@@ -825,6 +842,15 @@ export class RecruitEditor {
     } else {
       previewEl.innerHTML = '<span class="logo-placeholder">ロゴ未設定</span>';
     }
+  }
+
+  /**
+   * テンプレート選択状態を更新
+   */
+  updateTemplateSelection(selectedTemplate) {
+    document.querySelectorAll('.template-item').forEach(item => {
+      item.classList.toggle('selected', item.dataset.template === selectedTemplate);
+    });
   }
 
   /**
@@ -961,37 +987,135 @@ export class RecruitEditor {
     const container = document.getElementById('edit-custom-sections');
     if (!container) return;
 
-    container.innerHTML = sections.map((section, index) => {
-      const typeLabels = { text: 'テキスト', heading: '見出し', image: '画像' };
-      const typeLabel = typeLabels[section.type] || section.type;
-
-      let contentInput = '';
-      if (section.type === 'text') {
-        contentInput = `<textarea class="section-content" rows="3" placeholder="テキストを入力">${escapeHtml(section.content || '')}</textarea>`;
-      } else if (section.type === 'heading') {
-        contentInput = `<input type="text" class="section-content" placeholder="見出しテキスト" value="${escapeHtml(section.content || '')}">`;
-      } else if (section.type === 'image') {
-        contentInput = `<input type="url" class="section-content" placeholder="画像URL（https://...）" value="${escapeHtml(section.content || '')}">`;
-      }
+    container.innerHTML = (sections || []).map((section, index) => {
+      const template = sectionTemplates.find(t => t.id === section.type);
+      const typeLabel = template ? `${template.name}（${template.label}）` : section.type;
 
       return `
-        <div class="custom-section-item" data-index="${index}" data-type="${section.type}">
+        <div class="custom-section-item" data-index="${index}" data-type="${section.type}" draggable="true">
           <div class="section-item-header">
-            <span class="section-type-badge">${escapeHtml(typeLabel)}</span>
+            <span class="section-drag-handle" style="display:flex;width:24px;height:24px;background:#e5e7eb;border-radius:4px;align-items:center;justify-content:center;cursor:grab;" title="ドラッグで並び替え">☰</span>
+            <span class="section-type-badge ${template ? 'template-badge' : ''}">${escapeHtml(typeLabel)}</span>
             <div class="section-item-actions">
-              <button type="button" class="btn-move-section" data-direction="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
-              <button type="button" class="btn-move-section" data-direction="down" data-index="${index}" ${index === sections.length - 1 ? 'disabled' : ''}>↓</button>
-              <button type="button" class="btn-remove-section" data-index="${index}">✕</button>
+              <button type="button" class="btn-move-section" data-direction="up" data-index="${index}" ${index === 0 ? 'disabled' : ''} title="上へ移動">↑</button>
+              <button type="button" class="btn-move-section" data-direction="down" data-index="${index}" ${index === sections.length - 1 ? 'disabled' : ''} title="下へ移動">↓</button>
+              <button type="button" class="btn-remove-section" data-index="${index}" title="削除">✕</button>
             </div>
           </div>
           <div class="section-item-content">
-            ${contentInput}
+            ${this.renderSectionFields(template, section, index)}
           </div>
         </div>
       `;
     }).join('');
 
-    // 削除ボタンのイベントリスナー
+    this.bindCustomSectionEvents(container);
+    this.bindDragAndDropEvents(container);
+  }
+
+  /**
+   * セクションのフィールドをレンダリング
+   */
+  renderSectionFields(template, section, index) {
+    if (!template || !template.fields) {
+      // 後方互換: 古いtext/heading/image形式
+      if (section.type === 'text') {
+        return `<textarea class="section-content" rows="3" placeholder="テキストを入力">${escapeHtml(section.content || '')}</textarea>`;
+      } else if (section.type === 'heading') {
+        return `<input type="text" class="section-content" placeholder="見出しテキスト" value="${escapeHtml(section.content || '')}">`;
+      } else if (section.type === 'image') {
+        return `<input type="url" class="section-content" placeholder="画像URL（https://...）" value="${escapeHtml(section.content || '')}">`;
+      }
+      return '';
+    }
+
+    return template.fields.map(field => {
+      const value = section[field.key] || '';
+
+      if (field.type === 'text') {
+        return `
+          <div class="section-field">
+            <label>${escapeHtml(field.label)}</label>
+            <input type="text" class="section-field-input" data-field="${field.key}"
+                   placeholder="${escapeHtml(field.placeholder || '')}" value="${escapeHtml(value)}">
+          </div>
+        `;
+      } else if (field.type === 'textarea') {
+        return `
+          <div class="section-field">
+            <label>${escapeHtml(field.label)}</label>
+            <textarea class="section-field-input" data-field="${field.key}" rows="3"
+                      placeholder="${escapeHtml(field.placeholder || '')}">${escapeHtml(value)}</textarea>
+          </div>
+        `;
+      } else if (field.type === 'image') {
+        return `
+          <div class="section-field">
+            <label>${escapeHtml(field.label)}</label>
+            ${value ? `<img src="${escapeHtml(value)}" class="section-image-preview" alt="">` : ''}
+            <div class="input-with-button">
+              <input type="url" class="section-field-input section-image-url" data-field="${field.key}"
+                     placeholder="画像URL" value="${escapeHtml(value)}">
+              <button type="button" class="btn-upload-small btn-upload-section-image" data-index="${index}" data-field="${field.key}">📷</button>
+            </div>
+          </div>
+        `;
+      } else if (field.type === 'items') {
+        const items = Array.isArray(section[field.key]) ? section[field.key] : [];
+        const maxItems = field.maxItems || 4;
+        return `
+          <div class="section-field section-items-field" data-field="${field.key}" data-max-items="${maxItems}">
+            <label>${escapeHtml(field.label)}</label>
+            <div class="section-items-list">
+              ${items.map((item, itemIndex) => `
+                <div class="section-item-entry" data-item-index="${itemIndex}">
+                  ${field.itemFields.map(itemField => `
+                    <div class="item-field">
+                      <label>${escapeHtml(itemField.label)}</label>
+                      ${itemField.type === 'textarea'
+                        ? `<textarea class="item-field-input" data-field="${itemField.key}" rows="2"
+                                     placeholder="${escapeHtml(itemField.placeholder || '')}">${escapeHtml(item[itemField.key] || '')}</textarea>`
+                        : `<input type="text" class="item-field-input" data-field="${itemField.key}"
+                                  placeholder="${escapeHtml(itemField.placeholder || '')}" value="${escapeHtml(item[itemField.key] || '')}">`
+                      }
+                    </div>
+                  `).join('')}
+                  <button type="button" class="btn-remove-item" data-item-index="${itemIndex}">✕</button>
+                </div>
+              `).join('')}
+            </div>
+            ${items.length < maxItems ? `<button type="button" class="btn-add-item">+ 項目を追加</button>` : ''}
+          </div>
+        `;
+      } else if (field.type === 'gallery') {
+        const images = Array.isArray(section[field.key]) ? section[field.key] : [];
+        const maxImages = field.maxImages || 6;
+        return `
+          <div class="section-field section-gallery-field" data-field="${field.key}" data-max-images="${maxImages}">
+            <label>${escapeHtml(field.label)}</label>
+            <div class="section-gallery-grid">
+              ${images.map((url, imgIndex) => `
+                <div class="gallery-image-item">
+                  <img src="${escapeHtml(url)}" alt="">
+                  <button type="button" class="btn-remove-gallery-image" data-image-index="${imgIndex}">✕</button>
+                </div>
+              `).join('')}
+              ${images.length < maxImages ? `
+                <button type="button" class="btn-add-gallery-image" data-index="${index}" data-field="${field.key}">+ 画像追加</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }
+      return '';
+    }).join('');
+  }
+
+  /**
+   * カスタムセクションのイベントをバインド
+   */
+  bindCustomSectionEvents(container) {
+    // 削除ボタン
     container.querySelectorAll('.btn-remove-section').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.index, 10);
@@ -1004,7 +1128,7 @@ export class RecruitEditor {
       });
     });
 
-    // 移動ボタンのイベントリスナー
+    // 移動ボタン
     container.querySelectorAll('.btn-move-section').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.index, 10);
@@ -1024,12 +1148,305 @@ export class RecruitEditor {
       });
     });
 
-    // 入力変更時のイベントリスナー
-    container.querySelectorAll('.section-content').forEach(input => {
+    // フィールド入力変更
+    container.querySelectorAll('.section-field-input, .section-content').forEach(input => {
       input.addEventListener('input', () => {
         this.hasChanges = true;
         this.updateSettingsFromForm();
         this.debouncedPreview();
+      });
+    });
+
+    // 項目フィールド入力変更
+    container.querySelectorAll('.item-field-input').forEach(input => {
+      input.addEventListener('input', () => {
+        this.hasChanges = true;
+        this.updateSettingsFromForm();
+        this.debouncedPreview();
+      });
+    });
+
+    // 画像アップロードボタン
+    container.querySelectorAll('.btn-upload-section-image').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await this.uploadSectionImage(btn);
+      });
+    });
+
+    // 項目追加ボタン
+    container.querySelectorAll('.btn-add-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sectionItem = btn.closest('.custom-section-item');
+        const sectionIndex = parseInt(sectionItem.dataset.index, 10);
+        const itemsField = btn.closest('.section-items-field');
+        const fieldName = itemsField.dataset.field;
+        const maxItems = parseInt(itemsField.dataset.maxItems, 10) || 4;
+
+        const currentSections = this.getCustomSections();
+        if (currentSections[sectionIndex]) {
+          if (!Array.isArray(currentSections[sectionIndex][fieldName])) {
+            currentSections[sectionIndex][fieldName] = [];
+          }
+          if (currentSections[sectionIndex][fieldName].length < maxItems) {
+            currentSections[sectionIndex][fieldName].push({});
+            this.renderCustomSections(currentSections);
+            this.hasChanges = true;
+            this.updateSettingsFromForm();
+            this.applyPreview();
+          }
+        }
+      });
+    });
+
+    // 項目削除ボタン
+    container.querySelectorAll('.btn-remove-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const itemIndex = parseInt(btn.dataset.itemIndex, 10);
+        const sectionItem = btn.closest('.custom-section-item');
+        const sectionIndex = parseInt(sectionItem.dataset.index, 10);
+        const currentSections = this.getCustomSections();
+        if (currentSections[sectionIndex] && Array.isArray(currentSections[sectionIndex].items)) {
+          currentSections[sectionIndex].items.splice(itemIndex, 1);
+          this.renderCustomSections(currentSections);
+          this.hasChanges = true;
+          this.updateSettingsFromForm();
+          this.applyPreview();
+        }
+      });
+    });
+
+    // ギャラリー画像追加ボタン
+    container.querySelectorAll('.btn-add-gallery-image').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const index = parseInt(btn.dataset.index, 10);
+        const field = btn.dataset.field;
+        try {
+          const file = await selectImageFile();
+          if (file) {
+            const url = await uploadRecruitHeroImage(file, this.companyDomain);
+            const currentSections = this.getCustomSections();
+            if (!currentSections[index][field]) {
+              currentSections[index][field] = [];
+            }
+            currentSections[index][field].push(url);
+            this.renderCustomSections(currentSections);
+            this.hasChanges = true;
+            this.updateSettingsFromForm();
+            this.applyPreview();
+            showToast('画像をアップロードしました', 'success');
+          }
+        } catch (error) {
+          if (error.message !== 'ファイルが選択されませんでした') {
+            showToast('画像のアップロードに失敗しました', 'error');
+          }
+        }
+      });
+    });
+
+    // ギャラリー画像削除ボタン
+    container.querySelectorAll('.btn-remove-gallery-image').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const imageIndex = parseInt(btn.dataset.imageIndex, 10);
+        const sectionItem = btn.closest('.custom-section-item');
+        const sectionIndex = parseInt(sectionItem.dataset.index, 10);
+        const galleryField = btn.closest('.section-gallery-field');
+        const fieldName = galleryField.dataset.field;
+        const currentSections = this.getCustomSections();
+        if (currentSections[sectionIndex] && Array.isArray(currentSections[sectionIndex][fieldName])) {
+          currentSections[sectionIndex][fieldName].splice(imageIndex, 1);
+          this.renderCustomSections(currentSections);
+          this.hasChanges = true;
+          this.updateSettingsFromForm();
+          this.applyPreview();
+        }
+      });
+    });
+  }
+
+  /**
+   * ドラッグ&ドロップイベントをバインド
+   */
+  bindDragAndDropEvents(container) {
+    let draggedItem = null;
+    let draggedIndex = -1;
+
+    container.querySelectorAll('.custom-section-item').forEach(item => {
+      // ドラッグ開始
+      item.addEventListener('dragstart', (e) => {
+        // ドラッグハンドル以外からのドラッグを防止
+        const handle = e.target.closest('.section-drag-handle');
+        if (!handle && e.target !== item) {
+          // ドラッグハンドルからでない場合は入力フィールドの操作かもしれない
+          const isInput = e.target.closest('input, textarea, select, button');
+          if (isInput) {
+            e.preventDefault();
+            return;
+          }
+        }
+
+        draggedItem = item;
+        draggedIndex = parseInt(item.dataset.index, 10);
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedIndex.toString());
+      });
+
+      // ドラッグ終了
+      item.addEventListener('dragend', () => {
+        if (draggedItem) {
+          draggedItem.classList.remove('dragging');
+        }
+        draggedItem = null;
+        draggedIndex = -1;
+        container.querySelectorAll('.custom-section-item').forEach(el => {
+          el.classList.remove('drag-over');
+        });
+      });
+
+      // ドラッグ中（他の要素上）
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (draggedItem && item !== draggedItem) {
+          item.classList.add('drag-over');
+        }
+      });
+
+      // ドラッグ離脱
+      item.addEventListener('dragleave', () => {
+        item.classList.remove('drag-over');
+      });
+
+      // ドロップ
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+
+        if (!draggedItem || item === draggedItem) return;
+
+        const targetIndex = parseInt(item.dataset.index, 10);
+        if (draggedIndex === targetIndex) return;
+
+        // セクションの並び替え
+        const currentSections = this.getCustomSections();
+        const [movedSection] = currentSections.splice(draggedIndex, 1);
+        currentSections.splice(targetIndex, 0, movedSection);
+
+        this.renderCustomSections(currentSections);
+        this.hasChanges = true;
+        this.updateSettingsFromForm();
+        this.applyPreview();
+
+        showToast('セクションを移動しました', 'success');
+      });
+    });
+  }
+
+  /**
+   * セクション画像をアップロード
+   */
+  async uploadSectionImage(btn) {
+    try {
+      const file = await selectImageFile();
+      if (file) {
+        btn.disabled = true;
+        btn.textContent = '...';
+        const url = await uploadRecruitHeroImage(file, this.companyDomain);
+        const input = btn.parentElement.querySelector('.section-image-url');
+        if (input) {
+          input.value = url;
+          // プレビュー更新
+          let preview = btn.closest('.section-field').querySelector('.section-image-preview');
+          if (!preview) {
+            preview = document.createElement('img');
+            preview.className = 'section-image-preview';
+            btn.closest('.section-field').insertBefore(preview, btn.parentElement);
+          }
+          preview.src = url;
+        }
+        this.hasChanges = true;
+        this.updateSettingsFromForm();
+        this.applyPreview();
+        showToast('画像をアップロードしました', 'success');
+      }
+    } catch (error) {
+      if (error.message !== 'ファイルが選択されませんでした') {
+        showToast('画像のアップロードに失敗しました', 'error');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📷';
+    }
+  }
+
+  /**
+   * テンプレート選択モーダルを表示
+   */
+  showTemplateSelectorModal() {
+    // 既存のモーダルがあれば削除
+    const existingModal = document.getElementById('template-selector-modal-edit');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    const modalHtml = `
+      <div id="template-selector-modal-edit" class="template-modal-overlay">
+        <div class="template-modal">
+          <div class="template-modal-header">
+            <h3>コンテンツを追加する</h3>
+            <button type="button" class="template-modal-close">&times;</button>
+          </div>
+          <div class="template-modal-body">
+            <p class="template-modal-description">追加するコンテンツを選択してください。</p>
+            <div class="template-list">
+              ${sectionTemplates.map(template => `
+                <div class="template-item" data-template-id="${template.id}">
+                  <div class="template-thumbnail">
+                    <img src='${template.thumbnail}' alt="${escapeHtml(template.name)}">
+                  </div>
+                  <div class="template-info">
+                    <h4 class="template-name">${escapeHtml(template.name)}（${escapeHtml(template.label)}）</h4>
+                    <p class="template-description">${escapeHtml(template.description)}</p>
+                  </div>
+                  <button type="button" class="btn-add-template" data-template-id="${template.id}">追加する</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="template-modal-footer">
+            <button type="button" class="btn-template-cancel">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal = document.getElementById('template-selector-modal-edit');
+
+    // 閉じるボタン
+    modal.querySelector('.template-modal-close').addEventListener('click', () => {
+      modal.remove();
+    });
+
+    // キャンセルボタン
+    modal.querySelector('.btn-template-cancel').addEventListener('click', () => {
+      modal.remove();
+    });
+
+    // オーバーレイクリックで閉じる
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    // テンプレート追加ボタン
+    modal.querySelectorAll('.btn-add-template').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const templateId = btn.dataset.templateId;
+        this.addCustomSection(templateId);
+        modal.remove();
       });
     });
   }
@@ -1044,8 +1461,43 @@ export class RecruitEditor {
     const sections = [];
     container.querySelectorAll('.custom-section-item').forEach(item => {
       const type = item.dataset.type;
-      const content = item.querySelector('.section-content')?.value || '';
-      sections.push({ type, content });
+      const template = sectionTemplates.find(t => t.id === type);
+      const section = { type };
+
+      if (template && template.fields) {
+        // テンプレートベースのフィールドを取得
+        template.fields.forEach(field => {
+          if (field.type === 'items') {
+            // 項目配列を取得
+            const items = [];
+            item.querySelectorAll('.section-item-entry').forEach(entry => {
+              const itemData = {};
+              entry.querySelectorAll('.item-field-input').forEach(input => {
+                itemData[input.dataset.field] = input.value || '';
+              });
+              items.push(itemData);
+            });
+            section[field.key] = items;
+          } else if (field.type === 'gallery') {
+            // ギャラリー画像URLを取得
+            const images = [];
+            item.querySelectorAll('.gallery-image-item img').forEach(img => {
+              if (img.src) images.push(img.src);
+            });
+            section[field.key] = images;
+          } else {
+            // 通常のフィールド
+            const input = item.querySelector(`.section-field-input[data-field="${field.key}"]`);
+            section[field.key] = input?.value || '';
+          }
+        });
+      } else {
+        // 後方互換: 古いtext/heading/image形式
+        const content = item.querySelector('.section-content')?.value || '';
+        section.content = content;
+      }
+
+      sections.push(section);
     });
     return sections;
   }
@@ -1053,9 +1505,27 @@ export class RecruitEditor {
   /**
    * カスタムセクションを追加
    */
-  addCustomSection(type) {
+  addCustomSection(templateId) {
+    const template = sectionTemplates.find(t => t.id === templateId);
     const currentSections = this.getCustomSections();
-    currentSections.push({ type, content: '' });
+
+    // テンプレートの初期値を設定
+    const newSection = { type: templateId };
+    if (template && template.fields) {
+      template.fields.forEach(field => {
+        if (field.type === 'items') {
+          newSection[field.key] = [];
+        } else if (field.type === 'gallery') {
+          newSection[field.key] = [];
+        } else {
+          newSection[field.key] = '';
+        }
+      });
+    } else {
+      newSection.content = '';
+    }
+
+    currentSections.push(newSection);
     this.renderCustomSections(currentSections);
     this.hasChanges = true;
     this.updateSettingsFromForm();
@@ -1112,6 +1582,131 @@ export class RecruitEditor {
     } catch (error) {
       console.error('クリップボードへのコピーに失敗:', error);
       showToast('コピーに失敗しました', 'error');
+    }
+  }
+
+  /**
+   * プレビューのセクション並び替えを設定
+   */
+  setupPreviewSortable() {
+    const contentEl = document.getElementById('recruit-content');
+    if (!contentEl) return;
+
+    const sections = contentEl.querySelectorAll('section');
+    if (sections.length === 0) return;
+
+    sections.forEach((section) => {
+      // 既にドラッグハンドルがある場合はスキップ
+      if (section.querySelector('.recruit-section-drag-handle')) return;
+
+      const sectionType = this.detectRecruitSectionType(section);
+      section.dataset.section = sectionType;
+      section.classList.add('recruit-sortable-section');
+
+      // ドラッグハンドルを追加
+      const handle = document.createElement('div');
+      handle.className = 'recruit-section-drag-handle';
+      handle.innerHTML = `
+        <span class="recruit-section-label">${this.getRecruitSectionLabel(sectionType)}</span>
+        <span class="recruit-section-drag-icon">☰</span>
+      `;
+      section.insertBefore(handle, section.firstChild);
+
+      section.setAttribute('draggable', 'true');
+
+      section.addEventListener('dragstart', (e) => {
+        this.draggedSection = section;
+        section.classList.add('recruit-section-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setDragImage(section, 50, 30);
+      });
+
+      section.addEventListener('dragend', () => {
+        section.classList.remove('recruit-section-dragging');
+        this.draggedSection = null;
+        this.saveRecruitSectionOrder();
+      });
+
+      section.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        if (this.draggedSection && this.draggedSection !== section) {
+          const allSections = [...contentEl.querySelectorAll('section')];
+          const draggedIdx = allSections.indexOf(this.draggedSection);
+          const targetIdx = allSections.indexOf(section);
+
+          if (draggedIdx < targetIdx) {
+            section.parentNode.insertBefore(this.draggedSection, section.nextSibling);
+          } else {
+            section.parentNode.insertBefore(this.draggedSection, section);
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * セクションの種類を検出
+   */
+  detectRecruitSectionType(section) {
+    if (section.classList.contains('recruit-hero')) return 'hero';
+    if (section.classList.contains('recruit-about')) return 'company-intro';
+    if (section.classList.contains('recruit-jobs')) return 'jobs';
+    if (section.classList.contains('recruit-cta')) return 'cta';
+    if (section.id && section.id.startsWith('custom-section-')) {
+      const index = section.id.replace('custom-section-', '');
+      return `custom-${index}`;
+    }
+    return 'unknown';
+  }
+
+  /**
+   * セクションのラベルを取得
+   */
+  getRecruitSectionLabel(type) {
+    const labels = {
+      'hero': 'ヒーロー',
+      'company-intro': '会社紹介',
+      'jobs': '求人一覧',
+      'cta': 'CTA'
+    };
+    if (type.startsWith('custom-')) {
+      return 'カスタム';
+    }
+    return labels[type] || 'セクション';
+  }
+
+  /**
+   * セクション順序を保存
+   */
+  saveRecruitSectionOrder() {
+    const contentEl = document.getElementById('recruit-content');
+    if (!contentEl) return;
+
+    const sections = contentEl.querySelectorAll('section');
+    const order = Array.from(sections)
+      .map(s => s.dataset.section)
+      .filter(s => s && s !== 'unknown');
+
+    this.settings.sectionOrder = order.join(',');
+    this.hasChanges = true;
+
+    // 編集パネルのフォームも更新（セクション管理タブ）
+    this.updateSectionOrderInPanel(order);
+
+    showToast('セクション順序を変更しました', 'success');
+  }
+
+  /**
+   * 編集パネルのセクション順序を更新
+   */
+  updateSectionOrderInPanel(order) {
+    // セクション管理タブがある場合は同期
+    const sectionList = document.getElementById('edit-section-order');
+    if (sectionList) {
+      // 必要に応じてセクション管理UIを更新
+      // 現在は簡易実装のため、保存時に反映される
     }
   }
 }
