@@ -166,7 +166,7 @@ export function migrateToV2Format(legacySettings) {
     sections: sections,
     globalSettings: {
       designPattern: legacySettings.designPattern || 'modern',
-      layoutStyle: legacySettings.layoutStyle || 'default',
+      layoutStyle: legacySettings.layoutStyle || 'modern',
       ctaText: legacySettings.ctaText || '今すぐ応募する',
       tiktokPixelId: legacySettings.tiktokPixelId || '',
       googleAdsId: legacySettings.googleAdsId || '',
@@ -227,7 +227,7 @@ export function convertToLegacyFormat(v2Content) {
   // グローバル設定
   if (globalSettings) {
     legacySettings.designPattern = globalSettings.designPattern || 'modern';
-    legacySettings.layoutStyle = globalSettings.layoutStyle || 'default';
+    legacySettings.layoutStyle = globalSettings.layoutStyle || 'modern';
     legacySettings.ctaText = globalSettings.ctaText || '今すぐ応募する';
     legacySettings.tiktokPixelId = globalSettings.tiktokPixelId || '';
     legacySettings.googleAdsId = globalSettings.googleAdsId || '';
@@ -343,7 +343,7 @@ export function createEmptyV2Content() {
     ],
     globalSettings: {
       designPattern: 'modern',
-      layoutStyle: 'default',
+      layoutStyle: 'modern',
       ctaText: '今すぐ応募する'
     }
   };

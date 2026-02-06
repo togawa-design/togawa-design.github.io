@@ -54,7 +54,7 @@ export class LPRenderer {
     document.body.classList.add(patternClass);
 
     // レイアウトスタイルを適用
-    const layoutStyle = lpSettings.layoutStyle || 'default';
+    const layoutStyle = lpSettings.layoutStyle || 'modern';
     const layoutClass = `lp-layout-${layoutStyle}`;
     document.body.classList.add(layoutClass);
     if (contentEl) contentEl.classList.add(layoutClass);
@@ -216,7 +216,7 @@ export class LPRenderer {
             applyButtonText: section.data?.applyButtonText || context.lpSettings?.ctaText || '今すぐ応募する',
             videoButtonText: section.data?.videoButtonText || '求人内容を動画で見る'
           };
-          return renderer(heroCtaData, context.globalSettings?.layoutStyle || 'default');
+          return renderer(heroCtaData, context.globalSettings?.layoutStyle || 'modern');
 
         case 'points':
           const pointsLpSettings = this.convertPointsToLegacy(section.data, context.globalSettings);
@@ -284,7 +284,7 @@ export class LPRenderer {
   renderLegacySections(company, mainJob, jobs, lpSettings, contentEl) {
     const sectionVisibility = this.parseSectionVisibility(lpSettings.sectionVisibility);
     const sectionOrder = this.parseSectionOrder(lpSettings.sectionOrder);
-    const layoutStyle = lpSettings.layoutStyle || 'default';
+    const layoutStyle = lpSettings.layoutStyle || 'modern';
 
     contentEl.innerHTML = sectionOrder
       .map(sectionName => this.renderLegacySection(sectionName, company, mainJob, jobs, lpSettings, sectionVisibility, layoutStyle))

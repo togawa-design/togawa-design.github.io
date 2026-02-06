@@ -80,84 +80,47 @@ const DESIGN_PATTERNS = [
   }
 ];
 
-// テンプレートデザイン定義（レイアウト・構造・雰囲気）
+// テンプレートデザイン定義（採用ページと統一 - レイアウト・構造・雰囲気）
 const LAYOUT_STYLES = [
   {
-    id: 'default',
-    name: 'デフォルト',
-    description: '標準的なレイアウト',
-    preview: '中央揃え・シンプル',
-    features: ['title-center', 'card-shadow', 'rounded-md']
-  },
-  {
-    id: 'yellow',
-    name: 'イエロー',
-    description: '親しみやすい明るいデザイン',
-    preview: 'グラデーション・角丸',
-    features: ['hero-gradient', 'rounded-lg', 'card-border-bottom', 'friendly']
-  },
-  {
-    id: 'impact',
-    name: 'インパクト',
-    description: '黒背景の強烈なデザイン',
-    preview: '大文字・斜めボタン',
-    features: ['dark-bg', 'uppercase', 'skew-btn', 'neon']
-  },
-  {
-    id: 'trust',
-    name: '信頼',
-    description: 'ビジネス向けの信頼感',
-    preview: '左ボーダー・シンプル',
-    features: ['left-border', 'minimal', 'corporate']
-  },
-  {
-    id: 'bold',
-    name: 'ボールド',
-    description: '大きな文字で印象的に',
-    preview: '大文字・インパクト重視',
-    features: ['title-large', 'title-center', 'hero-overlay-dark', 'text-bold']
-  },
-  {
-    id: 'elegant',
-    name: 'エレガント',
-    description: '洗練された上品なデザイン',
-    preview: '左揃え・下線装飾',
-    features: ['title-left', 'title-underline', 'card-border', 'section-wide-padding']
-  },
-  {
-    id: 'playful',
-    name: 'ポップ',
-    description: '明るく楽しい雰囲気',
-    preview: '角丸・カラフル',
-    features: ['title-center', 'rounded-lg', 'card-colorful', 'section-wave']
-  },
-  {
-    id: 'corporate',
-    name: 'コーポレート',
-    description: 'ビジネス向けの信頼感',
-    preview: '左揃え・直線的',
-    features: ['title-left', 'title-badge', 'card-flat', 'section-striped']
-  },
-  {
-    id: 'magazine',
-    name: 'マガジン',
-    description: '雑誌風のレイアウト',
-    preview: '大きな画像・重なり',
-    features: ['title-overlap', 'hero-full', 'card-overlap', 'section-overlap']
+    id: 'modern',
+    name: 'モダン',
+    description: '洗練されたダークグレー + 青。信頼感と先進性',
+    preview: 'ミニマル・プロフェッショナル',
+    industries: ['製造', 'IT', 'オフィスワーク'],
+    features: ['title-center', 'card-shadow', 'rounded-md', 'minimal']
   },
   {
     id: 'athome',
     name: 'アットホーム',
-    description: '丸みのあるフレンドリーなデザイン',
+    description: '温かみのあるオレンジ系。親しみやすさ重視',
     preview: '角丸・吹き出し風',
+    industries: ['飲食', '介護', 'サービス'],
     features: ['rounded-xl', 'bubble-card', 'friendly', 'soft-colors']
   },
   {
-    id: 'local',
-    name: '地域密着',
-    description: '和風モダンの落ち着いたデザイン',
-    preview: '創業○年・安定感',
-    features: ['japanese-modern', 'stable', 'earth-tone', 'traditional']
+    id: 'cute',
+    name: 'キュート',
+    description: 'ポップで可愛いパステル調。女性向けに最適',
+    preview: '角丸・カラフル',
+    industries: ['保育', '美容', 'アパレル'],
+    features: ['title-center', 'rounded-lg', 'card-colorful', 'section-wave']
+  },
+  {
+    id: 'trust',
+    name: '信頼',
+    description: '誠実で堅実な印象。ビジネス・企業向け',
+    preview: '左ボーダー・シンプル',
+    industries: ['製造', '金融', 'コンサル'],
+    features: ['left-border', 'minimal', 'corporate']
+  },
+  {
+    id: 'kenchiku',
+    name: '建築',
+    description: '力強いオレンジ + ダーク。建設・土木業界向け',
+    preview: 'インパクト重視',
+    industries: ['建設', '土木', '施工管理'],
+    features: ['title-large', 'dark-bg', 'text-bold', 'impact']
   }
 ];
 
@@ -226,7 +189,7 @@ export class LPEditor {
     this.company = company;
     this.mainJob = mainJob;
     this.currentDesignPattern = lpSettings.designPattern || 'modern';
-    this.currentLayoutStyle = lpSettings.layoutStyle || 'default';
+    this.currentLayoutStyle = lpSettings.layoutStyle || 'modern';
 
     // URLからjobIdを取得
     const urlParams = new URLSearchParams(window.location.search);
@@ -2814,7 +2777,7 @@ export class LPEditor {
       company: this.currentJobInfo?.company || baseSettings.company || '',
       jobTitle: this.currentJobInfo?.title || baseSettings.jobTitle || '',
       designPattern: this.currentDesignPattern || baseSettings.designPattern || 'modern',
-      layoutStyle: this.currentLayoutStyle || baseSettings.layoutStyle || 'default',
+      layoutStyle: this.currentLayoutStyle || baseSettings.layoutStyle || 'modern',
       heroTitle: this.editedData.heroTitle ?? baseSettings.heroTitle ?? '',
       heroSubtitle: this.editedData.heroSubtitle ?? baseSettings.heroSubtitle ?? '',
       heroImage: this.editedData.heroImage ?? baseSettings.heroImage ?? '',

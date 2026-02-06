@@ -17,14 +17,18 @@ import {
 } from './lp-section-manager.js';
 import { LAYOUT_STYLES } from '@features/lp/LPEditor.js';
 
-// レイアウトスタイルごとのデフォルトカラー
+// レイアウトスタイルごとのデフォルトカラー（採用ページと統一された5種類）
 const layoutStyleColors = {
-  default: { primary: '#6366f1', accent: '#818cf8', bg: '#ffffff', text: '#1f2937' },
-  modern: { primary: '#3b82f6', accent: '#60a5fa', bg: '#f8fafc', text: '#1e293b' },
-  yellow: { primary: '#f59e0b', accent: '#fbbf24', bg: '#fffbeb', text: '#78350f' },
-  impact: { primary: '#111827', accent: '#374151', bg: '#f9fafb', text: '#111827' },
-  local: { primary: '#92400e', accent: '#b45309', bg: '#fef3c7', text: '#78350f' },
-  zen: { primary: '#059669', accent: '#10b981', bg: '#f0fdf4', text: '#1f2937' }
+  // モダン: 洗練されたダークグレー + 青
+  modern: { primary: '#0984e3', accent: '#74b9ff', bg: '#f8fafc', text: '#2d3436' },
+  // アットホーム: 温かみのあるオレンジ系
+  athome: { primary: '#e67e22', accent: '#f39c12', bg: '#fef9f3', text: '#5d4037' },
+  // キュート: ポップで可愛いパステル調
+  cute: { primary: '#ff8fa3', accent: '#fab1a0', bg: '#fff5f7', text: '#6d4c41' },
+  // 信頼: 誠実で堅実な印象
+  trust: { primary: '#0077c2', accent: '#4ea8de', bg: '#f0f8ff', text: '#1a2a3a' },
+  // 建築: 力強いオレンジ + ダーク
+  kenchiku: { primary: '#f39c12', accent: '#e67e22', bg: '#f5f5f5', text: '#2c3e50' }
 };
 
 let previewUpdateTimer = null;
@@ -733,8 +737,8 @@ function setLPCustomColors(colors) {
 function resetLPCustomColors() {
   // 現在選択されているレイアウトスタイルのデフォルトカラーを適用
   const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
-  const defaults = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
+  const defaults = layoutStyleColors[layoutStyle] || layoutStyleColors.modern;
 
   const colorIds = ['primary', 'accent', 'bg', 'text'];
   colorIds.forEach(id => {
@@ -788,8 +792,8 @@ function setupLPColorPickers() {
  */
 function getLPCustomColors() {
   const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
-  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
+  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.modern;
 
   return {
     primary: document.getElementById('lp-custom-primary-text')?.value || baseColors.primary,
@@ -1332,7 +1336,7 @@ function parseLPSettingsCSV(csvText, jobId) {
         ctaText: rowData.ctaText || rowData['CTAテキスト'] || '',
         faq: rowData.faq || rowData['FAQ'] || '',
         designPattern: rowData.designPattern || rowData['デザインパターン'] || '',
-        layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'default',
+        layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'modern',
         sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
         sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
         // 広告トラッキング設定
@@ -1501,7 +1505,7 @@ export async function saveLPSettings() {
 
   // レイアウトスタイルを取得（新しいUIから読み取り）
   const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
+  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
 
   const settings = {
     jobId: jobId,
@@ -1808,7 +1812,7 @@ function getCurrentLPSettings() {
   const points = getPointsData();
   // レイアウトスタイルを取得（新しいUIから読み取り）
   const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'default';
+  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
 
   // カスタムカラーを取得
   const customColors = getLPCustomColors();
@@ -1848,10 +1852,10 @@ function getCurrentLPSettings() {
 // プレビューHTML生成
 function generatePreviewHtml(company, lpSettings, jobData = null) {
   const patternClass = `lp-pattern-${lpSettings.designPattern || 'modern'}`;
-  const layoutStyle = lpSettings.layoutStyle || 'default';
+  const layoutStyle = lpSettings.layoutStyle || 'modern';
 
   // カスタムカラーを取得
-  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.modern;
   const customColors = {
     primary: lpSettings.customPrimary || baseColors.primary,
     accent: lpSettings.customAccent || baseColors.accent,

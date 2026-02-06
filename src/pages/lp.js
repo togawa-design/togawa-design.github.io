@@ -278,7 +278,7 @@ class CompanyLPPage {
    */
   async inheritCompanyRecruitSettings() {
     // LP固有の設定があるかチェック
-    const hasCustomLayoutStyle = this.lpSettings?.layoutStyle && this.lpSettings.layoutStyle !== 'default';
+    const hasCustomLayoutStyle = this.lpSettings?.layoutStyle && this.lpSettings.layoutStyle !== 'modern';
     const hasCustomDesignPattern = this.lpSettings?.designPattern && this.lpSettings.designPattern !== 'modern';
 
     const companyDomain = this.company?.companyDomain;
@@ -514,7 +514,7 @@ class CompanyLPPage {
       pointDesc6: rowData.pointDesc6 || rowData['ポイント6説明'] || '',
       faq: rowData.faq || rowData['FAQ'] || '',
       designPattern: rowData.designPattern || rowData['デザインパターン'] || 'modern',
-      layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'default',
+      layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'modern',
       sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
       sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
       // 広告トラッキング設定
@@ -619,7 +619,7 @@ class CompanyLPPage {
     }
 
     // レイアウトスタイルをbodyに設定
-    const layoutStyle = this.lpSettings?.layoutStyle || 'default';
+    const layoutStyle = this.lpSettings?.layoutStyle || 'modern';
     document.body.setAttribute('data-layout-style', layoutStyle);
 
     // ヘッダーを追加

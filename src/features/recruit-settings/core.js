@@ -366,7 +366,7 @@ export function populateForm(settings, companyName = '') {
   renderCustomSections(customSections);
 
   // レイアウトスタイルを設定
-  setLayoutStyle(settings.layoutStyle || 'default');
+  setLayoutStyle(settings.layoutStyle || 'modern');
 
   // カスタムカラーを設定
   setCustomColors({
@@ -1258,7 +1258,7 @@ export function applyPreviewColorTheme() {
   const customTextInput = document.getElementById('recruit-custom-text-text');
 
   // カスタムカラーの値（テキスト入力から取得、空欄の場合はレイアウトスタイルのデフォルトを使用）
-  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.default;
+  const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.modern;
   const colors = {
     primary: customPrimaryInput?.value || baseColors.primary,
     accent: customAccentInput?.value || baseColors.accent,

@@ -506,7 +506,7 @@ function parseLPSettingsCSVForJob(csvText, jobId) {
         ctaText: rowData.ctaText || rowData['CTAテキスト'] || '',
         faq: rowData.faq || rowData['FAQ'] || '',
         designPattern: rowData.designPattern || rowData['デザインパターン'] || '',
-        layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'default',
+        layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'modern',
         sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
         sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
         tiktokPixelId: rowData.tiktokPixelId || rowData['TikTok Pixel ID'] || '',

@@ -4,7 +4,7 @@
  */
 import { escapeHtml } from '@shared/utils.js';
 
-export function renderPointsSection(company, mainJob, lpSettings, layoutStyle = 'default') {
+export function renderPointsSection(company, mainJob, lpSettings, layoutStyle = 'modern') {
   const points = [];
 
   // LP設定からポイントを取得

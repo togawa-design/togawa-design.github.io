@@ -4,7 +4,7 @@
  */
 import { escapeHtml } from '@shared/utils.js';
 
-export function renderHeroSection(company, mainJob, lpSettings, layoutStyle = 'default') {
+export function renderHeroSection(company, mainJob, lpSettings, layoutStyle = 'modern') {
   const heroTitle = lpSettings.heroTitle || mainJob.title || `${company.company}で働こう`;
   const heroSubtitle = lpSettings.heroSubtitle || '';
   const heroImage = lpSettings.heroImage || company.imageUrl || '';

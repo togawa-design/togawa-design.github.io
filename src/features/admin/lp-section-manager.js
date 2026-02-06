@@ -50,7 +50,7 @@ function initTemplateSelector() {
   if (!container) return;
 
   // 現在選択されているレイアウトスタイルを取得
-  const currentLayoutStyle = globalSettings.layoutStyle || 'default';
+  const currentLayoutStyle = globalSettings.layoutStyle || 'modern';
 
   // レイアウトスタイルセレクターをレンダリング
   container.innerHTML = renderLayoutStyleSelector(currentLayoutStyle);
@@ -189,7 +189,7 @@ function updateTemplateSelectorUI() {
   const container = document.getElementById('template-selector-container');
   if (!container) return;
 
-  const currentLayoutStyle = globalSettings.layoutStyle || 'default';
+  const currentLayoutStyle = globalSettings.layoutStyle || 'modern';
 
   // 既存の選択をクリア
   container.querySelectorAll('.lp-admin-layout-option').forEach(opt => {

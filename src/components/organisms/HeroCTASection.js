@@ -13,7 +13,7 @@ import { escapeHtml } from '@shared/utils.js';
  * @param {string} options.videoButtonText - 動画ボタンテキスト
  * @param {string} layoutStyle - レイアウトスタイル
  */
-export function renderHeroCTASection(options = {}, layoutStyle = 'default') {
+export function renderHeroCTASection(options = {}, layoutStyle = 'modern') {
   const {
     showVideoButton = false,
     videoUrl = '',
