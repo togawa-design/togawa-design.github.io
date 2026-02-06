@@ -6,7 +6,6 @@ import { trackEvent, hasUrlParam, getUrlParam } from '@shared/utils.js';
 import { loadRecruitSettings } from '@features/recruit-settings/api.js';
 import {
   renderSiteHeader,
-  renderSiteFooter,
   renderFixedCtaBar
 } from '@components/organisms/LayoutComponents.js';
 import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
@@ -660,12 +659,19 @@ class CompanyLPPage {
       document.body.insertAdjacentHTML('afterbegin', headerHtml);
     }
 
-    // フッターを追加
-    const footerHtml = renderSiteFooter({
-      companyName: rs.companyNameDisplay || this.company?.company || '',
-      designPattern: designPattern
-    });
-    contentEl.insertAdjacentHTML('afterend', footerHtml);
+    // lp-footerの会社情報を更新（site-footerは使わない）
+    const companyName = rs.companyNameDisplay || this.company?.company || '';
+    const year = new Date().getFullYear();
+    const lpFooter = document.querySelector('.lp-footer');
+    if (lpFooter) {
+      // コピーライトを会社名に更新
+      const copyright = lpFooter.querySelector('.lp-footer-copyright');
+      if (copyright && companyName) {
+        copyright.innerHTML = `<small>&copy; ${year} ${companyName} All Rights Reserved.</small>`;
+      }
+      // layoutStyleクラスを追加
+      lpFooter.classList.add(`lp-layout-${layoutStyle}`);
+    }
 
     // CTAバーを追加
     if (hasCtaBar) {
