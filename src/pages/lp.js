@@ -619,7 +619,9 @@ class CompanyLPPage {
    */
   renderLayoutComponents(contentEl) {
     const rs = this.recruitSettings || {};
-    const designPattern = this.lpSettings?.designPattern || 'modern';
+    // layoutStyleとdesignPatternを同期（layoutStyleを主として使用）
+    const layoutStyle = this.lpSettings?.layoutStyle || 'modern';
+    const designPattern = layoutStyle;
     const companyDomain = this.company?.companyDomain || '';
 
     // ロゴまたは会社名がある場合のみヘッダーを追加
@@ -643,7 +645,6 @@ class CompanyLPPage {
     }
 
     // レイアウトスタイルをbodyに設定
-    const layoutStyle = this.lpSettings?.layoutStyle || 'modern';
     document.body.setAttribute('data-layout-style', layoutStyle);
 
     // ヘッダーを追加

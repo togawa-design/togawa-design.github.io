@@ -48,14 +48,11 @@ export class LPRenderer {
    * @param {HTMLElement} contentEl - 描画先要素
    */
   render(company, jobs, lpSettings, contentEl) {
-    // デザインパターンを適用
-    const pattern = lpSettings.designPattern || company.designPattern || 'modern';
-    const patternClass = `lp-pattern-${pattern}`;
-    document.body.classList.add(patternClass);
-
-    // レイアウトスタイルを適用
+    // レイアウトスタイルを適用（designPatternも同期）
     const layoutStyle = lpSettings.layoutStyle || 'modern';
     const layoutClass = `lp-layout-${layoutStyle}`;
+    const patternClass = `lp-pattern-${layoutStyle}`;
+    document.body.classList.add(patternClass);
     document.body.classList.add(layoutClass);
     if (contentEl) contentEl.classList.add(layoutClass);
 
@@ -364,13 +361,10 @@ export class LPRenderer {
    * @returns {Object} { html, patternClass, layoutClass }
    */
   renderToHtml(company, jobs, lpSettings) {
-    // デザインパターン
-    const pattern = lpSettings.designPattern || company.designPattern || 'modern';
-    const patternClass = `lp-pattern-${pattern}`;
-
-    // レイアウトスタイル
+    // レイアウトスタイルを適用（designPatternも同期）
     const layoutStyle = lpSettings.layoutStyle || 'modern';
     const layoutClass = `lp-layout-${layoutStyle}`;
+    const patternClass = `lp-pattern-${layoutStyle}`;
 
     // メインの求人情報
     const mainJob = jobs.length > 0 ? jobs[0] : company;
