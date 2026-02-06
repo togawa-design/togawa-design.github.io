@@ -141,6 +141,10 @@ class CompanyLPPage {
 
         // LP設定を取得（求人ID単位）
         this.lpSettings = await this.fetchLPSettings(this.jobId) || {};
+        console.log('[LP] fetchLPSettings後のlpSettings:', JSON.stringify({
+          layoutStyle: this.lpSettings.layoutStyle,
+          designPattern: this.lpSettings.designPattern
+        }));
 
         // プレビューモードの場合、sessionStorageから編集中のデータを読み込む
         this.lpSettings = this.loadPreviewSettings(this.jobId, this.lpSettings);
@@ -166,6 +170,10 @@ class CompanyLPPage {
 
       // 会社の採用ページ設定からデザインパターンを継承
       await this.inheritCompanyRecruitSettings();
+      console.log('[LP] inheritCompanyRecruitSettings後のlpSettings:', JSON.stringify({
+        layoutStyle: this.lpSettings.layoutStyle,
+        designPattern: this.lpSettings.designPattern
+      }));
 
       // URLパラメータでlayoutStyleをオーバーライド（テスト/プレビュー用）
       const urlLayoutStyle = getUrlParam('layoutStyle');
