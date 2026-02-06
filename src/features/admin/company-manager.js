@@ -148,7 +148,7 @@ export async function saveCompanyData() {
     company: document.getElementById('edit-company-name')?.value.trim() || '',
     company_domain: companyDomain,
     companyDomain: companyDomain,
-    designPattern: document.getElementById('edit-design-pattern')?.value || 'standard',
+    designPattern: document.getElementById('edit-design-pattern')?.value || 'modern',
     imageUrl: document.getElementById('edit-image-url')?.value.trim() || '',
     order: document.getElementById('edit-order')?.value || '',
     description: document.getElementById('edit-description')?.value.trim() || '',
@@ -322,7 +322,7 @@ export function renderCompanyTable() {
     <tr data-domain="${escapeHtml(company.companyDomain || '')}">
       <td>${escapeHtml(company.company || '')}</td>
       <td><code>${escapeHtml(company.companyDomain || '')}</code></td>
-      <td><span class="badge ${company.designPattern || 'standard'}">${getPatternLabel(company.designPattern || 'standard')}</span></td>
+      <td><span class="badge ${company.designPattern || 'modern'}">${getPatternLabel(company.designPattern || 'modern')}</span></td>
       <td>${company.showCompany === true || company.showCompany === '○' || company.showCompany === '◯' ? '<span class="badge success">表示</span>' : '<span class="badge">非表示</span>'}</td>
       <td>
         <div class="action-buttons">

@@ -11,83 +11,71 @@ import { renderHeroSection } from '@components/organisms/HeroSection.js';
 // GAS API URL（スプレッドシートに保存用）
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
 
-// デザインパターン定義（カラーテーマ）
+// デザインパターン定義（採用ページと統一テンプレート）
 const DESIGN_PATTERNS = [
   {
-    id: 'standard',
-    name: 'スタンダード',
-    description: 'バランスの取れた標準デザイン',
+    id: 'modern',
+    name: 'モダン',
+    description: '洗練されたダークグレー + 青。信頼感と先進性',
+    color: 'linear-gradient(135deg, #2d3436, #0984e3)',
+    industries: ['製造', 'IT', 'オフィスワーク'],
     colors: {
-      primary: '#667eea',
-      secondary: '#764ba2',
-      accent: '#ff6b35',
+      primary: '#2d3436',
+      secondary: '#0984e3',
+      accent: '#fff176',
       text: '#333333'
     }
   },
   {
-    id: 'modern',
-    name: 'モダン',
-    description: 'グリーン系のフレッシュなデザイン',
+    id: 'athome',
+    name: 'アットホーム',
+    description: '温かみのあるオレンジ系。親しみやすさ重視',
+    color: 'linear-gradient(135deg, #e67e22, #f39c12)',
+    industries: ['飲食', '介護', 'サービス'],
     colors: {
-      primary: '#10b981',
-      secondary: '#059669',
-      accent: '#10b981',
-      text: '#1f2937'
+      primary: '#f39c12',
+      secondary: '#e67e22',
+      accent: '#fff176',
+      text: '#5d4037'
     }
   },
   {
-    id: 'classic',
-    name: 'クラシック',
-    description: 'ブラウン系の落ち着いたデザイン',
+    id: 'cute',
+    name: 'キュート',
+    description: 'ポップで可愛いパステル調。女性向けに最適',
+    color: 'linear-gradient(135deg, #ff8fa3, #fab1a0)',
+    industries: ['保育', '美容', 'アパレル'],
     colors: {
-      primary: '#92400e',
-      secondary: '#78350f',
-      accent: '#b45309',
-      text: '#44403c'
+      primary: '#ff8fa3',
+      secondary: '#fab1a0',
+      accent: '#fff59d',
+      text: '#5d4037'
     }
   },
   {
-    id: 'minimal',
-    name: 'ミニマル',
-    description: 'モノトーンのシンプルなデザイン',
+    id: 'trust',
+    name: '信頼',
+    description: '誠実で堅実な印象。ビジネス・企業向け',
+    color: 'linear-gradient(135deg, #1a2a3a, #0077c2)',
+    industries: ['製造', '金融', 'コンサル'],
     colors: {
-      primary: '#374151',
-      secondary: '#1f2937',
-      accent: '#111827',
-      text: '#111827'
+      primary: '#0077c2',
+      secondary: '#1a2a3a',
+      accent: '#fff176',
+      text: '#2d3436'
     }
   },
   {
-    id: 'colorful',
-    name: 'カラフル',
-    description: 'ピンク〜パープルの華やかなデザイン',
+    id: 'kenchiku',
+    name: '建築',
+    description: '力強いオレンジ + ダーク。建設・土木業界向け',
+    color: 'linear-gradient(135deg, #2c3e50, #f39c12)',
+    industries: ['建設', '土木', '施工管理'],
     colors: {
-      primary: '#ec4899',
-      secondary: '#8b5cf6',
-      accent: '#ec4899',
-      text: '#581c87'
-    }
-  },
-  {
-    id: 'blue',
-    name: 'ブルー',
-    description: '信頼感のあるブルー系デザイン',
-    colors: {
-      primary: '#3b82f6',
-      secondary: '#1d4ed8',
-      accent: '#0ea5e9',
-      text: '#1e3a8a'
-    }
-  },
-  {
-    id: 'orange',
-    name: 'オレンジ',
-    description: '活気のあるオレンジ系デザイン',
-    colors: {
-      primary: '#f97316',
-      secondary: '#ea580c',
-      accent: '#fb923c',
-      text: '#9a3412'
+      primary: '#f39c12',
+      secondary: '#1a1a1a',
+      accent: '#fff176',
+      text: '#333333'
     }
   }
 ];
@@ -222,7 +210,7 @@ export class LPEditor {
     this.currentJobId = null;
     this.currentJobInfo = null;
     this.lpSettings = null;
-    this.currentDesignPattern = 'standard';
+    this.currentDesignPattern = 'modern';
     this.currentLayoutStyle = 'default';
     this.company = null;
     this.mainJob = null;
@@ -237,7 +225,7 @@ export class LPEditor {
     this.currentJobInfo = jobInfo;
     this.company = company;
     this.mainJob = mainJob;
-    this.currentDesignPattern = lpSettings.designPattern || 'standard';
+    this.currentDesignPattern = lpSettings.designPattern || 'modern';
     this.currentLayoutStyle = lpSettings.layoutStyle || 'default';
 
     // URLからjobIdを取得
@@ -2825,7 +2813,7 @@ export class LPEditor {
       companyDomain: companyDomain,
       company: this.currentJobInfo?.company || baseSettings.company || '',
       jobTitle: this.currentJobInfo?.title || baseSettings.jobTitle || '',
-      designPattern: this.currentDesignPattern || baseSettings.designPattern || 'standard',
+      designPattern: this.currentDesignPattern || baseSettings.designPattern || 'modern',
       layoutStyle: this.currentLayoutStyle || baseSettings.layoutStyle || 'default',
       heroTitle: this.editedData.heroTitle ?? baseSettings.heroTitle ?? '',
       heroSubtitle: this.editedData.heroSubtitle ?? baseSettings.heroSubtitle ?? '',

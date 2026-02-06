@@ -165,7 +165,7 @@ export async function renderCompanyPage() {
   trackEvent('view_company_page', {
     company_domain: companyInfo.companyDomain || '',
     company_name: companyInfo.company || '',
-    design_pattern: companyInfo.designPattern || 'standard',
+    design_pattern: companyInfo.designPattern || 'modern',
     page_location: window.location.href,
     page_title: document.title
   });

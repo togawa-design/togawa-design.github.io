@@ -171,7 +171,7 @@ function populateForm(data) {
 
   setVal('company-name', data.company);
   setVal('company-domain', data.companyDomain || data.company_domain);
-  setVal('design-pattern', data.designPattern || 'standard');
+  setVal('design-pattern', data.designPattern || 'modern');
   setVal('order', data.order);
   setVal('company-address', data.companyAddress || data.location);
 
@@ -329,7 +329,7 @@ async function saveCompany() {
   const companyData = {
     company: getVal('company-name'),
     companyDomain: getVal('company-domain'),
-    designPattern: document.getElementById('design-pattern')?.value || 'standard',
+    designPattern: document.getElementById('design-pattern')?.value || 'modern',
     logoUrl: logoUrl,
     imageUrl: logoUrl, // 後方互換性のため
     order: getVal('order'),

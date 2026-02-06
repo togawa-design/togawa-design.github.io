@@ -49,7 +49,7 @@ export class LPRenderer {
    */
   render(company, jobs, lpSettings, contentEl) {
     // デザインパターンを適用
-    const pattern = lpSettings.designPattern || company.designPattern || 'standard';
+    const pattern = lpSettings.designPattern || company.designPattern || 'modern';
     const patternClass = `lp-pattern-${pattern}`;
     document.body.classList.add(patternClass);
 

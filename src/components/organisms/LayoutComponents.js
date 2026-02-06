@@ -19,7 +19,7 @@ export function renderSiteHeader(options = {}) {
     companyName = '',
     recruitPageUrl = '',
     showBackLink = false,
-    designPattern = 'standard'
+    designPattern = 'modern'
   } = options;
 
   // ロゴまたは会社名がない場合はヘッダーを表示しない
@@ -66,7 +66,7 @@ export function renderSiteHeader(options = {}) {
 export function renderSiteFooter(options = {}) {
   const {
     companyName = '',
-    designPattern = 'standard',
+    designPattern = 'modern',
     sns = {},
     customLinks = []
   } = options;
@@ -140,7 +140,7 @@ export function renderFixedCtaBar(options = {}) {
     phoneNumber = '',
     ctaButtonText = '今すぐ応募する',
     ctaUrl = '#apply',
-    designPattern = 'standard'
+    designPattern = 'modern'
   } = options;
 
   // 電話番号もCTAボタンもない場合は表示しない

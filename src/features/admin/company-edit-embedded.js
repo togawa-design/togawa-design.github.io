@@ -234,7 +234,7 @@ function populateForm(data) {
 
   setVal('ce-company-name', data.company);
   setVal('ce-company-domain', data.companyDomain || data.company_domain);
-  setVal('ce-design-pattern', data.designPattern || 'standard');
+  setVal('ce-design-pattern', data.designPattern || 'modern');
   setVal('ce-order', data.order);
   setVal('ce-company-address', data.companyAddress || data.location);
 
@@ -392,7 +392,7 @@ async function saveCompany() {
   const companyData = {
     company: getVal('ce-company-name'),
     companyDomain: getVal('ce-company-domain'),
-    designPattern: document.getElementById('ce-design-pattern')?.value || 'standard',
+    designPattern: document.getElementById('ce-design-pattern')?.value || 'modern',
     logoUrl: logoUrl,
     imageUrl: logoUrl,
     order: getVal('ce-order'),

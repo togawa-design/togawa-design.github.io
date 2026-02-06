@@ -279,7 +279,7 @@ class CompanyLPPage {
   async inheritCompanyRecruitSettings() {
     // LP固有の設定があるかチェック
     const hasCustomLayoutStyle = this.lpSettings?.layoutStyle && this.lpSettings.layoutStyle !== 'default';
-    const hasCustomDesignPattern = this.lpSettings?.designPattern && this.lpSettings.designPattern !== 'standard';
+    const hasCustomDesignPattern = this.lpSettings?.designPattern && this.lpSettings.designPattern !== 'modern';
 
     const companyDomain = this.company?.companyDomain;
     if (!companyDomain) {
@@ -513,7 +513,7 @@ class CompanyLPPage {
       pointTitle6: rowData.pointTitle6 || rowData['ポイント6タイトル'] || '',
       pointDesc6: rowData.pointDesc6 || rowData['ポイント6説明'] || '',
       faq: rowData.faq || rowData['FAQ'] || '',
-      designPattern: rowData.designPattern || rowData['デザインパターン'] || 'standard',
+      designPattern: rowData.designPattern || rowData['デザインパターン'] || 'modern',
       layoutStyle: rowData.layoutStyle || rowData['レイアウトスタイル'] || 'default',
       sectionOrder: rowData.sectionOrder || rowData['セクション順序'] || '',
       sectionVisibility: rowData.sectionVisibility || rowData['セクション表示'] || '',
@@ -595,7 +595,7 @@ class CompanyLPPage {
    */
   renderLayoutComponents(contentEl) {
     const rs = this.recruitSettings || {};
-    const designPattern = this.lpSettings?.designPattern || 'standard';
+    const designPattern = this.lpSettings?.designPattern || 'modern';
     const companyDomain = this.company?.companyDomain || '';
 
     // ロゴまたは会社名がある場合のみヘッダーを追加

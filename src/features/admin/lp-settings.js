@@ -1508,7 +1508,7 @@ export async function saveLPSettings() {
     companyDomain: jobData.companyDomain,
     company: jobData.company,
     jobTitle: jobData.title,
-    designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'standard',
+    designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'modern',
     layoutStyle: layoutStyle,
     heroTitle: document.getElementById('lp-hero-title')?.value || '',
     heroSubtitle: document.getElementById('lp-hero-subtitle')?.value || '',
@@ -1818,7 +1818,7 @@ function getCurrentLPSettings() {
   const v2Sections = lpContent?.sections || [];
 
   const settings = {
-    designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'standard',
+    designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'modern',
     layoutStyle: layoutStyle,
     heroTitle: document.getElementById('lp-hero-title')?.value || '',
     heroSubtitle: document.getElementById('lp-hero-subtitle')?.value || '',
@@ -1847,7 +1847,7 @@ function getCurrentLPSettings() {
 
 // プレビューHTML生成
 function generatePreviewHtml(company, lpSettings, jobData = null) {
-  const patternClass = `lp-pattern-${lpSettings.designPattern || 'standard'}`;
+  const patternClass = `lp-pattern-${lpSettings.designPattern || 'modern'}`;
   const layoutStyle = lpSettings.layoutStyle || 'default';
 
   // カスタムカラーを取得
