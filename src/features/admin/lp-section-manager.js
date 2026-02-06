@@ -249,8 +249,8 @@ export function renderSectionsList() {
  * 動画、カルーセル、ギャラリー等の追加コンテンツを表示
  */
 function renderCustomSectionsPanel() {
-  const panel = document.getElementById('custom-sections-panel');
-  const list = document.getElementById('custom-sections-list');
+  const panel = document.getElementById('lp-custom-sections-panel');
+  const list = document.getElementById('lp-custom-sections-list');
   if (!panel || !list) return;
 
   // カスタムセクションタイプ（コアセクション以外）
@@ -259,13 +259,11 @@ function renderCustomSectionsPanel() {
     .filter(s => !coreTypes.includes(s.type))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  // カスタムセクションがあれば表示
+  // パネルは常に表示（採用ページ設定と同じ）
   if (customSections.length > 0) {
-    panel.style.display = '';
     list.innerHTML = customSections.map(section => renderCustomSectionItem(section)).join('');
     setupCustomSectionsPanelEvents();
   } else {
-    panel.style.display = 'none';
     list.innerHTML = '';
   }
 }
@@ -348,7 +346,7 @@ function getCustomSectionMeta(section) {
  * カスタムセクションパネルのイベントを設定
  */
 function setupCustomSectionsPanelEvents() {
-  const list = document.getElementById('custom-sections-list');
+  const list = document.getElementById('lp-custom-sections-list');
   if (!list) return;
 
   // 既存のイベントを削除して再設定
@@ -664,52 +662,125 @@ function closeAddSectionModal() {
 }
 
 /**
- * カスタムセクションの説明マッピング
+ * LPカスタムセクションテンプレート定義（採用ページ設定と同じUI用）
  */
-const SECTION_DESCRIPTIONS = {
-  video: '動画（YouTube、Vimeo、TikTok）を埋め込んで、求人や会社の魅力を伝えることができます。',
-  carousel: '複数の画像をスライドショー形式で表示できます。職場の様子や仕事風景をアピールできます。',
-  gallery: '複数の画像をグリッド形式で表示できます。職場環境や仕事の様子を見せられます。',
-  testimonial: '社員の声やインタビューを掲載できます。実際に働いている人の声を届けられます。',
-  custom: '自由なテキストと画像でオリジナルのセクションを作成できます。',
-  heroCta: 'ファーストビュー内にCTAボタン（応募ボタン・動画ボタン）を追加できます。'
-};
+const LP_SECTION_TEMPLATES = [
+  {
+    id: 'video',
+    name: 'VIDEO',
+    label: '動画',
+    description: '動画（YouTube、Vimeo、TikTok）を埋め込んで、求人や会社の魅力を伝えることができます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="vidBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%23ef4444"/%3E%3Cstop offset="100%25" stop-color="%23dc2626"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23vidBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23000" opacity="0.3" x="15" y="15" width="90" height="50" rx="4"/%3E%3Ccircle fill="%23fff" opacity="0.9" cx="60" cy="40" r="15"/%3E%3Cpath fill="%23ef4444" d="M55 32 L55 48 L70 40 Z"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'carousel',
+    name: 'CAROUSEL',
+    label: '画像カルーセル',
+    description: '複数の画像をスライドショー形式で表示できます。職場の様子や仕事風景をアピールできます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="carBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%233b82f6"/%3E%3Cstop offset="100%25" stop-color="%232563eb"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23carBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.2" x="25" y="12" width="70" height="45" rx="4"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="45" cy="28" r="8"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M30 52 L50 32 L70 45 L90 35 L90 52 L30 52 Z"/%3E%3Crect fill="%23fff" opacity="0.4" x="8" y="20" width="12" height="30" rx="2"/%3E%3Crect fill="%23fff" opacity="0.4" x="100" y="20" width="12" height="30" rx="2"/%3E%3Cpath fill="%23fff" opacity="0.8" d="M12 32 L16 35 L12 38 Z"/%3E%3Cpath fill="%23fff" opacity="0.8" d="M108 32 L104 35 L108 38 Z"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="52" cy="65" r="3"/%3E%3Ccircle fill="%23fff" opacity="0.9" cx="60" cy="65" r="3"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="68" cy="65" r="3"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'gallery',
+    name: 'GALLERY',
+    label: '画像ギャラリー',
+    description: '複数の画像をグリッド形式で表示できます。職場環境や仕事の様子を見せられます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="galBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%23f59e0b"/%3E%3Cstop offset="100%25" stop-color="%23d97706"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23galBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.3" x="8" y="10" width="32" height="26" rx="3"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="18" cy="18" r="4"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M12 32 L22 22 L32 28 L36 24 L36 32 L12 32 Z"/%3E%3Crect fill="%23fff" opacity="0.3" x="44" y="10" width="32" height="26" rx="3"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="54" cy="18" r="4"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M48 32 L58 22 L68 28 L72 24 L72 32 L48 32 Z"/%3E%3Crect fill="%23fff" opacity="0.3" x="80" y="10" width="32" height="26" rx="3"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="90" cy="18" r="4"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M84 32 L94 22 L104 28 L108 24 L108 32 L84 32 Z"/%3E%3Crect fill="%23fff" opacity="0.3" x="8" y="42" width="32" height="26" rx="3"/%3E%3Crect fill="%23fff" opacity="0.3" x="44" y="42" width="32" height="26" rx="3"/%3E%3Crect fill="%23fff" opacity="0.3" x="80" y="42" width="32" height="26" rx="3"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'testimonial',
+    name: 'VOICE',
+    label: '社員の声',
+    description: '社員の声やインタビューを掲載できます。実際に働いている人の声を届けられます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="tstBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%2310b981"/%3E%3Cstop offset="100%25" stop-color="%23059669"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23tstBg)" width="120" height="80" rx="4"/%3E%3Ccircle fill="%23fff" opacity="0.3" cx="30" cy="32" r="16"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="30" cy="28" r="8"/%3E%3Cellipse fill="%23fff" opacity="0.4" cx="30" cy="42" rx="10" ry="6"/%3E%3Crect fill="%23fff" opacity="0.2" x="52" y="18" width="58" height="36" rx="4"/%3E%3Cpath fill="%23fff" opacity="0.3" d="M52 40 L46 48 L52 48 Z"/%3E%3Crect fill="%23fff" opacity="0.6" x="58" y="24" width="40" height="4" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="58" y="32" width="46" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="58" y="38" width="42" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="58" y="44" width="38" height="3" rx="1"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="30" cy="66" r="2"/%3E%3Ccircle fill="%23fff" opacity="0.9" cx="40" cy="66" r="2"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="50" cy="66" r="2"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'custom',
+    name: 'CUSTOM',
+    label: 'カスタムセクション',
+    description: '自由なテキストと画像でオリジナルのセクションを作成できます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="cstBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%238b5cf6"/%3E%3Cstop offset="100%25" stop-color="%237c3aed"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23cstBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.2" x="8" y="12" width="48" height="56" rx="4"/%3E%3Crect fill="%23fff" opacity="0.6" x="14" y="18" width="36" height="4" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="14" y="26" width="32" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="14" y="32" width="36" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="14" y="38" width="28" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.3" x="14" y="48" width="36" height="14" rx="2"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="22" cy="52" r="3"/%3E%3Cpath fill="%23fff" opacity="0.4" d="M18 58 L26 50 L34 54 L42 48 L46 58 L18 58 Z"/%3E%3Crect fill="%23fff" opacity="0.2" x="64" y="12" width="48" height="56" rx="4"/%3E%3Crect fill="%23fff" opacity="0.3" x="70" y="18" width="36" height="24" rx="2"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="80" cy="26" r="5"/%3E%3Cpath fill="%23fff" opacity="0.4" d="M74 38 L86 26 L98 32 L102 28 L102 38 L74 38 Z"/%3E%3Crect fill="%23fff" opacity="0.5" x="70" y="48" width="30" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="70" y="54" width="36" height="2" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="70" y="58" width="32" height="2" rx="1"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'heroCta',
+    name: 'CTA',
+    label: 'CTAボタン',
+    description: 'ファーストビュー内にCTAボタン（応募ボタン・動画ボタン）を追加できます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="ctaBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%23ec4899"/%3E%3Cstop offset="100%25" stop-color="%23db2777"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23ctaBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.95" x="20" y="28" width="80" height="24" rx="12"/%3E%3Crect fill="%23ec4899" x="28" y="36" width="64" height="8" rx="4"/%3E%3Cpath fill="%23fff" d="M84 40 L88 36 L88 44 Z"/%3E%3Crect fill="%23fff" opacity="0.4" x="35" y="60" width="50" height="6" rx="3"/%3E%3C/svg%3E'
+  }
+];
 
 /**
- * カスタムセクション追加モーダルを開く（共通モーダルコンポーネント使用）
+ * カスタムセクション追加モーダルを開く（採用ページ設定と同じUI）
  */
 function openAddCustomSectionModal() {
-  // カスタムセクションタイプのみ表示
-  const coreTypes = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
-  const customTypes = Object.entries(SECTION_TYPES)
-    .filter(([type]) => !coreTypes.includes(type));
+  // 既存のモーダルがあれば削除
+  const existingModal = document.getElementById('lp-template-selector-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
 
-  // モーダル用のアイテムを生成
-  const items = customTypes.map(([type, config]) => {
-    const isDisabled = !canAddSection(type, currentSections);
-    const description = SECTION_DESCRIPTIONS[type] || '';
-    return {
-      id: type,
-      name: config.name,
-      description: description,
-      icon: config.icon,
-      iconBgColor: '#4AA7C0',
-      disabled: isDisabled,
-      disabledText: '追加済み'
-    };
+  const modalHtml = `
+    <div id="lp-template-selector-modal" class="template-modal-overlay">
+      <div class="template-modal">
+        <div class="template-modal-header">
+          <h3>コンテンツを追加する</h3>
+          <button type="button" class="template-modal-close">&times;</button>
+        </div>
+        <div class="template-modal-body">
+          <p class="template-modal-description">追加するコンテンツを選択してください。</p>
+          <div class="template-list">
+            ${LP_SECTION_TEMPLATES.map(template => {
+              const isDisabled = !canAddSection(template.id, currentSections);
+              return `
+              <div class="template-item ${isDisabled ? 'disabled' : ''}" data-template-id="${template.id}">
+                <div class="template-thumbnail">
+                  <img src='${template.thumbnail}' alt="${escapeHtml(template.name)}">
+                </div>
+                <div class="template-info">
+                  <h4 class="template-name">${escapeHtml(template.name)}（${escapeHtml(template.label)}）</h4>
+                  <p class="template-description">${escapeHtml(template.description)}</p>
+                </div>
+                <button type="button" class="btn-add-template" data-template-id="${template.id}" ${isDisabled ? 'disabled' : ''}>${isDisabled ? '追加済み' : '追加する'}</button>
+              </div>
+            `;
+            }).join('')}
+          </div>
+        </div>
+        <div class="template-modal-footer">
+          <button type="button" class="btn-template-cancel">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('lp-template-selector-modal');
+
+  // 閉じるボタン
+  modal.querySelector('.template-modal-close').addEventListener('click', () => {
+    modal.remove();
   });
 
-  // 共通モーダルコンポーネントを使用
-  showSelectorModal({
-    id: 'lp-add-section-modal',
-    title: 'コンテンツを追加する',
-    description: '追加するコンテンツを選択してください。',
-    items: items,
-    buttonText: '追加する',
-    cancelText: 'キャンセル',
-    onSelect: (type) => {
-      addSection(type);
+  // キャンセルボタン
+  modal.querySelector('.btn-template-cancel').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // オーバーレイクリックで閉じる
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
     }
+  });
+
+  // テンプレート追加ボタン
+  modal.querySelectorAll('.btn-add-template:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const templateId = btn.dataset.templateId;
+      addSection(templateId);
+      modal.remove();
+    });
   });
 }
 
@@ -828,6 +899,23 @@ export function toggleSectionVisibility(sectionId) {
   if (!section) return;
 
   section.visible = !section.visible;
+  renderSectionsList();
+  triggerPreviewUpdate();
+}
+
+/**
+ * セクションタイプで表示状態を設定
+ * @param {string} type - セクションタイプ（'faq'など）
+ * @param {boolean} visible - 表示状態
+ */
+export function setSectionVisibleByType(type, visible) {
+  const section = currentSections.find(s => s.type === type);
+  if (!section) return;
+
+  // 既に同じ状態なら何もしない
+  if (section.visible === visible) return;
+
+  section.visible = visible;
   renderSectionsList();
   triggerPreviewUpdate();
 }
@@ -2036,6 +2124,7 @@ export default {
   duplicateSection,
   deleteSection,
   toggleSectionVisibility,
+  setSectionVisibleByType,
   openSectionEditor,
   closeSectionEditor,
   applyTemplate

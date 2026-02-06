@@ -124,6 +124,52 @@ const LAYOUT_STYLES = [
   }
 ];
 
+// セクション追加用テンプレート定義（LP設定と同じUI用）
+const LP_SECTION_TEMPLATES = [
+  {
+    id: 'video',
+    name: 'VIDEO',
+    label: '動画',
+    description: '動画（YouTube、Vimeo、TikTok）を埋め込んで、求人や会社の魅力を伝えることができます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="vidBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%23ef4444"/%3E%3Cstop offset="100%25" stop-color="%23dc2626"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23vidBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23000" opacity="0.3" x="15" y="15" width="90" height="50" rx="4"/%3E%3Ccircle fill="%23fff" opacity="0.9" cx="60" cy="40" r="15"/%3E%3Cpath fill="%23ef4444" d="M55 32 L55 48 L70 40 Z"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'carousel',
+    name: 'CAROUSEL',
+    label: '画像カルーセル',
+    description: '複数の画像をスライドショー形式で表示できます。職場の様子や仕事風景をアピールできます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="carBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%233b82f6"/%3E%3Cstop offset="100%25" stop-color="%232563eb"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23carBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.2" x="25" y="12" width="70" height="45" rx="4"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="45" cy="28" r="8"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M30 52 L50 32 L70 45 L90 35 L90 52 L30 52 Z"/%3E%3Crect fill="%23fff" opacity="0.4" x="8" y="20" width="12" height="30" rx="2"/%3E%3Crect fill="%23fff" opacity="0.4" x="100" y="20" width="12" height="30" rx="2"/%3E%3Cpath fill="%23fff" opacity="0.8" d="M12 32 L16 35 L12 38 Z"/%3E%3Cpath fill="%23fff" opacity="0.8" d="M108 32 L104 35 L108 38 Z"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="52" cy="65" r="3"/%3E%3Ccircle fill="%23fff" opacity="0.9" cx="60" cy="65" r="3"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="68" cy="65" r="3"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'gallery',
+    name: 'GALLERY',
+    label: '画像ギャラリー',
+    description: '複数の画像をグリッド形式で表示できます。職場環境や仕事の様子を見せられます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="galBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%23f59e0b"/%3E%3Cstop offset="100%25" stop-color="%23d97706"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23galBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.3" x="8" y="10" width="32" height="26" rx="3"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="18" cy="18" r="4"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M12 32 L22 22 L32 28 L36 24 L36 32 L12 32 Z"/%3E%3Crect fill="%23fff" opacity="0.3" x="44" y="10" width="32" height="26" rx="3"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="54" cy="18" r="4"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M48 32 L58 22 L68 28 L72 24 L72 32 L48 32 Z"/%3E%3Crect fill="%23fff" opacity="0.3" x="80" y="10" width="32" height="26" rx="3"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="90" cy="18" r="4"/%3E%3Cpath fill="%23fff" opacity="0.5" d="M84 32 L94 22 L104 28 L108 24 L108 32 L84 32 Z"/%3E%3Crect fill="%23fff" opacity="0.3" x="8" y="42" width="32" height="26" rx="3"/%3E%3Crect fill="%23fff" opacity="0.3" x="44" y="42" width="32" height="26" rx="3"/%3E%3Crect fill="%23fff" opacity="0.3" x="80" y="42" width="32" height="26" rx="3"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'testimonial',
+    name: 'VOICE',
+    label: '社員の声',
+    description: '社員の声やインタビューを掲載できます。実際に働いている人の声を届けられます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="tstBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%2310b981"/%3E%3Cstop offset="100%25" stop-color="%23059669"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23tstBg)" width="120" height="80" rx="4"/%3E%3Ccircle fill="%23fff" opacity="0.3" cx="30" cy="32" r="16"/%3E%3Ccircle fill="%23fff" opacity="0.6" cx="30" cy="28" r="8"/%3E%3Cellipse fill="%23fff" opacity="0.4" cx="30" cy="42" rx="10" ry="6"/%3E%3Crect fill="%23fff" opacity="0.2" x="52" y="18" width="58" height="36" rx="4"/%3E%3Cpath fill="%23fff" opacity="0.3" d="M52 40 L46 48 L52 48 Z"/%3E%3Crect fill="%23fff" opacity="0.6" x="58" y="24" width="40" height="4" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="58" y="32" width="46" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="58" y="38" width="42" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="58" y="44" width="38" height="3" rx="1"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="30" cy="66" r="2"/%3E%3Ccircle fill="%23fff" opacity="0.9" cx="40" cy="66" r="2"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="50" cy="66" r="2"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'custom',
+    name: 'CUSTOM',
+    label: 'カスタムセクション',
+    description: '自由なテキストと画像でオリジナルのセクションを作成できます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="cstBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%238b5cf6"/%3E%3Cstop offset="100%25" stop-color="%237c3aed"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23cstBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.2" x="8" y="12" width="48" height="56" rx="4"/%3E%3Crect fill="%23fff" opacity="0.6" x="14" y="18" width="36" height="4" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="14" y="26" width="32" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="14" y="32" width="36" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="14" y="38" width="28" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.3" x="14" y="48" width="36" height="14" rx="2"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="22" cy="52" r="3"/%3E%3Cpath fill="%23fff" opacity="0.4" d="M18 58 L26 50 L34 54 L42 48 L46 58 L18 58 Z"/%3E%3Crect fill="%23fff" opacity="0.2" x="64" y="12" width="48" height="56" rx="4"/%3E%3Crect fill="%23fff" opacity="0.3" x="70" y="18" width="36" height="24" rx="2"/%3E%3Ccircle fill="%23fff" opacity="0.5" cx="80" cy="26" r="5"/%3E%3Cpath fill="%23fff" opacity="0.4" d="M74 38 L86 26 L98 32 L102 28 L102 38 L74 38 Z"/%3E%3Crect fill="%23fff" opacity="0.5" x="70" y="48" width="30" height="3" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="70" y="54" width="36" height="2" rx="1"/%3E%3Crect fill="%23fff" opacity="0.4" x="70" y="58" width="32" height="2" rx="1"/%3E%3C/svg%3E'
+  },
+  {
+    id: 'heroCta',
+    name: 'CTA',
+    label: 'CTAボタン',
+    description: 'ファーストビュー内にCTAボタン（応募ボタン・動画ボタン）を追加できます。',
+    thumbnail: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80"%3E%3Cdefs%3E%3ClinearGradient id="ctaBg" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" stop-color="%23ec4899"/%3E%3Cstop offset="100%25" stop-color="%23db2777"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill="url(%23ctaBg)" width="120" height="80" rx="4"/%3E%3Crect fill="%23fff" opacity="0.95" x="20" y="28" width="80" height="24" rx="12"/%3E%3Crect fill="%23ec4899" x="28" y="36" width="64" height="8" rx="4"/%3E%3Cpath fill="%23fff" d="M84 40 L88 36 L88 44 Z"/%3E%3Crect fill="%23fff" opacity="0.4" x="35" y="60" width="50" height="6" rx="3"/%3E%3C/svg%3E'
+  }
+];
+
 // プリセット画像一覧
 const PRESET_IMAGES = [
   {
@@ -188,8 +234,11 @@ export class LPEditor {
     this.currentJobInfo = jobInfo;
     this.company = company;
     this.mainJob = mainJob;
-    this.currentDesignPattern = lpSettings.designPattern || 'modern';
-    this.currentLayoutStyle = lpSettings.layoutStyle || 'modern';
+
+    // layoutStyleとdesignPatternを同期（どちらかに値があれば使用）
+    const templateId = lpSettings.layoutStyle || lpSettings.designPattern || 'modern';
+    this.currentDesignPattern = templateId;
+    this.currentLayoutStyle = templateId;
 
     // URLからjobIdを取得
     const urlParams = new URLSearchParams(window.location.search);
@@ -299,6 +348,14 @@ export class LPEditor {
       <div class="lp-editor-header">
         <h2 class="lp-editor-title">LP編集</h2>
         <div class="lp-editor-actions">
+          <div class="preview-mode-toggle" id="lp-preview-mode-toggle">
+            <button type="button" class="btn-preview-mode active" data-mode="pc" title="PC表示">
+              🖥️
+            </button>
+            <button type="button" class="btn-preview-mode" data-mode="mobile" title="モバイル表示">
+              📱
+            </button>
+          </div>
           <button type="button" class="btn-preview-lp" id="btn-preview-lp" title="プレビュー">
             <span>👁</span>
           </button>
@@ -312,22 +369,80 @@ export class LPEditor {
         <!-- タブナビゲーション -->
         <div class="lp-editor-tabs">
           <button type="button" class="lp-editor-tab active" data-tab="design">デザイン</button>
+          <button type="button" class="lp-editor-tab" data-tab="content">コンテンツ</button>
           <button type="button" class="lp-editor-tab" data-tab="sections">セクション</button>
         </div>
 
         <!-- デザインタブ -->
         <div class="lp-editor-tab-content active" data-tab-content="design">
           <div class="editor-section">
-            <h3 class="editor-section-title">レイアウトスタイル</h3>
+            <h3 class="editor-section-title">テンプレート</h3>
+            <p class="editor-section-desc">業種やイメージに合わせて最適なデザインを選べます</p>
             <div class="layout-style-grid" id="lp-layout-selector">
               ${this.renderLayoutStyleOptions()}
             </div>
           </div>
+        </div>
 
+        <!-- コンテンツタブ -->
+        <div class="lp-editor-tab-content" data-tab-content="content">
+          <!-- ファーストビュー設定 -->
           <div class="editor-section">
-            <h3 class="editor-section-title">カラーテーマ</h3>
-            <div class="design-pattern-grid" id="lp-design-selector">
-              ${this.renderDesignPatternOptions()}
+            <h3 class="editor-section-title">ファーストビュー</h3>
+            <div class="editor-form-group">
+              <label for="lp-edit-hero-title">タイトル</label>
+              <input type="text" id="lp-edit-hero-title" placeholder="例: 月収32万円以上可！" value="${this.escapeAttr(this.lpSettings?.heroTitle || '')}">
+            </div>
+            <div class="editor-form-group">
+              <label for="lp-edit-hero-subtitle">サブタイトル</label>
+              <input type="text" id="lp-edit-hero-subtitle" placeholder="例: 未経験歓迎・寮完備" value="${this.escapeAttr(this.lpSettings?.heroSubtitle || '')}">
+            </div>
+            <div class="editor-form-group">
+              <label for="lp-edit-hero-image">背景画像URL</label>
+              <input type="text" id="lp-edit-hero-image" placeholder="https://..." value="${this.escapeAttr(this.lpSettings?.heroImage || '')}">
+            </div>
+          </div>
+
+          <!-- CTA設定 -->
+          <div class="editor-section">
+            <h3 class="editor-section-title">CTAボタン</h3>
+            <div class="editor-form-group">
+              <label for="lp-edit-cta-text">ボタンテキスト</label>
+              <input type="text" id="lp-edit-cta-text" placeholder="今すぐ応募する" value="${this.escapeAttr(this.lpSettings?.ctaText || '今すぐ応募する')}">
+            </div>
+          </div>
+
+          <!-- ポイント編集 -->
+          <div class="editor-section">
+            <div class="editor-section-header">
+              <h3 class="editor-section-title">ポイント（特徴）</h3>
+              <span class="editor-section-hint">最大6つまで</span>
+            </div>
+            <div class="sidebar-items-list" id="sidebar-points-list">
+              ${this.renderSidebarPoints()}
+            </div>
+          </div>
+
+          <!-- FAQ編集 -->
+          <div class="editor-section">
+            <div class="editor-section-header">
+              <h3 class="editor-section-title">FAQ（よくある質問）</h3>
+              <button type="button" class="editor-add-btn" id="sidebar-add-faq">+</button>
+            </div>
+            <div class="sidebar-items-list" id="sidebar-faq-list">
+              ${this.renderSidebarFAQ()}
+            </div>
+          </div>
+
+          <!-- カスタムセクション編集 -->
+          <div class="editor-section">
+            <h3 class="editor-section-title">カスタムセクション</h3>
+            <p class="section-description">ページに独自のセクションを追加できます</p>
+            <div class="custom-sections-list" id="sidebar-custom-list">
+              ${this.renderSidebarCustomSections()}
+            </div>
+            <div class="add-section-buttons">
+              <button type="button" class="btn-open-template-selector" id="sidebar-add-custom">+ コンテンツを追加</button>
             </div>
           </div>
         </div>
@@ -371,6 +486,14 @@ export class LPEditor {
       this.previewChanges();
     });
 
+    // プレビューモード切り替え
+    panel.querySelectorAll('.btn-preview-mode').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        this.setPreviewMode(mode);
+      });
+    });
+
     // セクション追加ボタン
     panel.querySelector('#lp-btn-add-section').addEventListener('click', () => {
       this.openAddSectionPanel();
@@ -379,14 +502,15 @@ export class LPEditor {
     // 保存ボタン
     panel.querySelector('#lp-sidebar-save').addEventListener('click', () => this.saveChanges());
 
-    // レイアウトスタイル選択イベント
+    // テンプレート選択イベント
     this.setupLayoutStyleEvents();
 
-    // デザインパターン選択イベント
-    this.setupDesignPatternEvents();
+    // コンテンツ入力イベント
+    this.setupContentInputEvents(panel);
 
-    // 初期レイアウトスタイルを適用
+    // 初期テンプレートを適用
     this.applyLayoutStyle(this.currentLayoutStyle);
+    this.applyDesignPattern(this.currentDesignPattern);
 
     // bodyに編集モードクラスを追加
     document.body.classList.add('lp-edit-mode');
@@ -421,23 +545,1029 @@ export class LPEditor {
   }
 
   /**
+   * プレビューモード切り替え（PC/モバイル）
+   */
+  setPreviewMode(mode) {
+    // ボタンのアクティブ状態を更新
+    document.querySelectorAll('#lp-preview-mode-toggle .btn-preview-mode').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // bodyにクラスを設定
+    if (mode === 'mobile') {
+      document.body.classList.add('lp-preview-mode-mobile');
+      document.body.classList.remove('lp-preview-mode-pc');
+    } else {
+      document.body.classList.add('lp-preview-mode-pc');
+      document.body.classList.remove('lp-preview-mode-mobile');
+    }
+  }
+
+  /**
+   * HTMLエスケープ（属性値用）
+   */
+  escapeAttr(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  /**
+   * コンテンツ入力イベントをセットアップ
+   */
+  setupContentInputEvents(panel) {
+    // ファーストビュー設定
+    const heroTitleInput = panel.querySelector('#lp-edit-hero-title');
+    const heroSubtitleInput = panel.querySelector('#lp-edit-hero-subtitle');
+    const heroImageInput = panel.querySelector('#lp-edit-hero-image');
+    const ctaTextInput = panel.querySelector('#lp-edit-cta-text');
+
+    // 入力時にリアルタイムプレビュー更新
+    if (heroTitleInput) {
+      heroTitleInput.addEventListener('input', (e) => {
+        this.editedData.heroTitle = e.target.value;
+        this.updateHeroPreview();
+      });
+    }
+
+    if (heroSubtitleInput) {
+      heroSubtitleInput.addEventListener('input', (e) => {
+        this.editedData.heroSubtitle = e.target.value;
+        this.updateHeroPreview();
+      });
+    }
+
+    if (heroImageInput) {
+      heroImageInput.addEventListener('input', (e) => {
+        this.editedData.heroImage = e.target.value;
+        this.updateHeroPreview();
+      });
+    }
+
+    if (ctaTextInput) {
+      ctaTextInput.addEventListener('input', (e) => {
+        this.editedData.ctaText = e.target.value;
+        this.updateCtaPreview();
+      });
+    }
+
+    // サイドバーのポイント・FAQ・カスタムセクション編集イベントをセットアップ
+    this.setupSidebarPointsEvents(panel);
+    this.setupSidebarFAQEvents(panel);
+    this.setupSidebarCustomEvents(panel);
+  }
+
+  /**
+   * サイドバーのポイント編集イベントをセットアップ
+   */
+  setupSidebarPointsEvents(panel) {
+    const pointsList = panel.querySelector('#sidebar-points-list');
+    if (!pointsList) return;
+
+    // アコーディオン開閉
+    pointsList.querySelectorAll('.sidebar-item-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const idx = header.dataset.toggle.replace('point-', '');
+        const body = document.getElementById(`sidebar-point-body-${idx}`);
+        const toggle = header.querySelector('.sidebar-item-toggle');
+        if (body) {
+          const isOpen = body.style.display !== 'none';
+          body.style.display = isOpen ? 'none' : 'block';
+          toggle.textContent = isOpen ? '▼' : '▲';
+          header.closest('.sidebar-item').classList.toggle('open', !isOpen);
+        }
+      });
+    });
+
+    // タイトル入力
+    pointsList.querySelectorAll('.sidebar-point-title').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = e.target.dataset.idx;
+        this.editedData[`pointTitle${idx}`] = e.target.value;
+        this.updateSidebarPointHeader(idx);
+        this.updatePointsPreview();
+      });
+    });
+
+    // 説明入力
+    pointsList.querySelectorAll('.sidebar-point-desc').forEach(textarea => {
+      textarea.addEventListener('input', (e) => {
+        const idx = e.target.dataset.idx;
+        this.editedData[`pointDesc${idx}`] = e.target.value;
+        this.updatePointsPreview();
+      });
+    });
+
+    // クリアボタン
+    pointsList.querySelectorAll('.sidebar-item-clear').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = e.target.dataset.idx;
+        const item = pointsList.querySelector(`.sidebar-item[data-point-idx="${idx}"]`);
+        if (item) {
+          item.querySelector('.sidebar-point-title').value = '';
+          item.querySelector('.sidebar-point-desc').value = '';
+          this.editedData[`pointTitle${idx}`] = '';
+          this.editedData[`pointDesc${idx}`] = '';
+          this.updateSidebarPointHeader(idx);
+          this.updatePointsPreview();
+        }
+      });
+    });
+  }
+
+  /**
+   * ポイントヘッダーの表示を更新
+   */
+  updateSidebarPointHeader(idx) {
+    const item = document.querySelector(`.sidebar-item[data-point-idx="${idx}"]`);
+    if (!item) return;
+
+    const title = this.editedData[`pointTitle${idx}`] ?? this.lpSettings?.[`pointTitle${idx}`] ?? '';
+    const desc = this.editedData[`pointDesc${idx}`] ?? this.lpSettings?.[`pointDesc${idx}`] ?? '';
+    const hasContent = title || desc;
+
+    const titleSpan = item.querySelector('.sidebar-item-title');
+    if (titleSpan) {
+      titleSpan.textContent = hasContent ? (title || '（タイトル未設定）') : '未設定';
+    }
+
+    item.classList.toggle('has-content', hasContent);
+    item.classList.toggle('empty', !hasContent);
+  }
+
+  /**
+   * サイドバーのFAQ編集イベントをセットアップ
+   */
+  setupSidebarFAQEvents(panel) {
+    const faqList = panel.querySelector('#sidebar-faq-list');
+    const addFaqBtn = panel.querySelector('#sidebar-add-faq');
+    if (!faqList) return;
+
+    // FAQ追加ボタン
+    if (addFaqBtn) {
+      addFaqBtn.addEventListener('click', () => this.addSidebarFAQ());
+    }
+
+    this.bindSidebarFAQItemEvents(faqList);
+  }
+
+  /**
+   * サイドバーのカスタムセクション編集イベントをセットアップ
+   */
+  setupSidebarCustomEvents(panel) {
+    const customList = panel.querySelector('#sidebar-custom-list');
+    const addCustomBtn = panel.querySelector('#sidebar-add-custom');
+    if (!customList) return;
+
+    // カスタムセクション追加ボタン（モーダルを開く）
+    if (addCustomBtn) {
+      addCustomBtn.addEventListener('click', () => this.openContentSelectorModal());
+    }
+
+    this.bindSidebarCustomItemEvents(customList);
+  }
+
+  /**
+   * カスタムセクションアイテムのイベントをバインド（採用ページ形式）
+   */
+  bindSidebarCustomItemEvents(customList) {
+    // セクションタイトル入力（video, carousel, gallery, testimonial用）
+    customList.querySelectorAll('.sidebar-section-title').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const sectionId = e.target.dataset.id;
+        this.updateCustomSectionData(sectionId, 'sectionTitle', e.target.value);
+        this.updateSectionTitlePreview(sectionId);
+      });
+    });
+
+    // URL入力（video用）
+    customList.querySelectorAll('.sidebar-section-url').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const sectionId = e.target.dataset.id;
+        this.updateCustomSectionData(sectionId, 'videoUrl', e.target.value);
+        this.updateVideoPreview(sectionId);
+      });
+    });
+
+    // カスタムセクションのタイトル入力
+    customList.querySelectorAll('.sidebar-custom-title').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const sectionId = e.target.dataset.id;
+        this.updateCustomSectionData(sectionId, 'title', e.target.value);
+        this.updateCustomSectionPreview(sectionId);
+      });
+    });
+
+    // 本文入力
+    customList.querySelectorAll('.sidebar-custom-content').forEach(textarea => {
+      textarea.addEventListener('input', (e) => {
+        const sectionId = e.target.dataset.id;
+        this.updateCustomSectionData(sectionId, 'content', e.target.value);
+        this.updateCustomSectionPreview(sectionId);
+      });
+    });
+
+    // 画像URL入力
+    customList.querySelectorAll('.sidebar-custom-image').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const sectionId = e.target.dataset.id;
+        this.updateCustomSectionData(sectionId, 'image', e.target.value);
+        this.updateCustomSectionPreview(sectionId);
+        // 画像プレビューを更新
+        this.updateCustomImagePreview(e.target);
+      });
+    });
+
+    // 移動ボタン
+    customList.querySelectorAll('.btn-move-section').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const sectionId = btn.dataset.id;
+        const direction = btn.dataset.direction;
+        this.moveCustomSection(sectionId, direction);
+      });
+    });
+
+    // 削除ボタン
+    customList.querySelectorAll('.btn-remove-section').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const sectionId = btn.dataset.id;
+        this.deleteSidebarCustomSection(sectionId);
+      });
+    });
+  }
+
+  /**
+   * セクションタイトルのプレビューを更新
+   */
+  updateSectionTitlePreview(sectionId) {
+    const section = this.sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const sectionEl = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (!sectionEl) return;
+
+    const titleEl = sectionEl.querySelector('.lp-section-title');
+    if (titleEl) {
+      titleEl.textContent = section.data?.sectionTitle || '';
+    }
+  }
+
+  /**
+   * 動画プレビューを更新
+   */
+  updateVideoPreview(sectionId) {
+    const section = this.sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const sectionEl = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (!sectionEl) return;
+
+    const videoUrl = section.data?.videoUrl;
+    const placeholder = sectionEl.querySelector('.lp-video-placeholder');
+    const videoContainer = sectionEl.querySelector('.lp-video-container');
+
+    if (videoUrl) {
+      // URL入力があればプレースホルダーを更新
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div class="lp-video-placeholder-icon">🎬</div>
+          <p>動画URL設定済み</p>
+          <p class="lp-placeholder-hint">保存後に動画が表示されます</p>
+        `;
+      }
+    }
+  }
+
+  /**
+   * 画像プレビューを更新
+   */
+  updateCustomImagePreview(input) {
+    const fieldContainer = input.closest('.section-field');
+    if (!fieldContainer) return;
+
+    let preview = fieldContainer.querySelector('.section-image-preview');
+    const url = input.value.trim();
+
+    if (url) {
+      if (!preview) {
+        preview = document.createElement('img');
+        preview.className = 'section-image-preview';
+        preview.alt = '';
+        input.insertAdjacentElement('beforebegin', preview);
+      }
+      preview.src = url;
+    } else if (preview) {
+      preview.remove();
+    }
+  }
+
+  /**
+   * カスタムセクションを移動
+   */
+  moveCustomSection(sectionId, direction) {
+    const customTypes = ['video', 'carousel', 'gallery', 'testimonial', 'custom'];
+    const customSections = this.sections.filter(s => customTypes.includes(s.type));
+    const currentIdx = customSections.findIndex(s => s.id === sectionId);
+
+    if (currentIdx === -1) return;
+
+    const newIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
+    if (newIdx < 0 || newIdx >= customSections.length) return;
+
+    // sections配列内の実際のインデックスを取得
+    const section = customSections[currentIdx];
+    const swapSection = customSections[newIdx];
+
+    const sectionIndex = this.sections.indexOf(section);
+    const swapIndex = this.sections.indexOf(swapSection);
+
+    // 配列内で入れ替え
+    [this.sections[sectionIndex], this.sections[swapIndex]] = [this.sections[swapIndex], this.sections[sectionIndex]];
+
+    // DOM上でも入れ替え
+    const sectionEl = document.querySelector(`[data-section-id="${sectionId}"]`);
+    const swapEl = document.querySelector(`[data-section-id="${swapSection.id}"]`);
+
+    if (sectionEl && swapEl) {
+      if (direction === 'up') {
+        swapEl.insertAdjacentElement('beforebegin', sectionEl);
+      } else {
+        swapEl.insertAdjacentElement('afterend', sectionEl);
+      }
+    }
+
+    // サイドバーを更新
+    this.refreshSidebarCustomList();
+    this.updateSidebarList();
+  }
+
+  /**
+   * カスタムセクションのデータを更新
+   */
+  updateCustomSectionData(sectionId, field, value) {
+    const section = this.sections.find(s => s.id === sectionId);
+    if (section) {
+      if (!section.data) section.data = {};
+      section.data[field] = value;
+    }
+  }
+
+  /**
+   * コンテンツ追加モーダルを開く（コンテンツタブ用）
+   */
+  openContentSelectorModal() {
+    // 既存のモーダルを閉じる
+    const existingModal = document.getElementById('lp-content-selector-modal');
+    if (existingModal) existingModal.remove();
+
+    const modalHtml = `
+      <div id="lp-content-selector-modal" class="template-modal-overlay">
+        <div class="template-modal">
+          <div class="template-modal-header">
+            <h3>コンテンツを追加する</h3>
+            <button type="button" class="template-modal-close">&times;</button>
+          </div>
+          <div class="template-modal-body">
+            <p class="template-modal-description">追加するコンテンツを選択してください。</p>
+            <div class="template-list">
+              ${LP_SECTION_TEMPLATES.map(template => {
+                const isDisabled = !canAddSection(template.id, this.sections);
+                return `
+                <div class="template-item ${isDisabled ? 'disabled' : ''}" data-template-id="${template.id}">
+                  <div class="template-thumbnail">
+                    <img src='${template.thumbnail}' alt="${escapeHtml(template.name)}">
+                  </div>
+                  <div class="template-info">
+                    <h4 class="template-name">${escapeHtml(template.name)}（${escapeHtml(template.label)}）</h4>
+                    <p class="template-description">${escapeHtml(template.description)}</p>
+                  </div>
+                  <button type="button" class="btn-add-template" data-template-id="${template.id}" ${isDisabled ? 'disabled' : ''}>${isDisabled ? '追加済み' : '追加する'}</button>
+                </div>
+              `;
+              }).join('')}
+            </div>
+          </div>
+          <div class="template-modal-footer">
+            <button type="button" class="btn-template-cancel">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal = document.getElementById('lp-content-selector-modal');
+
+    // 閉じるボタン
+    modal.querySelector('.template-modal-close').addEventListener('click', () => {
+      modal.remove();
+    });
+
+    // キャンセルボタン
+    modal.querySelector('.btn-template-cancel').addEventListener('click', () => {
+      modal.remove();
+    });
+
+    // オーバーレイクリックで閉じる
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    // テンプレート追加ボタン
+    modal.querySelectorAll('.btn-add-template:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const templateId = btn.dataset.templateId;
+        this.addNewSection(templateId);
+        this.refreshSidebarCustomList();
+        modal.remove();
+      });
+    });
+  }
+
+  /**
+   * カスタムセクションをサイドバーから追加（直接追加用）
+   */
+  addSidebarCustomSection() {
+    // 新しいセクションをページに追加
+    this.addNewSection('custom');
+
+    // サイドバーのカスタムセクションリストを再レンダリング
+    this.refreshSidebarCustomList();
+  }
+
+  /**
+   * カスタムセクションをサイドバーから削除
+   */
+  deleteSidebarCustomSection(sectionId) {
+    // セクションを削除
+    const sectionIndex = this.sections.findIndex(s => s.id === sectionId);
+    if (sectionIndex === -1) return;
+
+    this.sections.splice(sectionIndex, 1);
+
+    // DOMからセクションを削除
+    const sectionEl = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (sectionEl) sectionEl.remove();
+
+    // サイドバーを更新
+    this.refreshSidebarCustomList();
+
+    // セクション一覧も更新
+    this.updateSidebarList();
+  }
+
+  /**
+   * サイドバーのカスタムセクションリストを更新
+   */
+  refreshSidebarCustomList() {
+    const customList = document.getElementById('sidebar-custom-list');
+    if (!customList) return;
+
+    customList.innerHTML = this.renderSidebarCustomSections();
+    this.bindSidebarCustomItemEvents(customList);
+  }
+
+  /**
+   * カスタムセクションのプレビューを更新
+   */
+  updateCustomSectionPreview(sectionId) {
+    const section = this.sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    const sectionEl = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (!sectionEl) return;
+
+    const title = section.data?.title || '';
+    const content = section.data?.content || '';
+    const image = section.data?.image || '';
+    const hasContent = title || content || image;
+
+    const innerEl = sectionEl.querySelector('.lp-section-inner');
+    if (!innerEl) return;
+
+    // プレースホルダーを削除
+    const placeholder = sectionEl.querySelector('.lp-custom-placeholder');
+    if (hasContent && placeholder) {
+      placeholder.remove();
+    }
+
+    // タイトルを更新/追加
+    let titleEl = sectionEl.querySelector('.lp-custom-title');
+    if (title) {
+      if (!titleEl) {
+        titleEl = document.createElement('h2');
+        titleEl.className = 'lp-section-title lp-custom-title';
+        innerEl.insertBefore(titleEl, innerEl.firstChild);
+      }
+      titleEl.textContent = title;
+    } else if (titleEl) {
+      titleEl.remove();
+    }
+
+    // 画像を更新/追加
+    let imageContainer = sectionEl.querySelector('.lp-custom-image');
+    if (image) {
+      if (!imageContainer) {
+        imageContainer = document.createElement('div');
+        imageContainer.className = 'lp-custom-image';
+        imageContainer.innerHTML = `<img src="${this.escapeHtml(image)}" alt="">`;
+        const titleEl = innerEl.querySelector('.lp-custom-title');
+        if (titleEl) {
+          titleEl.insertAdjacentElement('afterend', imageContainer);
+        } else {
+          innerEl.insertBefore(imageContainer, innerEl.firstChild);
+        }
+      } else {
+        const img = imageContainer.querySelector('img');
+        if (img) img.src = image;
+      }
+    } else if (imageContainer) {
+      imageContainer.remove();
+    }
+
+    // 本文を更新/追加
+    let textEl = sectionEl.querySelector('.lp-custom-text');
+    if (content) {
+      if (!textEl) {
+        textEl = document.createElement('div');
+        textEl.className = 'lp-custom-text';
+        innerEl.appendChild(textEl);
+      }
+      textEl.innerHTML = content.replace(/\n/g, '<br>');
+    } else if (textEl) {
+      textEl.remove();
+    }
+
+    // プレースホルダーが必要な場合は追加
+    if (!hasContent && !sectionEl.querySelector('.lp-custom-placeholder')) {
+      innerEl.innerHTML += `
+        <div class="lp-custom-placeholder">
+          <div class="lp-custom-placeholder-icon">🎨</div>
+          <p>カスタムセクション</p>
+          <p class="lp-placeholder-hint">サイドバーから内容を編集できます</p>
+        </div>
+      `;
+    }
+
+    // emptyクラスを更新
+    sectionEl.classList.toggle('lp-custom-empty', !hasContent);
+  }
+
+  /**
+   * FAQアイテムのイベントをバインド
+   */
+  bindSidebarFAQItemEvents(faqList) {
+    // アコーディオン開閉
+    faqList.querySelectorAll('.sidebar-item-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const idx = header.dataset.toggle.replace('faq-', '');
+        const body = document.getElementById(`sidebar-faq-body-${idx}`);
+        const toggle = header.querySelector('.sidebar-item-toggle');
+        if (body) {
+          const isOpen = body.style.display !== 'none';
+          body.style.display = isOpen ? 'none' : 'block';
+          toggle.textContent = isOpen ? '▼' : '▲';
+          header.closest('.sidebar-item').classList.toggle('open', !isOpen);
+        }
+      });
+    });
+
+    // 質問入力
+    faqList.querySelectorAll('.sidebar-faq-question').forEach(input => {
+      input.addEventListener('input', (e) => {
+        this.updateSidebarFAQData();
+        this.updateSidebarFAQHeader(e.target.dataset.idx);
+        this.updateFAQPreview();
+      });
+    });
+
+    // 回答入力
+    faqList.querySelectorAll('.sidebar-faq-answer').forEach(textarea => {
+      textarea.addEventListener('input', (e) => {
+        this.updateSidebarFAQData();
+        this.updateFAQPreview();
+      });
+    });
+
+    // 削除ボタン
+    faqList.querySelectorAll('.sidebar-item-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.idx);
+        this.deleteSidebarFAQ(idx);
+      });
+    });
+  }
+
+  /**
+   * FAQヘッダーの表示を更新
+   */
+  updateSidebarFAQHeader(idx) {
+    const item = document.querySelector(`.sidebar-item[data-faq-idx="${idx}"]`);
+    if (!item) return;
+
+    const question = item.querySelector('.sidebar-faq-question').value;
+    const answer = item.querySelector('.sidebar-faq-answer').value;
+    const hasContent = question || answer;
+
+    const titleSpan = item.querySelector('.sidebar-item-title');
+    if (titleSpan) {
+      const displayText = question.substring(0, 20) + (question.length > 20 ? '...' : '');
+      titleSpan.textContent = hasContent ? (displayText || '（質問未設定）') : '未設定';
+    }
+
+    item.classList.toggle('has-content', hasContent);
+    item.classList.toggle('empty', !hasContent);
+  }
+
+  /**
+   * サイドバーからFAQデータを収集
+   */
+  updateSidebarFAQData() {
+    const faqList = document.getElementById('sidebar-faq-list');
+    if (!faqList) return;
+
+    const faqs = [];
+    faqList.querySelectorAll('.sidebar-item').forEach(item => {
+      const question = item.querySelector('.sidebar-faq-question').value.trim();
+      const answer = item.querySelector('.sidebar-faq-answer').value.trim();
+      if (question || answer) {
+        faqs.push({ question, answer });
+      }
+    });
+
+    // FAQ文字列形式に変換
+    this.editedData.faq = faqs.map(f => `Q:${f.question}|A:${f.answer}`).join('||');
+  }
+
+  /**
+   * FAQを追加
+   */
+  addSidebarFAQ() {
+    const faqList = document.getElementById('sidebar-faq-list');
+    if (!faqList) return;
+
+    const currentCount = faqList.querySelectorAll('.sidebar-item').length;
+    const newIdx = currentCount;
+
+    const newItem = document.createElement('div');
+    newItem.className = 'sidebar-item empty';
+    newItem.dataset.faqIdx = newIdx;
+    newItem.innerHTML = `
+      <div class="sidebar-item-header" data-toggle="faq-${newIdx}">
+        <span class="sidebar-item-number">Q${newIdx + 1}</span>
+        <span class="sidebar-item-title">未設定</span>
+        <span class="sidebar-item-toggle">▲</span>
+      </div>
+      <div class="sidebar-item-body" id="sidebar-faq-body-${newIdx}" style="display: block;">
+        <div class="sidebar-item-field">
+          <label>質問</label>
+          <input type="text" class="sidebar-faq-question" data-idx="${newIdx}" value="" placeholder="例: 未経験でも大丈夫ですか？">
+        </div>
+        <div class="sidebar-item-field">
+          <label>回答</label>
+          <textarea class="sidebar-faq-answer" data-idx="${newIdx}" rows="3" placeholder="例: はい、未経験の方も大歓迎です。"></textarea>
+        </div>
+        <button type="button" class="sidebar-item-delete" data-idx="${newIdx}">削除</button>
+      </div>
+    `;
+
+    faqList.appendChild(newItem);
+    newItem.classList.add('open');
+
+    // イベントを再バインド
+    this.bindSidebarFAQItemEvents(faqList);
+
+    // 追加した項目の質問欄にフォーカス
+    newItem.querySelector('.sidebar-faq-question').focus();
+  }
+
+  /**
+   * FAQを削除
+   */
+  deleteSidebarFAQ(idx) {
+    const faqList = document.getElementById('sidebar-faq-list');
+    if (!faqList) return;
+
+    const item = faqList.querySelector(`.sidebar-item[data-faq-idx="${idx}"]`);
+    if (item) {
+      item.remove();
+      this.reindexSidebarFAQ();
+      this.updateSidebarFAQData();
+      this.updateFAQPreview();
+    }
+  }
+
+  /**
+   * FAQのインデックスを再採番
+   */
+  reindexSidebarFAQ() {
+    const faqList = document.getElementById('sidebar-faq-list');
+    if (!faqList) return;
+
+    faqList.querySelectorAll('.sidebar-item').forEach((item, newIdx) => {
+      item.dataset.faqIdx = newIdx;
+      item.querySelector('.sidebar-item-number').textContent = `Q${newIdx + 1}`;
+      item.querySelector('.sidebar-item-header').dataset.toggle = `faq-${newIdx}`;
+      item.querySelector('.sidebar-item-body').id = `sidebar-faq-body-${newIdx}`;
+      item.querySelectorAll('[data-idx]').forEach(el => el.dataset.idx = newIdx);
+    });
+  }
+
+  /**
+   * ポイントセクションのプレビュー更新
+   */
+  updatePointsPreview() {
+    const pointsSection = document.querySelector('.lp-points');
+    if (!pointsSection) return;
+
+    for (let i = 1; i <= 6; i++) {
+      const title = this.editedData[`pointTitle${i}`] ?? this.lpSettings?.[`pointTitle${i}`] ?? '';
+      const desc = this.editedData[`pointDesc${i}`] ?? this.lpSettings?.[`pointDesc${i}`] ?? '';
+      const pointCard = pointsSection.querySelector(`.lp-point-card:nth-child(${i})`);
+
+      if (pointCard) {
+        const titleEl = pointCard.querySelector('.lp-point-title');
+        const descEl = pointCard.querySelector('.lp-point-desc');
+        if (titleEl) titleEl.textContent = title;
+        if (descEl) descEl.textContent = desc;
+
+        // 空のポイントは非表示
+        pointCard.style.display = (title || desc) ? '' : 'none';
+      }
+    }
+  }
+
+  /**
+   * FAQセクションのプレビュー更新
+   */
+  updateFAQPreview() {
+    const faqSection = document.querySelector('.lp-faq');
+    if (!faqSection) return;
+
+    const faqString = this.editedData.faq ?? this.lpSettings?.faq ?? '';
+    const faqs = this.parseFAQString(faqString);
+
+    const container = faqSection.querySelector('.lp-faq-chat-container');
+    if (container) {
+      container.innerHTML = faqs.map((faq, idx) => `
+        <div class="lp-faq-chat-pair">
+          <div class="lp-faq-chat-row lp-faq-chat-question">
+            <div class="lp-faq-chat-avatar lp-faq-chat-avatar-support">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+            </div>
+            <div class="lp-faq-chat-bubble lp-faq-chat-bubble-support">
+              <span class="lp-faq-chat-text">${escapeHtml(faq.question)}</span>
+            </div>
+          </div>
+          <div class="lp-faq-chat-row lp-faq-chat-answer">
+            <div class="lp-faq-chat-bubble lp-faq-chat-bubble-user">
+              <span class="lp-faq-chat-text">${escapeHtml(faq.answer)}</span>
+            </div>
+            <div class="lp-faq-chat-avatar lp-faq-chat-avatar-user">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  /**
+   * ヒーローセクションのプレビュー更新
+   */
+  updateHeroPreview() {
+    const heroTitle = document.querySelector('.lp-hero-title');
+    const heroSubtitle = document.querySelector('.lp-hero-subtitle');
+    const heroBg = document.querySelector('.lp-hero-bg');
+
+    if (heroTitle && this.editedData.heroTitle !== undefined) {
+      heroTitle.textContent = this.editedData.heroTitle || this.lpSettings?.heroTitle || '';
+    }
+
+    if (heroSubtitle && this.editedData.heroSubtitle !== undefined) {
+      heroSubtitle.textContent = this.editedData.heroSubtitle || this.lpSettings?.heroSubtitle || '';
+    }
+
+    if (heroBg && this.editedData.heroImage !== undefined) {
+      const imageUrl = this.editedData.heroImage || this.lpSettings?.heroImage;
+      if (imageUrl) {
+        heroBg.style.backgroundImage = `url('${imageUrl}')`;
+      }
+    }
+  }
+
+  /**
+   * CTAボタンのプレビュー更新
+   */
+  updateCtaPreview() {
+    const ctaButtons = document.querySelectorAll('.lp-btn-apply-hero, .lp-btn-apply-main');
+    const ctaText = this.editedData.ctaText || this.lpSettings?.ctaText || '今すぐ応募する';
+
+    ctaButtons.forEach(btn => {
+      // ボタン内のテキスト部分を更新（SVGアイコンは保持）
+      const textNode = Array.from(btn.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+      if (textNode) {
+        textNode.textContent = ctaText;
+      } else {
+        // テキストノードがない場合は追加
+        btn.insertAdjacentText('beforeend', ctaText);
+      }
+    });
+  }
+
+  /**
    * レイアウトスタイルオプションをレンダリング
    */
   renderLayoutStyleOptions() {
     return LAYOUT_STYLES.map(style => {
       const isSelected = this.currentLayoutStyle === style.id;
       return `
-        <div class="lp-layout-option ${isSelected ? 'selected' : ''}"
-             data-layout="${style.id}"
-             title="${style.description}">
-          <div class="lp-layout-option-preview">
-            <span class="lp-layout-preview-text">${style.preview}</span>
+        <label class="template-item ${isSelected ? 'selected' : ''}" data-layout="${style.id}">
+          <input type="radio" name="lp-layout" value="${style.id}" ${isSelected ? 'checked' : ''}>
+          <div class="template-preview" style="background: ${style.color}"></div>
+          <div class="template-info">
+            <span class="template-name">${style.name}</span>
+            <span class="template-desc">${style.description}</span>
+            <span class="template-industries">${style.industries.join(' / ')}</span>
           </div>
-          <span class="lp-layout-option-name">${style.name}</span>
-          ${isSelected ? '<span class="lp-layout-option-check">✓</span>' : ''}
+        </label>
+      `;
+    }).join('');
+  }
+
+  /**
+   * サイドバー用ポイントリストをレンダリング
+   */
+  renderSidebarPoints() {
+    const items = [];
+    for (let i = 1; i <= 6; i++) {
+      const title = this.editedData[`pointTitle${i}`] ?? this.lpSettings?.[`pointTitle${i}`] ?? '';
+      const desc = this.editedData[`pointDesc${i}`] ?? this.lpSettings?.[`pointDesc${i}`] ?? '';
+      const hasContent = title || desc;
+      items.push(`
+        <div class="sidebar-item ${hasContent ? 'has-content' : 'empty'}" data-point-idx="${i}">
+          <div class="sidebar-item-header" data-toggle="point-${i}">
+            <span class="sidebar-item-number">${i}</span>
+            <span class="sidebar-item-title">${hasContent ? escapeHtml(title || '（タイトル未設定）') : '未設定'}</span>
+            <span class="sidebar-item-toggle">▼</span>
+          </div>
+          <div class="sidebar-item-body" id="sidebar-point-body-${i}" style="display: none;">
+            <div class="sidebar-item-field">
+              <label>タイトル</label>
+              <input type="text" class="sidebar-point-title" data-idx="${i}" value="${this.escapeAttr(title)}" placeholder="例: 入社特典充実">
+            </div>
+            <div class="sidebar-item-field">
+              <label>説明</label>
+              <textarea class="sidebar-point-desc" data-idx="${i}" rows="2" placeholder="例: 特典総額50万円！">${escapeHtml(desc)}</textarea>
+            </div>
+            <button type="button" class="sidebar-item-clear" data-idx="${i}">クリア</button>
+          </div>
+        </div>
+      `);
+    }
+    return items.join('');
+  }
+
+  /**
+   * サイドバー用FAQリストをレンダリング
+   */
+  renderSidebarFAQ() {
+    const faqString = this.editedData.faq ?? this.lpSettings?.faq ?? '';
+    const faqs = this.parseFAQString(faqString);
+
+    // FAQがない場合は空の1つを表示
+    if (faqs.length === 0) {
+      faqs.push({ question: '', answer: '' });
+    }
+
+    return faqs.map((faq, idx) => {
+      const hasContent = faq.question || faq.answer;
+      return `
+        <div class="sidebar-item ${hasContent ? 'has-content' : 'empty'}" data-faq-idx="${idx}">
+          <div class="sidebar-item-header" data-toggle="faq-${idx}">
+            <span class="sidebar-item-number">Q${idx + 1}</span>
+            <span class="sidebar-item-title">${hasContent ? escapeHtml(faq.question.substring(0, 20) || '（質問未設定）') + (faq.question.length > 20 ? '...' : '') : '未設定'}</span>
+            <span class="sidebar-item-toggle">▼</span>
+          </div>
+          <div class="sidebar-item-body" id="sidebar-faq-body-${idx}" style="display: none;">
+            <div class="sidebar-item-field">
+              <label>質問</label>
+              <input type="text" class="sidebar-faq-question" data-idx="${idx}" value="${this.escapeAttr(faq.question)}" placeholder="例: 未経験でも大丈夫ですか？">
+            </div>
+            <div class="sidebar-item-field">
+              <label>回答</label>
+              <textarea class="sidebar-faq-answer" data-idx="${idx}" rows="3" placeholder="例: はい、未経験の方も大歓迎です。">${escapeHtml(faq.answer)}</textarea>
+            </div>
+            <button type="button" class="sidebar-item-delete" data-idx="${idx}">削除</button>
+          </div>
         </div>
       `;
     }).join('');
+  }
+
+  /**
+   * サイドバー用カスタムセクションリストをレンダリング（採用ページ形式）
+   */
+  renderSidebarCustomSections() {
+    // カスタムコンテンツタイプ（コアセクション以外）
+    const customTypes = ['video', 'carousel', 'gallery', 'testimonial', 'custom'];
+    const customSections = this.sections.filter(s => customTypes.includes(s.type));
+
+    if (customSections.length === 0) {
+      return '';
+    }
+
+    return customSections.map((section, idx) => {
+      const template = LP_SECTION_TEMPLATES.find(t => t.id === section.type);
+      const typeLabel = template ? `${template.name}（${template.label}）` : section.type.toUpperCase();
+      const totalSections = customSections.length;
+
+      return `
+        <div class="custom-section-item" data-custom-id="${section.id}" data-type="${section.type}" data-index="${idx}">
+          <div class="section-item-header">
+            <span class="section-drag-handle" title="ドラッグで並び替え">☰</span>
+            <span class="section-type-badge">${escapeHtml(typeLabel)}</span>
+            <div class="section-item-actions">
+              <button type="button" class="btn-move-section" data-direction="up" data-id="${section.id}" ${idx === 0 ? 'disabled' : ''} title="上へ移動">↑</button>
+              <button type="button" class="btn-move-section" data-direction="down" data-id="${section.id}" ${idx === totalSections - 1 ? 'disabled' : ''} title="下へ移動">↓</button>
+              <button type="button" class="btn-remove-section" data-id="${section.id}" title="削除">✕</button>
+            </div>
+          </div>
+          <div class="section-item-content">
+            ${this.renderSectionFields(section)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /**
+   * セクションタイプに応じたフィールドをレンダリング
+   */
+  renderSectionFields(section) {
+    switch (section.type) {
+      case 'video':
+        return `
+          <div class="section-field">
+            <label>セクションタイトル</label>
+            <input type="text" class="section-field-input sidebar-section-title" data-id="${section.id}" value="${this.escapeAttr(section.data?.sectionTitle || '')}" placeholder="例: 会社紹介動画">
+          </div>
+          <div class="section-field">
+            <label>動画URL</label>
+            <input type="url" class="section-field-input sidebar-section-url" data-id="${section.id}" value="${this.escapeAttr(section.data?.videoUrl || '')}" placeholder="https://youtube.com/watch?v=...">
+          </div>
+        `;
+
+      case 'carousel':
+      case 'gallery':
+        return `
+          <div class="section-field">
+            <label>セクションタイトル</label>
+            <input type="text" class="section-field-input sidebar-section-title" data-id="${section.id}" value="${this.escapeAttr(section.data?.sectionTitle || '')}" placeholder="例: 職場の様子">
+          </div>
+          <div class="section-field">
+            <p class="section-field-hint">画像は保存後、管理画面から追加できます</p>
+          </div>
+        `;
+
+      case 'testimonial':
+        return `
+          <div class="section-field">
+            <label>セクションタイトル</label>
+            <input type="text" class="section-field-input sidebar-section-title" data-id="${section.id}" value="${this.escapeAttr(section.data?.sectionTitle || '社員の声')}" placeholder="例: 社員の声">
+          </div>
+          <div class="section-field">
+            <p class="section-field-hint">社員の声は保存後、管理画面から追加できます</p>
+          </div>
+        `;
+
+      case 'custom':
+      default:
+        const title = section.data?.title || '';
+        const content = section.data?.content || '';
+        const image = section.data?.image || '';
+        return `
+          <div class="section-field">
+            <label>見出し</label>
+            <input type="text" class="section-field-input sidebar-custom-title" data-id="${section.id}" value="${this.escapeAttr(title)}" placeholder="例: 働きやすい環境">
+          </div>
+          <div class="section-field">
+            <label>本文</label>
+            <textarea class="section-field-input sidebar-custom-content" data-id="${section.id}" rows="3" placeholder="セクションの内容を入力...">${escapeHtml(content)}</textarea>
+          </div>
+          <div class="section-field">
+            <label>画像</label>
+            ${image ? `<img src="${escapeHtml(image)}" class="section-image-preview" alt="">` : ''}
+            <input type="url" class="section-field-input sidebar-custom-image" data-id="${section.id}" value="${this.escapeAttr(image)}" placeholder="画像URL（https://...）">
+          </div>
+        `;
+    }
   }
 
   /**
@@ -447,9 +1577,9 @@ export class LPEditor {
     const container = document.getElementById('lp-layout-selector');
     if (!container) return;
 
-    container.querySelectorAll('.lp-layout-option').forEach(option => {
-      option.addEventListener('click', () => {
-        const layoutId = option.dataset.layout;
+    container.querySelectorAll('.template-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const layoutId = item.dataset.layout;
         this.changeLayoutStyle(layoutId);
       });
     });
@@ -463,17 +1593,27 @@ export class LPEditor {
     if (!style) return;
 
     this.currentLayoutStyle = layoutId;
+    this.currentDesignPattern = layoutId;  // デザインパターンも同期
     this.editedData.layoutStyle = layoutId;
+    this.editedData.designPattern = layoutId;  // 両方保存
 
-    // UIを更新
+    // レイアウトUIを更新
     const container = document.getElementById('lp-layout-selector');
     if (container) {
       container.innerHTML = this.renderLayoutStyleOptions();
       this.setupLayoutStyleEvents();
     }
 
-    // ページにレイアウトスタイルを適用
+    // デザインパターンUIも更新
+    const designContainer = document.getElementById('lp-design-selector');
+    if (designContainer) {
+      designContainer.innerHTML = this.renderDesignPatternOptions();
+      this.setupDesignPatternEvents();
+    }
+
+    // ページにレイアウトスタイルとデザインパターンを適用
     this.applyLayoutStyle(layoutId);
+    this.applyDesignPattern(layoutId);
 
     // セクションを再レンダリング（HTML構造が変わるため）
     this.rerenderSections();
@@ -599,17 +1739,30 @@ export class LPEditor {
     if (!pattern) return;
 
     this.currentDesignPattern = patternId;
+    this.currentLayoutStyle = patternId;  // レイアウトも同期
     this.editedData.designPattern = patternId;
+    this.editedData.layoutStyle = patternId;  // 両方保存
 
-    // UIを更新
+    // デザインパターンUIを更新
     const container = document.getElementById('lp-design-selector');
     if (container) {
       container.innerHTML = this.renderDesignPatternOptions();
       this.setupDesignPatternEvents();
     }
 
-    // ページにデザインパターンを適用
+    // レイアウトUIも更新
+    const layoutContainer = document.getElementById('lp-layout-selector');
+    if (layoutContainer) {
+      layoutContainer.innerHTML = this.renderLayoutStyleOptions();
+      this.setupLayoutStyleEvents();
+    }
+
+    // ページにデザインパターンとレイアウトスタイルを適用
     this.applyDesignPattern(patternId);
+    this.applyLayoutStyle(patternId);
+
+    // セクションを再レンダリング
+    this.rerenderSections();
   }
 
   /**
@@ -708,63 +1861,80 @@ export class LPEditor {
   }
 
   /**
-   * セクション追加パネルを開く
+   * セクション追加モーダルを開く（LP設定と同じUI）
    */
   openAddSectionPanel() {
-    // 既存のパネルを閉じる
+    // 既存のモーダルを閉じる
     this.closeAddSectionPanel();
 
-    const panel = document.createElement('div');
-    panel.className = 'lp-add-section-panel';
-    panel.id = 'lp-add-section-panel';
-    panel.innerHTML = `
-      <div class="lp-add-section-header">
-        <span>セクションを追加</span>
-        <button type="button" class="lp-add-section-close">×</button>
-      </div>
-      <div class="lp-add-section-grid">
-        ${Object.entries(SECTION_TYPES).map(([type, config]) => `
-          <div class="lp-add-section-card" data-type="${type}">
-            <span class="lp-add-section-icon">${config.icon}</span>
-            <span class="lp-add-section-name">${config.name}</span>
+    const modalHtml = `
+      <div id="lp-add-section-modal" class="template-modal-overlay">
+        <div class="template-modal">
+          <div class="template-modal-header">
+            <h3>コンテンツを追加する</h3>
+            <button type="button" class="template-modal-close">&times;</button>
           </div>
-        `).join('')}
+          <div class="template-modal-body">
+            <p class="template-modal-description">追加するコンテンツを選択してください。</p>
+            <div class="template-list">
+              ${LP_SECTION_TEMPLATES.map(template => {
+                const isDisabled = !canAddSection(template.id, this.sections);
+                return `
+                <div class="template-item ${isDisabled ? 'disabled' : ''}" data-template-id="${template.id}">
+                  <div class="template-thumbnail">
+                    <img src='${template.thumbnail}' alt="${escapeHtml(template.name)}">
+                  </div>
+                  <div class="template-info">
+                    <h4 class="template-name">${escapeHtml(template.name)}（${escapeHtml(template.label)}）</h4>
+                    <p class="template-description">${escapeHtml(template.description)}</p>
+                  </div>
+                  <button type="button" class="btn-add-template" data-template-id="${template.id}" ${isDisabled ? 'disabled' : ''}>${isDisabled ? '追加済み' : '追加する'}</button>
+                </div>
+              `;
+              }).join('')}
+            </div>
+          </div>
+          <div class="template-modal-footer">
+            <button type="button" class="btn-template-cancel">キャンセル</button>
+          </div>
+        </div>
       </div>
     `;
 
-    document.body.appendChild(panel);
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal = document.getElementById('lp-add-section-modal');
 
     // 閉じるボタン
-    panel.querySelector('.lp-add-section-close').addEventListener('click', () => {
+    modal.querySelector('.template-modal-close').addEventListener('click', () => {
       this.closeAddSectionPanel();
     });
 
-    // セクションタイプ選択
-    panel.querySelectorAll('.lp-add-section-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const type = card.dataset.type;
-        this.addNewSection(type);
+    // キャンセルボタン
+    modal.querySelector('.btn-template-cancel').addEventListener('click', () => {
+      this.closeAddSectionPanel();
+    });
+
+    // オーバーレイクリックで閉じる
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.closeAddSectionPanel();
+      }
+    });
+
+    // テンプレート追加ボタン
+    modal.querySelectorAll('.btn-add-template:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const templateId = btn.dataset.templateId;
+        this.addNewSection(templateId);
         this.closeAddSectionPanel();
       });
     });
-
-    // 外側クリックで閉じる
-    setTimeout(() => {
-      document.addEventListener('click', this.handleAddPanelOutsideClick);
-    }, 100);
-  }
-
-  handleAddPanelOutsideClick = (e) => {
-    const panel = document.getElementById('lp-add-section-panel');
-    if (panel && !panel.contains(e.target) && !e.target.closest('#lp-btn-add-section')) {
-      this.closeAddSectionPanel();
-    }
   }
 
   closeAddSectionPanel() {
-    const panel = document.getElementById('lp-add-section-panel');
-    if (panel) panel.remove();
-    document.removeEventListener('click', this.handleAddPanelOutsideClick);
+    const modal = document.getElementById('lp-add-section-modal');
+    if (modal) modal.remove();
   }
 
   /**
@@ -916,19 +2086,39 @@ export class LPEditor {
    */
   renderCustomSectionHtml(section) {
     const title = section.data?.title || '';
+    const content = section.data?.content || '';
+    const image = section.data?.image || '';
+    const hasContent = title || content || image;
+
+    const imageHtml = image ? `
+      <div class="lp-custom-image">
+        <img src="${this.escapeHtml(image)}" alt="${this.escapeHtml(title)}">
+      </div>
+    ` : '';
+
+    const contentHtml = content ? `
+      <div class="lp-custom-text">${content.replace(/\n/g, '<br>')}</div>
+    ` : '';
+
+    const placeholderHtml = !hasContent ? `
+      <div class="lp-custom-placeholder">
+        <div class="lp-custom-placeholder-icon">🎨</div>
+        <p>カスタムセクション</p>
+        <p class="lp-placeholder-hint">サイドバーから内容を編集できます</p>
+      </div>
+    ` : '';
+
     return `
-      <section class="lp-custom lp-custom-empty lp-sortable-section" data-section-id="${section.id}" data-section="custom">
+      <section class="lp-custom ${hasContent ? '' : 'lp-custom-empty'} lp-sortable-section" data-section-id="${section.id}" data-section="custom">
         <div class="lp-section-drag-handle">
           <span class="lp-section-label">カスタム</span>
           <span class="lp-section-drag-icon">⋮⋮</span>
         </div>
         <div class="lp-section-inner">
-          ${title ? `<h2 class="lp-section-title">${this.escapeHtml(title)}</h2>` : ''}
-          <div class="lp-custom-placeholder">
-            <div class="lp-custom-placeholder-icon">🎨</div>
-            <p>カスタムセクション</p>
-            <p class="lp-placeholder-hint">保存後、管理画面から内容を編集してください</p>
-          </div>
+          ${title ? `<h2 class="lp-section-title lp-custom-title">${this.escapeHtml(title)}</h2>` : ''}
+          ${imageHtml}
+          ${contentHtml}
+          ${placeholderHtml}
         </div>
       </section>
     `;
