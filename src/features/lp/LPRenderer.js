@@ -355,6 +355,93 @@ export class LPRenderer {
     const missingSections = this.defaultOrder.filter(s => !customOrder.includes(s));
     return [...customOrder, ...missingSections];
   }
+
+  /**
+   * LPをHTML文字列として返す（プレビュー用）
+   * @param {Object} company - 会社情報
+   * @param {Array} jobs - 求人情報配列
+   * @param {Object} lpSettings - LP設定
+   * @returns {Object} { html, patternClass, layoutClass }
+   */
+  renderToHtml(company, jobs, lpSettings) {
+    // デザインパターン
+    const pattern = lpSettings.designPattern || company.designPattern || 'modern';
+    const patternClass = `lp-pattern-${pattern}`;
+
+    // レイアウトスタイル
+    const layoutStyle = lpSettings.layoutStyle || 'modern';
+    const layoutClass = `lp-layout-${layoutStyle}`;
+
+    // メインの求人情報
+    const mainJob = jobs.length > 0 ? jobs[0] : company;
+
+    // v2形式をチェック
+    const lpContent = this.parseLPContent(lpSettings);
+
+    let html = '';
+    if (lpContent && lpContent.version === '2.0') {
+      // 新形式（v2）で描画
+      html = this.renderV2SectionsToHtml(lpContent, company, mainJob, jobs, lpSettings);
+    } else {
+      // 旧形式で描画（後方互換性）
+      html = this.renderLegacySectionsToHtml(company, mainJob, jobs, lpSettings);
+    }
+
+    return { html, patternClass, layoutClass };
+  }
+
+  /**
+   * v2形式でセクションをHTML文字列として返す
+   */
+  renderV2SectionsToHtml(lpContent, company, mainJob, jobs, lpSettings) {
+    let { sections, globalSettings } = lpContent;
+
+    // heroCTAセクションが存在しない場合、heroの直後に追加
+    const hasHeroCta = sections.some(s => s.type === 'heroCta');
+    if (!hasHeroCta) {
+      const heroIndex = sections.findIndex(s => s.type === 'hero');
+      const heroCtaSection = {
+        id: 'heroCta-auto',
+        type: 'heroCta',
+        order: heroIndex >= 0 ? sections[heroIndex].order + 0.5 : 0.5,
+        visible: true,
+        data: {}
+      };
+      sections = [...sections, heroCtaSection];
+    }
+
+    // 表示するセクションをフィルタリング＆ソート
+    const visibleSections = sections
+      .filter(s => s.visible !== false)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // コンテキストオブジェクト
+    const context = {
+      company,
+      mainJob,
+      jobs,
+      globalSettings: globalSettings || {},
+      lpSettings: lpSettings || {}
+    };
+
+    // 各セクションを描画
+    return visibleSections
+      .map(section => this.renderV2Section(section, context))
+      .join('');
+  }
+
+  /**
+   * 旧形式でセクションをHTML文字列として返す
+   */
+  renderLegacySectionsToHtml(company, mainJob, jobs, lpSettings) {
+    const sectionVisibility = this.parseSectionVisibility(lpSettings.sectionVisibility);
+    const sectionOrder = this.parseSectionOrder(lpSettings.sectionOrder);
+    const layoutStyle = lpSettings.layoutStyle || 'modern';
+
+    return sectionOrder
+      .map(sectionName => this.renderLegacySection(sectionName, company, mainJob, jobs, lpSettings, sectionVisibility, layoutStyle))
+      .join('');
+  }
 }
 
 export default LPRenderer;

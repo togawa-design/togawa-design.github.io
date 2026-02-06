@@ -183,14 +183,26 @@ class CompanyLPPage {
       this.hideLoading();
       const contentEl = document.getElementById('lp-content');
       if (contentEl) {
+        // 編集モードの場合は静的ヘッダー・フッターを非表示にして
+        // リアルタイムプレビューと同じ構造にする（スマホ枠付き）
+        if (this.isEditMode) {
+          document.body.classList.add('lp-preview-mode-mobile');
+          const staticHeader = document.querySelector('.lp-header');
+          const staticFooter = document.querySelector('.lp-footer');
+          if (staticHeader) staticHeader.style.display = 'none';
+          if (staticFooter) staticFooter.style.display = 'none';
+        }
+
         // 新形式の場合はメイン求人を先頭に
         const orderedJobs = this.mainJob
           ? [this.mainJob, ...jobs.filter(j => j !== this.mainJob)]
           : jobs;
         this.renderer.render(this.company, orderedJobs, this.lpSettings, contentEl);
 
-        // ヘッダー・フッター・CTAバーを追加
-        this.renderLayoutComponents(contentEl);
+        // ヘッダー・フッター・CTAバーを追加（編集モードではスキップ）
+        if (!this.isEditMode) {
+          this.renderLayoutComponents(contentEl);
+        }
 
         this.setupEventListeners(this.company);
 
@@ -340,15 +352,27 @@ class CompanyLPPage {
         // jobIdは「companyDomain_actualJobId」形式
         const parts = jobId.split('_');
         const companyDomain = parts[0];
-        const actualJobId = parts.slice(1).join('_'); // 複数のアンダースコアがある場合も対応
 
-        console.log('[LP] Firestore LP設定取得:', companyDomain, actualJobId);
-        const result = await FirestoreService.getLPSettings(companyDomain, actualJobId);
+        // 管理画面はjobIdをそのまま保存しているため、フルIDで取得を試みる
+        console.log('[LP] Firestore LP設定取得 (フルID):', companyDomain, jobId);
+        let result = await FirestoreService.getLPSettings(companyDomain, jobId);
 
         if (result.success && result.settings && Object.keys(result.settings).length > 0) {
-          console.log('[LP] Firestore LP設定を発見:', result.settings);
+          console.log('[LP] Firestore LP設定を発見 (フルID):', result.settings);
           return result.settings;
         }
+
+        // フォールバック: 旧形式（jobIdのみ）で試行
+        const actualJobId = parts.slice(1).join('_');
+        if (actualJobId && actualJobId !== jobId) {
+          console.log('[LP] Firestore LP設定取得 (フォールバック):', companyDomain, actualJobId);
+          result = await FirestoreService.getLPSettings(companyDomain, actualJobId);
+          if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+            console.log('[LP] Firestore LP設定を発見 (フォールバック):', result.settings);
+            return result.settings;
+          }
+        }
+
         console.log('[LP] Firestore LP設定が見つかりません（デフォルト設定を使用）');
         return null;
       } catch (e) {

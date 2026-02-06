@@ -13,9 +13,11 @@ import {
   initSectionManager,
   loadSectionsFromSettings,
   getCurrentLPContent,
-  renderSectionsList
+  renderSectionsList,
+  setSectionVisibleByType
 } from './lp-section-manager.js';
 import { LAYOUT_STYLES } from '@features/lp/LPEditor.js';
+import { LPRenderer } from '@features/lp/LPRenderer.js';
 
 // レイアウトスタイルごとのデフォルトカラー（採用ページと統一された5種類）
 const layoutStyleColors = {
@@ -38,6 +40,28 @@ let allJobsCache = [];
 let currentJobData = null;
 let visibleCompaniesCache = [];
 let selectedCompanyDomain = null;
+let cachedLpCss = null; // lp.cssのキャッシュ
+
+// lp.cssを読み込んでキャッシュ
+async function loadLpCss() {
+  if (cachedLpCss) {
+    console.log('[LP Preview] lp.css キャッシュ使用:', cachedLpCss.length, '文字');
+    return cachedLpCss;
+  }
+  try {
+    console.log('[LP Preview] lp.css fetch開始...');
+    const response = await fetch('/css/lp.css');
+    if (response.ok) {
+      cachedLpCss = await response.text();
+      console.log('[LP Preview] lp.css fetch成功:', cachedLpCss.length, '文字');
+    } else {
+      console.warn('[LP Preview] lp.css fetch失敗:', response.status);
+    }
+  } catch (e) {
+    console.warn('[LP Preview] lp.css読み込みエラー:', e);
+  }
+  return cachedLpCss || '';
+}
 
 // LP設定用の会社・求人リストを読み込み
 export async function loadJobListForLP() {
@@ -736,8 +760,7 @@ function setLPCustomColors(colors) {
  */
 function resetLPCustomColors() {
   // 現在選択されているレイアウトスタイルのデフォルトカラーを適用
-  const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
+  const layoutStyle = document.querySelector('input[name="lp-layout-style"]:checked')?.value || 'modern';
   const defaults = layoutStyleColors[layoutStyle] || layoutStyleColors.modern;
 
   const colorIds = ['primary', 'accent', 'bg', 'text'];
@@ -791,8 +814,7 @@ function setupLPColorPickers() {
  * 現在のカスタムカラーを取得
  */
 function getLPCustomColors() {
-  const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
+  const layoutStyle = document.querySelector('input[name="lp-layout-style"]:checked')?.value || 'modern';
   const baseColors = layoutStyleColors[layoutStyle] || layoutStyleColors.modern;
 
   return {
@@ -858,12 +880,11 @@ function setupLPLivePreview() {
     showVideoCheckbox.addEventListener('change', () => debouncedUpdatePreview());
   }
 
-  // レイアウトスタイルオプション（クリック時）
-  document.querySelectorAll('.lp-admin-layout-option').forEach(option => {
-    option.addEventListener('click', () => {
-      // 少し遅延させて選択状態が更新されてからプレビュー更新
-      setTimeout(() => debouncedUpdatePreview(), 50);
-    });
+  // レイアウトスタイルオプション（radioボタン変更時）
+  // 注: メインのイベントリスナーはlp-section-manager.jsで設定済み
+  // ここではバックアップとしてプレビュー更新を追加
+  document.querySelectorAll('input[name="lp-layout-style"]').forEach(radio => {
+    radio.addEventListener('change', () => debouncedUpdatePreview());
   });
 
   // カラーピッカーをセットアップ
@@ -1182,6 +1203,7 @@ export function renderFAQInputs(faqs = [{ question: '', answer: '' }]) {
   container.querySelectorAll('.faq-question-input, .faq-answer-input').forEach(input => {
     input.addEventListener('input', () => {
       updateFAQHiddenField();
+      autoShowFAQSection(); // FAQに入力があったら自動で表示
       debouncedUpdatePreview();
     });
   });
@@ -1190,12 +1212,24 @@ export function renderFAQInputs(faqs = [{ question: '', answer: '' }]) {
   updateFAQHiddenField();
 }
 
+// FAQに内容があれば自動的にセクションを表示する
+function autoShowFAQSection() {
+  const faqs = getFAQData();
+  const hasContent = faqs.some(f => f.question.trim() || f.answer.trim());
+
+  if (hasContent) {
+    // セクションマネージャーを通じてFAQセクションを表示
+    setSectionVisibleByType('faq', true);
+  }
+}
+
 // FAQ項目を追加
 export function addFAQItem() {
   const faqs = getFAQData();
   faqs.push({ question: '', answer: '' });
   renderFAQInputs(faqs);
   updateFAQHiddenField();
+  debouncedUpdatePreview();
 
   // 新しく追加された項目の質問フィールドにフォーカス
   setTimeout(() => {
@@ -1503,9 +1537,8 @@ export async function saveLPSettings() {
   // ポイントデータを取得
   const points = getPointsData();
 
-  // レイアウトスタイルを取得（新しいUIから読み取り）
-  const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
+  // レイアウトスタイルを取得（radioボタンUIから読み取り）
+  const layoutStyle = document.querySelector('input[name="lp-layout-style"]:checked')?.value || 'modern';
 
   const settings = {
     jobId: jobId,
@@ -1777,8 +1810,11 @@ export function closeLPPreview() {
   // プレビューは常時表示のため何もしない
 }
 
+// 前回のblob URLを保持（メモリリーク防止用）
+let previousBlobUrl = null;
+
 // LPプレビューを更新
-export function updateLPPreview() {
+export async function updateLPPreview() {
   const iframe = document.getElementById('lp-preview-frame');
   const container = document.getElementById('lp-preview-container');
 
@@ -1786,6 +1822,9 @@ export function updateLPPreview() {
 
   const companyDomain = selectedCompanyDomain;
   if (!companyDomain) return;
+
+  // lp.cssを読み込み（キャッシュがあれば即座に返る）
+  const lpCss = await loadLpCss();
 
   // 会社データを取得
   const companiesCache = getCompaniesCache();
@@ -1800,19 +1839,25 @@ export function updateLPPreview() {
   // 求人データを取得（rawDataから詳細情報を取得）
   const jobData = currentJobData?.rawData || currentJobData || null;
 
-  // プレビューHTMLを生成
-  const previewHtml = generatePreviewHtml(company, lpSettings, jobData);
+  // プレビューHTMLを生成（lp.cssをインラインで埋め込み）
+  const previewHtml = generatePreviewHtml(company, lpSettings, jobData, lpCss);
 
-  // iframeに注入
-  iframe.srcdoc = previewHtml;
+  // 前回のblob URLを解放
+  if (previousBlobUrl) {
+    URL.revokeObjectURL(previousBlobUrl);
+  }
+
+  // blob URLを作成してiframeに設定（srcdocのサイズ制限を回避）
+  const blob = new Blob([previewHtml], { type: 'text/html' });
+  previousBlobUrl = URL.createObjectURL(blob);
+  iframe.src = previousBlobUrl;
 }
 
 // 現在のフォーム値からLP設定オブジェクトを取得
 function getCurrentLPSettings() {
   const points = getPointsData();
-  // レイアウトスタイルを取得（新しいUIから読み取り）
-  const selectedLayoutOption = document.querySelector('.lp-admin-layout-option.selected');
-  const layoutStyle = selectedLayoutOption?.dataset?.layout || 'modern';
+  // レイアウトスタイルを取得（radioボタンUIから読み取り）
+  const layoutStyle = document.querySelector('input[name="lp-layout-style"]:checked')?.value || 'modern';
 
   // カスタムカラーを取得
   const customColors = getLPCustomColors();
@@ -1849,9 +1894,11 @@ function getCurrentLPSettings() {
   return settings;
 }
 
-// プレビューHTML生成
-function generatePreviewHtml(company, lpSettings, jobData = null) {
-  const patternClass = `lp-pattern-${lpSettings.designPattern || 'modern'}`;
+// LPRendererインスタンス（共通利用）
+const lpRenderer = new LPRenderer();
+
+// プレビューHTML生成（LPRendererを使用して編集モードと統一）
+function generatePreviewHtml(company, lpSettings, jobData = null, lpCss = '') {
   const layoutStyle = lpSettings.layoutStyle || 'modern';
 
   // カスタムカラーを取得
@@ -1863,64 +1910,6 @@ function generatePreviewHtml(company, lpSettings, jobData = null) {
     text: lpSettings.customText || baseColors.text
   };
 
-  // セクション表示設定を解析
-  let sectionVisibility = { points: true, jobs: true, details: true, faq: true };
-  try {
-    if (lpSettings.sectionVisibility) {
-      sectionVisibility = { ...sectionVisibility, ...JSON.parse(lpSettings.sectionVisibility) };
-    }
-  } catch (e) {}
-
-  // セクション順序を解析
-  const defaultOrder = ['hero', 'points', 'jobs', 'details', 'faq', 'apply'];
-  let sectionOrder = defaultOrder;
-  if (lpSettings.sectionOrder) {
-    const customOrder = lpSettings.sectionOrder.split(',').map(s => s.trim()).filter(s => s);
-    if (customOrder.length > 0) {
-      const missingSections = defaultOrder.filter(s => !customOrder.includes(s));
-      sectionOrder = [...customOrder, ...missingSections];
-    }
-  }
-
-  // v2セクションをマップに変換（IDでアクセス可能に）
-  const v2SectionsMap = {};
-  (lpSettings.v2Sections || []).forEach(s => {
-    v2SectionsMap[s.type] = s;
-  });
-
-  // 各セクションをレンダリング
-  const sectionsHtml = sectionOrder.map(section => {
-    // 非表示の場合はスキップ
-    if (sectionVisibility[section] === false) return '';
-
-    switch (section) {
-      case 'hero':
-        return renderPreviewHero(company, lpSettings, jobData);
-      case 'points':
-        return renderPreviewPoints(lpSettings);
-      case 'jobs':
-        return renderPreviewJobs(company, jobData);
-      case 'details':
-        return renderPreviewDetails(company, jobData);
-      case 'faq':
-        return lpSettings.faq ? renderPreviewFAQ(lpSettings.faq) : '';
-      case 'apply':
-        return renderPreviewApply(company, lpSettings);
-      case 'video':
-        return renderPreviewVideo(v2SectionsMap.video);
-      case 'carousel':
-        return renderPreviewCarousel(v2SectionsMap.carousel);
-      case 'gallery':
-        return renderPreviewGallery(v2SectionsMap.gallery);
-      case 'testimonial':
-        return renderPreviewTestimonial(v2SectionsMap.testimonial);
-      case 'custom':
-        return renderPreviewCustom(v2SectionsMap.custom);
-      default:
-        return '';
-    }
-  }).join('');
-
   // CSS変数としてカスタムカラーを設定
   const colorVars = `
     --lp-primary: ${customColors.primary};
@@ -1928,6 +1917,10 @@ function generatePreviewHtml(company, lpSettings, jobData = null) {
     --lp-bg: ${customColors.bg};
     --lp-text: ${customColors.text};
   `;
+
+  // LPRendererでHTML生成（jobDataを配列として渡す）
+  const jobs = jobData ? [jobData] : [];
+  const { html: sectionsHtml, patternClass, layoutClass } = lpRenderer.renderToHtml(company, jobs, lpSettings);
 
   return `
 <!DOCTYPE html>
@@ -1937,11 +1930,14 @@ function generatePreviewHtml(company, lpSettings, jobData = null) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
+    /* lp.css インライン埋め込み */
+    ${lpCss}
+    /* プレビュー用追加スタイル */
     ${getPreviewStyles()}
   </style>
 </head>
-<body class="lp-body ${patternClass}" style="${colorVars}" data-layout="${layoutStyle}">
-  <div id="lp-content">
+<body class="lp-body ${patternClass} ${layoutClass}" style="${colorVars}">
+  <div id="lp-content" class="${layoutClass}">
     ${sectionsHtml}
   </div>
 </body>
@@ -2088,9 +2084,9 @@ function renderPreviewDetails(company, jobData = null) {
         <h2 class="lp-section-title">募集要項</h2>
         <div class="lp-details-table">
           ${detailItems.map(item => `
-            <div class="lp-details-row">
-              <div class="lp-details-label">${escapeHtml(item.label)}</div>
-              <div class="lp-details-value">${escapeHtml(item.value).replace(/\n/g, '<br>')}</div>
+            <div class="lp-detail-row">
+              <dt class="lp-detail-label">${escapeHtml(item.label)}</dt>
+              <dd class="lp-detail-value">${escapeHtml(item.value).replace(/\n/g, '<br>')}</dd>
             </div>
           `).join('')}
         </div>
@@ -2099,7 +2095,7 @@ function renderPreviewDetails(company, jobData = null) {
   `;
 }
 
-// FAQセクション
+// FAQセクション（LINE風チャットスタイル）
 function renderPreviewFAQ(faqText) {
   if (!faqText) return '';
 
@@ -2122,16 +2118,24 @@ function renderPreviewFAQ(faqText) {
     <section class="lp-faq">
       <div class="lp-section-inner">
         <h2 class="lp-section-title">よくある質問</h2>
-        <div class="lp-faq-list">
+        <div class="lp-faq-chat">
           ${faqItems.map(item => `
             <div class="lp-faq-item">
-              <div class="lp-faq-question">
-                <span class="lp-faq-q">Q</span>
-                <span>${escapeHtml(item.question)}</span>
+              <div class="lp-faq-row lp-faq-row-question">
+                <div class="lp-faq-avatar lp-faq-avatar-user">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div class="lp-faq-bubble lp-faq-bubble-question">
+                  ${escapeHtml(item.question)}
+                </div>
               </div>
-              <div class="lp-faq-answer">
-                <span class="lp-faq-a">A</span>
-                <span>${escapeHtml(item.answer)}</span>
+              <div class="lp-faq-row lp-faq-row-answer">
+                <div class="lp-faq-bubble lp-faq-bubble-answer">
+                  ${escapeHtml(item.answer)}
+                </div>
+                <div class="lp-faq-avatar lp-faq-avatar-staff">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z"/></svg>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -2291,98 +2295,12 @@ function renderPreviewCustom(sectionData) {
   `;
 }
 
-// プレビュー用スタイル
+// プレビュー用スタイル（lp.cssを読み込むので最小限のみ）
 function getPreviewStyles() {
   return `
+    /* 基本リセット */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Noto Sans JP', sans-serif; line-height: 1.6; color: var(--lp-text, #333); background-color: var(--lp-bg, #fff); }
-
-    .lp-hero { position: relative; min-height: 400px; display: flex; align-items: center; justify-content: center; }
-    .lp-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
-    .lp-hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
-    .lp-hero-content { position: relative; z-index: 1; text-align: center; color: #fff; padding: 40px 20px; }
-    .lp-hero-company { font-size: 14px; margin-bottom: 10px; opacity: 0.9; }
-    .lp-hero-title { font-size: 28px; font-weight: 900; margin-bottom: 15px; }
-    .lp-hero-subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 20px; }
-    .lp-hero-cta { margin-top: 20px; }
-    .lp-btn-apply-hero { display: inline-block; padding: 15px 40px; background: var(--lp-accent, #ff6b35); color: #fff; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 16px; }
-
-    .lp-section-inner { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-    .lp-section-title { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 30px; color: var(--lp-text, #333); }
-
-    .lp-points { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
-    .lp-points-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-    .lp-point-card { background: var(--lp-bg, #fff); padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .lp-point-number { width: 36px; height: 36px; background: var(--lp-primary, #667eea); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 15px; }
-    .lp-point-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: var(--lp-text, #333); }
-    .lp-point-desc { font-size: 14px; color: color-mix(in srgb, var(--lp-text, #666) 70%, transparent); }
-
-    .lp-jobs, .lp-details { background: var(--lp-bg, #fff); }
-    .lp-jobs-placeholder, .lp-details-placeholder { text-align: center; padding: 40px; background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); border-radius: 8px; color: color-mix(in srgb, var(--lp-text, #888) 60%, transparent); }
-
-    /* 求人カードプレビュー */
-    .lp-job-card-preview { background: var(--lp-bg, #fff); border: 1px solid color-mix(in srgb, var(--lp-text, #ddd) 20%, transparent); border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .lp-job-title-preview { font-size: 18px; font-weight: 700; margin-bottom: 15px; color: var(--lp-text, #333); }
-    .lp-job-meta-preview { display: flex; flex-wrap: wrap; gap: 12px; }
-    .lp-job-meta-item { display: flex; align-items: center; gap: 6px; font-size: 14px; color: color-mix(in srgb, var(--lp-text, #666) 80%, transparent); background: color-mix(in srgb, var(--lp-bg, #f3f4f6) 95%, var(--lp-primary, #667eea) 5%); padding: 6px 12px; border-radius: 20px; }
-    .lp-meta-icon { font-size: 14px; }
-
-    /* 募集要項テーブル */
-    .lp-details-table { display: flex; flex-direction: column; gap: 0; border: 1px solid color-mix(in srgb, var(--lp-text, #ddd) 20%, transparent); border-radius: 12px; overflow: hidden; }
-    .lp-details-row { display: flex; border-bottom: 1px solid color-mix(in srgb, var(--lp-text, #eee) 15%, transparent); }
-    .lp-details-row:last-child { border-bottom: none; }
-    .lp-details-label { width: 120px; flex-shrink: 0; padding: 15px; background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); font-weight: 600; font-size: 13px; color: var(--lp-text, #333); }
-    .lp-details-value { flex: 1; padding: 15px; font-size: 14px; color: color-mix(in srgb, var(--lp-text, #333) 90%, transparent); line-height: 1.7; white-space: pre-wrap; }
-
-    .lp-faq { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
-    .lp-faq-list { display: flex; flex-direction: column; gap: 15px; }
-    .lp-faq-item { background: var(--lp-bg, #fff); border-radius: 8px; padding: 20px; }
-    .lp-faq-question { display: flex; gap: 12px; font-weight: 600; margin-bottom: 10px; color: var(--lp-text, #333); }
-    .lp-faq-answer { display: flex; gap: 12px; color: color-mix(in srgb, var(--lp-text, #666) 70%, transparent); }
-    .lp-faq-q, .lp-faq-a { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
-    .lp-faq-q { background: var(--lp-primary, #667eea); color: #fff; }
-    .lp-faq-a { background: color-mix(in srgb, var(--lp-primary, #e9ecef) 20%, var(--lp-bg, #fff) 80%); color: var(--lp-text, #333); }
-
-    .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #667eea) 0%, var(--lp-accent, #764ba2) 100%); color: #fff; text-align: center; }
-    .lp-apply .lp-section-title { color: #fff; }
-    .lp-apply-text { margin-bottom: 25px; opacity: 0.9; }
-    .lp-btn-apply-main { padding: 18px 50px; background: var(--lp-accent, #ff6b35); color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: 700; cursor: pointer; }
-
-    /* デザインパターン（フォールバック用、カスタムカラーが優先） */
-    .lp-pattern-modern .lp-point-number { background: var(--lp-primary, #10b981); }
-    .lp-pattern-modern .lp-btn-apply-hero, .lp-pattern-modern .lp-btn-apply-main { background: var(--lp-accent, #10b981); }
-    .lp-pattern-modern .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #10b981) 0%, var(--lp-accent, #059669) 100%); }
-    .lp-pattern-modern .lp-faq-q { background: var(--lp-primary, #10b981); }
-
-    .lp-pattern-classic .lp-point-number { background: var(--lp-primary, #92400e); }
-    .lp-pattern-classic .lp-btn-apply-hero, .lp-pattern-classic .lp-btn-apply-main { background: var(--lp-accent, #b45309); }
-    .lp-pattern-classic .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #92400e) 0%, var(--lp-accent, #78350f) 100%); }
-    .lp-pattern-classic .lp-faq-q { background: var(--lp-primary, #92400e); }
-
-    .lp-pattern-minimal .lp-point-number { background: var(--lp-primary, #374151); }
-    .lp-pattern-minimal .lp-btn-apply-hero, .lp-pattern-minimal .lp-btn-apply-main { background: var(--lp-accent, #111827); }
-    .lp-pattern-minimal .lp-apply { background: var(--lp-primary, #111827); }
-    .lp-pattern-minimal .lp-faq-q { background: var(--lp-primary, #374151); }
-
-    .lp-pattern-colorful .lp-point-number { background: var(--lp-primary, #ec4899); }
-    .lp-pattern-colorful .lp-btn-apply-hero, .lp-pattern-colorful .lp-btn-apply-main { background: linear-gradient(90deg, var(--lp-primary, #ec4899), var(--lp-accent, #8b5cf6)); }
-    .lp-pattern-colorful .lp-apply { background: linear-gradient(135deg, var(--lp-primary, #ec4899) 0%, var(--lp-accent, #8b5cf6) 100%); }
-    .lp-pattern-colorful .lp-faq-q { background: var(--lp-primary, #ec4899); }
-
-    /* カスタムセクション */
-    .lp-video { background: var(--lp-bg, #fff); }
-    .lp-video-container { max-width: 600px; margin: 0 auto; }
-    .lp-video-placeholder { text-align: center; padding: 40px; background: #f0f0f0; border-radius: 8px; color: #888; }
-
-    .lp-carousel { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
-    .lp-carousel-preview { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
-
-    .lp-gallery { background: var(--lp-bg, #fff); }
-
-    .lp-testimonial { background: color-mix(in srgb, var(--lp-bg, #f8f9fa) 95%, var(--lp-primary, #667eea) 5%); }
-
-    .lp-custom { background: var(--lp-bg, #fff); }
-    .lp-custom-content { font-size: 14px; line-height: 1.8; color: var(--lp-text, #333); }
+    body { font-family: 'Noto Sans JP', sans-serif; }
   `;
 }
 
