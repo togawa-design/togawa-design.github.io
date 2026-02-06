@@ -86,7 +86,7 @@ const LAYOUT_STYLES = [
     id: 'modern',
     name: 'モダン',
     description: '洗練されたダークグレー + 青。信頼感と先進性',
-    preview: 'ミニマル・プロフェッショナル',
+    color: 'linear-gradient(135deg, #2d3436, #0984e3)',
     industries: ['製造', 'IT', 'オフィスワーク'],
     features: ['title-center', 'card-shadow', 'rounded-md', 'minimal']
   },
@@ -94,7 +94,7 @@ const LAYOUT_STYLES = [
     id: 'athome',
     name: 'アットホーム',
     description: '温かみのあるオレンジ系。親しみやすさ重視',
-    preview: '角丸・吹き出し風',
+    color: 'linear-gradient(135deg, #e67e22, #f39c12)',
     industries: ['飲食', '介護', 'サービス'],
     features: ['rounded-xl', 'bubble-card', 'friendly', 'soft-colors']
   },
@@ -102,7 +102,7 @@ const LAYOUT_STYLES = [
     id: 'cute',
     name: 'キュート',
     description: 'ポップで可愛いパステル調。女性向けに最適',
-    preview: '角丸・カラフル',
+    color: 'linear-gradient(135deg, #ff8fa3, #fab1a0)',
     industries: ['保育', '美容', 'アパレル'],
     features: ['title-center', 'rounded-lg', 'card-colorful', 'section-wave']
   },
@@ -110,7 +110,7 @@ const LAYOUT_STYLES = [
     id: 'trust',
     name: '信頼',
     description: '誠実で堅実な印象。ビジネス・企業向け',
-    preview: '左ボーダー・シンプル',
+    color: 'linear-gradient(135deg, #1a2a3a, #0077c2)',
     industries: ['製造', '金融', 'コンサル'],
     features: ['left-border', 'minimal', 'corporate']
   },
@@ -118,7 +118,7 @@ const LAYOUT_STYLES = [
     id: 'kenchiku',
     name: '建築',
     description: '力強いオレンジ + ダーク。建設・土木業界向け',
-    preview: 'インパクト重視',
+    color: 'linear-gradient(135deg, #2c3e50, #f39c12)',
     industries: ['建設', '土木', '施工管理'],
     features: ['title-large', 'dark-bg', 'text-bold', 'impact']
   }

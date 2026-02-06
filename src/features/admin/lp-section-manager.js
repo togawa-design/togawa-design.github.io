@@ -60,29 +60,36 @@ function initTemplateSelector() {
 }
 
 /**
- * レイアウトスタイルセレクターをレンダリング（LPエディタと同じUI）
+ * レイアウトスタイルセレクターをレンダリング（採用ページ設定と同じUI）
  */
-function renderLayoutStyleSelector(selectedLayout = 'default') {
-  const options = LAYOUT_STYLES.map(style => {
+function renderLayoutStyleSelector(selectedLayout = 'modern') {
+  const options = LAYOUT_STYLES.map((style, index) => {
     const isSelected = selectedLayout === style.id;
     return `
-      <div class="lp-admin-layout-option ${isSelected ? 'selected' : ''}"
-           data-layout="${style.id}"
-           title="${style.description}">
-        <div class="lp-admin-layout-preview">
-          <span class="lp-admin-layout-preview-text">${style.preview}</span>
+      <label class="layout-option ${isSelected ? 'selected' : ''}">
+        <input type="radio" name="lp-layout-style" value="${style.id}" ${isSelected ? 'checked' : ''} data-layout="${style.id}">
+        <div class="layout-preview" style="position: relative;">
+          <div class="template-color-preview" style="
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background: ${style.color};
+            border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          "></div>
+          <span class="layout-name">${style.name}</span>
+          <span class="layout-desc">${style.description}</span>
+          <span class="layout-industries" style="font-size: 11px; color: #6b7280; margin-top: 4px; display: block;">${style.industries.join(' / ')}</span>
         </div>
-        <div class="lp-admin-layout-info">
-          <span class="lp-admin-layout-name">${style.name}</span>
-          <span class="lp-admin-layout-desc">${style.description}</span>
-        </div>
-        ${isSelected ? '<span class="lp-admin-layout-check">✓</span>' : ''}
-      </div>
+      </label>
     `;
   }).join('');
 
   return `
-    <div class="lp-admin-layout-selector">
+    <div class="layout-style-grid">
       ${options}
     </div>
   `;
@@ -92,24 +99,14 @@ function renderLayoutStyleSelector(selectedLayout = 'default') {
  * レイアウトスタイル選択イベントをセットアップ
  */
 function setupLayoutStyleEvents(container) {
-  container.querySelectorAll('.lp-admin-layout-option').forEach(option => {
-    option.addEventListener('click', () => {
-      const layoutId = option.dataset.layout;
+  container.querySelectorAll('input[name="lp-layout-style"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const layoutId = radio.value;
 
-      // 選択状態を更新
-      container.querySelectorAll('.lp-admin-layout-option').forEach(opt => {
-        opt.classList.toggle('selected', opt === option);
-        const check = opt.querySelector('.lp-admin-layout-check');
-        if (opt === option) {
-          if (!check) {
-            const checkSpan = document.createElement('span');
-            checkSpan.className = 'lp-admin-layout-check';
-            checkSpan.textContent = '✓';
-            opt.appendChild(checkSpan);
-          }
-        } else if (check) {
-          check.remove();
-        }
+      // 選択状態を更新（label要素にselectedクラス）
+      container.querySelectorAll('.layout-option').forEach(opt => {
+        const optRadio = opt.querySelector('input[name="lp-layout-style"]');
+        opt.classList.toggle('selected', optRadio?.value === layoutId);
       });
 
       // グローバル設定を更新
@@ -191,23 +188,15 @@ function updateTemplateSelectorUI() {
 
   const currentLayoutStyle = globalSettings.layoutStyle || 'modern';
 
-  // 既存の選択をクリア
-  container.querySelectorAll('.lp-admin-layout-option').forEach(opt => {
-    const isSelected = opt.dataset.layout === currentLayoutStyle;
-    opt.classList.toggle('selected', isSelected);
+  // ラジオボタンの選択状態を更新
+  container.querySelectorAll('input[name="lp-layout-style"]').forEach(radio => {
+    radio.checked = radio.value === currentLayoutStyle;
+  });
 
-    // チェックマークを更新
-    let check = opt.querySelector('.lp-admin-layout-check');
-    if (isSelected) {
-      if (!check) {
-        const checkSpan = document.createElement('span');
-        checkSpan.className = 'lp-admin-layout-check';
-        checkSpan.textContent = '✓';
-        opt.appendChild(checkSpan);
-      }
-    } else if (check) {
-      check.remove();
-    }
+  // label要素のselectedクラスを更新
+  container.querySelectorAll('.layout-option').forEach(opt => {
+    const optRadio = opt.querySelector('input[name="lp-layout-style"]');
+    opt.classList.toggle('selected', optRadio?.value === currentLayoutStyle);
   });
 }
 
