@@ -642,39 +642,49 @@
 }
 
 /* ========================================
-   CTAセクション
+   CTAセクション（改善版）
    ======================================== */
 .recruit-cta {
   background: linear-gradient(135deg, var(--recruit-primary) 0%, var(--recruit-primary-dark) 100%);
   color: var(--recruit-white);
   text-align: center;
+  padding: 5rem 1.5rem;
 }
 
 .recruit-cta-title {
   color: var(--recruit-white);
   margin-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
 .recruit-cta-text {
   font-size: 1.125rem;
   opacity: 0.9;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
 }
 
 .recruit-cta-button {
   display: inline-block;
-  padding: 1rem 3rem;
+  padding: 1.125rem 3.5rem;
   background: var(--recruit-white);
   color: var(--recruit-primary);
   font-weight: 700;
+  font-size: 1.0625rem;
   text-decoration: none;
   border-radius: 50px;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
 .recruit-cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }
 
 /* ========================================
@@ -985,7 +995,7 @@
 }
 
 /* ========================================
-   レスポンシブ
+   レスポンシブ（改善版）
    ======================================== */
 @media (max-width: 768px) {
   .recruit-header-inner {
@@ -1003,6 +1013,11 @@
 
   .recruit-hero-title {
     font-size: 1.75rem;
+    line-height: 1.3;
+  }
+
+  .recruit-hero-subtitle {
+    font-size: 1rem;
   }
 
   .recruit-stat-number {
@@ -1010,35 +1025,47 @@
   }
 
   .recruit-section {
-    padding: 3rem 1rem;
+    padding: 3.5rem 1rem;
   }
 
   .recruit-section-title {
     font-size: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
-  /* 求人一覧（モバイル：横スクロール） */
+  .recruit-section-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+
+  /* 求人一覧（モバイル：縦並び） */
   .recruit-jobs-grid {
     display: flex;
-    gap: 0.75rem;
-    max-width: 100%;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    margin: 0 -1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  .recruit-jobs-grid::-webkit-scrollbar {
-    display: none;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   .recruit-job-card {
-    flex: 0 0 85%;
-    scroll-snap-align: center;
-    min-width: 280px;
+    width: 100%;
+  }
+
+  .recruit-job-card-image {
+    height: 200px;
+  }
+
+  .recruit-job-card-body,
+  .recruit-job-card-content {
+    padding: 1.25rem;
+  }
+
+  .recruit-job-card-title {
+    font-size: 1.125rem;
+    line-height: 1.4;
+  }
+
+  .recruit-job-card-btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
   }
 
   /* ページネーション（モバイル：非表示） */
@@ -1046,7 +1073,7 @@
     display: none;
   }
 
-  /* 職種タブ（モバイル） */
+  /* 職種タブ（モバイル：横スクロール） */
   .recruit-job-tabs {
     gap: 0.375rem;
     padding: 0.375rem;
@@ -1065,6 +1092,28 @@
     font-size: 0.8125rem;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  /* CTA セクション（モバイル） */
+  .recruit-cta {
+    padding: 3.5rem 1.25rem;
+  }
+
+  .recruit-cta-title {
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+
+  .recruit-cta-text {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .recruit-cta-button {
+    width: 100%;
+    max-width: 320px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
   }
 }
 
@@ -1189,9 +1238,13 @@
   color: #fff;
   text-decoration: none;
   border-radius: 50%;
-  font-size: 1rem;
-  font-weight: bold;
   transition: all 0.2s;
+}
+
+.footer-sns-link svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
 }
 
 .footer-sns-link:hover {
@@ -1199,7 +1252,7 @@
   transform: translateY(-2px);
 }
 
-.footer-sns-twitter:hover { background: #1da1f2; }
+.footer-sns-twitter:hover { background: #000; }
 .footer-sns-instagram:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
 .footer-sns-facebook:hover { background: #1877f2; }
 .footer-sns-youtube:hover { background: #ff0000; }
@@ -1326,354 +1379,630 @@
 }
 
 /* ========================================
-   デザインパターン（カラーテーマ）
+   統合テンプレートシステム（新）
+   4つの完成度の高いテンプレート
    ======================================== */
 
-/* スタンダード（デフォルト） */
-.lp-pattern-standard .recruit-hero-cta,
-.lp-pattern-standard .recruit-cta-button {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-}
-
-.lp-pattern-standard .recruit-hero-cta:hover,
-.lp-pattern-standard .recruit-cta-button:hover {
-  background: linear-gradient(135deg, #5a67d8, #6b46c1);
-}
-
-/* モダン（グリーン） */
-.lp-pattern-modern .recruit-hero-cta,
-.lp-pattern-modern .recruit-cta-button {
-  background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.lp-pattern-modern .recruit-hero-cta:hover,
-.lp-pattern-modern .recruit-cta-button:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-}
-
-.lp-pattern-modern .recruit-section-title {
-  color: #059669;
-}
-
-.lp-pattern-modern .recruit-cta {
-  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-}
-
-/* クラシック（ブラウン） */
-.lp-pattern-classic .recruit-hero-cta,
-.lp-pattern-classic .recruit-cta-button {
-  background: linear-gradient(135deg, #92400e, #78350f);
-}
-
-.lp-pattern-classic .recruit-hero-cta:hover,
-.lp-pattern-classic .recruit-cta-button:hover {
-  background: linear-gradient(135deg, #78350f, #451a03);
-}
-
-.lp-pattern-classic .recruit-section-title {
-  color: #78350f;
-}
-
-.lp-pattern-classic .recruit-cta {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-}
-
-/* ミニマル（モノトーン） */
-.lp-pattern-minimal .recruit-hero-cta,
-.lp-pattern-minimal .recruit-cta-button {
-  background: #1f2937;
-}
-
-.lp-pattern-minimal .recruit-hero-cta:hover,
-.lp-pattern-minimal .recruit-cta-button:hover {
-  background: #111827;
-}
-
-.lp-pattern-minimal .recruit-section-title {
-  color: #1f2937;
-}
-
-.lp-pattern-minimal .recruit-hero-overlay {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
-}
-
-/* カラフル（ピンク〜パープル） */
-.lp-pattern-colorful .recruit-hero-cta,
-.lp-pattern-colorful .recruit-cta-button {
-  background: linear-gradient(135deg, #ec4899, #8b5cf6);
-}
-
-.lp-pattern-colorful .recruit-hero-cta:hover,
-.lp-pattern-colorful .recruit-cta-button:hover {
-  background: linear-gradient(135deg, #db2777, #7c3aed);
-}
-
-.lp-pattern-colorful .recruit-section-title {
-  color: #8b5cf6;
-}
-
-.lp-pattern-colorful .recruit-cta {
-  background: linear-gradient(135deg, #fdf4ff, #f3e8ff);
-}
-
-/* ブルー */
-.lp-pattern-blue .recruit-hero-cta,
-.lp-pattern-blue .recruit-cta-button {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-
-.lp-pattern-blue .recruit-hero-cta:hover,
-.lp-pattern-blue .recruit-cta-button:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-}
-
-.lp-pattern-blue .recruit-section-title {
-  color: #1d4ed8;
-}
-
-.lp-pattern-blue .recruit-cta {
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-}
-
-/* オレンジ */
-.lp-pattern-orange .recruit-hero-cta,
-.lp-pattern-orange .recruit-cta-button {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-}
-
-.lp-pattern-orange .recruit-hero-cta:hover,
-.lp-pattern-orange .recruit-cta-button:hover {
-  background: linear-gradient(135deg, #ea580c, #c2410c);
-}
-
-.lp-pattern-orange .recruit-section-title {
-  color: #ea580c;
-}
-
-.lp-pattern-orange .recruit-cta {
-  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+/* --- 共通: セクションラベル（モダンスタイル） --- */
+.recruit-section-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--recruit-primary);
+  display: block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
 }
 
 /* ========================================
-   レイアウトスタイル
+   テンプレート1: モダン（デフォルト）
+   洗練されたダークグレー + 青アクセント
+   製造業・IT・オフィスワーク向け
    ======================================== */
-
-/* イエロー */
-[data-layout-style="yellow"] .recruit-hero {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+[data-template="modern"] {
+  --tpl-primary: #2d3436;
+  --tpl-primary-dark: #1e272e;
+  --tpl-accent: #0984e3;
+  --tpl-text: #2d3436;
+  --tpl-text-sub: #636e72;
+  --tpl-bg: #f8f9fa;
+  --tpl-highlight: #fff176;
+  --tpl-border: #eee;
+  --tpl-card-radius: 4px;
 }
 
-[data-layout-style="yellow"] .recruit-hero-overlay {
-  background: linear-gradient(to bottom, rgba(251, 191, 36, 0.5), rgba(245, 158, 11, 0.6));
+[data-template="modern"] .recruit-hero-overlay {
+  background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3));
 }
 
-[data-layout-style="yellow"] .recruit-hero-title {
-  color: #92400e;
-}
-
-[data-layout-style="yellow"] .recruit-hero-subtitle {
-  color: #78350f;
-}
-
-[data-layout-style="yellow"] .recruit-hero-cta {
-  background: #f59e0b;
-  color: #fff;
-}
-
-[data-layout-style="yellow"] .recruit-hero-cta:hover {
-  background: #d97706;
-}
-
-[data-layout-style="yellow"] .recruit-section {
-  border-radius: 16px;
-}
-
-[data-layout-style="yellow"] .recruit-job-card {
-  border-radius: 16px;
-  border-bottom: 4px solid #f59e0b;
-}
-
-/* インパクト */
-[data-layout-style="impact"] .recruit-hero-overlay {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7));
-}
-
-[data-layout-style="impact"] .recruit-hero-title {
-  font-size: clamp(2rem, 5vw, 4rem);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-}
-
-[data-layout-style="impact"] .recruit-hero-cta {
-  transform: skewX(-5deg);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-[data-layout-style="impact"] .recruit-cta {
-  background: #111827;
-  color: #fff;
-}
-
-[data-layout-style="impact"] .recruit-cta-title,
-[data-layout-style="impact"] .recruit-cta-text {
-  color: #fff;
-}
-
-/* 信頼 */
-[data-layout-style="trust"] .recruit-section-title {
-  padding-left: 1rem;
-  border-left: 4px solid var(--recruit-primary);
-}
-
-[data-layout-style="trust"] .recruit-section-title::after {
-  display: none;
-}
-
-[data-layout-style="trust"] .recruit-job-card {
-  border-radius: 4px;
-  border-left: 4px solid var(--recruit-primary);
-}
-
-/* ボールド */
-[data-layout-style="bold"] .recruit-hero-title {
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  font-weight: 900;
-  line-height: 1.1;
-}
-
-[data-layout-style="bold"] .recruit-hero-overlay {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.8));
-}
-
-[data-layout-style="bold"] .recruit-section-title {
-  font-size: 2rem;
+[data-template="modern"] .recruit-hero-title {
   font-weight: 900;
 }
 
-/* エレガント */
-[data-layout-style="elegant"] .recruit-section-title {
-  text-align: left;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--recruit-primary);
+[data-template="modern"] .recruit-hero-cta {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 50px;
 }
 
-[data-layout-style="elegant"] .recruit-section-title::after {
-  display: none;
+[data-template="modern"] .recruit-hero-cta:hover {
+  background: #0773c5;
+  transform: scale(1.05);
 }
 
-[data-layout-style="elegant"] .recruit-job-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 0;
+[data-template="modern"] .recruit-section-label {
+  color: var(--tpl-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
 }
 
-[data-layout-style="elegant"] .recruit-section {
-  padding: 4rem 2rem;
+[data-template="modern"] .recruit-section-title {
+  font-weight: 800;
+  color: var(--tpl-primary);
 }
 
-/* ポップ */
-[data-layout-style="playful"] .recruit-hero {
-  background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 50%, #e0e7ff 100%);
-}
-
-[data-layout-style="playful"] .recruit-hero-overlay {
-  background: transparent;
-}
-
-[data-layout-style="playful"] .recruit-hero-title {
-  color: #7c3aed;
-}
-
-[data-layout-style="playful"] .recruit-hero-subtitle {
-  color: #6b7280;
-}
-
-[data-layout-style="playful"] .recruit-job-card {
-  border-radius: 24px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-}
-
-[data-layout-style="playful"] .recruit-section-title {
-  color: #7c3aed;
-}
-
-/* コーポレート */
-[data-layout-style="corporate"] .recruit-section-title {
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-[data-layout-style="corporate"] .recruit-section-title::before {
-  content: '';
-  width: 4px;
-  height: 1.5em;
-  background: var(--recruit-primary);
-}
-
-[data-layout-style="corporate"] .recruit-section-title::after {
-  display: none;
-}
-
-[data-layout-style="corporate"] .recruit-job-card {
-  border-radius: 0;
+/* モダン: 求人カード */
+[data-template="modern"] .recruit-job-card {
+  border: 1px solid var(--tpl-border);
+  border-radius: var(--tpl-card-radius);
   box-shadow: none;
-  border: 1px solid #e5e7eb;
 }
 
-[data-layout-style="corporate"] .recruit-section:nth-child(even) {
-  background: #f9fafb;
+[data-template="modern"] .recruit-job-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-/* アットホーム */
-[data-layout-style="athome"] .recruit-hero {
-  border-radius: 0 0 50% 50% / 0 0 5% 5%;
+/* モダン: NEWタグ（ダークスタイル） */
+[data-template="modern"] .recruit-job-new-tag {
+  background: var(--tpl-primary);
+  color: #fff;
+  border-radius: 0;
+  font-size: 10px;
+  padding: 5px 12px;
 }
 
-[data-layout-style="athome"] .recruit-job-card {
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+/* モダン: 給与セクション（点線区切り） */
+[data-template="modern"] .recruit-job-card-benefits {
+  border-top: 1px dashed #ddd;
+  background: transparent;
+  padding-top: 15px;
+  margin-top: 15px;
 }
 
-[data-layout-style="athome"] .recruit-section-title {
-  background: linear-gradient(135deg, #fef3c7, #fce7f3);
-  padding: 0.5rem 1.5rem;
-  border-radius: 9999px;
+/* モダン: 特典総額ハイライト */
+[data-template="modern"] .recruit-benefit-item.highlight {
+  background: var(--tpl-highlight);
+  font-weight: bold;
+  padding: 2px 8px;
+  display: inline-block;
+  margin-top: 5px;
+  border-radius: 0;
+}
+
+[data-template="modern"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+[data-template="modern"] .recruit-benefit-item.highlight .recruit-benefit-value {
+  color: #1e272e;
+  font-size: 12px;
+}
+
+/* モダン: 給与表示（大きく） */
+[data-template="modern"] .recruit-benefit-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+/* モダン: 特徴タグ */
+[data-template="modern"] .recruit-feature-tag {
+  background: #f1f2f6;
+  color: var(--tpl-text-sub);
+  border: none;
+  border-radius: 0;
+  font-size: 11px;
+}
+
+/* モダン: CTA セクション */
+[data-template="modern"] .recruit-cta {
+  background: var(--tpl-primary);
+}
+
+[data-template="modern"] .recruit-cta-title {
+  font-weight: 800;
+}
+
+[data-template="modern"] .recruit-cta-button,
+[data-template="modern"] .fixed-cta-button {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 50px;
+}
+
+[data-template="modern"] .recruit-cta-button:hover,
+[data-template="modern"] .fixed-cta-button:hover {
+  background: #0773c5;
+  transform: scale(1.05);
+}
+
+/* ========================================
+   テンプレート2: アットホーム
+   温かみのある親しみやすいデザイン
+   飲食・介護・サービス業向け
+   ======================================== */
+[data-template="athome"] {
+  --tpl-primary: #e67e22;
+  --tpl-primary-dark: #d35400;
+  --tpl-accent: #f39c12;
+  --tpl-text: #5d4037;
+  --tpl-text-sub: #8d6e63;
+  --tpl-bg: #fffbf0;
+  --tpl-highlight: #fff176;
+  --tpl-card-radius: 25px;
+}
+
+[data-template="athome"] .recruit-hero {
+  background-color: var(--tpl-bg);
+}
+
+[data-template="athome"] .recruit-hero-bg {
+  border-radius: 40px;
+  margin: 20px;
+  height: calc(100% - 40px);
+}
+
+[data-template="athome"] .recruit-hero-overlay {
+  background: rgba(0,0,0,0.2);
+  border-radius: 40px;
+}
+
+[data-template="athome"] .recruit-hero-title {
+  font-weight: 800;
+}
+
+[data-template="athome"] .recruit-hero-cta {
+  background: var(--tpl-primary);
+  color: #fff;
+  border-radius: 50px;
+}
+
+[data-template="athome"] .recruit-hero-cta:hover {
+  background: var(--tpl-primary-dark);
+}
+
+[data-template="athome"] .recruit-section-label {
+  color: var(--tpl-primary);
+}
+
+[data-template="athome"] .recruit-section-title {
+  color: var(--tpl-primary);
+}
+
+/* アットホーム: 求人カード */
+[data-template="athome"] .recruit-job-card {
+  border-radius: var(--tpl-card-radius);
+  border: 2px solid transparent;
+  box-shadow: 0 2px 10px rgba(230,126,34,0.1);
+}
+
+[data-template="athome"] .recruit-job-card:hover {
+  border-color: var(--tpl-accent);
+  transform: scale(1.02);
+}
+
+[data-template="athome"] .recruit-job-card-image {
+  border-radius: var(--tpl-card-radius) var(--tpl-card-radius) 0 0;
+}
+
+/* アットホーム: NEWタグ */
+[data-template="athome"] .recruit-job-new-tag {
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 20px;
+  padding: 5px 15px;
+  font-size: 12px;
+}
+
+/* アットホーム: 特徴タグ */
+[data-template="athome"] .recruit-feature-tag {
+  background: #fff5e6;
+  color: var(--tpl-primary);
+  border: 1px solid #ffe0b3;
+  border-radius: 15px;
+  font-size: 11px;
+}
+
+/* アットホーム: 給与セクション */
+[data-template="athome"] .recruit-job-card-benefits {
+  border-top: 1px dashed #ddd;
+  padding-top: 15px;
+}
+
+[data-template="athome"] .recruit-benefit-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--tpl-text);
+}
+
+/* アットホーム: 特典総額ハイライト */
+[data-template="athome"] .recruit-benefit-item.highlight {
+  background: var(--tpl-highlight);
+  color: var(--tpl-primary-dark);
+  padding: 2px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+[data-template="athome"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+/* アットホーム: ボタン */
+[data-template="athome"] .recruit-job-card-btn {
+  background: var(--tpl-accent);
+  border-radius: 50px;
+  box-shadow: 0 6px 0 var(--tpl-primary-dark);
+}
+
+[data-template="athome"] .recruit-job-card-btn:hover {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 var(--tpl-primary-dark);
+}
+
+/* アットホーム: CTA */
+[data-template="athome"] .recruit-cta {
+  background: var(--tpl-bg);
+  color: var(--tpl-text);
+}
+
+[data-template="athome"] .recruit-cta-title {
+  color: var(--tpl-primary);
+}
+
+[data-template="athome"] .recruit-cta-text {
+  color: var(--tpl-text-sub);
+}
+
+[data-template="athome"] .recruit-cta-button,
+[data-template="athome"] .fixed-cta-button {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 50px;
+  box-shadow: 0 6px 0 var(--tpl-primary-dark);
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+
+[data-template="athome"] .recruit-cta-button:hover,
+[data-template="athome"] .fixed-cta-button:hover {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 var(--tpl-primary-dark);
+}
+
+/* ========================================
+   テンプレート3: キュート
+   ポップで可愛いパステル調デザイン
+   保育・美容・アパレル向け
+   ======================================== */
+[data-template="cute"] {
+  --tpl-primary: #ff8fa3;
+  --tpl-primary-dark: #e85d75;
+  --tpl-secondary: #74b9ff;
+  --tpl-accent: #fab1a0;
+  --tpl-text: #5d4037;
+  --tpl-text-sub: #8d6e63;
+  --tpl-bg: #fffaf0;
+  --tpl-highlight: #fff59d;
+  --tpl-card-radius: 40px;
+}
+
+[data-template="cute"] body {
+  background-color: var(--tpl-bg);
+  background-image: radial-gradient(#ffe0e9 2px, transparent 2px);
+  background-size: 30px 30px;
+}
+
+[data-template="cute"] .recruit-hero-bg {
+  border-radius: 50px 150px 50px 120px;
+}
+
+[data-template="cute"] .recruit-hero-overlay {
+  border-radius: 50px 150px 50px 120px;
+}
+
+[data-template="cute"] .recruit-hero-title {
+  font-weight: 900;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+[data-template="cute"] .recruit-hero-cta {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 30px;
+}
+
+[data-template="cute"] .recruit-hero-cta:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+[data-template="cute"] .recruit-section-label {
+  color: var(--tpl-primary);
+}
+
+[data-template="cute"] .recruit-section-title {
+  font-weight: 900;
+  position: relative;
   display: inline-block;
 }
 
-[data-layout-style="athome"] .recruit-section-title::after {
+[data-template="cute"] .recruit-section-title::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: var(--tpl-highlight);
+  z-index: -1;
+  border-radius: 10px;
+}
+
+/* キュート: 求人カード */
+[data-template="cute"] .recruit-job-card {
+  border-radius: var(--tpl-card-radius);
+  border: 2px solid #ffe0e9;
+  box-shadow: 0 10px 0 #ffe0e9;
+}
+
+[data-template="cute"] .recruit-job-card:hover {
+  transform: translateY(5px);
+  box-shadow: 0 5px 0 #ffe0e9;
+}
+
+[data-template="cute"] .recruit-job-card-image {
+  border-radius: calc(var(--tpl-card-radius) - 2px) calc(var(--tpl-card-radius) - 2px) 0 0;
+}
+
+/* キュート: NEWタグ（丸い・回転） */
+[data-template="cute"] .recruit-job-new-tag {
+  background: var(--tpl-primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transform: rotate(-15deg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 0;
+}
+
+/* キュート: 特徴タグ */
+[data-template="cute"] .recruit-feature-tag {
+  background: #fff0f3;
+  color: var(--tpl-primary);
+  border: 1px solid #ffdae1;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+/* キュート: 勤務地情報 */
+[data-template="cute"] .recruit-job-card-location,
+[data-template="cute"] .recruit-job-card-access {
+  background: #fdfdfd;
+  padding: 8px 15px;
+  border-radius: 20px;
+  margin-bottom: 5px;
+}
+
+/* キュート: 給与セクション */
+[data-template="cute"] .recruit-job-card-benefits {
+  border-top: 2px dotted #ffe0e9;
+  padding-top: 15px;
+}
+
+[data-template="cute"] .recruit-benefit-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--tpl-primary);
+}
+
+/* キュート: 特典総額ハイライト */
+[data-template="cute"] .recruit-benefit-item.highlight {
+  background: var(--tpl-highlight);
+  color: #d63031;
+  padding: 5px 15px;
+  border-radius: 15px;
+  border: 2px dashed #ff7675;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+[data-template="cute"] .recruit-benefit-item.highlight .recruit-benefit-label {
   display: none;
 }
 
-/* 地域密着 */
-[data-layout-style="local"] .recruit-hero-overlay {
-  background: linear-gradient(to bottom, rgba(120, 53, 15, 0.4), rgba(146, 64, 14, 0.6));
+/* キュート: ボタン */
+[data-template="cute"] .recruit-job-card-btn {
+  background: var(--tpl-primary);
+  border-radius: 50px;
 }
 
-[data-layout-style="local"] .recruit-hero-title {
-  font-family: serif;
+[data-template="cute"] .recruit-job-card-btn:hover {
+  background: var(--tpl-primary-dark);
+}
+
+/* キュート: CTA */
+[data-template="cute"] .recruit-cta {
+  background: var(--tpl-accent);
+  border-radius: 60px 60px 0 0;
+  color: #fff;
+}
+
+[data-template="cute"] .recruit-cta-title {
+  font-weight: 900;
+  font-size: 2.2rem;
+}
+
+[data-template="cute"] .recruit-cta-button,
+[data-template="cute"] .fixed-cta-button {
+  background: #fff;
+  color: var(--tpl-accent);
+  border-radius: 50px;
+  font-weight: 900;
+  font-size: 1.3rem;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+}
+
+[data-template="cute"] .recruit-cta-button:hover,
+[data-template="cute"] .fixed-cta-button:hover {
+  transform: translateY(3px);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+}
+
+/* ========================================
+   テンプレート4: 信頼
+   誠実で信頼感のあるデザイン
+   製造・金融・コンサル向け
+   ======================================== */
+[data-template="trust"] {
+  --tpl-primary: #1a2a3a;
+  --tpl-primary-dark: #0d1821;
+  --tpl-accent: #0077c2;
+  --tpl-accent-light: #fbc02d;
+  --tpl-text: #333333;
+  --tpl-text-sub: #666666;
+  --tpl-bg: #f4f7f9;
+  --tpl-border: #e0e6ed;
+  --tpl-card-radius: 4px;
+}
+
+[data-template="trust"] .recruit-hero-overlay {
+  background: linear-gradient(rgba(26,42,58,0.8), rgba(26,42,58,0.8));
+}
+
+[data-template="trust"] .recruit-hero-title {
+  font-weight: 700;
   letter-spacing: 0.1em;
 }
 
-[data-layout-style="local"] .recruit-section-title {
-  font-family: serif;
-  letter-spacing: 0.05em;
+[data-template="trust"] .recruit-hero-cta {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: var(--tpl-card-radius);
 }
 
-[data-layout-style="local"] .recruit-section-title::after {
-  background: linear-gradient(90deg, #92400e, transparent);
+[data-template="trust"] .recruit-hero-cta:hover {
+  background: #005a94;
 }
 
-[data-layout-style="local"] .recruit-job-card {
+[data-template="trust"] .recruit-section-title {
+  font-weight: 700;
+  color: var(--tpl-primary);
+  position: relative;
+  text-align: center;
+}
+
+[data-template="trust"] .recruit-section-title::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 3px;
+  background: var(--tpl-accent);
+  margin: 15px auto 0;
+}
+
+/* 信頼: 求人カード */
+[data-template="trust"] .recruit-job-card {
+  border: 1px solid var(--tpl-border);
+  border-radius: var(--tpl-card-radius);
+  box-shadow: none;
+}
+
+[data-template="trust"] .recruit-job-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 信頼: NEWタグ */
+[data-template="trust"] .recruit-job-new-tag {
+  background: var(--tpl-accent);
+  color: #fff;
   border-radius: 0;
-  border: 1px solid #d6d3d1;
+  font-size: 10px;
+  padding: 4px 12px;
 }
 
-[data-layout-style="local"] .recruit-cta {
-  background: linear-gradient(135deg, #fef3c7, #f5f5f4);
+/* 信頼: 特徴タグ */
+[data-template="trust"] .recruit-feature-tag {
+  background: transparent;
+  color: var(--tpl-text-sub);
+  border: 1px solid var(--tpl-border);
+  border-radius: 0;
+  font-size: 11px;
+}
+
+/* 信頼: 給与セクション */
+[data-template="trust"] .recruit-job-card-benefits {
+  border-top: 1px solid var(--tpl-border);
+  padding-top: 15px;
+}
+
+[data-template="trust"] .recruit-benefit-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--tpl-primary);
+}
+
+/* 信頼: 特典総額ハイライト */
+[data-template="trust"] .recruit-benefit-item.highlight {
+  background: var(--tpl-accent-light);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 10px;
+  border-radius: 2px;
+  margin-top: 5px;
+}
+
+[data-template="trust"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+/* 信頼: ボタン */
+[data-template="trust"] .recruit-job-card-btn {
+  background: var(--tpl-accent);
+  border-radius: var(--tpl-card-radius);
+}
+
+[data-template="trust"] .recruit-job-card-btn:hover {
+  background: #005a94;
+}
+
+/* 信頼: CTA */
+[data-template="trust"] .recruit-cta {
+  background: var(--tpl-primary);
+}
+
+[data-template="trust"] .recruit-cta-title {
+  font-weight: 700;
+}
+
+[data-template="trust"] .recruit-cta-button,
+[data-template="trust"] .fixed-cta-button {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: var(--tpl-card-radius);
+  font-weight: bold;
+}
+
+[data-template="trust"] .recruit-cta-button:hover,
+[data-template="trust"] .fixed-cta-button:hover {
+  background: #005a94;
 }
 
 /* ========================================
@@ -1773,13 +2102,21 @@
 /* タブナビゲーション */
 .recruit-editor-tabs {
   display: flex;
+  overflow-x: auto;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin-bottom: 8px;
+}
+
+.recruit-editor-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .recruit-editor-tab {
-  flex: 1;
-  padding: 0.75rem 0.5rem;
+  flex: 0 0 auto;
+  padding: 1rem 1rem;
   border: none;
   background: none;
   font-size: 0.8125rem;
@@ -1788,6 +2125,7 @@
   cursor: pointer;
   transition: all 0.2s;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .recruit-editor-tab:hover {
@@ -1818,29 +2156,33 @@
 
 /* エディターセクション */
 .editor-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.editor-section:first-child {
+  margin-top: 0.5rem;
 }
 
 .editor-section-title {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #374151;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
 /* フォームグループ */
 .recruit-editor-panel .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .recruit-editor-panel .form-group label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.375rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
 }
 
 /* toggle-switchはflexレイアウトを維持 */
@@ -1852,17 +2194,26 @@
 }
 
 .recruit-editor-panel .form-group input[type="text"],
+.recruit-editor-panel .form-group input[type="url"],
+.recruit-editor-panel .form-group input[type="number"],
+.recruit-editor-panel .form-group input[type="email"],
+.recruit-editor-panel .form-group select,
 .recruit-editor-panel .form-group textarea {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 0.75rem;
   font-size: 0.875rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background: #fff;
   transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
 .recruit-editor-panel .form-group input[type="text"]:focus,
+.recruit-editor-panel .form-group input[type="url"]:focus,
+.recruit-editor-panel .form-group input[type="number"]:focus,
+.recruit-editor-panel .form-group input[type="email"]:focus,
+.recruit-editor-panel .form-group select:focus,
 .recruit-editor-panel .form-group textarea:focus {
   outline: none;
   border-color: var(--recruit-primary);
@@ -1874,7 +2225,76 @@
   min-height: 60px;
 }
 
-/* レイアウトスタイルグリッド */
+/* テンプレートグリッド（新） */
+.template-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.template-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.template-item:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.template-item.selected,
+.template-item:has(input:checked) {
+  border-color: var(--recruit-primary);
+  background: rgba(99, 102, 241, 0.05);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.template-item input[type="radio"] {
+  display: none;
+}
+
+.template-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.template-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.template-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.template-industries {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+  margin-top: 0.125rem;
+}
+
+/* レガシー互換: レイアウトスタイルグリッド */
 .layout-style-grid {
   display: flex;
   flex-direction: column;
@@ -3143,4 +3563,566 @@ body.recruit-edit-mode.preview-mode-mobile::before {
   font-size: 20px;
   font-weight: bold;
   margin-top: 4px;
+}
+
+/* ========================================
+   テンプレート選択モーダル（編集モード用）
+   ======================================== */
+.template-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.template-modal {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.template-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--recruit-primary, #6366f1);
+  color: #fff;
+}
+
+.template-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.template-modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.template-modal-close:hover {
+  opacity: 1;
+}
+
+.template-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.template-modal-description {
+  margin: 0 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.template-list .template-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.template-list .template-item:hover {
+  border-color: var(--recruit-primary, #6366f1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.template-thumbnail {
+  flex-shrink: 0;
+  width: 100px;
+  height: 70px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.template-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.template-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-description {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.btn-add-template {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px solid var(--recruit-primary, #6366f1);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-template:hover {
+  background: var(--recruit-primary, #6366f1);
+  color: #fff;
+}
+
+.template-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.btn-template-cancel {
+  padding: 10px 32px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px solid var(--recruit-primary, #6366f1);
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-template-cancel:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* コンテンツ追加ボタン */
+.btn-open-template-selector {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 2px dashed var(--recruit-primary, #6366f1);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-open-template-selector:hover {
+  background: rgba(99, 102, 241, 0.05);
+  border-color: var(--recruit-primary, #6366f1);
+}
+
+/* ========================================
+   カスタムセクションフィールド（編集モード用）
+   ======================================== */
+#edit-custom-sections .custom-section-item {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+#edit-custom-sections .section-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ドラッグハンドル */
+#edit-custom-sections .section-drag-handle,
+.recruit-editor-panel .section-drag-handle,
+.custom-section-item .section-drag-handle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #6b7280;
+  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  user-select: none;
+  transition: color 0.2s;
+  letter-spacing: -3px;
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+#edit-custom-sections .section-drag-handle:hover,
+.recruit-editor-panel .section-drag-handle:hover,
+.custom-section-item .section-drag-handle:hover {
+  color: #374151;
+  background: #d1d5db;
+}
+
+#edit-custom-sections .section-drag-handle:active,
+.recruit-editor-panel .section-drag-handle:active,
+.custom-section-item .section-drag-handle:active {
+  cursor: grabbing;
+  color: var(--recruit-primary, #6366f1);
+  background: #c7d2fe;
+}
+
+#edit-custom-sections .section-type-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--recruit-primary, #6366f1);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ドラッグ状態 */
+#edit-custom-sections .custom-section-item.dragging {
+  opacity: 0.5;
+  border: 2px dashed var(--recruit-primary, #6366f1);
+}
+
+#edit-custom-sections .custom-section-item.drag-over {
+  border: 2px solid var(--recruit-primary, #6366f1);
+  background: #eef2ff;
+}
+
+#edit-custom-sections .section-item-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+#edit-custom-sections .section-item-actions button {
+  padding: 4px 8px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#edit-custom-sections .section-item-actions button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+#edit-custom-sections .section-item-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#edit-custom-sections .section-item-content {
+  padding: 12px;
+}
+
+/* セクションフィールド */
+.section-field {
+  margin-bottom: 12px;
+}
+
+.section-field:last-child {
+  margin-bottom: 0;
+}
+
+.section-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.section-field-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.section-field-input:focus {
+  outline: none;
+  border-color: var(--recruit-primary, #6366f1);
+}
+
+textarea.section-field-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.section-image-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  object-fit: contain;
+}
+
+/* 項目リスト（business用） */
+.section-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-item-entry {
+  position: relative;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.item-field {
+  margin-bottom: 8px;
+}
+
+.item-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.item-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.item-field-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.item-field-input:focus {
+  outline: none;
+  border-color: var(--recruit-primary, #6366f1);
+}
+
+.btn-remove-item {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #ef4444;
+}
+
+.btn-add-item {
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px dashed var(--recruit-primary, #6366f1);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-item:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* ギャラリー */
+.section-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.gallery-image-item {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.gallery-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-gallery-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.btn-add-gallery-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4/3;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px dashed var(--recruit-primary, #6366f1);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-gallery-image:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* ========================================
+   プレビューセクション並び替え（編集モード）
+   ======================================== */
+
+/* 編集モード時のセクション */
+.recruit-edit-mode .recruit-sortable-section {
+  position: relative;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.recruit-edit-mode .recruit-sortable-section:hover {
+  outline: 2px solid var(--recruit-primary, #6366f1);
+  outline-offset: -2px;
+}
+
+/* ドラッグハンドル */
+.recruit-section-drag-handle {
+  display: none;
+}
+
+.recruit-edit-mode .recruit-section-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: #fff;
+  color: #1f2937;
+  border: 2px solid #6366f1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: grab;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.recruit-edit-mode .recruit-section-drag-handle:hover {
+  background: #6366f1;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.recruit-edit-mode .recruit-section-drag-handle:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+  background: #4f46e5;
+  color: #fff;
+}
+
+.recruit-section-label {
+  font-weight: 700;
+}
+
+.recruit-section-drag-icon {
+  font-size: 16px;
+  color: #6366f1;
+}
+
+.recruit-edit-mode .recruit-section-drag-handle:hover .recruit-section-drag-icon,
+.recruit-edit-mode .recruit-section-drag-handle:active .recruit-section-drag-icon {
+  color: #fff;
+}
+
+/* ドラッグ中のスタイル */
+.recruit-edit-mode .recruit-section-dragging {
+  opacity: 0.5;
+  outline: 3px dashed var(--recruit-primary, #6366f1) !important;
+  outline-offset: -3px;
+}
+
+/* ヒーローセクションはz-indexが高いので調整 */
+.recruit-edit-mode .recruit-hero .recruit-section-drag-handle {
+  z-index: 1100;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .recruit-edit-mode .recruit-section-drag-handle {
+    top: 8px;
+    left: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
 }
