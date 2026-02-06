@@ -44,7 +44,7 @@ function renderDefaultHero(company, heroTitle, heroSubtitle, heroImage, highligh
       <div class="lp-hero-content">
         <p class="lp-hero-company">${escapeHtml(company.company)}</p>
         <h1 class="lp-hero-title lp-editable" data-field="heroTitle" data-label="メインタイトル">${escapeHtml(heroTitle)}</h1>
-        ${heroSubtitle ? `<p class="lp-hero-subtitle lp-editable" data-field="heroSubtitle" data-label="サブタイトル">${escapeHtml(heroSubtitle)}</p>` : `<p class="lp-hero-subtitle lp-editable lp-placeholder" data-field="heroSubtitle" data-label="サブタイトル">サブタイトルを追加</p>`}
+        ${heroSubtitle ? `<p class="lp-hero-subtitle lp-editable" data-field="heroSubtitle" data-label="サブタイトル">${escapeHtml(heroSubtitle)}</p>` : ''}
 
         ${highlights.length > 0 ? `
         <div class="lp-hero-highlights">
