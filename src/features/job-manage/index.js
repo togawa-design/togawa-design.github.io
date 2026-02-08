@@ -9,7 +9,9 @@ import {
   isAdmin,
   hasAccessToCompany,
   initFirebase,
-  handleLogout
+  handleLogout,
+  getAvailableCompanies,
+  switchCompany
 } from './auth.js';
 
 // 状態管理
@@ -334,7 +336,79 @@ export async function initJobManager() {
   }
 
   setupEventListeners();
+  setupCompanySwitcher();
   await loadJobsData();
+}
+
+/**
+ * 会社切り替えドロップダウンの初期化
+ */
+function setupCompanySwitcher() {
+  const companies = getAvailableCompanies();
+
+  // 複数会社に所属していない場合は非表示
+  if (companies.length <= 1) {
+    return;
+  }
+
+  const switcher = document.getElementById('company-switcher');
+  const btn = document.getElementById('company-switcher-btn');
+  const dropdown = document.getElementById('company-switcher-dropdown');
+  const currentCompanyEl = document.getElementById('current-company-name');
+
+  if (!switcher || !btn || !dropdown) return;
+
+  // 現在の会社名を表示
+  const currentCompany = companies.find(c => c.companyDomain === companyDomain);
+  if (currentCompanyEl && currentCompany) {
+    currentCompanyEl.textContent = currentCompany.companyName;
+  }
+
+  // ドロップダウンを構築
+  dropdown.innerHTML = companies.map(company => `
+    <div class="company-switcher-dropdown-item ${company.companyDomain === companyDomain ? 'active' : ''}"
+         data-domain="${company.companyDomain}">
+      <span class="check-icon">${company.companyDomain === companyDomain ? '✓' : ''}</span>
+      <span>${company.companyName}</span>
+    </div>
+  `).join('');
+
+  // ドロップダウン表示を切り替え
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    switcher.classList.toggle('open');
+  });
+
+  // 外側クリックで閉じる
+  document.addEventListener('click', () => {
+    switcher.classList.remove('open');
+  });
+
+  // 会社選択
+  dropdown.addEventListener('click', async (e) => {
+    const item = e.target.closest('.company-switcher-dropdown-item');
+    if (!item) return;
+
+    const domain = item.dataset.domain;
+    if (domain === companyDomain) {
+      switcher.classList.remove('open');
+      return;
+    }
+
+    const result = switchCompany(domain);
+    if (result.success) {
+      // ページをリロードして新しい会社のデータを読み込む
+      const params = new URLSearchParams(window.location.search);
+      params.set('domain', domain);
+      params.set('company', result.companyName);
+      window.location.search = params.toString();
+    } else {
+      alert(result.error || '会社の切り替えに失敗しました');
+    }
+  });
+
+  // 表示
+  switcher.style.display = 'block';
 }
 
 // グローバルにエクスポート（後方互換）

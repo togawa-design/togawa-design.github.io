@@ -5,7 +5,7 @@
 import { config, USER_ROLES } from './config.js';
 import {
   initFirebase, checkSession, handleLogin, handleGoogleLogin, handleLogout, getIdToken,
-  getUserRole, getUserCompanyDomain, isAdmin, handleCompanyLogin,
+  getUserRole, getUserCompanyDomain, isAdmin, handleCompanyLogin, confirmCompanySelection,
   getAllCompanyUsersWithInfo, addCompanyUser, updateCompanyUser, deleteCompanyUser,
   resetCompanyUserPassword, generatePassword, generateUsername, hasCompanyUser
 } from './auth.js';
@@ -116,24 +116,31 @@ function applyRoleBasedUI() {
 
 /**
  * 設定画面の制限を適用（会社ユーザー用）
- * パスワード変更のみ表示し、他の設定項目は非表示
+ * 管理者専用セクションを非表示、会社ユーザー向けセクションを表示
  */
 function applySettingsRestrictions() {
   const settingsSection = document.getElementById('section-settings');
   if (!settingsSection) return;
 
+  // 管理者専用セクションを非表示
+  const adminOnlySections = settingsSection.querySelectorAll('.admin-only-section');
+  adminOnlySections.forEach(section => {
+    section.style.display = 'none';
+  });
+
+  // 会社ユーザー専用セクションを表示
+  const companyOnlySections = settingsSection.querySelectorAll('.company-only-section');
+  companyOnlySections.forEach(section => {
+    section.style.display = 'block';
+  });
+
+  // 以下のセクションは会社ユーザーには非表示
+  const hiddenTitles = ['スプレッドシート連携', 'API設定', 'レガシー管理者パスワード'];
   const cards = settingsSection.querySelectorAll('.settings-card');
   cards.forEach(card => {
     const title = card.querySelector('h3')?.textContent;
-    // パスワード変更（管理者アカウント）以外は非表示
-    if (title !== '管理者アカウント') {
+    if (hiddenTitles.includes(title)) {
       card.style.display = 'none';
-    } else {
-      // パスワード変更セクションのタイトルを変更
-      const titleEl = card.querySelector('h3');
-      if (titleEl) {
-        titleEl.textContent = 'パスワード変更';
-      }
     }
   });
 }
@@ -319,6 +326,17 @@ async function switchSection(sectionName, options = {}) {
     loadCompanyUsersData();
   }
 
+  // 設定セクションに切り替えた場合
+  if (sectionName === 'settings') {
+    const { isAdmin } = await import('./auth.js');
+    if (isAdmin()) {
+      loadAdminUsersData();
+    } else {
+      loadCompanyStaffData();
+      setupCompanyStaffEvents();
+    }
+  }
+
   // Job-Manage埋め込みセクションに切り替えた場合は初期化
   if (sectionName === 'job-manage') {
     // 戻るボタンのイベントハンドラー設定（動的読み込み対応）
@@ -388,6 +406,74 @@ function navigateToCompanyEdit(domain, returnSection = 'company-manage') {
   setEditingCompanyDomain(domain);
   pushHistory(returnSection);
   switchSection('company-edit');
+}
+
+// ========================================
+// 会社選択モーダル（複数会社所属ユーザー用）
+// ========================================
+
+/**
+ * 会社選択モーダルを表示
+ * @param {Array} companies - 会社一覧
+ */
+function showCompanySelectModal(companies) {
+  const modal = document.getElementById('company-select-modal');
+  const list = document.getElementById('company-select-list');
+
+  if (!modal || !list) return;
+
+  // リストを構築
+  list.innerHTML = companies.map(company => `
+    <div class="company-select-item" data-domain="${escapeHtml(company.companyDomain)}">
+      <div class="company-icon">🏢</div>
+      <div class="company-info">
+        <div class="company-name">${escapeHtml(company.companyName)}</div>
+        <div class="company-domain">${escapeHtml(company.companyDomain)}</div>
+      </div>
+      <div class="arrow-icon">→</div>
+    </div>
+  `).join('');
+
+  modal.style.display = 'flex';
+}
+
+/**
+ * 会社選択モーダルを閉じる
+ */
+function hideCompanySelectModal() {
+  const modal = document.getElementById('company-select-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+/**
+ * 会社選択モーダルのイベント設定
+ */
+function setupCompanySelectModal() {
+  const modal = document.getElementById('company-select-modal');
+  const list = document.getElementById('company-select-list');
+
+  if (!list) return;
+
+  // 会社選択時の処理
+  list.addEventListener('click', async (e) => {
+    const item = e.target.closest('.company-select-item');
+    if (!item) return;
+
+    const companyDomain = item.dataset.domain;
+    const result = await confirmCompanySelection(companyDomain);
+
+    if (result.success) {
+      hideCompanySelectModal();
+      showDashboard();
+      navigateToJobManage(result.companyDomain, result.companyName, 'overview', null, 'jobs');
+    } else {
+      alert(result.error || '会社の選択に失敗しました');
+    }
+  });
+
+  // モーダル外クリックでは閉じない（会社選択は必須）
 }
 
 // イベントバインド
@@ -464,22 +550,60 @@ function bindEvents() {
   if (companyLoginForm) {
     companyLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('company-username')?.value || '';
+      const email = document.getElementById('company-email')?.value || '';
       const password = document.getElementById('company-password')?.value || '';
       const errorEl = document.getElementById('company-login-error');
 
       if (errorEl) errorEl.style.display = 'none';
 
-      const result = await handleCompanyLogin(username, password);
+      const result = await handleCompanyLogin(email, password);
       if (result.success) {
-        // 会社ユーザーは自社の管理画面に直接遷移（SPA内）
-        showDashboard();
-        navigateToJobManage(result.companyDomain, result.companyName || result.companyDomain, 'overview', null, 'jobs');
+        // 複数会社に所属している場合は会社選択モーダルを表示
+        if (result.requiresCompanySelection) {
+          showCompanySelectModal(result.companies);
+        } else {
+          // 単一会社の場合は直接遷移
+          showDashboard();
+          navigateToJobManage(result.companyDomain, result.companyName || result.companyDomain, 'overview', null, 'jobs');
+        }
       } else {
         if (errorEl) {
           errorEl.textContent = result.error;
           errorEl.style.display = 'block';
         }
+      }
+    });
+  }
+
+  // 会社選択モーダルの初期化
+  setupCompanySelectModal();
+
+  // パスワードリセットリンク
+  const passwordResetLink = document.getElementById('company-password-reset-link');
+  if (passwordResetLink) {
+    passwordResetLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const emailOrUsername = document.getElementById('company-email')?.value || '';
+
+      if (!emailOrUsername) {
+        alert('メールアドレスまたはユーザーIDを入力してください');
+        return;
+      }
+
+      // メールアドレス形式かチェック
+      const isEmail = emailOrUsername.includes('@');
+      if (!isEmail) {
+        alert('パスワードリセットにはメールアドレスが必要です。\nユーザーIDでログインしている場合は、管理者にお問い合わせください。');
+        return;
+      }
+
+      const { sendPasswordResetEmail } = await import('./auth.js');
+      const result = await sendPasswordResetEmail(emailOrUsername);
+
+      if (result.success) {
+        alert('パスワードリセットメールを送信しました。メールをご確認ください。');
+      } else {
+        alert(result.error || 'パスワードリセットメールの送信に失敗しました');
       }
     });
   }
@@ -671,6 +795,9 @@ function bindEvents() {
       }
     });
   }
+
+  // 管理者ユーザー管理
+  setupAdminUserManagement();
 
   // 求人フィードダウンロード
   const feedStatus = document.getElementById('feed-status');
@@ -1114,14 +1241,22 @@ function closeCompanyUserModal() {
 // 会社ユーザーを保存
 async function saveCompanyUser() {
   const companyDomain = document.getElementById('cu-company-select')?.value;
-  const username = document.getElementById('cu-username')?.value?.trim();
+  const email = document.getElementById('cu-email')?.value?.trim();
   const password = document.getElementById('cu-password')?.value;
   const name = document.getElementById('cu-name')?.value?.trim() || '';
+  const username = document.getElementById('cu-username')?.value?.trim() || '';
   const role = document.getElementById('cu-role')?.value || 'staff';
   const isActive = document.getElementById('cu-is-active')?.checked;
 
-  if (!companyDomain || !username) {
+  if (!companyDomain || !email) {
     alert('必須項目を入力してください');
+    return;
+  }
+
+  // メールアドレス形式チェック
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    alert('メールアドレスの形式が正しくありません');
     return;
   }
 
@@ -1133,10 +1268,10 @@ async function saveCompanyUser() {
 
   try {
     if (currentEditingUserId) {
-      // 更新
-      const updateData = { username, name, role, isActive };
-      if (password) {
-        updateData.password = password;
+      // 更新（メールアドレスは変更不可）
+      const updateData = { name, role, isActive };
+      if (username) {
+        updateData.username = username;
       }
 
       const result = await updateCompanyUser(currentEditingUserId, updateData);
@@ -1154,13 +1289,21 @@ async function saveCompanyUser() {
         return;
       }
 
-      const result = await addCompanyUser(username, password, companyDomain, name, role);
+      if (password.length < 8) {
+        alert('パスワードは8文字以上で入力してください');
+        return;
+      }
+
+      const result = await addCompanyUser(email, password, companyDomain, name, role, username);
       if (!result.success) {
         throw new Error(result.error);
       }
 
       // 発行情報を表示
-      document.getElementById('cu-issued-username').textContent = username;
+      const issuedEmailEl = document.getElementById('cu-issued-email');
+      if (issuedEmailEl) {
+        issuedEmailEl.textContent = email;
+      }
       document.getElementById('cu-issued-password').textContent = password;
       document.getElementById('cu-credentials-display').style.display = 'block';
 
@@ -1173,7 +1316,12 @@ async function saveCompanyUser() {
         };
       }
 
-      alert('ユーザーを作成しました。ログイン情報を控えてください。');
+      // レガシー認証の場合は警告を表示
+      if (result._isLegacy) {
+        alert('ユーザーを作成しました（レガシーモード）。\n\n注意: Cloud Function が設定されていないため、パスワードは暗号化されていません。\nセキュリティ強化のため、Cloud Function の設定を推奨します。');
+      } else {
+        alert('ユーザーを作成しました。ログイン情報を控えてください。');
+      }
     }
 
     await loadCompanyUsersData();
@@ -1315,15 +1463,247 @@ async function bulkGenerateUsers() {
 
 // クリップボードにコピー
 function copyCredentialsToClipboard() {
-  const username = document.getElementById('cu-issued-username')?.textContent;
+  const email = document.getElementById('cu-issued-email')?.textContent;
   const password = document.getElementById('cu-issued-password')?.textContent;
 
-  if (username && password) {
-    const text = `ユーザーID: ${username}\nパスワード: ${password}`;
+  if (email && password) {
+    const text = `メールアドレス: ${email}\nパスワード: ${password}`;
     navigator.clipboard.writeText(text).then(() => {
       alert('クリップボードにコピーしました');
     }).catch(() => {
       alert('コピーに失敗しました');
+    });
+  }
+}
+
+// 管理者ユーザー管理のセットアップ
+function setupAdminUserManagement() {
+  const addAdminBtn = document.getElementById('add-admin-user');
+  if (addAdminBtn) {
+    addAdminBtn.addEventListener('click', async () => {
+      const email = document.getElementById('admin-email')?.value?.trim();
+      if (!email) {
+        alert('メールアドレスを入力してください');
+        return;
+      }
+
+      addAdminBtn.disabled = true;
+      addAdminBtn.textContent = '追加中...';
+
+      try {
+        const { addAdminUserByEmail } = await import('./auth.js');
+        const result = await addAdminUserByEmail(email);
+
+        if (result.success) {
+          alert(`管理者を追加しました: ${email}\n\nこのユーザーはGoogleログインで管理画面にアクセスできるようになります。`);
+          document.getElementById('admin-email').value = '';
+          await loadAdminUsersData();
+        } else {
+          alert(result.error || '追加に失敗しました');
+        }
+      } catch (error) {
+        alert('エラーが発生しました: ' + error.message);
+      } finally {
+        addAdminBtn.disabled = false;
+        addAdminBtn.textContent = '管理者を追加';
+      }
+    });
+  }
+}
+
+// 管理者ユーザー一覧を読み込み
+async function loadAdminUsersData() {
+  const container = document.getElementById('admin-users-list');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-spinner-small"></div><span>読み込み中...</span>';
+
+  try {
+    const { getAdminUsers, getCurrentUser } = await import('./auth.js');
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      container.innerHTML = `
+        <div class="admin-users-notice">
+          <p>管理者ユーザー一覧を表示するには、<strong>Googleでログイン</strong>してください。</p>
+          <p style="font-size: 0.875rem; color: var(--text-muted);">レガシー認証（admin/password）ではこの機能は使用できません。</p>
+        </div>
+      `;
+      return;
+    }
+
+    const adminUsers = await getAdminUsers();
+
+    if (adminUsers.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-muted);">登録されている管理者はいません</p>';
+      return;
+    }
+
+    container.innerHTML = adminUsers.map(user => `
+      <div class="admin-user-item" data-id="${user.id}">
+        <div class="admin-user-info">
+          <span class="admin-user-email">${user.email || '(メールなし)'}</span>
+          ${user.id === currentUser.uid ? '<span class="admin-user-badge">あなた</span>' : ''}
+          <span class="admin-user-date">${user.createdAt ? user.createdAt.toLocaleDateString('ja-JP') : ''}</span>
+        </div>
+        ${user.id !== currentUser.uid ? `
+          <button class="btn-delete-admin" data-id="${user.id}" data-email="${user.email}">削除</button>
+        ` : ''}
+      </div>
+    `).join('');
+
+    // 削除ボタンのイベント
+    container.querySelectorAll('.btn-delete-admin').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = btn.dataset.id;
+        const email = btn.dataset.email;
+
+        if (!confirm(`管理者 "${email}" を削除してよろしいですか？`)) return;
+
+        btn.disabled = true;
+        btn.textContent = '削除中...';
+
+        try {
+          const { deleteAdminUser } = await import('./auth.js');
+          const result = await deleteAdminUser(userId);
+
+          if (result.success) {
+            alert('管理者を削除しました');
+            await loadAdminUsersData();
+          } else {
+            alert(result.error || '削除に失敗しました');
+          }
+        } catch (error) {
+          alert('エラーが発生しました: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '削除';
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Failed to load admin users:', error);
+    container.innerHTML = '<p style="color: var(--error-color);">読み込みに失敗しました</p>';
+  }
+}
+
+// 会社スタッフ一覧を読み込み（会社ユーザー用）
+async function loadCompanyStaffData() {
+  const container = document.getElementById('company-staff-list');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading-spinner-small"></div><span>読み込み中...</span>';
+
+  try {
+    const { getCompanyUsers, getUserCompanyDomain } = await import('./auth.js');
+    const companyDomain = getUserCompanyDomain();
+
+    if (!companyDomain) {
+      container.innerHTML = '<p style="color: var(--text-muted);">会社情報が見つかりません</p>';
+      return;
+    }
+
+    const staffList = await getCompanyUsers(companyDomain);
+
+    if (staffList.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-muted);">登録されているスタッフはいません</p>';
+      return;
+    }
+
+    const currentUserId = sessionStorage.getItem('company_user_id');
+
+    container.innerHTML = staffList.map(staff => `
+      <div class="admin-user-item" data-id="${staff.id}">
+        <div class="admin-user-info">
+          <span class="admin-user-email">${escapeHtml(staff.name || staff.username || staff.email)}</span>
+          <span class="admin-user-date" style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(staff.email)}</span>
+          ${(staff.username === currentUserId || staff.email === currentUserId) ? '<span class="admin-user-badge">あなた</span>' : ''}
+        </div>
+        ${(staff.username !== currentUserId && staff.email !== currentUserId) ? `
+          <button class="btn-delete-admin" data-id="${staff.id}" data-name="${escapeHtml(staff.name || staff.username || staff.email)}">削除</button>
+        ` : ''}
+      </div>
+    `).join('');
+
+    // 削除ボタンのイベント
+    container.querySelectorAll('.btn-delete-admin').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const staffId = btn.dataset.id;
+        const name = btn.dataset.name;
+
+        if (!confirm(`スタッフ "${name}" を削除してよろしいですか？`)) return;
+
+        btn.disabled = true;
+        btn.textContent = '削除中...';
+
+        try {
+          const { deleteCompanyStaff } = await import('./auth.js');
+          const result = await deleteCompanyStaff(staffId);
+
+          if (result.success) {
+            alert('スタッフを削除しました');
+            await loadCompanyStaffData();
+          } else {
+            alert(result.error || '削除に失敗しました');
+          }
+        } catch (error) {
+          alert('エラーが発生しました: ' + error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '削除';
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Failed to load company staff:', error);
+    container.innerHTML = '<p style="color: var(--error-color);">読み込みに失敗しました</p>';
+  }
+}
+
+// スタッフ追加ボタンのイベント設定
+function setupCompanyStaffEvents() {
+  const addStaffBtn = document.getElementById('add-company-staff');
+  if (addStaffBtn && !addStaffBtn.hasAttribute('data-listener-attached')) {
+    addStaffBtn.setAttribute('data-listener-attached', 'true');
+    addStaffBtn.addEventListener('click', async () => {
+      const email = document.getElementById('staff-email')?.value?.trim();
+      const name = document.getElementById('staff-name')?.value?.trim();
+      const username = document.getElementById('staff-username')?.value?.trim();
+      const password = document.getElementById('staff-password')?.value;
+
+      if (!email) {
+        alert('メールアドレスを入力してください');
+        return;
+      }
+
+      if (!password || password.length < 6) {
+        alert('パスワードは6文字以上で入力してください');
+        return;
+      }
+
+      addStaffBtn.disabled = true;
+      addStaffBtn.textContent = '追加中...';
+
+      try {
+        const { addCompanyStaff } = await import('./auth.js');
+        const result = await addCompanyStaff(email, password, name, username);
+
+        if (result.success) {
+          alert(`スタッフを追加しました: ${email}`);
+          document.getElementById('staff-email').value = '';
+          document.getElementById('staff-name').value = '';
+          document.getElementById('staff-username').value = '';
+          document.getElementById('staff-password').value = '';
+          await loadCompanyStaffData();
+        } else {
+          alert(result.error || '追加に失敗しました');
+        }
+      } catch (error) {
+        alert('エラーが発生しました: ' + error.message);
+      } finally {
+        addStaffBtn.disabled = false;
+        addStaffBtn.textContent = 'スタッフを追加';
+      }
     });
   }
 }

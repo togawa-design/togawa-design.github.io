@@ -84,5 +84,100 @@ export function initFirebase() {
   if (!firebase.apps.length) {
     firebase.initializeApp(config.firebaseConfig);
   }
+
+  // Firebase Auth の状態を監視
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      // ログイン中 - セッションを維持
+      console.log('[JobManager] Firebase Auth: logged in as', user.email);
+    } else {
+      // ログアウト - セッションをクリアしてリダイレクト
+      const currentSession = sessionStorage.getItem(config.sessionKey);
+      const authMethod = sessionStorage.getItem('auth_method');
+
+      // 会社ユーザー（Firebase Auth）でログインしていた場合
+      if (currentSession && authMethod === 'company') {
+        console.log('[JobManager] Firebase Auth: logged out, clearing session');
+        handleLogout();
+        // ログイン画面にリダイレクト
+        window.location.href = 'admin.html';
+      }
+    }
+  });
+
   return true;
+}
+
+/**
+ * 現在のFirebase Auth ユーザーを取得
+ */
+export function getCurrentUser() {
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    return null;
+  }
+  return firebase.auth().currentUser;
+}
+
+/**
+ * Firebase Auth IDトークンを取得
+ */
+export async function getIdToken() {
+  const user = getCurrentUser();
+  if (!user) return null;
+
+  try {
+    return await user.getIdToken();
+  } catch (error) {
+    console.error('[JobManager] Failed to get ID token:', error);
+    return null;
+  }
+}
+
+/**
+ * 利用可能な会社一覧を取得
+ */
+export function getAvailableCompanies() {
+  const companiesJson = sessionStorage.getItem('available_companies');
+  if (companiesJson) {
+    try {
+      return JSON.parse(companiesJson);
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
+ * 会社を切り替え（複数会社所属ユーザー用）
+ * @param {string} companyDomain - 切り替え先の会社ドメイン
+ */
+export function switchCompany(companyDomain) {
+  const companies = getAvailableCompanies();
+  const targetCompany = companies.find(c => c.companyDomain === companyDomain);
+
+  if (!targetCompany) {
+    return { success: false, error: '指定された会社にアクセス権限がありません' };
+  }
+
+  // セッションを更新
+  sessionStorage.setItem(config.userCompanyKey, companyDomain);
+
+  console.log('[JobManager] Switched company to:', companyDomain);
+
+  // カスタムイベントを発火して画面を更新
+  const event = new CustomEvent('companyChanged', {
+    detail: {
+      companyDomain,
+      companyName: targetCompany.companyName,
+      docId: targetCompany.docId
+    }
+  });
+  document.dispatchEvent(event);
+
+  return {
+    success: true,
+    companyDomain,
+    companyName: targetCompany.companyName
+  };
 }

@@ -117,6 +117,18 @@
       <!-- ヘッダー -->
       <header class="admin-header">
         <h1 id="page-title">求人一覧</h1>
+
+        <!-- 会社切り替え（複数会社所属ユーザー用） -->
+        <div id="company-switcher" class="company-switcher" style="display: none;">
+          <button class="company-switcher-btn" id="company-switcher-btn">
+            <span class="current-company" id="current-company-name">-</span>
+            <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="company-switcher-dropdown" id="company-switcher-dropdown">
+            <!-- 動的に会社リストが挿入される -->
+          </div>
+        </div>
+
         <div class="header-actions">
           <button id="btn-sort-mode" class="btn-secondary">並び順変更</button>
           <button id="btn-add-job" class="btn-primary">+ 新規求人作成</button>

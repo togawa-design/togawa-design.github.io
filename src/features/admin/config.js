@@ -19,6 +19,8 @@ export const config = {
   gaPropertyId: 'G-E1XC94EG05',
   gaApiKey: 'AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo',
   apiEndpoint: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData',
+  cloudFunctionsBaseUrl: 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net',
+  legacyLoginUrl: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/legacyLogin',
   firebaseConfig: {
     apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
     authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",

@@ -3137,3 +3137,476 @@ functions.http('getCalendarIntegration', (req, res) => {
     }
   });
 });
+
+// =====================================================
+// 会社ユーザー管理 Cloud Functions
+// =====================================================
+
+/**
+ * IDトークンを検証して管理者かどうかを確認するヘルパー関数
+ */
+async function verifyAdminToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { success: false, error: '認証トークンがありません' };
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    // admin_users コレクションで管理者かどうかを確認
+    const db = admin.firestore();
+    const adminDoc = await db.collection('admin_users').doc(uid).get();
+
+    if (!adminDoc.exists) {
+      return { success: false, error: '管理者権限がありません' };
+    }
+
+    return { success: true, uid, email: decodedToken.email };
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return { success: false, error: '認証に失敗しました' };
+  }
+}
+
+/**
+ * 会社ユーザーを作成（管理者のみ）
+ * Firebase Auth でアカウントを作成し、Firestore にメタ情報を保存
+ */
+functions.http('createCompanyUser', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      // 管理者認証チェック
+      const authResult = await verifyAdminToken(req);
+      if (!authResult.success) {
+        return res.status(403).json({ success: false, error: authResult.error });
+      }
+
+      const { email, password, companyDomain, name, role, username } = req.body;
+
+      // 必須パラメータチェック
+      if (!email || !password || !companyDomain) {
+        return res.status(400).json({
+          success: false,
+          error: 'email, password, companyDomain は必須です'
+        });
+      }
+
+      // パスワード長チェック
+      if (password.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: 'パスワードは8文字以上で入力してください'
+        });
+      }
+
+      const db = admin.firestore();
+
+      // 同じメールアドレスが既に存在するかチェック
+      const existingQuery = await db.collection('company_users')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (!existingQuery.empty) {
+        return res.status(400).json({
+          success: false,
+          error: 'このメールアドレスは既に使用されています'
+        });
+      }
+
+      // Firebase Auth でユーザー作成
+      const userRecord = await admin.auth().createUser({
+        email: email,
+        password: password,
+        displayName: name || username || email.split('@')[0]
+      });
+
+      const uid = userRecord.uid;
+
+      // Firestore にユーザー情報を保存（パスワードは保存しない）
+      await db.collection('company_users').doc(uid).set({
+        uid: uid,
+        email: email,
+        username: username || email.split('@')[0],
+        companyDomain: companyDomain,
+        name: name || '',
+        role: role || 'staff',
+        isActive: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      res.json({
+        success: true,
+        uid: uid,
+        email: email,
+        message: 'ユーザーを作成しました'
+      });
+
+    } catch (error) {
+      console.error('createCompanyUser error:', error);
+
+      // Firebase Auth エラーを日本語化
+      let errorMessage = error.message;
+      if (error.code === 'auth/email-already-exists') {
+        errorMessage = 'このメールアドレスは既に使用されています';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'メールアドレスの形式が正しくありません';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'パスワードが弱すぎます';
+      }
+
+      res.status(500).json({
+        success: false,
+        error: errorMessage
+      });
+    }
+  });
+});
+
+/**
+ * 会社ユーザーを削除（管理者のみ）
+ * Firebase Auth と Firestore の両方から削除
+ */
+functions.http('deleteCompanyUser', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      // 管理者認証チェック
+      const authResult = await verifyAdminToken(req);
+      if (!authResult.success) {
+        return res.status(403).json({ success: false, error: authResult.error });
+      }
+
+      const { uid } = req.body;
+
+      if (!uid) {
+        return res.status(400).json({
+          success: false,
+          error: 'uid は必須です'
+        });
+      }
+
+      // Firebase Auth からユーザーを削除
+      try {
+        await admin.auth().deleteUser(uid);
+      } catch (authError) {
+        console.warn('Firebase Auth からの削除に失敗:', authError.message);
+        // Auth に存在しない場合でも Firestore からは削除を続行
+      }
+
+      // Firestore からユーザー情報を削除
+      const db = admin.firestore();
+      await db.collection('company_users').doc(uid).delete();
+
+      res.json({
+        success: true,
+        message: 'ユーザーを削除しました'
+      });
+
+    } catch (error) {
+      console.error('deleteCompanyUser error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+});
+
+/**
+ * 既存の会社ユーザーを Firebase Auth に移行
+ * Firestore の company_users から読み込み、Firebase Auth にアカウント作成
+ */
+functions.http('migrateCompanyUsersToFirebaseAuth', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      // 一時的な移行キー（使用後は削除すること）
+      const { migrationKey } = req.body;
+      const TEMP_MIGRATION_KEY = 'rikueco_migrate_2026_temp';
+
+      if (migrationKey !== TEMP_MIGRATION_KEY) {
+        // 管理者認証チェック
+        const authResult = await verifyAdminToken(req);
+        if (!authResult.success) {
+          return res.status(403).json({ success: false, error: authResult.error });
+        }
+      }
+
+      const db = admin.firestore();
+
+      // 既存のレガシーユーザーを取得（_legacyAuth フラグがあるもの）
+      const snapshot = await db.collection('company_users').get();
+
+      const results = {
+        total: snapshot.size,
+        migrated: 0,
+        skipped: 0,
+        errors: []
+      };
+
+      for (const doc of snapshot.docs) {
+        const userData = doc.data();
+
+        // 既に Firebase Auth UID を持っている場合はスキップ
+        if (userData.uid && !userData._legacyAuth) {
+          results.skipped++;
+          continue;
+        }
+
+        // email と password が必要
+        const email = userData.email;
+        const password = userData.password;
+
+        if (!email || !password) {
+          results.errors.push({
+            id: doc.id,
+            error: 'email または password が見つかりません'
+          });
+          continue;
+        }
+
+        try {
+          // Firebase Auth でユーザー作成
+          const userRecord = await admin.auth().createUser({
+            email: email,
+            password: password,
+            displayName: userData.name || userData.username || email.split('@')[0]
+          });
+
+          const newUid = userRecord.uid;
+
+          // 新しいドキュメントを作成（UIDをドキュメントIDとして使用）
+          const newUserData = {
+            uid: newUid,
+            email: email,
+            username: userData.username || email.split('@')[0],
+            companyDomain: userData.companyDomain,
+            name: userData.name || '',
+            role: userData.role || 'staff',
+            isActive: userData.isActive !== false,
+            createdAt: userData.createdAt || admin.firestore.FieldValue.serverTimestamp(),
+            migratedAt: admin.firestore.FieldValue.serverTimestamp(),
+            migratedFrom: doc.id
+            // password フィールドは含めない
+          };
+
+          await db.collection('company_users').doc(newUid).set(newUserData);
+
+          // 旧ドキュメントを削除
+          if (doc.id !== newUid) {
+            await db.collection('company_users').doc(doc.id).delete();
+          }
+
+          results.migrated++;
+
+        } catch (userError) {
+          // メールアドレスが既に存在する場合
+          if (userError.code === 'auth/email-already-exists') {
+            // 既存のユーザーを取得してリンク
+            try {
+              const existingUser = await admin.auth().getUserByEmail(email);
+              const existingUid = existingUser.uid;
+
+              // Firestore のドキュメントを更新
+              await db.collection('company_users').doc(existingUid).set({
+                ...userData,
+                uid: existingUid,
+                _legacyAuth: admin.firestore.FieldValue.delete(),
+                password: admin.firestore.FieldValue.delete(),
+                migratedAt: admin.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+
+              // 旧ドキュメントを削除
+              if (doc.id !== existingUid) {
+                await db.collection('company_users').doc(doc.id).delete();
+              }
+
+              results.migrated++;
+            } catch (linkError) {
+              results.errors.push({
+                id: doc.id,
+                email: email,
+                error: linkError.message
+              });
+            }
+          } else {
+            results.errors.push({
+              id: doc.id,
+              email: email,
+              error: userError.message
+            });
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        results: results,
+        message: `${results.migrated}件のユーザーを移行しました`
+      });
+
+    } catch (error) {
+      console.error('migrateCompanyUsersToFirebaseAuth error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  });
+});
+
+/**
+ * legacyLogin - レガシー認証（Firebase Auth を使わない旧ユーザー用）
+ * パスワードの照合をバックエンドで行い、セキュリティを確保
+ */
+functions.http('legacyLogin', async (req, res) => {
+  // Gen2 Cloud Functions 用の CORS ヘッダー設定
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'http://localhost:3004',
+    'http://localhost:3005',
+    'http://127.0.0.1:3000',
+    'https://togawa-design.github.io'
+  ];
+
+  const origin = req.headers.origin || '';
+
+  // CORS ヘッダーを常に設定（preflight対応）
+  if (allowedOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+  } else {
+    // 開発環境用: localhostからのリクエストを許可
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      res.set('Access-Control-Allow-Origin', origin);
+    }
+  }
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Allow-Credentials', 'true');
+  res.set('Access-Control-Max-Age', '3600');
+
+  // Preflight リクエストの処理
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ success: false, error: 'Method not allowed' });
+    return;
+  }
+
+    try {
+      const { usernameOrEmail, password } = req.body;
+
+      if (!usernameOrEmail || !password) {
+        res.status(400).json({ success: false, error: 'ユーザーIDとパスワードを入力してください' });
+        return;
+      }
+
+      const db = admin.firestore();
+      const isEmail = usernameOrEmail.includes('@');
+      let matchingDocs = [];
+
+      if (isEmail) {
+        // emailで検索
+        const snapshot = await db.collection('company_users')
+          .where('email', '==', usernameOrEmail)
+          .get();
+
+        matchingDocs = snapshot.docs.filter(doc => {
+          const data = doc.data();
+          return data.password === password && data.isActive !== false;
+        });
+      } else {
+        // usernameで検索
+        const snapshot = await db.collection('company_users')
+          .where('username', '==', usernameOrEmail)
+          .limit(1)
+          .get();
+
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+          if (data.password === password && data.isActive !== false) {
+            matchingDocs = [doc];
+          }
+        }
+      }
+
+      if (matchingDocs.length === 0) {
+        res.status(401).json({ success: false, error: 'ユーザーIDまたはパスワードが正しくありません' });
+        return;
+      }
+
+      // 複数会社に所属している場合
+      if (matchingDocs.length > 1) {
+        const companies = matchingDocs.map(doc => {
+          const data = doc.data();
+          return {
+            docId: doc.id,
+            companyDomain: data.companyDomain,
+            companyName: data.companyName || data.companyDomain,
+            userName: data.name || data.username || usernameOrEmail
+          };
+        });
+
+        res.json({
+          success: true,
+          requiresCompanySelection: true,
+          companies
+        });
+        return;
+      }
+
+      // 単一会社の場合
+      const userDoc = matchingDocs[0];
+      const userData = userDoc.data();
+
+      // 最終ログイン日時を更新
+      try {
+        await db.collection('company_users').doc(userDoc.id).update({
+          lastLogin: admin.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        console.warn('Failed to update last login:', e);
+      }
+
+      res.json({
+        success: true,
+        user: {
+          docId: userDoc.id,
+          companyDomain: userData.companyDomain,
+          companyName: userData.companyName || userData.companyDomain,
+          userName: userData.name || userData.username || usernameOrEmail,
+          email: userData.email || null
+        },
+        companies: [{
+          docId: userDoc.id,
+          companyDomain: userData.companyDomain,
+          companyName: userData.companyName || userData.companyDomain
+        }]
+      });
+
+    } catch (error) {
+      console.error('legacyLogin error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'ログインに失敗しました'
+      });
+    }
+});
