@@ -426,6 +426,9 @@ function setupApplyButtonTracking() {
 
 // ページ初期化
 export async function initJobDetailPage() {
+  // Firestoreローダーを初期化
+  await JobsLoader.initFirestoreLoader();
+
   const companyDomain = getUrlParam('company');
   const jobId = getUrlParam('job');
 

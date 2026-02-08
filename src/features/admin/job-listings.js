@@ -6,6 +6,8 @@ import { escapeHtml } from '@shared/utils.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { getJobStatus } from '@shared/job-service.js';
 import { isAdmin, getUserCompanyDomain } from './auth.js';
+import * as FirestoreService from '@shared/firestore-service.js';
+import { useFirestore } from '@features/admin/config.js';
 
 // 状態管理
 let allJobs = [];
@@ -18,6 +20,9 @@ let pendingCompanyFilter = null; // 遷移時に適用するフィルター値
  * @param {string} [companyDomain] - 初期フィルターとして適用する会社ドメイン
  */
 export async function initJobListings(companyDomain = null) {
+  // Firestoreローダーを初期化
+  await JobsLoader.initFirestoreLoader();
+
   // 引数で渡された場合のみ設定（事前にsetCompanyFilterで設定されている場合は上書きしない）
   if (companyDomain) {
     pendingCompanyFilter = companyDomain;
@@ -338,9 +343,10 @@ function renderJobCard(job) {
   }[status];
 
   const imageUrl = job.jobLogo || job.imageUrl || '';
+  const hasMemo = job.memo && job.memo.trim();
 
   return `
-    <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-company-domain="${escapeHtml(job.companyDomain || '')}">
+    <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-company-domain="${escapeHtml(job.companyDomain || '')}" ${hasMemo ? `data-memo="${escapeHtml(job.memo)}"` : ''}>
       <div class="job-card-image">
         ${imageUrl
           ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(job.title || '')}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">`
@@ -362,11 +368,15 @@ function renderJobCard(job) {
         </div>
       </div>
       <div class="job-card-actions">
-        <button class="btn-job-action btn-edit-job" title="編集">
+        ${hasMemo ? `<button class="btn-job-action btn-memo-icon" data-tooltip="メモを表示"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H4.99c-1.11 0-1.98.89-1.98 2L3 19c0 1.1.88 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19v10z"/></svg></button>` : ''}
+        <button class="btn-job-action btn-edit-job" data-tooltip="編集">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
         </button>
-        <button class="btn-job-action btn-preview-job" title="プレビュー">
+        <button class="btn-job-action btn-preview-job" data-tooltip="プレビュー">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        </button>
+        <button class="btn-job-action btn-duplicate-job" data-tooltip="複製">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
         </button>
       </div>
     </div>
@@ -430,6 +440,35 @@ function setupJobCardEvents() {
       }
     });
   });
+
+  // メモアイコン
+  document.querySelectorAll('.btn-memo-icon').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.job-listing-card');
+      const memo = card?.dataset.memo;
+      const jobTitle = card?.querySelector('.job-card-title')?.textContent?.replace(/\s+/g, ' ').trim() || '求人';
+      if (memo) {
+        showMemoPopup(memo, jobTitle, btn);
+      }
+    });
+  });
+
+  // 複製ボタン
+  document.querySelectorAll('.btn-duplicate-job').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.job-listing-card');
+      const jobId = card?.dataset.jobId;
+      const companyDomain = card?.dataset.companyDomain;
+      if (jobId && companyDomain) {
+        duplicateJob(companyDomain, jobId);
+      }
+    });
+  });
+
+  // ツールチップ
+  setupActionTooltips();
 }
 
 /**
@@ -474,6 +513,185 @@ function navigateToCompanyManage(companyDomain) {
       const event = new CustomEvent('openCompanyJobs', { detail: { companyDomain } });
       document.dispatchEvent(event);
     }, 100);
+  }
+}
+
+/**
+ * メモポップアップを表示
+ */
+function showMemoPopup(memo, jobTitle, targetBtn) {
+  // 既存のポップアップを削除
+  const existingPopup = document.querySelector('.memo-popup');
+  if (existingPopup) {
+    existingPopup.remove();
+  }
+
+  // ポップアップを作成
+  const popup = document.createElement('div');
+  popup.className = 'memo-popup';
+  popup.innerHTML = `
+    <div class="memo-popup-header">
+      <span class="memo-popup-title">📝 メモ</span>
+      <button class="memo-popup-close" aria-label="閉じる">&times;</button>
+    </div>
+    <div class="memo-popup-content">${escapeHtml(memo)}</div>
+  `;
+
+  // ボディに追加
+  document.body.appendChild(popup);
+
+  // 位置を計算（ボタンの下に表示）
+  const btnRect = targetBtn.getBoundingClientRect();
+  const popupRect = popup.getBoundingClientRect();
+
+  let top = btnRect.bottom + 8;
+  let left = btnRect.left - popupRect.width / 2 + btnRect.width / 2;
+
+  // 画面端に収まるように調整
+  if (left < 10) left = 10;
+  if (left + popupRect.width > window.innerWidth - 10) {
+    left = window.innerWidth - popupRect.width - 10;
+  }
+  if (top + popupRect.height > window.innerHeight - 10) {
+    top = btnRect.top - popupRect.height - 8;
+  }
+
+  popup.style.top = `${top}px`;
+  popup.style.left = `${left}px`;
+
+  // 閉じるボタン
+  popup.querySelector('.memo-popup-close').addEventListener('click', () => {
+    popup.remove();
+  });
+
+  // 外側クリックで閉じる
+  const closeOnOutsideClick = (e) => {
+    if (!popup.contains(e.target) && e.target !== targetBtn) {
+      popup.remove();
+      document.removeEventListener('click', closeOnOutsideClick);
+    }
+  };
+  // 少し遅延させてイベント登録（即座に閉じるのを防ぐ）
+  setTimeout(() => {
+    document.addEventListener('click', closeOnOutsideClick);
+  }, 0);
+
+  // ESCキーで閉じる
+  const closeOnEsc = (e) => {
+    if (e.key === 'Escape') {
+      popup.remove();
+      document.removeEventListener('keydown', closeOnEsc);
+    }
+  };
+  document.addEventListener('keydown', closeOnEsc);
+}
+
+/**
+ * 求人を複製
+ */
+async function duplicateJob(companyDomain, jobId) {
+  // 元の求人を検索
+  const originalJob = allJobs.find(j => j.companyDomain === companyDomain && String(j.id) === String(jobId));
+  if (!originalJob) {
+    alert('求人が見つかりません');
+    return;
+  }
+
+  // 確認ダイアログ
+  if (!confirm(`「${originalJob.title || '求人'}」を複製しますか？`)) {
+    return;
+  }
+
+  try {
+    // 複製データを作成（IDと日付を除去）
+    const duplicateData = { ...originalJob };
+    delete duplicateData.id;
+    delete duplicateData._docId;
+    delete duplicateData.createdAt;
+    delete duplicateData.updatedAt;
+
+    // タイトルに「(コピー)」を追加
+    duplicateData.title = `${originalJob.title || '求人'} (コピー)`;
+
+    // 非公開で作成
+    duplicateData.visible = false;
+
+    // 応募数・閲覧数をリセット
+    duplicateData.applicationCount = 0;
+    duplicateData.viewCount = 0;
+
+    if (useFirestore) {
+      FirestoreService.initFirestore();
+      const result = await FirestoreService.saveJob(companyDomain, duplicateData, null);
+      console.log('[JobListings] 複製結果:', result);
+    } else {
+      alert('複製機能はFirestoreモードでのみ利用可能です');
+      return;
+    }
+
+    // 成功メッセージ
+    alert('求人を複製しました');
+
+    // データを再読み込み
+    await loadJobListingsData();
+  } catch (error) {
+    console.error('求人複製エラー:', error);
+    alert('求人の複製に失敗しました');
+  }
+}
+
+/**
+ * アクションボタンのツールチップを設定
+ */
+function setupActionTooltips() {
+  document.querySelectorAll('.btn-job-action[data-tooltip]').forEach(btn => {
+    btn.addEventListener('mouseenter', showActionTooltip);
+    btn.addEventListener('mouseleave', hideActionTooltip);
+  });
+}
+
+/**
+ * ツールチップを表示
+ */
+function showActionTooltip(e) {
+  const btn = e.currentTarget;
+  const text = btn.dataset.tooltip;
+  if (!text) return;
+
+  // 既存のツールチップを削除
+  hideActionTooltip();
+
+  // ツールチップ要素を作成
+  const tooltip = document.createElement('div');
+  tooltip.className = 'action-tooltip';
+  tooltip.textContent = text;
+  tooltip.id = 'action-tooltip-active';
+  document.body.appendChild(tooltip);
+
+  // 位置を計算（ボタンの下に表示）
+  const btnRect = btn.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+
+  let top = btnRect.bottom + 6;
+  let left = btnRect.left + (btnRect.width / 2) - (tooltipRect.width / 2);
+
+  // 画面端に収まるように調整
+  if (left < 8) left = 8;
+  if (left + tooltipRect.width > window.innerWidth - 8) {
+    left = window.innerWidth - tooltipRect.width - 8;
+  }
+
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+}
+
+/**
+ * ツールチップを非表示
+ */
+function hideActionTooltip() {
+  const tooltip = document.getElementById('action-tooltip-active');
+  if (tooltip) {
+    tooltip.remove();
   }
 }
 

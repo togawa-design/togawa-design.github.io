@@ -86,6 +86,9 @@ export function setupApplyTracking(companyDomain) {
 
 // 会社ページを描画
 export async function renderCompanyPage() {
+  // Firestoreローダーを初期化
+  await JobsLoader.initFirestoreLoader();
+
   const container = document.getElementById('job-detail-container');
   if (!container) return;
 

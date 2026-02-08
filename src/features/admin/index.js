@@ -1339,16 +1339,21 @@ export function initAdminDashboard() {
   // Firebase初期化
   initFirebase();
 
+  // Firestoreローダーを初期化
+  JobsLoader.initFirestoreLoader();
+
   // セッション確認
   if (checkSession()) {
     showDashboard();
     // Firebase認証が完了したらデータを読み込む
-    document.addEventListener('authReady', () => {
+    document.addEventListener('authReady', async () => {
+      await JobsLoader.initFirestoreLoader(); // 念のため再初期化
       loadDashboardData();
     }, { once: true });
     // フォールバック: 認証に時間がかかる場合は3秒後に読み込み
-    setTimeout(() => {
+    setTimeout(async () => {
       if (!getIdToken()) {
+        await JobsLoader.initFirestoreLoader();
         loadDashboardData();
       }
     }, 3000);

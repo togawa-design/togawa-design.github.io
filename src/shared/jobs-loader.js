@@ -411,8 +411,10 @@ export async function fetchAllJobs() {
   for (const company of companies) {
     if (!isCompanyVisible(company)) continue;
 
-    // jobsSheetから求人データソースを取得（'管理シート'カラムからマッピング）
-    const jobsSource = company.jobsSheet?.trim();
+    // Firestore使用時はcompanyDomainを使用、それ以外はjobsSheetを使用
+    const jobsSource = useFirestore && company.companyDomain
+      ? company.companyDomain
+      : company.jobsSheet?.trim();
     if (!jobsSource) continue;
 
     const jobs = await fetchCompanyJobs(jobsSource);
