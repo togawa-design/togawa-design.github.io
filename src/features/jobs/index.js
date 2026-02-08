@@ -48,7 +48,6 @@ export async function renderAllJobs(container) {
 
     const companiesWithJobData = await Promise.all(
       visibleCompanies.map(async (company) => {
-        company._displayTotalBonus = '';
         company._displayMonthlySalary = company.monthlySalary || '';
 
         if (company.jobsSheet && company.jobsSheet.trim()) {
@@ -60,8 +59,6 @@ export async function renderAllJobs(container) {
               .sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
 
             if (sortedJobs.length > 0) {
-              const firstJob = sortedJobs[0];
-              company._displayTotalBonus = firstJob.totalBonus || '';
               const maxMonthlySalary = JobsLoader.getMaxMonthlySalary(sortedJobs);
               if (maxMonthlySalary) {
                 company._displayMonthlySalary = maxMonthlySalary;
