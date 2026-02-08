@@ -204,6 +204,9 @@ export async function initLocationPage() {
   const container = document.getElementById('location-page-container');
   if (!container) return;
 
+  // Firestoreを初期化
+  await JobsLoader.initFirestoreLoader();
+
   const prefecture = getPrefectureFromUrl();
 
   if (!prefecture) {

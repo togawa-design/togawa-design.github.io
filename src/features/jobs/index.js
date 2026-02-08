@@ -206,6 +206,9 @@ export async function initJobsPage() {
   const container = document.getElementById('jobs-page-container');
   if (!container) return;
 
+  // Firestoreを初期化
+  await JobsLoader.initFirestoreLoader();
+
   // URLパラメータをチェック
   const params = new URLSearchParams(window.location.search);
   const keyword = params.get('keyword');

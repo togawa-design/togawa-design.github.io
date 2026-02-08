@@ -11,7 +11,7 @@ const CLOUDINARY_CONFIG = {
 };
 
 /**
- * 画像を圧縮・WebP変換する
+ * 画像を圧縮・WebP変換する（縦横比維持、ファイルサイズ制限対応）
  * @param {File} file - 元の画像ファイル
  * @param {Object} options - オプション
  * @returns {Promise<Blob>} - 圧縮された画像Blob
@@ -21,7 +21,8 @@ export async function compressImage(file, options = {}) {
     maxWidth = 1200,
     maxHeight = 1200,
     quality = 0.8,
-    outputType = 'image/webp'
+    outputType = 'image/webp',
+    maxFileSize = null // バイト単位（例: 100 * 1024 = 100KB）
   } = options;
 
   return new Promise((resolve, reject) => {
@@ -29,37 +30,52 @@ export async function compressImage(file, options = {}) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    img.onload = () => {
+    img.onload = async () => {
       // アスペクト比を維持してリサイズ
       let { width, height } = img;
+      const aspectRatio = width / height;
 
       if (width > maxWidth) {
-        height = (height * maxWidth) / width;
         width = maxWidth;
+        height = width / aspectRatio;
       }
       if (height > maxHeight) {
-        width = (width * maxHeight) / height;
         height = maxHeight;
+        width = height * aspectRatio;
       }
 
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = Math.round(width);
+      canvas.height = Math.round(height);
 
       // 画像を描画
-      ctx.drawImage(img, 0, 0, width, height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Blobとして出力
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('画像の変換に失敗しました'));
-          }
-        },
-        outputType,
-        quality
-      );
+      // ファイルサイズ制限がある場合は品質を調整
+      if (maxFileSize) {
+        let currentQuality = quality;
+        let blob = await canvasToBlob(canvas, outputType, currentQuality);
+
+        // ファイルサイズが超過している場合、品質を下げて再試行
+        while (blob.size > maxFileSize && currentQuality > 0.1) {
+          currentQuality -= 0.1;
+          blob = await canvasToBlob(canvas, outputType, currentQuality);
+        }
+
+        resolve(blob);
+      } else {
+        // 通常の圧縮
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('画像の変換に失敗しました'));
+            }
+          },
+          outputType,
+          quality
+        );
+      }
     };
 
     img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
@@ -68,26 +84,47 @@ export async function compressImage(file, options = {}) {
 }
 
 /**
- * ロゴ用に画像を圧縮する（小さめ）
+ * Canvas を Blob に変換するヘルパー関数
  */
-export async function compressLogo(file) {
-  return compressImage(file, {
-    maxWidth: 400,
-    maxHeight: 400,
-    quality: 0.85,
-    outputType: 'image/webp'
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('画像の変換に失敗しました'));
+        }
+      },
+      type,
+      quality
+    );
   });
 }
 
 /**
- * コンテンツ画像用に圧縮する
+ * ロゴ用に画像を圧縮する（縦横比維持、100KB以下）
+ */
+export async function compressLogo(file) {
+  return compressImage(file, {
+    maxWidth: 800,  // 大きめに設定（縦横比維持のため）
+    maxHeight: 800,
+    quality: 0.85,
+    outputType: 'image/webp',
+    maxFileSize: 100 * 1024  // 100KB
+  });
+}
+
+/**
+ * コンテンツ画像用に圧縮する（縦横比維持、500KB以下）
  */
 export async function compressContentImage(file) {
   return compressImage(file, {
     maxWidth: 1200,
-    maxHeight: 800,
-    quality: 0.8,
-    outputType: 'image/webp'
+    maxHeight: 1200,
+    quality: 0.85,
+    outputType: 'image/webp',
+    maxFileSize: 500 * 1024  // 500KB
   });
 }
 
@@ -169,12 +206,13 @@ export async function uploadRecruitLogo(file, companyDomain) {
  * @returns {Promise<string>} - 画像URL
  */
 export async function uploadRecruitHeroImage(file, companyDomain) {
-  // ヒーロー画像用に大きめサイズで圧縮
+  // ヒーロー画像用に大きめサイズで圧縮（縦横比維持、500KB以下）
   const compressed = await compressImage(file, {
     maxWidth: 1920,
-    maxHeight: 1080,
+    maxHeight: 1920,
     quality: 0.85,
-    outputType: 'image/webp'
+    outputType: 'image/webp',
+    maxFileSize: 500 * 1024  // 500KB
   });
 
   // Cloudinaryにアップロード（採用ページ専用パス）

@@ -66,8 +66,10 @@ export function Image({ src, alt, fallback, className = '' }) {
   const escapedAlt = escapeHtml(alt);
   const escapedFallback = fallback ? escapeHtml(fallback) : '';
 
+  // フォールバック画像がある場合は、エラー時にフォールバック画像を表示
+  // フォールバック画像も読み込めない場合は非表示にする
   const errorHandler = fallback
-    ? `onerror="this.parentElement.innerHTML='<div class=\\'image-placeholder\\'>${escapedFallback}</div>'"`
+    ? `onerror="if(this.src!=='${escapedFallback}'){this.src='${escapedFallback}'}else{this.style.display='none'}"`
     : `onerror="this.style.display='none'"`;
 
   return `<img src="${escapedSrc}" alt="${escapedAlt}" class="${className}" ${errorHandler}>`;

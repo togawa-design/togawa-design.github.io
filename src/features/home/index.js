@@ -395,13 +395,33 @@ export async function renderJobs(containerId = 'jobs-container') {
   container.innerHTML = displayJobs.map(job => JobCard({ job, showCompanyName: true })).join('');
 }
 
-// 日付文字列をパース
-function parseJobDate(dateStr) {
-  if (!dateStr) return new Date(0);
-  // YYYY/MM/DD または YYYY-MM-DD 形式に対応
-  const normalized = dateStr.replace(/\//g, '-');
-  const date = new Date(normalized);
-  return isNaN(date.getTime()) ? new Date(0) : date;
+// 日付をパース（Firestore Timestamp、Date、文字列に対応）
+function parseJobDate(dateValue) {
+  if (!dateValue) return new Date(0);
+
+  // Firestore Timestamp（toDate()メソッドを持つ）
+  if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+    return dateValue.toDate();
+  }
+
+  // Firestore Timestamp（secondsプロパティを持つ）
+  if (dateValue.seconds) {
+    return new Date(dateValue.seconds * 1000);
+  }
+
+  // すでにDateオブジェクト
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+
+  // 文字列の場合
+  if (typeof dateValue === 'string') {
+    const normalized = dateValue.replace(/\//g, '-');
+    const date = new Date(normalized);
+    return isNaN(date.getTime()) ? new Date(0) : date;
+  }
+
+  return new Date(0);
 }
 
 // 実績を描画
@@ -595,7 +615,10 @@ function getYouTubeEmbedUrl(url) {
 }
 
 // ページ初期化
-export function initHomePage() {
+export async function initHomePage() {
+  // Firestoreを初期化
+  await JobsLoader.initFirestoreLoader();
+
   initSearchTabs();
   initMobileMenu();
   initSmoothScroll();

@@ -529,6 +529,7 @@ export async function getAllVisibleJobs() {
   if (!firestore) throw new Error('Firestore not initialized');
 
   try {
+    // collectionGroupクエリで全求人を一度に取得（インデックス必須）
     const snapshot = await firestore.collectionGroup('jobs')
       .where('visible', '==', true)
       .orderBy('order', 'asc')

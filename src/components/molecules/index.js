@@ -18,6 +18,42 @@ function isWithinOneWeek(publishStartDate) {
   return startDate >= oneWeekAgo;
 }
 
+// 給与表示を給与形態に即したものに決定
+function getSalaryDisplay(job) {
+  const salaryType = job.salaryType || '';
+  const dailySalary = job.dailySalaryExample || '';
+  const monthlySalary = job.monthlySalaryExample || job._displayMonthlySalary || job.monthlySalary || '';
+  const yearlySalary = job.yearlySalaryExample || '';
+
+  // 日収例、月収例、年収例の優先順位で表示
+  if (dailySalary) {
+    return { label: '日収例', value: dailySalary };
+  }
+  if (monthlySalary && salaryType !== '日給') {
+    return { label: '月収例', value: monthlySalary };
+  }
+  if (yearlySalary) {
+    return { label: '年収例', value: yearlySalary };
+  }
+
+  // 例がない場合は給与形態に応じたラベルで給与額を表示
+  const baseSalary = job._displayMonthlySalary || job.monthlySalary || '';
+  if (!baseSalary) {
+    return { label: '', value: '' };
+  }
+
+  switch (salaryType) {
+    case '時給':
+      return { label: '時給', value: baseSalary };
+    case '日給':
+      return { label: '日給', value: baseSalary };
+    case '月給':
+      return { label: '月給', value: baseSalary };
+    default:
+      return { label: '給与', value: baseSalary };
+  }
+}
+
 // 求人カード
 export function JobCard({ job, showCompanyName = false, linkToJobsList = false }) {
   // displayedFeaturesが設定されている場合はそれを優先表示
@@ -34,9 +70,11 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
   // displayedFeaturesがあればそれを使用、なければallFeaturesの最初の3つ
   const features = displayedFeatures.length > 0 ? displayedFeatures.slice(0, 3) : allFeatures.slice(0, 3);
 
-  const imageSrc = job.jobLogo?.trim() || job.imageUrl?.trim() || 'images/default-job.svg';
-  const totalBonus = job._displayTotalBonus || job.totalBonus || '';
-  const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
+  const imageSrc = job.jobLogo?.trim() || job.imageUrl?.trim() || job.logoUrl?.trim() || '';
+  const hasImage = !!imageSrc;
+
+  // 給与表示を取得
+  const salaryDisplay = getSalaryDisplay(job);
 
   // 掲載開始日から1週間以内の場合はNEWタグを自動表示
   const isNew = isWithinOneWeek(job.publishStartDate);
@@ -77,30 +115,39 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
 
   // 表示するタイトル（titleがなければcompanyをフォールバック）
   const displayTitle = job.title || job.company || '';
+  // 会社名はtitleがある場合のみ別途表示（重複防止）
+  const displayCompanyName = showCompanyName && job.title && job.company ? job.company : '';
+
+  // 画像表示: 画像があれば表示、なければデフォルト画像
+  // linkToJobsList=true は会社カード、false は求人カード
+  const defaultLogoUrl = linkToJobsList
+    ? '/images/default-company-logo.webp'
+    : '/images/default-job-logo.webp';
+  const imageHtml = Image({
+    src: hasImage ? imageSrc : defaultLogoUrl,
+    alt: job.company || displayTitle,
+    fallback: defaultLogoUrl
+  });
 
   return `
     <article class="job-card${isNew ? ' is-new' : ''}${showVideoButton ? ' has-video' : ''}" data-job-id="${escapeHtml(job.id || '')}">
       ${newTagHtml}
       <div class="job-card-image">
-        ${Image({ src: imageSrc, alt: job.company || displayTitle, fallback: job.company })}
+        ${imageHtml}
       </div>
       <div class="job-card-body">
-        ${showCompanyName ? `<p class="job-company-name">${escapeHtml(job.company || '')}</p>` : ''}
+        ${displayCompanyName ? `<p class="job-company-name">${escapeHtml(displayCompanyName)}</p>` : ''}
         <h3 class="job-title">${escapeHtml(displayTitle)}</h3>
         <p class="job-location">${escapeHtml(job.companyAddress || job.location || '')}</p>
         ${job.access ? `<p class="job-access">${escapeHtml(job.access)}</p>` : ''}
+        ${salaryDisplay.value ? `
         <div class="job-benefits">
-          ${totalBonus ? `
-            <div class="benefit-item highlight">
-              <span class="benefit-label">特典総額</span>
-              <span class="benefit-value">${escapeHtml(totalBonus)}</span>
-            </div>
-          ` : ''}
           <div class="benefit-item">
-            <span class="benefit-label">月収例</span>
-            <span class="benefit-value">${escapeHtml(monthlySalary)}</span>
+            <span class="benefit-label">${escapeHtml(salaryDisplay.label)}</span>
+            <span class="benefit-value">${escapeHtml(salaryDisplay.value)}</span>
           </div>
         </div>
+        ` : ''}
         ${TagList({ tags: features, className: 'job-features' })}
         <div class="job-card-actions">
           ${Button({ text: '詳細を見る', href: detailUrl, className: 'btn-apply' })}

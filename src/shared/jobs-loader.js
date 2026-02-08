@@ -223,6 +223,8 @@ export async function fetchCompanies() {
       // Firestoreから取得
       const result = await FirestoreService.getCompanies();
       if (result.success) {
+        // デバッグ: 会社データのフィールドを確認
+        console.log('[JobsLoader] Firestore companies raw data:', result.companies);
         // Firestoreデータをスプレッドシート形式に変換
         data = result.companies.map(c => ({
           id: c.companyDomain,
@@ -233,7 +235,7 @@ export async function fetchCompanies() {
           companyAddress: c.companyAddress || '',
           workLocation: c.workLocation || '',
           designPattern: c.designPattern || '',
-          imageUrl: c.imageUrl || '',
+          imageUrl: c.imageUrl || c.logoUrl || '',
           order: c.order || 0,
           showCompany: c.showCompany ? '○' : '',
           companyDomain: c.companyDomain,
@@ -367,7 +369,7 @@ export function getMaxMonthlySalary(jobs) {
   jobs.forEach(job => {
     if (!job.monthlySalary) return;
 
-    const salaryStr = job.monthlySalary;
+    const salaryStr = String(job.monthlySalary);
     let salary = 0;
 
     const manMatch = salaryStr.match(/(\d+(?:\.\d+)?)\s*万/);
