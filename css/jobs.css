@@ -64,14 +64,14 @@
 }
 
 .job-image-placeholder {
-  background: var(--gradient-primary);
-  color: #fff;
+  background: var(--gray-100);
+  color: var(--gray-400);
   height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   border-radius: var(--radius);
   letter-spacing: 0.02em;
 }
@@ -81,7 +81,20 @@
   width: 100%;
   height: 140px;
   object-fit: contain;
-  background: var(--gradient-primary);
+  background: transparent;
+  border-radius: var(--radius);
+}
+
+/* 画像なしの場合 */
+.job-card-no-image {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-400);
+  background: var(--gray-100);
   border-radius: var(--radius);
 }
 

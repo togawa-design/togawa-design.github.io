@@ -1688,7 +1688,7 @@ img {
   width: 100%;
   height: 140px;
   object-fit: contain;
-  background: var(--gradient-primary);
+  background: #fff;
   border-radius: var(--radius);
 }
 
