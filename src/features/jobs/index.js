@@ -79,7 +79,7 @@ export async function renderAllJobs(container) {
         <p class="jobs-page-description">${companiesWithJobData.length}社の会社が見つかりました</p>
       </div>
       <div class="jobs-grid jobs-page-grid">
-        ${companiesWithJobData.map(company => JobCard({ job: company })).join('')}
+        ${companiesWithJobData.map(company => JobCard({ job: company, linkToJobsList: true })).join('')}
       </div>
     `;
 

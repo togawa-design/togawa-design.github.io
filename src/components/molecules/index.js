@@ -46,19 +46,22 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
   const showVideoButton = String(job.showVideoButton).toLowerCase() === 'true' && job.videoUrl?.trim();
   const videoUrl = job.videoUrl?.trim() || '';
 
-  // linkToJobsList が true の場合は企業の求人一覧ページへ、それ以外はLPページへ
+  // 求人ID（複数のフィールド名に対応）
+  const jobId = job.id || job.jobId || job._docId || '';
+
+  // リンク先を決定
   let detailUrl = 'jobs.html';
   if (linkToJobsList) {
-    // 企業の求人一覧ページへリンク
+    // 企業の採用ページへリンク
     if (job.companyDomain?.trim()) {
-      detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
+      detailUrl = `company-recruit.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
     }
   } else {
-    // LPページへリンク
-    if (job.companyDomain?.trim() && job.id) {
-      detailUrl = `lp.html?j=${encodeURIComponent(job.companyDomain.trim())}_${encodeURIComponent(job.id)}`;
+    // LPページへリンク（求人IDがある場合）、なければ採用ページへ
+    if (job.companyDomain?.trim() && jobId) {
+      detailUrl = `lp.html?j=${encodeURIComponent(job.companyDomain.trim())}_${encodeURIComponent(jobId)}`;
     } else if (job.companyDomain?.trim()) {
-      detailUrl = `company.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
+      detailUrl = `company-recruit.html?id=${encodeURIComponent(job.companyDomain.trim())}`;
     } else if (job.detailUrl) {
       detailUrl = job.detailUrl;
     }
@@ -72,15 +75,18 @@ export function JobCard({ job, showCompanyName = false, linkToJobsList = false }
     </button>
   ` : '';
 
+  // 表示するタイトル（titleがなければcompanyをフォールバック）
+  const displayTitle = job.title || job.company || '';
+
   return `
     <article class="job-card${isNew ? ' is-new' : ''}${showVideoButton ? ' has-video' : ''}" data-job-id="${escapeHtml(job.id || '')}">
       ${newTagHtml}
       <div class="job-card-image">
-        ${Image({ src: imageSrc, alt: job.company || job.title, fallback: job.company })}
+        ${Image({ src: imageSrc, alt: job.company || displayTitle, fallback: job.company })}
       </div>
       <div class="job-card-body">
         ${showCompanyName ? `<p class="job-company-name">${escapeHtml(job.company || '')}</p>` : ''}
-        <h3 class="job-title">${escapeHtml(job.title)}</h3>
+        <h3 class="job-title">${escapeHtml(displayTitle)}</h3>
         <p class="job-location">${escapeHtml(job.companyAddress || job.location || '')}</p>
         ${job.access ? `<p class="job-access">${escapeHtml(job.access)}</p>` : ''}
         <div class="job-benefits">

@@ -221,39 +221,34 @@
               <textarea id="lp-faq" style="display: none;"></textarea>
             </div>
 
-            <!-- カスタムセクション（動画・カルーセル等）※登録されている場合のみ表示 -->
-            <div class="form-section lp-form-section" id="custom-sections-panel" style="display: none;">
-              <div class="lp-section-header">
-                <span class="lp-section-number">✨</span>
-                <h4>追加コンテンツ</h4>
-              </div>
-              <span class="form-description">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</span>
-              <div class="custom-sections-list" id="custom-sections-list">
-                <!-- JSで動的に生成 -->
-              </div>
-              <button type="button" id="btn-add-custom-section" class="btn-add-item">
-                <span>+</span> 動画・スライドなどを追加
-              </button>
-            </div>
-
-            <!-- 8. セクション管理 -->
-            <div class="form-section lp-form-section" id="section-manager">
+            <!-- 8. カスタムセクション -->
+            <div class="form-section lp-form-section" id="lp-custom-sections-panel">
               <div class="lp-section-header">
                 <span class="lp-section-number">8</span>
+                <h4>カスタムセクション</h4>
+              </div>
+              <span class="form-description">ページに独自のセクションを追加できます</span>
+              <div class="custom-sections-list" id="lp-custom-sections-list">
+                <!-- JSで動的に生成 -->
+              </div>
+              <div class="add-section-buttons">
+                <button type="button" class="btn-open-template-selector" id="btn-add-custom-section">+ コンテンツを追加</button>
+              </div>
+            </div>
+
+            <!-- 9. セクション管理 -->
+            <div class="form-section lp-form-section" id="section-manager">
+              <div class="lp-section-header">
+                <span class="lp-section-number">9</span>
                 <h4>セクション管理</h4>
               </div>
-              <span class="form-description">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</span>
-              <div class="section-manager-toolbar">
-                <button type="button" id="btn-add-section" class="btn-primary">
-                  <span>+</span> セクションを追加
-                </button>
-              </div>
+              <span class="form-description">セクションの並び順と表示/非表示を設定。ドラッグ＆ドロップで並び替え。</span>
               <ul id="lp-sections-list" class="sections-list">
                 <!-- セクションリストはJSで動的に生成 -->
               </ul>
             </div>
 
-            <!-- 9. 広告トラッキング設定 -->
+            <!-- 10. 広告トラッキング設定 -->
             <div class="form-section lp-form-section collapsible" id="ad-tracking-section">
               <div class="lp-section-header collapsible-header" data-target="ad-tracking-content">
                 <span class="lp-section-number">9</span>
@@ -295,10 +290,10 @@
               </div>
             </div>
 
-            <!-- 10. OGP設定（広告プレビュー用） -->
+            <!-- 11. OGP設定（広告プレビュー用） -->
             <div class="form-section lp-form-section collapsible" id="ogp-section">
               <div class="lp-section-header collapsible-header" data-target="ogp-content">
-                <span class="lp-section-number">10</span>
+                <span class="lp-section-number">11</span>
                 <h4>OGP設定（広告プレビュー用）</h4>
                 <span class="collapse-icon">▼</span>
               </div>

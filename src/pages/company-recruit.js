@@ -741,7 +741,9 @@ class CompanyRecruitPage {
     const jobType = job.jobType || '';
     const isNew = isWithinOneWeek(job.publishStartDate);
     const totalBonus = job._displayTotalBonus || job.totalBonus || '';
-    const monthlySalary = job._displayMonthlySalary || job.monthlySalary || '';
+    const monthlySalary = job._displayMonthlySalary || job.monthlySalaryExample || job.monthlySalary || '';
+    const dailySalary = job.dailySalaryExample || '';
+    const yearlySalary = job.yearlySalaryExample || '';
     const location = job.companyAddress || job.location || '';
 
     return `
@@ -761,10 +763,22 @@ class CompanyRecruitPage {
                 <span class="recruit-benefit-value">${escapeHtml(totalBonus)}</span>
               </div>
             ` : ''}
+            ${dailySalary ? `
+              <div class="recruit-benefit-item">
+                <span class="recruit-benefit-label">日収例</span>
+                <span class="recruit-benefit-value">${escapeHtml(dailySalary)}</span>
+              </div>
+            ` : ''}
             ${monthlySalary ? `
               <div class="recruit-benefit-item">
                 <span class="recruit-benefit-label">月収例</span>
                 <span class="recruit-benefit-value">${escapeHtml(monthlySalary)}</span>
+              </div>
+            ` : ''}
+            ${yearlySalary ? `
+              <div class="recruit-benefit-item">
+                <span class="recruit-benefit-label">年収例</span>
+                <span class="recruit-benefit-value">${escapeHtml(yearlySalary)}</span>
               </div>
             ` : ''}
           </div>

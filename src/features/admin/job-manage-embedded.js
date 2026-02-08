@@ -412,6 +412,22 @@ function showJobEditNew() {
   const salaryOtherGroup = document.getElementById('jm-salary-other-group');
   if (salaryOtherGroup) salaryOtherGroup.style.display = 'none';
 
+  // 収入例フィールドをクリア
+  const dailySalaryEl = document.getElementById('jm-edit-job-daily-salary');
+  if (dailySalaryEl) dailySalaryEl.value = '';
+  const dailySalaryGroup = document.getElementById('jm-daily-salary-group');
+  if (dailySalaryGroup) dailySalaryGroup.style.display = 'none';
+
+  const monthlySalaryExEl = document.getElementById('jm-edit-job-monthly-salary');
+  if (monthlySalaryExEl) monthlySalaryExEl.value = '';
+  const monthlySalaryGroup = document.getElementById('jm-monthly-salary-group');
+  if (monthlySalaryGroup) monthlySalaryGroup.style.display = 'none';
+
+  const yearlySalaryEl = document.getElementById('jm-edit-job-yearly-salary');
+  if (yearlySalaryEl) yearlySalaryEl.value = '';
+  const yearlySalaryGroup = document.getElementById('jm-yearly-salary-group');
+  if (yearlySalaryGroup) yearlySalaryGroup.style.display = 'none';
+
   // 勤務時間リストをクリア
   const workingHoursList = document.getElementById('jm-working-hours-list');
   if (workingHoursList) {
@@ -555,6 +571,35 @@ function populateSalaryFields(job) {
       salaryOtherEl.value = '';
       salaryOtherGroup.style.display = 'none';
     }
+  }
+
+  // 収入例フィールドを設定
+  const dailySalaryEl = document.getElementById('jm-edit-job-daily-salary');
+  const dailySalaryGroup = document.getElementById('jm-daily-salary-group');
+  if (dailySalaryEl) {
+    dailySalaryEl.value = job.dailySalaryExample || '';
+  }
+  if (dailySalaryGroup) {
+    dailySalaryGroup.style.display = job.salaryType === '日給' ? 'block' : 'none';
+  }
+
+  const monthlySalaryExEl = document.getElementById('jm-edit-job-monthly-salary');
+  const monthlySalaryGroup = document.getElementById('jm-monthly-salary-group');
+  if (monthlySalaryExEl) {
+    monthlySalaryExEl.value = job.monthlySalaryExample || '';
+  }
+  if (monthlySalaryGroup) {
+    monthlySalaryGroup.style.display = job.salaryType === '月給' ? 'block' : 'none';
+  }
+
+  const yearlySalaryEl = document.getElementById('jm-edit-job-yearly-salary');
+  const yearlySalaryGroup = document.getElementById('jm-yearly-salary-group');
+  if (yearlySalaryEl) {
+    yearlySalaryEl.value = job.yearlySalaryExample || '';
+  }
+  if (yearlySalaryGroup) {
+    // 月給の場合も年収例を表示
+    yearlySalaryGroup.style.display = (job.salaryType === '月給') ? 'block' : 'none';
   }
 }
 
@@ -789,6 +834,9 @@ async function saveJob() {
   const salaryType = getVal('salary-type');
   const salaryValue = getVal('salary');
   const salaryOther = getVal('salary-other');
+  const dailySalaryExample = getVal('daily-salary');
+  const monthlySalaryExample = getVal('monthly-salary');
+  const yearlySalaryExample = getVal('yearly-salary');
 
   // 勤務時間の取得（複数入力から）
   const workingHoursInputs = document.querySelectorAll('#jm-working-hours-list .jm-working-hours-input');
@@ -824,6 +872,9 @@ async function saveJob() {
     salaryType: salaryType,
     monthlySalary: salaryValue,
     salaryOther: salaryOther,
+    dailySalaryExample: dailySalaryExample,
+    monthlySalaryExample: monthlySalaryExample,
+    yearlySalaryExample: yearlySalaryExample,
     totalBonus: getVal('bonus'),
     order: getVal('order'),
     jobType: getVal('type'),
@@ -1376,13 +1427,32 @@ function handleJmShowVideoChange() {
 function handleJmSalaryTypeChange() {
   const salaryTypeEl = document.getElementById('jm-edit-job-salary-type');
   const salaryOtherGroup = document.getElementById('jm-salary-other-group');
+  const dailySalaryGroup = document.getElementById('jm-daily-salary-group');
+  const monthlySalaryGroup = document.getElementById('jm-monthly-salary-group');
+  const yearlySalaryGroup = document.getElementById('jm-yearly-salary-group');
 
-  if (!salaryTypeEl || !salaryOtherGroup) return;
+  if (!salaryTypeEl) return;
 
-  if (salaryTypeEl.value === 'その他') {
-    salaryOtherGroup.style.display = 'block';
-  } else {
-    salaryOtherGroup.style.display = 'none';
+  const salaryType = salaryTypeEl.value;
+
+  // その他の場合の詳細入力
+  if (salaryOtherGroup) {
+    salaryOtherGroup.style.display = salaryType === 'その他' ? 'block' : 'none';
+  }
+
+  // 日収例（日給の場合表示）
+  if (dailySalaryGroup) {
+    dailySalaryGroup.style.display = salaryType === '日給' ? 'block' : 'none';
+  }
+
+  // 月収例（月給の場合表示）
+  if (monthlySalaryGroup) {
+    monthlySalaryGroup.style.display = salaryType === '月給' ? 'block' : 'none';
+  }
+
+  // 年収例（月給の場合表示）
+  if (yearlySalaryGroup) {
+    yearlySalaryGroup.style.display = salaryType === '月給' ? 'block' : 'none';
   }
 }
 
