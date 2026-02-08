@@ -1,98 +1,160 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // admin_users コレクション - 管理者ユーザー（Google認証）
+
+    // ===== ヘルパー関数 =====
+
+    // 認証済みかどうか
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 管理者かどうか
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+
+    // 特定の会社に所属しているかどうか
+    function isCompanyMember(companyDomain) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/company_users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/company_users/$(request.auth.uid)).data.companyDomain == companyDomain;
+    }
+
+    // 管理者または特定の会社に所属しているかどうか
+    function hasCompanyAccess(companyDomain) {
+      return isAdmin() || isCompanyMember(companyDomain);
+    }
+
+    // ===== admin_users コレクション - 管理者ユーザー =====
     match /admin_users/{userId} {
-      // 認証済みユーザーは読み取り可能
-      allow read: if request.auth != null;
-      // 管理者のみ書き込み可能（本番では管理者判定を追加）
-      allow write: if true;
+      // 認証済みユーザーは読み取り可能（権限確認用）
+      allow read: if isAuthenticated();
+      // 管理者のみ書き込み可能
+      allow write: if isAdmin();
     }
 
-    // company_users コレクション - 会社ユーザー（ID/PW認証）
+    // ===== company_users コレクション - 会社ユーザー =====
     match /company_users/{userId} {
-      // 認証済みユーザーまたはログイン時は読み取り可能
+      // 管理者または自分自身のデータのみ読み取り可能
+      allow read: if isAdmin() || request.auth.uid == userId;
+      // 管理者のみ書き込み可能（ユーザー作成はCloud Functions経由）
+      allow write: if isAdmin();
+    }
+
+    // ===== collectionGroup クエリ用: jobs =====
+    // collectionGroupクエリで全求人を取得するために必要
+    match /{path=**}/jobs/{jobId} {
       allow read: if true;
-      // 管理者のみ書き込み可能（本番では管理者判定を追加）
-      allow write: if true;
     }
 
-    // applications コレクション - 応募データ
-    match /applications/{docId} {
-      // 読み書き全て許可（開発用）
-      allow read, write: if true;
-    }
-
-    // assignees コレクション - 担当者データ
-    match /assignees/{docId} {
-      allow read, write: if true;
-    }
-
-    // companies コレクション - 会社情報・設定
+    // ===== companies コレクション - 会社情報・設定 =====
     match /companies/{companyDomain} {
-      // 公開会社は誰でも読める、書き込みは認証ユーザー
+      // 公開データは誰でも読める
       allow read: if true;
-      allow write: if request.auth != null;
+      // 書き込みは管理者または所属会社のユーザー
+      allow write: if hasCompanyAccess(companyDomain);
 
       // サブコレクション: jobs - 求人データ
       match /jobs/{jobId} {
         // 公開求人は誰でも読める
         allow read: if true;
-        // 書き込みは認証ユーザーのみ
-        allow write: if request.auth != null;
+        // 書き込みは管理者または所属会社のユーザー
+        allow write: if hasCompanyAccess(companyDomain);
       }
 
       // サブコレクション: lpSettings - LP設定
       match /lpSettings/{settingsId} {
         allow read: if true;
-        allow write: if request.auth != null;
+        allow write: if hasCompanyAccess(companyDomain);
       }
 
       // サブコレクション: recruitSettings - 採用ページ設定
       match /recruitSettings/{settingsId} {
         allow read: if true;
-        allow write: if request.auth != null;
+        allow write: if hasCompanyAccess(companyDomain);
       }
 
       // サブコレクション: assignees - 担当者
       match /assignees/{assigneeId} {
-        allow read, write: if true;
+        allow read: if isAuthenticated();
+        allow write: if hasCompanyAccess(companyDomain);
       }
     }
 
-    // pageviews コレクション - ページビューデータ
+    // ===== applications コレクション - 応募データ =====
+    match /applications/{docId} {
+      // 応募は誰でも可能
+      allow create: if true;
+      // 読み取り・更新・削除は認証ユーザーのみ
+      allow read, update, delete: if isAuthenticated();
+    }
+
+    // ===== assignees コレクション（ルートレベル） - 担当者データ =====
+    match /assignees/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ===== pageviews コレクション - ページビューデータ =====
     match /pageviews/{docId} {
-      allow read, write: if true;
-    }
-
-    // page_analytics_events コレクション - ページアナリティクスイベント（LP/採用ページ）
-    match /page_analytics_events/{docId} {
-      // 書き込みは誰でも可能（Cloud Functions経由で送信）
+      // 書き込みは誰でも可能（アクセス解析用）
       allow write: if true;
-      // 読み取りは認証済みユーザーのみ
-      allow read: if request.auth != null;
+      // 読み取りは認証ユーザーのみ
+      allow read: if isAuthenticated();
     }
 
-    // page_analytics_daily コレクション - ページアナリティクス日次集計
+    // ===== page_analytics_events コレクション - ページアナリティクスイベント =====
+    match /page_analytics_events/{docId} {
+      // 書き込みは誰でも可能（アクセス解析用）
+      allow write: if true;
+      // 読み取りは認証ユーザーのみ
+      allow read: if isAuthenticated();
+    }
+
+    // ===== page_analytics_daily コレクション - ページアナリティクス日次集計 =====
     match /page_analytics_daily/{dateStr} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
+      // 書き込みは認証ユーザーまたはCloud Functions
       allow write: if true;
 
       // サブコレクション: stats
       match /stats/{statsId} {
-        allow read: if request.auth != null;
+        allow read: if isAuthenticated();
         allow write: if true;
       }
     }
 
-    // users コレクション - ユーザープロフィール
+    // ===== users コレクション - 求職者ユーザープロフィール =====
     match /users/{userId} {
-      allow read, write: if true;
+      // 自分のデータのみ読み書き可能
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // その他のコレクションも許可（開発用）
-    match /{document=**} {
-      allow read, write: if true;
+    // ===== favorites コレクション - お気に入り求人 =====
+    match /favorites/{docId} {
+      allow read, write: if isAuthenticated();
     }
+
+    // ===== job_views コレクション - 求人閲覧履歴 =====
+    match /job_views/{docId} {
+      allow write: if true;
+      allow read: if isAuthenticated();
+    }
+
+    // ===== lp_settings コレクション（ルートレベル） =====
+    match /lp_settings/{companyDomain} {
+      allow read: if true;
+      allow write: if hasCompanyAccess(companyDomain);
+    }
+
+    // ===== recruit_page_settings コレクション（ルートレベル） =====
+    match /recruit_page_settings/{companyDomain} {
+      allow read: if true;
+      allow write: if hasCompanyAccess(companyDomain);
+    }
+
+    // 注意: 上記にマッチしないドキュメントへのアクセスは拒否されます
   }
 }
