@@ -1718,6 +1718,92 @@
   background: #4f46e5;
 }
 
+/* 管理者ユーザー管理 */
+.admin-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-user-email {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.admin-user-badge {
+  padding: 2px 8px;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.admin-user-date {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.btn-delete-admin {
+  padding: 6px 12px;
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-admin:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.btn-delete-admin:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-users-notice {
+  padding: 16px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+}
+
+.admin-users-notice p {
+  margin: 0 0 8px;
+}
+
+.admin-users-notice p:last-child {
+  margin-bottom: 0;
+}
+
+.admin-user-form h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
 /* ========================================
    レスポンシブ
 ======================================== */
@@ -12607,4 +12693,179 @@ textarea.section-field-input {
   word-break: break-word;
   max-height: 300px;
   overflow-y: auto;
+}
+
+/* ========================================
+   会社選択モーダル（複数会社所属ユーザー用）
+======================================== */
+.company-select-modal {
+  max-width: 480px;
+  padding: 32px;
+  text-align: center;
+}
+
+.company-select-modal h2 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.company-select-modal .modal-description {
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.company-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.company-select-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.company-select-item:hover {
+  background: #f0fdf4;
+  border-color: #4AA7C0;
+}
+
+.company-select-item .company-icon {
+  width: 48px;
+  height: 48px;
+  background: #4AA7C0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.company-select-item .company-info {
+  flex: 1;
+}
+
+.company-select-item .company-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.company-select-item .company-domain {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.company-select-item .arrow-icon {
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+.company-select-item:hover .arrow-icon {
+  color: #4AA7C0;
+}
+
+/* ========================================
+   会社切り替えドロップダウン（ヘッダー用）
+======================================== */
+.company-switcher {
+  position: relative;
+}
+
+.company-switcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.company-switcher-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.company-switcher-btn .current-company {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.company-switcher-btn .dropdown-arrow {
+  font-size: 10px;
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+
+.company-switcher.open .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.company-switcher-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  display: none;
+}
+
+.company-switcher.open .company-switcher-dropdown {
+  display: block;
+}
+
+.company-switcher-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.company-switcher-dropdown-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.company-switcher-dropdown-item:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.company-switcher-dropdown-item:hover {
+  background: #f9fafb;
+}
+
+.company-switcher-dropdown-item.active {
+  background: #f0fdf4;
+  color: #4AA7C0;
+}
+
+.company-switcher-dropdown-item .check-icon {
+  width: 16px;
+  color: #4AA7C0;
 }
