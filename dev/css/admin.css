@@ -6737,30 +6737,7 @@
   border-color: #f87171;
 }
 
-#btn-add-custom-section {
-  width: 100%;
-  padding: 14px 20px;
-  background: #fff;
-  border: 2px dashed #fcd34d;
-  border-radius: 12px;
-  color: #b45309;
-  font-size: 15px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-#btn-add-custom-section:hover {
-  background: #fef3c7;
-  border-color: #f59e0b;
-  border-style: solid;
-  color: #92400e;
-  transform: translateY(-1px);
-}
-
-#btn-add-custom-section span {
-  font-size: 18px;
-  font-weight: 700;
-}
+/* LP設定のカスタムセクション追加ボタンは.btn-open-template-selectorクラスのスタイルを使用 */
 
 /* セクションタイプ別のカラー */
 .custom-section-item[data-type="video"] {
