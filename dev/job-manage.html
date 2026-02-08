@@ -1,0 +1,2237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>求人管理 | L-SET</title>
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/dev/css/style.css">
+  <link rel="stylesheet" href="/dev/css/admin.css">
+  <link rel="stylesheet" href="/dev/css/applicants.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/dev/js/jobManage-EQfT3HqL.js"></script>
+  <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/utils-BB91om2o.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/modal-gG-182nw.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/index-CVa_OPUj.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/config-pr2r6KvW.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/firestore-service-CkqluxkX.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-Dwqb589-.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-DlNuWP3J.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-cU_lMvcQ.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/api-IzJH-TGY.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/core-BWKjDW10.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/job-edit-utils-CG2H3x3O.js">
+</head>
+<body class="admin-body">
+  <!-- 求人管理ダッシュボード -->
+  <div id="job-manage-dashboard" class="admin-dashboard">
+    <!-- 会社ユーザー用サイドバー -->
+    <aside class="admin-sidebar" id="company-sidebar">
+      <div class="sidebar-header">
+        <h2>L-SET</h2>
+        <p>求人管理</p>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3 class="nav-section-title">求人関連</h3>
+          <ul>
+            <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📄</span>求人一覧</a></li>
+            <li><a href="#" id="nav-applicants" data-section="applicants"><span class="nav-icon">💬</span>応募者管理</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">採用ページ及びLP</h3>
+          <ul>
+            <li id="nav-recruit-settings-item"><a href="#" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ</a></li>
+            <li id="nav-lp-settings-item"><a href="#" data-section="lp-settings"><span class="nav-icon">🎨</span>LP</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">アナリティクス</h3>
+          <ul>
+            <li><a href="#" data-section="analytics"><span class="nav-icon">📊</span>アクセス解析</a></li>
+            <li><a href="#" data-section="reports"><span class="nav-icon">📈</span>レポート</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">設定</h3>
+          <ul>
+            <li id="nav-settings-item"><a href="#" data-section="settings"><span class="nav-icon">⚙️</span>設定</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="#" id="btn-open-sheet" target="_blank" class="btn-back-top">管理シートを開く</a>
+        <a href="admin.html" id="btn-back-admin" class="btn-back-admin">管理画面へ戻る</a>
+        <button id="btn-logout" class="btn-logout" style="display: none;">ログアウト</button>
+      </div>
+    </aside>
+
+    <!-- 管理者用サイドバー -->
+    <aside class="admin-sidebar" id="admin-sidebar" style="display: none;">
+      <div class="sidebar-header">
+        <h2>L-SET</h2>
+        <p>管理画面</p>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3 class="nav-section-title">アナリティクス</h3>
+          <ul>
+            <li><a href="admin.html" data-section="overview"><span class="nav-icon">📊</span>概要</a></li>
+            <li><a href="admin.html#analytics-detail" data-section="analytics-detail"><span class="nav-icon">📈</span>詳細分析</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">会社管理</h3>
+          <ul>
+            <li><a href="admin.html#company-manage" data-section="company-manage"><span class="nav-icon">🏭</span>会社一覧</a></li>
+            <li><a href="admin.html#job-listings" data-section="job-listings"><span class="nav-icon">📄</span>求人一覧</a></li>
+            <li><a href="admin.html#lp-settings" data-section="lp-settings"><span class="nav-icon">🎨</span>LP設定</a></li>
+            <li><a href="admin.html#recruit-settings" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ設定</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">応募者対応</h3>
+          <ul>
+            <li><a href="admin.html#applicant-select" data-section="applicant-select"><span class="nav-icon">💬</span>応募者管理</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">ユーザー管理</h3>
+          <ul>
+            <li><a href="admin.html#company-users" data-section="company-users"><span class="nav-icon">👥</span>会社ユーザー</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">現在の求人</h3>
+          <ul>
+            <li class="active"><a href="#" data-section="jobs"><span class="nav-icon">📋</span>求人一覧</a></li>
+            <li><a href="#" data-section="analytics"><span class="nav-icon">📈</span>アクセス解析</a></li>
+            <li><a href="#" data-section="reports"><span class="nav-icon">📊</span>レポート</a></li>
+            <li><a href="#" data-section="applicants"><span class="nav-icon">👥</span>応募者管理</a></li>
+            <li><a href="#" data-section="recruit-settings"><span class="nav-icon">📋</span>採用ページ設定</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="admin.html" class="btn-back-top">管理画面トップへ</a>
+        <button id="btn-logout-admin" class="btn-logout">ログアウト</button>
+      </div>
+    </aside>
+
+    <!-- メインコンテンツ -->
+    <main class="admin-main">
+      <!-- ヘッダー -->
+      <header class="admin-header">
+        <h1 id="page-title">求人一覧</h1>
+
+        <!-- 会社切り替え（複数会社所属ユーザー用） -->
+        <div id="company-switcher" class="company-switcher" style="display: none;">
+          <button class="company-switcher-btn" id="company-switcher-btn">
+            <span class="current-company" id="current-company-name">-</span>
+            <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="company-switcher-dropdown" id="company-switcher-dropdown">
+            <!-- 動的に会社リストが挿入される -->
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-sort-mode" class="btn-secondary">並び順変更</button>
+          <button id="btn-add-job" class="btn-primary">+ 新規求人作成</button>
+          <button id="btn-refresh" class="btn-refresh">更新</button>
+        </div>
+      </header>
+
+      <!-- 求人一覧セクション -->
+      <section id="section-jobs" class="admin-section active">
+        <div class="info-box">
+          <p id="company-info">会社: <strong id="company-name">-</strong></p>
+          <p>この会社の求人データは、専用の管理シートで管理されています。</p>
+        </div>
+
+        <!-- 求人フィード出力 -->
+        <div class="feed-export-section">
+          <div class="feed-export-header">
+            <h3>求人フィード出力</h3>
+            <span class="form-description">各求人媒体に掲載するためのフィードをダウンロードできます</span>
+          </div>
+          <div class="feed-export-buttons">
+            <button id="btn-download-indeed" class="btn-feed" title="Indeed用XMLフィード">
+              <span class="feed-icon">📄</span>
+              <span class="feed-label">Indeed XML</span>
+            </button>
+            <button id="btn-download-google" class="btn-feed" title="Google しごと検索用JSON-LD">
+              <span class="feed-icon">📄</span>
+              <span class="feed-label">Google JSON-LD</span>
+            </button>
+            <button id="btn-download-jobbox" class="btn-feed" title="求人ボックス/スタンバイ用XML">
+              <span class="feed-icon">📄</span>
+              <span class="feed-label">求人ボックス XML</span>
+            </button>
+            <button id="btn-download-csv" class="btn-feed" title="CSV形式でエクスポート">
+              <span class="feed-icon">📊</span>
+              <span class="feed-label">CSV</span>
+            </button>
+          </div>
+          <div id="feed-status" class="feed-status" style="display: none;">
+            <div class="loading-spinner-small"></div>
+            <span>フィードを生成中...</span>
+          </div>
+        </div>
+
+        <!-- 検索・絞り込み -->
+        <div class="job-filter-section">
+          <div class="job-filter-row">
+            <div class="job-filter-search">
+              <input type="text" id="job-search" placeholder="求人タイトルで検索..." class="filter-input">
+            </div>
+            <div class="job-filter-selects">
+              <select id="job-filter-status" class="filter-select">
+                <option value="">全ステータス</option>
+                <option value="published">公開中</option>
+                <option value="draft">非公開</option>
+                <option value="expired">掲載終了</option>
+              </select>
+              <select id="job-filter-area" class="filter-select">
+                <option value="">全エリア</option>
+              </select>
+            </div>
+            <button id="btn-clear-filters" class="btn-secondary btn-small">クリア</button>
+          </div>
+        </div>
+
+        <!-- 並び替えモード -->
+        <div id="sort-mode-bar" class="sort-mode-bar" style="display: none;">
+          <div class="sort-mode-info">
+            <span class="sort-mode-icon">↕</span>
+            <span class="sort-mode-text">並び替えモード：ドラッグ&amp;ドロップで求人の表示順を変更できます</span>
+          </div>
+          <div class="sort-mode-actions">
+            <button id="btn-save-sort" class="btn-primary btn-small">順序を保存</button>
+            <button id="btn-cancel-sort" class="btn-secondary btn-small">キャンセル</button>
+          </div>
+        </div>
+
+        <!-- 求人カード一覧 -->
+        <div class="job-cards-header">
+          <div class="job-cards-count">
+            <span id="jobs-count">0</span>件 <span id="jobs-filtered-count"></span>
+          </div>
+          <div class="job-cards-header-row">
+            <span class="job-col-image">画像</span>
+            <span class="job-col-info">件名/タグ</span>
+            <span class="job-col-type">職種</span>
+            <span class="job-col-employment-type">雇用形態</span>
+            <span class="job-col-area">エリア</span>
+            <span class="job-col-deadline">掲載期限</span>
+            <span class="job-col-stats">応募</span>
+            <span class="job-col-stats">PV</span>
+            <span class="job-col-status">ステータス</span>
+            <span class="job-col-actions">操作</span>
+          </div>
+        </div>
+        <div class="job-cards-list" id="jobs-list">
+          <div class="job-cards-loading">データを読み込み中...</div>
+        </div>
+      </section>
+
+      <!-- 求人編集セクション -->
+      <section id="section-job-edit" class="admin-section">
+        <div class="job-edit-header">
+          <button type="button" id="job-edit-back-btn" class="btn-back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            求人一覧に戻る
+          </button>
+          <div class="job-edit-info">
+            <h2 id="job-edit-title">新規求人作成</h2>
+            <span id="job-edit-badge" class="edit-mode-badge">新規</span>
+          </div>
+        </div>
+
+        <div class="edit-page-main">
+          <form id="job-edit-form-section" class="edit-form">
+            <!-- 管理メモセクション -->
+            <section class="form-section memo-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3H4.99c-1.11 0-1.98.9-1.98 2L3 19c0 1.1.88 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19v10z"/>
+                </svg>
+                管理メモ
+              </h2>
+              <div class="form-group full-width">
+                <label for="edit-job-memo-section">社内用メモ（求職者には表示されません）</label>
+                <textarea id="edit-job-memo-section" rows="3" placeholder="例: 担当者との連絡事項、採用進捗など"></textarea>
+              </div>
+            </section>
+
+            <!-- 基本情報セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+                基本情報
+              </h2>
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label for="edit-job-title-section">募集タイトル <span class="required">*</span></label>
+                  <input type="text" id="edit-job-title-section" required placeholder="例: 製造スタッフ募集！月収32万円以上">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-employment-type-section">雇用形態</label>
+                  <select id="edit-job-employment-type-section">
+                    <option value="">選択してください</option>
+                    <option value="正社員">正社員</option>
+                    <option value="契約社員">契約社員</option>
+                    <option value="派遣社員">派遣社員</option>
+                    <option value="アルバイト・パート">アルバイト・パート</option>
+                    <option value="業務委託">業務委託</option>
+                    <option value="新卒">新卒</option>
+                    <option value="インターン">インターン</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-location-section">勤務地 <span class="required">*</span></label>
+                  <input type="text" id="edit-job-location-section" required placeholder="例: 愛知県豊田市">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-access-section">アクセス</label>
+                  <input type="text" id="edit-job-access-section" placeholder="例: 名鉄三河線「土橋駅」より徒歩10分">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-type-section">職種</label>
+                  <select id="edit-job-type-section">
+                    <option value="">選択してください</option>
+                    <option value="事務・管理・企画">事務・管理・企画</option>
+                    <option value="営業・販売・サービス">営業・販売・サービス</option>
+                    <option value="IT・クリエイティブ">IT・クリエイティブ</option>
+                    <option value="製造・エンジニアリング">製造・エンジニアリング</option>
+                    <option value="建築・建設">建築・建設</option>
+                    <option value="医療・福祉・教育">医療・福祉・教育</option>
+                    <option value="物流・運輸">物流・運輸</option>
+                    <option value="その他">その他</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- 給与・条件セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                </svg>
+                給与・条件
+              </h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="edit-job-salary-type-section">給与形態</label>
+                  <select id="edit-job-salary-type-section">
+                    <option value="">選択してください</option>
+                    <option value="時給">時給</option>
+                    <option value="日給">日給</option>
+                    <option value="月給">月給</option>
+                    <option value="その他">その他</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-salary-section">金額（円）</label>
+                  <input type="number" id="edit-job-salary-section" placeholder="例: 1200">
+                </div>
+                <div class="form-group full-width" id="salary-other-group" style="display: none;">
+                  <label for="edit-job-salary-other-section">給与詳細（その他の場合）</label>
+                  <input type="text" id="edit-job-salary-other-section" placeholder="例: 出来高制 1件あたり5,000円〜">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-bonus-section">賞与合計（円）</label>
+                  <input type="number" id="edit-job-bonus-section" placeholder="例: 500000">
+                </div>
+                <div class="form-group full-width">
+                  <label>勤務時間</label>
+                  <span class="form-description">シフト制の場合は複数追加できます</span>
+                  <div id="working-hours-list" class="multi-input-list">
+                    <div class="multi-input-item">
+                      <input type="text" class="working-hours-input" placeholder="例: 8:00〜17:00">
+                      <button type="button" class="btn-remove-item" title="削除">×</button>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-add-working-hours" class="btn-add-item">+ 勤務時間を追加</button>
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-holidays-section">休日</label>
+                  <input type="text" id="edit-job-holidays-section" placeholder="例: 土日祝, GW, 年末年始">
+                </div>
+              </div>
+            </section>
+
+            <!-- 特徴セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+                </svg>
+                特徴
+              </h2>
+              <div class="form-group full-width">
+                <label>求人の特徴を選択</label>
+                <span class="form-description">該当するものをすべて選択してください</span>
+                <div id="features-checkbox-grid" class="features-checkbox-grid">
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="未経験歓迎"><span>未経験歓迎</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="経験者優遇"><span>経験者優遇</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="学歴不問"><span>学歴不問</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="高収入"><span>高収入</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="寮完備"><span>寮完備</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="社宅あり"><span>社宅あり</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="交通費支給"><span>交通費支給</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="車通勤OK"><span>車通勤OK</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="駅チカ"><span>駅チカ</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="土日祝休み"><span>土日祝休み</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="シフト制"><span>シフト制</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="残業少なめ"><span>残業少なめ</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="社会保険完備"><span>社会保険完備</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="昇給あり"><span>昇給あり</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="賞与あり"><span>賞与あり</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="即日勤務OK"><span>即日勤務OK</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="週払いOK"><span>週払いOK</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="日払いOK"><span>日払いOK</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="研修あり"><span>研修あり</span></label>
+                  <label class="feature-checkbox"><input type="checkbox" name="job-features" value="資格取得支援"><span>資格取得支援</span></label>
+                </div>
+                <!-- 隠しフィールド（保存用） -->
+                <input type="hidden" id="edit-job-features-section">
+              </div>
+              <!-- 表示する特徴 -->
+              <div class="form-group full-width displayed-features-group">
+                <label>表示する特徴 <span class="form-hint">※最大3つまで</span></label>
+                <span class="form-description">求人一覧やLPに目立つ形で表示される特徴を選択してください</span>
+                <div id="displayed-features-container" class="displayed-features-container">
+                  <div class="displayed-features-empty">上記から特徴を選択すると、ここに表示されます</div>
+                </div>
+                <input type="hidden" id="edit-job-displayed-features-section">
+              </div>
+            </section>
+
+            <!-- 詳細情報セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                </svg>
+                詳細情報
+              </h2>
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label for="edit-job-description-section">仕事内容</label>
+                  <textarea id="edit-job-description-section" rows="5" placeholder="仕事内容の詳細を入力..."></textarea>
+                </div>
+                <div class="form-group full-width">
+                  <label for="edit-job-requirements-section">応募資格</label>
+                  <textarea id="edit-job-requirements-section" rows="3" placeholder="応募資格を入力..."></textarea>
+                </div>
+                <div class="form-group full-width">
+                  <label for="edit-job-benefits-section">福利厚生</label>
+                  <textarea id="edit-job-benefits-section" rows="3" placeholder="福利厚生を入力..."></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- 掲載設定セクション -->
+            <section class="form-section">
+              <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
+                </svg>
+                掲載設定
+              </h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="edit-job-start-date-section">掲載開始日</label>
+                  <input type="date" id="edit-job-start-date-section">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-end-date-section">掲載終了日</label>
+                  <input type="date" id="edit-job-end-date-section">
+                </div>
+                <div class="form-group">
+                  <label for="edit-job-order-section">表示順</label>
+                  <span class="form-description">数字が小さいほど上に表示</span>
+                  <input type="number" id="edit-job-order-section" placeholder="1" min="1">
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="edit-job-visible-section" checked>
+                    <span>公開する</span>
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <!-- アクションボタン -->
+            <div class="form-actions">
+              <button type="button" class="btn btn-danger" id="job-edit-delete-btn" style="display: none;">削除</button>
+              <button type="button" class="btn btn-secondary" id="job-edit-cancel-btn">キャンセル</button>
+              <button type="submit" class="btn btn-primary" id="job-edit-save-btn">保存</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- アクセス解析セクション -->
+      <section id="section-analytics" class="admin-section">
+        <div class="analytics-header">
+          <h2>アクセス解析</h2>
+          <p class="section-description">求人ページへのアクセス状況を確認できます</p>
+        </div>
+
+        <!-- 期間選択 -->
+        <div class="analytics-controls">
+          <div class="analytics-date-range">
+            <label>期間</label>
+            <div class="date-range-inputs">
+              <input type="date" id="analytics-start-date" class="date-input">
+              <span class="date-separator">〜</span>
+              <input type="date" id="analytics-end-date" class="date-input">
+            </div>
+            <div class="date-range-presets">
+              <button type="button" class="date-preset-btn" data-preset="7days">7日間</button>
+              <button type="button" class="date-preset-btn active" data-preset="30days">30日間</button>
+              <button type="button" class="date-preset-btn" data-preset="90days">90日間</button>
+            </div>
+          </div>
+          <button id="btn-load-analytics" class="btn-primary">データ取得</button>
+        </div>
+
+        <!-- サマリーカード -->
+        <div class="analytics-summary">
+          <div class="analytics-card">
+            <div class="analytics-icon">👁️</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-pv">-</span>
+              <span class="analytics-label">総PV数</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-icon">👤</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-users">-</span>
+              <span class="analytics-label">ユニークユーザー</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-icon">📄</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-pages-per-session">-</span>
+              <span class="analytics-label">平均閲覧求人数</span>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-icon">⏱️</div>
+            <div class="analytics-content">
+              <span class="analytics-value" id="analytics-avg-time">-</span>
+              <span class="analytics-label">平均滞在時間</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分析タブ -->
+        <div class="analytics-tabs" id="jm-analytics-tabs">
+          <button class="analytics-tab active" data-tab="jm-overview-tab">概要</button>
+          <button class="analytics-tab" data-tab="jm-conversion-tab">応募・CVR</button>
+          <button class="analytics-tab" data-tab="jm-traffic-tab">流入・行動</button>
+          <button class="analytics-tab" data-tab="jm-trends-tab">時系列</button>
+        </div>
+
+        <!-- 概要タブ -->
+        <div id="jm-overview-tab" class="analytics-tab-content active">
+          <!-- 求人別アクセス数 -->
+          <div class="analytics-section">
+            <h3>求人別アクセス数</h3>
+            <div class="analytics-table-container">
+              <table class="analytics-table">
+                <thead>
+                  <tr>
+                    <th>求人タイトル</th>
+                    <th>PV</th>
+                    <th>ユーザー</th>
+                    <th>直帰率</th>
+                    <th>平均滞在時間</th>
+                  </tr>
+                </thead>
+                <tbody id="job-analytics-tbody">
+                  <tr>
+                    <td colspan="5" class="loading-cell">「データ取得」ボタンをクリックしてください</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 流入元別 -->
+          <div class="analytics-section">
+            <h3>流入元別アクセス</h3>
+            <div class="analytics-table-container">
+              <table class="analytics-table">
+                <thead>
+                  <tr>
+                    <th>流入元</th>
+                    <th>セッション</th>
+                    <th>割合</th>
+                  </tr>
+                </thead>
+                <tbody id="source-analytics-tbody">
+                  <tr>
+                    <td colspan="3" class="loading-cell">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- デバイス別 -->
+          <div class="analytics-section">
+            <h3>デバイス別アクセス</h3>
+            <div class="analytics-table-container">
+              <table class="analytics-table">
+                <thead>
+                  <tr>
+                    <th>デバイス</th>
+                    <th>セッション</th>
+                    <th>割合</th>
+                  </tr>
+                </thead>
+                <tbody id="device-analytics-tbody">
+                  <tr>
+                    <td colspan="3" class="loading-cell">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ユーザー属性（会社アカウント用） -->
+          <div class="analytics-demographics company-only-section" id="analytics-demographics" style="display: none;">
+            <h3>ユーザー属性</h3>
+            <p class="demographics-note">※ Google Signalsが有効な場合のみデータが表示されます</p>
+            <div class="demographics-grid">
+              <!-- 男女比 -->
+              <div class="demographics-card">
+                <h4>男女比</h4>
+                <div class="gender-chart" id="gender-chart">
+                  <div class="gender-bar-container">
+                    <div class="gender-bar male" id="gender-bar-male" style="width: 0%"></div>
+                    <div class="gender-bar female" id="gender-bar-female" style="width: 0%"></div>
+                  </div>
+                  <div class="gender-labels">
+                    <span class="gender-label male"><span class="gender-icon">♂</span> 男性 <span id="gender-male-percent">-</span></span>
+                    <span class="gender-label female"><span class="gender-icon">♀</span> 女性 <span id="gender-female-percent">-</span></span>
+                  </div>
+                </div>
+              </div>
+              <!-- 年齢分布 -->
+              <div class="demographics-card">
+                <h4>年齢分布</h4>
+                <div class="age-chart" id="age-chart">
+                  <div class="age-bars" id="age-bars">
+                    <!-- JSで動的に生成 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 応募・CVRタブ -->
+        <div id="jm-conversion-tab" class="analytics-tab-content">
+          <!-- コンバージョンファネル -->
+          <div class="funnel-container">
+            <h3>コンバージョンファネル</h3>
+            <div id="jm-funnel-chart" class="funnel-chart">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- アクション内訳 -->
+          <div class="analytics-row">
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>アクション種別内訳</h3>
+                <div id="jm-action-breakdown-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-col">
+              <div class="table-container">
+                <h3>求人別CVR</h3>
+                <table class="analytics-table" id="jm-job-cvr-table">
+                  <thead>
+                    <tr>
+                      <th>求人</th>
+                      <th>閲覧</th>
+                      <th>クリック</th>
+                      <th>CVR</th>
+                    </tr>
+                  </thead>
+                  <tbody id="jm-job-cvr-tbody">
+                    <tr>
+                      <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 応募イベント一覧 -->
+          <div class="table-container" style="margin-top: 24px;">
+            <h3>応募イベント一覧</h3>
+            <table class="analytics-table" id="jm-applications-table">
+              <thead>
+                <tr>
+                  <th>日時</th>
+                  <th>求人</th>
+                  <th>ボタン種別</th>
+                  <th>参照元</th>
+                </tr>
+              </thead>
+              <tbody id="jm-applications-tbody">
+                <tr>
+                  <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 流入・行動タブ -->
+        <div id="jm-traffic-tab" class="analytics-tab-content">
+          <!-- 行動サマリー -->
+          <div class="stats-grid stats-grid-3">
+            <div class="stat-card">
+              <div class="stat-icon">⏱️</div>
+              <div class="stat-content">
+                <p class="stat-label">平均滞在時間</p>
+                <p class="stat-value" id="jm-avg-session-duration">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📊</div>
+              <div class="stat-content">
+                <p class="stat-label">エンゲージメント率</p>
+                <p class="stat-value" id="jm-engagement-rate">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">↩️</div>
+              <div class="stat-content">
+                <p class="stat-label">直帰率</p>
+                <p class="stat-value" id="jm-bounce-rate">-</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 流入元詳細 -->
+          <div class="analytics-row" style="margin-top: 24px;">
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>チャネル別セッション</h3>
+                <div id="jm-channel-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-col">
+              <div class="table-container">
+                <h3>参照元/メディア</h3>
+                <table class="analytics-table" id="jm-source-table">
+                  <thead>
+                    <tr>
+                      <th>参照元</th>
+                      <th>メディア</th>
+                      <th>セッション</th>
+                      <th>ユーザー</th>
+                    </tr>
+                  </thead>
+                  <tbody id="jm-source-tbody">
+                    <tr>
+                      <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 求人別エンゲージメント -->
+          <div class="table-container" style="margin-top: 24px;">
+            <h3>求人別エンゲージメント</h3>
+            <table class="analytics-table" id="jm-engagement-table">
+              <thead>
+                <tr>
+                  <th>求人名</th>
+                  <th>閲覧数</th>
+                  <th>総エンゲージ時間</th>
+                  <th>平均時間/閲覧</th>
+                </tr>
+              </thead>
+              <tbody id="jm-engagement-tbody">
+                <tr>
+                  <td colspan="4" class="loading-cell">データを読み込み中...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 時系列タブ -->
+        <div id="jm-trends-tab" class="analytics-tab-content">
+          <div class="stats-grid stats-grid-2">
+            <div class="stat-card">
+              <div class="stat-icon">📅</div>
+              <div class="stat-content">
+                <p class="stat-label">ピーク曜日</p>
+                <p class="stat-value" id="jm-peak-day">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🕐</div>
+              <div class="stat-content">
+                <p class="stat-label">ピーク時間帯</p>
+                <p class="stat-value" id="jm-peak-hour">-</p>
+              </div>
+            </div>
+          </div>
+          <div class="analytics-row" style="margin-top: 24px;">
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>曜日別アクセス</h3>
+                <div id="jm-day-of-week-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+            <div class="analytics-col">
+              <div class="chart-container">
+                <h3>時間帯別アクセス</h3>
+                <div id="jm-hour-chart" class="chart-placeholder">
+                  <div class="loading-placeholder">データを読み込み中...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 日別推移チャート -->
+          <div class="chart-container" style="margin-top: 24px;">
+            <h3>日別アクセス推移</h3>
+            <div id="jm-daily-chart" class="chart-placeholder" style="height: 300px;">
+              <div class="loading-placeholder">データを読み込み中...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 注意書き -->
+        <div class="analytics-note">
+          <p>※ アクセス解析データはGoogle Analyticsから取得しています。データ反映には最大24時間かかる場合があります。</p>
+        </div>
+      </section>
+
+      <!-- レポートセクション -->
+      <section id="section-reports" class="admin-section">
+        <div class="report-header">
+          <h2>応募レポート</h2>
+          <p class="section-description">期間を選択してレポートを生成・ダウンロードできます</p>
+        </div>
+
+        <!-- 期間選択 -->
+        <div class="report-controls">
+          <div class="report-period-select">
+            <label for="report-period">期間</label>
+            <select id="report-period">
+              <option value="week">今週</option>
+              <option value="last-week">先週</option>
+              <option value="month" selected>今月</option>
+              <option value="last-month">先月</option>
+              <option value="custom">カスタム</option>
+            </select>
+          </div>
+          <div id="report-custom-dates" class="report-custom-dates" style="display: none;">
+            <div class="date-input">
+              <label for="report-from">開始日</label>
+              <input type="date" id="report-from">
+            </div>
+            <span class="date-separator">〜</span>
+            <div class="date-input">
+              <label for="report-to">終了日</label>
+              <input type="date" id="report-to">
+            </div>
+          </div>
+          <button id="btn-generate-report" class="btn-primary">レポート生成</button>
+        </div>
+
+        <!-- レポートプレビュー -->
+        <div id="report-preview" class="report-preview">
+          <div class="report-loading" id="report-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>レポートを生成中...</p>
+          </div>
+
+          <div id="report-content" style="display: none;">
+            <!-- サマリーカード -->
+            <div class="report-summary">
+              <div class="summary-card">
+                <div class="summary-icon">📥</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-total">0</span>
+                  <span class="summary-label">総応募数</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon">📈</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-change">-</span>
+                  <span class="summary-label">前期比</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon">✅</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-hired">0</span>
+                  <span class="summary-label">採用数</span>
+                </div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-icon">⏳</div>
+                <div class="summary-content">
+                  <span class="summary-value" id="summary-pending">0</span>
+                  <span class="summary-label">対応中</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ステータス別内訳 -->
+            <div class="report-section">
+              <h3>ステータス別内訳</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>ステータス</th>
+                      <th>件数</th>
+                      <th>割合</th>
+                    </tr>
+                  </thead>
+                  <tbody id="status-breakdown">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 求人別パフォーマンス -->
+            <div class="report-section">
+              <h3>求人別パフォーマンス TOP5</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>求人</th>
+                      <th>応募数</th>
+                      <th>PV</th>
+                      <th>CVR</th>
+                    </tr>
+                  </thead>
+                  <tbody id="job-performance">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 流入元分析 -->
+            <div class="report-section">
+              <h3>流入元分析</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>流入元</th>
+                      <th>応募数</th>
+                      <th>割合</th>
+                    </tr>
+                  </thead>
+                  <tbody id="source-breakdown">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 担当者別対応状況 -->
+            <div class="report-section">
+              <h3>担当者別対応状況</h3>
+              <div class="report-table-container">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>担当者</th>
+                      <th>対応済</th>
+                      <th>未対応</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assignee-breakdown">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 未生成時メッセージ -->
+          <div id="report-empty" class="report-empty">
+            <div class="empty-icon">📊</div>
+            <p>「レポート生成」ボタンをクリックしてレポートを作成してください</p>
+          </div>
+        </div>
+
+        <!-- ダウンロードボタン -->
+        <div class="report-actions" id="report-actions" style="display: none;">
+          <button id="btn-report-csv" class="btn-secondary">
+            <span class="btn-icon">📄</span>
+            CSVダウンロード
+          </button>
+          <button id="btn-report-excel" class="btn-primary">
+            <span class="btn-icon">📊</span>
+            Excelダウンロード
+          </button>
+        </div>
+      </section>
+
+      <!-- 応募者管理セクション -->
+      <section id="section-applicants" class="admin-section">
+        <div class="section-header">
+          <div class="header-actions">
+            <button id="btn-export-csv" class="btn-secondary">📥 CSVエクスポート</button>
+            <button id="btn-refresh-applicants" class="btn-refresh">更新</button>
+          </div>
+        </div>
+
+        <!-- 2カラムレイアウト -->
+        <div class="applicants-content">
+          <!-- 左：応募者一覧 (60%) -->
+          <div class="applicants-list-panel">
+            <!-- 統計カード -->
+            <div class="stats-cards compact">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">総応募</div>
+              </div>
+              <div class="stat-card stat-new">
+                <div class="stat-value" id="stat-new">0</div>
+                <div class="stat-label">新規</div>
+              </div>
+              <div class="stat-card stat-progress">
+                <div class="stat-value" id="stat-progress">0</div>
+                <div class="stat-label">対応中</div>
+              </div>
+              <div class="stat-card stat-complete">
+                <div class="stat-value" id="stat-complete">0</div>
+                <div class="stat-label">完了</div>
+              </div>
+            </div>
+
+            <!-- フィルター -->
+            <div class="filter-section compact">
+              <div class="filter-row">
+                <select id="filter-status" class="filter-select">
+                  <option value="">全ステータス</option>
+                  <option value="new">新規</option>
+                  <option value="contacted">連絡済み</option>
+                  <option value="interviewing">面接調整中</option>
+                  <option value="interviewed">面接済み</option>
+                  <option value="hired">採用</option>
+                  <option value="joined">入社</option>
+                  <option value="pending">保留</option>
+                  <option value="ng">NG</option>
+                  <option value="rejected">不採用</option>
+                  <option value="withdrawn">辞退</option>
+                </select>
+                <select id="filter-job" class="filter-select">
+                  <option value="">全求人</option>
+                </select>
+                <select id="filter-age" class="filter-select">
+                  <option value="">全年齢</option>
+                  <option value="10">10代</option>
+                  <option value="20">20代</option>
+                  <option value="30">30代</option>
+                  <option value="40">40代</option>
+                  <option value="50">50代</option>
+                  <option value="60">60代以上</option>
+                </select>
+                <select id="filter-date" class="filter-select">
+                  <option value="">全期間</option>
+                  <option value="today">今日</option>
+                  <option value="week">過去7日間</option>
+                  <option value="month">過去30日間</option>
+                  <option value="3months">過去3ヶ月</option>
+                </select>
+                <input type="text" id="filter-search" class="filter-input" placeholder="名前・求人で検索...">
+              </div>
+              <div class="filter-row filter-row-checkbox">
+                <label class="filter-checkbox">
+                  <input type="checkbox" id="filter-exclude-complete" checked>
+                  <span>完了以外を表示</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 応募者リスト -->
+            <div class="applicants-list" id="applicants-list">
+              <div class="loading-message">データを読み込み中...</div>
+            </div>
+
+            <!-- ページネーション -->
+            <div class="pagination" id="pagination"></div>
+          </div>
+
+          <!-- 右：詳細パネル (40%) -->
+          <div class="applicants-detail-panel" id="detail-panel">
+            <div class="detail-empty-state" id="detail-empty">
+              <div class="empty-icon">👆</div>
+              <p>左の一覧から応募者を選択してください</p>
+            </div>
+
+            <div class="detail-content" id="detail-content" style="display: none;">
+              <!-- 詳細ヘッダー -->
+              <div class="detail-header">
+                <div class="detail-header-info">
+                  <h2 id="detail-name">-</h2>
+                  <p id="detail-job-title" class="detail-job">-</p>
+                </div>
+                <button class="btn-close-detail" id="btn-close-detail" title="閉じる">&times;</button>
+              </div>
+
+              <!-- スクロール可能な詳細エリア -->
+              <div class="detail-scroll-area">
+                <!-- 基本情報カード -->
+                <div class="detail-card">
+                  <h3>基本情報</h3>
+                  <div class="detail-grid">
+                    <div class="detail-item">
+                      <label>電話番号</label>
+                      <span id="detail-phone">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>メール</label>
+                      <span id="detail-email">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>年齢</label>
+                      <span id="detail-age">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>現住所</label>
+                      <span id="detail-address">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>希望開始日</label>
+                      <span id="detail-start-date">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>応募日時</label>
+                      <span id="detail-datetime">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>種別</label>
+                      <span id="detail-type">-</span>
+                    </div>
+                    <div class="detail-item">
+                      <label>流入元</label>
+                      <span id="detail-source">-</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ステータス・担当者 -->
+                <div class="detail-card">
+                  <h3>ステータス</h3>
+                  <div class="status-buttons" id="status-buttons">
+                    <button class="status-btn" data-status="new">新規</button>
+                    <button class="status-btn" data-status="contacted">連絡済み</button>
+                    <button class="status-btn" data-status="interviewing">面接調整</button>
+                    <button class="status-btn" data-status="interviewed">面接済み</button>
+                    <button class="status-btn status-success" data-status="hired">採用</button>
+                    <button class="status-btn status-joined" data-status="joined">入社</button>
+                    <button class="status-btn status-warning" data-status="pending">保留</button>
+                    <button class="status-btn status-ng" data-status="ng">NG</button>
+                    <button class="status-btn status-danger" data-status="rejected">不採用</button>
+                    <button class="status-btn status-muted" data-status="withdrawn">辞退</button>
+                  </div>
+                  <div class="assignee-row">
+                    <label>担当者</label>
+                    <select id="detail-assignee">
+                      <option value="">未割当</option>
+                    </select>
+                    <button type="button" id="btn-add-assignee" class="btn-icon" title="担当者を追加">+</button>
+                  </div>
+                </div>
+
+                <!-- メモ -->
+                <div class="detail-card">
+                  <h3>メモ</h3>
+                  <textarea id="detail-notes" rows="3" placeholder="メモを入力..."></textarea>
+                  <button id="btn-save-notes" class="btn-save-small">保存</button>
+                </div>
+
+                <!-- 対応履歴 -->
+                <div class="detail-card">
+                  <h3>対応履歴</h3>
+                  <div id="detail-history" class="history-list">
+                    <p class="no-data">対応履歴はありません</p>
+                  </div>
+                  <div class="add-history-row">
+                    <input type="text" id="new-history-text" placeholder="対応内容を入力...">
+                    <button id="btn-add-history" class="btn-add">追加</button>
+                  </div>
+                </div>
+
+                <!-- メッセージ -->
+                <div class="detail-card">
+                  <h3>メッセージ</h3>
+                  <div id="messages-container" class="messages-container">
+                    <p class="no-data">メッセージはありません</p>
+                  </div>
+                  <div class="message-input-row">
+                    <select id="message-template-select" class="template-select">
+                      <option value="">テンプレート選択...</option>
+                      <option value="first_contact">初回連絡</option>
+                      <option value="schedule_interview">面接日程調整</option>
+                      <option value="interview_reminder">面接リマインダー</option>
+                      <option value="document_request">書類提出依頼</option>
+                      <option value="result_pending">選考結果待ち</option>
+                      <option value="offer">内定通知</option>
+                      <option value="rejection">不採用通知</option>
+                    </select>
+                  </div>
+                  <div class="message-input-row">
+                    <textarea id="new-message-text" rows="4" placeholder="メッセージを入力..."></textarea>
+                  </div>
+                  <div class="message-actions">
+                    <button id="btn-send-message" class="btn-primary btn-send">送信</button>
+                  </div>
+                  <p class="message-hint">応募者がマイページで確認できます</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 設定セクション（会社ユーザー用） -->
+      <section id="section-settings" class="admin-section">
+        <div class="section-header">
+          <h2>アカウント設定</h2>
+        </div>
+
+        <div class="settings-card">
+          <h3>パスワード変更</h3>
+          <form id="password-change-form">
+            <div class="form-group">
+              <label for="current-password">現在のパスワード</label>
+              <input type="password" id="current-password" required autocomplete="current-password">
+            </div>
+            <div class="form-group">
+              <label for="new-password">新しいパスワード</label>
+              <input type="password" id="new-password" required minlength="8" autocomplete="new-password">
+              <span class="form-description">8文字以上で設定してください</span>
+            </div>
+            <div class="form-group">
+              <label for="confirm-password">新しいパスワード（確認）</label>
+              <input type="password" id="confirm-password" required minlength="8" autocomplete="new-password">
+            </div>
+            <div id="password-change-error" class="form-error" style="display: none;"></div>
+            <div id="password-change-success" class="form-success" style="display: none;"></div>
+            <button type="submit" class="btn-primary">パスワードを変更</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- LP設定セクション（会社ユーザー用 - admin同等のUI） -->
+      <section id="section-lp-settings" class="admin-section">
+        <div class="section-header">
+          <h3>LP（ランディングページ）設定</h3>
+        </div>
+
+        <div class="info-box">
+          <p>求人専用のランディングページの設定を行います。URLは <code>/lp.html?j=求人ID</code> でアクセスできます。</p>
+        </div>
+
+        <div class="lp-settings-form" id="lp-settings-form">
+          <!-- ステップインジケーター -->
+          <div class="lp-selection-steps" id="lp-selection-steps">
+            <div class="lp-step active" data-step="job">
+              <span class="lp-step-number">1</span>
+              <span class="lp-step-label">求人を選択</span>
+            </div>
+            <div class="lp-step-arrow">→</div>
+            <div class="lp-step" data-step="edit">
+              <span class="lp-step-number">2</span>
+              <span class="lp-step-label">LP編集</span>
+            </div>
+          </div>
+
+          <!-- 求人選択 -->
+          <div class="lp-selection-panel" id="lp-job-select-group">
+            <div class="lp-selection-header">
+              <h4>LP設定する求人を選択</h4>
+            </div>
+            <div class="lp-job-grid" id="lp-job-grid">
+              <div class="lp-loading-placeholder">読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 非表示のselect（互換性のため） -->
+          <select id="lp-job-select" style="display: none;"></select>
+
+          <div id="lp-editor" style="display: none;">
+            <!-- 2カラムレイアウト：フォーム + プレビュー -->
+            <div class="lp-editor-layout">
+              <!-- 左カラム：フォーム -->
+              <div class="lp-editor-form">
+                <!-- プレビューアクション -->
+                <div class="lp-preview-actions">
+                  <button type="button" class="lp-back-btn" id="lp-back-to-jobs">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                求人一覧に戻る
+              </button>
+              <a href="#" id="lp-preview-btn" target="_blank" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                プレビュー
+              </a>
+              <a href="#" id="lp-edit-mode-btn" target="_blank" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                編集モードで開く
+              </a>
+            </div>
+
+            <!-- 1. テンプレート -->
+            <div class="form-section lp-form-section" id="template-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">1</span>
+                <h4>テンプレート</h4>
+              </div>
+              <span class="form-description">LPのレイアウトスタイルを選択してください。未選択の場合はデフォルトが適用されます。</span>
+              <div id="template-selector-container">
+                <!-- テンプレートセレクターはJSで動的に生成 -->
+              </div>
+
+              <!-- カスタムカラー設定 -->
+              <div class="custom-color-section" id="lp-custom-color-section">
+                <h5 class="subsection-title">カスタムカラー設定</h5>
+                <span class="form-description">空欄の場合はテンプレートのデフォルトカラーが適用されます。</span>
+                <div class="color-pickers-grid">
+                  <div class="color-picker-group">
+                    <label for="lp-custom-primary">メインカラー</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-primary" value="#6366f1">
+                      <input type="text" id="lp-custom-primary-text" placeholder="#6366f1" maxlength="7">
+                    </div>
+                  </div>
+                  <div class="color-picker-group">
+                    <label for="lp-custom-accent">アクセントカラー</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-accent" value="#818cf8">
+                      <input type="text" id="lp-custom-accent-text" placeholder="#818cf8" maxlength="7">
+                    </div>
+                  </div>
+                  <div class="color-picker-group">
+                    <label for="lp-custom-bg">背景色</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-bg" value="#ffffff">
+                      <input type="text" id="lp-custom-bg-text" placeholder="#ffffff" maxlength="7">
+                    </div>
+                  </div>
+                  <div class="color-picker-group">
+                    <label for="lp-custom-text">テキストカラー</label>
+                    <div class="color-input-row">
+                      <input type="color" id="lp-custom-text" value="#1f2937">
+                      <input type="text" id="lp-custom-text-text" placeholder="#1f2937" maxlength="7">
+                    </div>
+                  </div>
+                </div>
+                <button type="button" id="lp-reset-colors" class="btn-small btn-secondary">カラーをリセット</button>
+              </div>
+            </div>
+
+            <!-- 2. ファーストビュー -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">2</span>
+                <h4>ファーストビュー</h4>
+              </div>
+              <div class="form-group">
+                <label for="lp-hero-title">ファーストビューのタイトル</label>
+                <input type="text" id="lp-hero-title" placeholder="例: 月収32万円以上可！入社特典あり">
+              </div>
+              <div class="form-group">
+                <label for="lp-hero-subtitle">サブタイトル</label>
+                <input type="text" id="lp-hero-subtitle" placeholder="例: 未経験歓迎・寮完備">
+              </div>
+              <div class="form-group">
+                <label for="lp-hero-image">ファーストビューの画像（TOP画像）</label>
+                <div class="input-with-button">
+                  <input type="text" id="lp-hero-image" placeholder="https://example.com/image.jpg">
+                  <button type="button" id="btn-upload-hero-image" class="btn-upload-inline"><span class="upload-icon">📷</span> アップロード</button>
+                </div>
+                <span class="form-description">下のプリセットから選択するか、画像をアップロードまたはURLを入力してください</span>
+                <div id="lp-hero-image-preview" class="hero-image-preview"></div>
+              </div>
+              <div class="form-group">
+                <label>プリセット画像を選択</label>
+                <div class="hero-image-presets" id="hero-image-presets">
+                  <!-- JavaScriptで動的に生成 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 求人動画の設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">4</span>
+                <h4>求人動画の設定</h4>
+              </div>
+              <span class="form-description">求人説明の動画を設定できます</span>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="lp-show-video-button">
+                  <span>動画ボタンを表示する</span>
+                </label>
+              </div>
+              <div class="form-group" id="video-url-group" style="display: none;">
+                <label for="lp-video-url">動画URL（YouTube）</label>
+                <input type="url" id="lp-video-url" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
+                <span class="form-description">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</span>
+              </div>
+            </div>
+
+            <!-- 5. ポイント（特徴） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">5</span>
+                <h4>ポイント（特徴）</h4>
+              </div>
+              <span class="form-description">最大6つまで追加できます。表示したくない項目は空欄のままにしてください。</span>
+              <div class="point-inputs" id="point-inputs-container">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+              <button type="button" id="btn-add-point" class="btn-add-item">
+                <span>+</span> ポイントを追加
+              </button>
+            </div>
+
+            <!-- 6. CTA（応募ボタン） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">6</span>
+                <h4>CTA（応募ボタン）</h4>
+              </div>
+              <div class="form-group">
+                <label for="lp-cta-text">ボタンテキスト</label>
+                <input type="text" id="lp-cta-text" placeholder="例: 今すぐ応募する" value="今すぐ応募する">
+              </div>
+            </div>
+
+            <!-- 7. FAQ（よくある質問） -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">7</span>
+                <h4>FAQ（よくある質問）</h4>
+              </div>
+              <span class="form-description">質問と回答を入力してください。LPではLINE風のチャット形式で表示されます。</span>
+              <div class="faq-editor" id="faq-editor">
+                <div class="faq-list" id="faq-list">
+                  <!-- FAQアイテムはJSで動的に生成 -->
+                </div>
+                <button type="button" class="faq-add-btn" id="btn-add-faq">
+                  <span class="faq-add-icon">+</span>
+                  質問を追加
+                </button>
+              </div>
+              <!-- 互換性のため非表示のテキストエリアを保持 -->
+              <textarea id="lp-faq" style="display: none;"></textarea>
+            </div>
+
+            <!-- カスタムセクション（動画・カルーセル等） -->
+            <div class="form-section lp-form-section" id="custom-sections-panel" style="display: none;">
+              <div class="lp-section-header">
+                <span class="lp-section-number">✨</span>
+                <h4>追加コンテンツ</h4>
+              </div>
+              <span class="form-description">登録済みの動画・画像スライド・ギャラリーなど。クリックして編集できます。</span>
+              <div class="custom-sections-list" id="custom-sections-list">
+                <!-- JSで動的に生成 -->
+              </div>
+              <button type="button" id="btn-add-custom-section" class="btn-add-item">
+                <span>+</span> 動画・スライドなどを追加
+              </button>
+            </div>
+
+            <!-- 8. セクション管理 -->
+            <div class="form-section lp-form-section" id="section-manager">
+              <div class="lp-section-header">
+                <span class="lp-section-number">8</span>
+                <h4>セクション管理</h4>
+              </div>
+              <span class="form-description">セクションの追加・削除・並び替えができます。ドラッグ＆ドロップで並び替え可能です。</span>
+              <div class="section-manager-toolbar">
+                <button type="button" id="btn-add-section" class="btn-primary">
+                  <span>+</span> セクションを追加
+                </button>
+              </div>
+              <ul id="lp-sections-list" class="sections-list">
+                <!-- セクションリストはJSで動的に生成 -->
+              </ul>
+            </div>
+
+            <!-- 9. 広告トラッキング設定 -->
+            <div class="form-section lp-form-section collapsible" id="ad-tracking-section">
+              <div class="lp-section-header collapsible-header" data-target="ad-tracking-content">
+                <span class="lp-section-number">9</span>
+                <h4>広告トラッキング設定</h4>
+                <span class="collapse-icon">▼</span>
+              </div>
+              <div class="collapsible-content" id="ad-tracking-content">
+                <span class="form-description">TikTok広告やGoogle広告のコンバージョン計測に使用します。</span>
+                <div class="form-group">
+                  <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
+                  <input type="text" id="lp-tiktok-pixel" placeholder="例: CXXXXXXXXXXXXXX">
+                  <span class="form-description">TikTok Ads ManagerのPixel IDを入力してください</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-google-ads-id">Google Ads コンバージョンID</label>
+                  <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789">
+                  <span class="form-description">Google Adsのコンバージョン追跡タグIDを入力してください</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-google-ads-label">Google Ads コンバージョンラベル</label>
+                  <input type="text" id="lp-google-ads-label" placeholder="例: AbCdEfGhIjKlMn">
+                  <span class="form-description">コンバージョンアクション作成時に発行されるラベルを入力してください</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-meta-pixel">Meta Pixel ID</label>
+                  <input type="text" id="lp-meta-pixel" placeholder="例: 1234567890123456">
+                  <span class="form-description">Meta Business SuiteのPixel IDを入力してください（Facebook/Instagram広告用）</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-line-tag">LINE Tag ID</label>
+                  <input type="text" id="lp-line-tag" placeholder="例: 12345678-abcd-efgh-ijkl-1234567890ab">
+                  <span class="form-description">LINE広告マネージャーのベースタグIDを入力してください</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-clarity">Microsoft Clarity Project ID</label>
+                  <input type="text" id="lp-clarity" placeholder="例: abcdefghij">
+                  <span class="form-description">Clarityのプロジェクト設定で確認できるIDを入力してください（ヒートマップ・レコーディング用）</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. OGP設定（広告プレビュー用） -->
+            <div class="form-section lp-form-section collapsible" id="ogp-section">
+              <div class="lp-section-header collapsible-header" data-target="ogp-content">
+                <span class="lp-section-number">10</span>
+                <h4>OGP設定（広告プレビュー用）</h4>
+                <span class="collapse-icon">▼</span>
+              </div>
+              <div class="collapsible-content" id="ogp-content">
+                <span class="form-description">広告やSNSでシェアされた時に表示される情報です。</span>
+                <div class="form-group">
+                  <label for="lp-ogp-title">OGPタイトル</label>
+                  <input type="text" id="lp-ogp-title" placeholder="例: 月収32万円以上可！製造スタッフ募集">
+                  <span class="form-description">空欄の場合はヒーロータイトルが使用されます</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-ogp-description">OGP説明文</label>
+                  <input type="text" id="lp-ogp-description" placeholder="例: 未経験歓迎・寮完備の高待遇求人！今すぐチェック">
+                  <span class="form-description">空欄の場合は自動生成されます</span>
+                </div>
+                <div class="form-group">
+                  <label for="lp-ogp-image">OGP画像URL</label>
+                  <input type="text" id="lp-ogp-image" placeholder="https://example.com/ogp-image.jpg">
+                  <span class="form-description">推奨サイズ: 1200×630px。空欄の場合はヒーロー画像が使用されます</span>
+                </div>
+              </div>
+            </div>
+
+                <!-- 保存ボタン -->
+                <div class="form-actions">
+                  <button id="btn-save-lp-settings" class="btn-primary">LP設定を保存</button>
+                  <button id="btn-reset-lp-settings" class="btn-secondary">リセット</button>
+                </div>
+
+                <div id="lp-save-message" class="form-success" style="display: none;">LP設定を保存しました</div>
+                <div id="lp-error-message" class="form-error" style="display: none;"></div>
+              </div>
+
+              <!-- 右カラム：リアルタイムプレビュー -->
+              <div class="lp-preview-panel">
+                <div id="lp-preview-container" class="lp-preview-container">
+                  <div class="lp-preview-header">
+                    <h4>プレビュー</h4>
+                    <div class="lp-preview-controls">
+                      <button class="preview-device-btn active" data-device="desktop" title="デスクトップ">🖥️</button>
+                      <button class="preview-device-btn" data-device="tablet" title="タブレット">📱</button>
+                      <button class="preview-device-btn" data-device="mobile" title="スマートフォン">📲</button>
+                    </div>
+                  </div>
+                  <div class="lp-preview-frame-wrapper" data-device="desktop">
+                    <iframe id="lp-preview-frame" class="lp-preview-frame"></iframe>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 採用ページ設定セクション（会社ユーザー用） -->
+      <section id="section-recruit-settings" class="admin-section">
+        <div class="section-header">
+          <h3>採用ページ設定</h3>
+        </div>
+
+        <!-- 採用ページの情報 -->
+        <div class="recruit-info-panel">
+          <div class="recruit-info-header">
+            <h4>採用ページの情報</h4>
+            <a href="#" id="recruit-preview-link" target="_blank" class="btn-link">プレビューを見る →</a>
+          </div>
+          <div class="recruit-info-content">
+            <div class="recruit-info-row">
+              <span class="recruit-info-label">公開状態</span>
+              <div class="recruit-info-value">
+                <span id="recruit-status-badge" class="status-badge status-published">公開中</span>
+                <button type="button" id="btn-toggle-publish" class="btn-link btn-toggle-status">非公開にする</button>
+              </div>
+            </div>
+            <div class="recruit-info-row">
+              <span class="recruit-info-label">URL</span>
+              <div class="recruit-info-value">
+                <a href="#" id="recruit-page-url-link" target="_blank" class="recruit-url-display"></a>
+                <button type="button" id="btn-copy-recruit-url" class="btn-icon" title="URLをコピー">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2カラムレイアウト：フォーム + プレビュー -->
+        <div class="recruit-editor-layout">
+          <!-- 左カラム：フォーム -->
+          <div class="recruit-editor-form">
+            <div class="recruit-settings-form" id="recruit-settings-form">
+          <!-- プレビューアクション -->
+          <div class="lp-preview-actions">
+            <a href="#" id="recruit-preview-btn" target="_blank" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              プレビュー
+            </a>
+            <a href="#" id="recruit-edit-btn" target="_blank" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              編集モードで開く
+            </a>
+          </div>
+
+          <!-- 1. テンプレート選択 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">1</span>
+              <h4>テンプレート</h4>
+            </div>
+            <span class="form-description">採用ページと全求人LPに適用されるレイアウトスタイルを選択してください</span>
+            <div class="layout-style-grid" id="recruit-layout-style-grid">
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="default" checked>
+                <div class="layout-preview">
+                  <span class="layout-name">デフォルト</span>
+                  <span class="layout-desc">標準的なレイアウト</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="yellow">
+                <div class="layout-preview">
+                  <span class="layout-name">イエロー</span>
+                  <span class="layout-desc">親しみやすい明るいデザイン</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="impact">
+                <div class="layout-preview">
+                  <span class="layout-name">インパクト</span>
+                  <span class="layout-desc">黒背景の強烈なデザイン</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="trust">
+                <div class="layout-preview">
+                  <span class="layout-name">信頼</span>
+                  <span class="layout-desc">ビジネス向けの信頼感</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="bold">
+                <div class="layout-preview">
+                  <span class="layout-name">ボールド</span>
+                  <span class="layout-desc">大きな文字で印象的に</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="elegant">
+                <div class="layout-preview">
+                  <span class="layout-name">エレガント</span>
+                  <span class="layout-desc">洗練された上品なデザイン</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="playful">
+                <div class="layout-preview">
+                  <span class="layout-name">ポップ</span>
+                  <span class="layout-desc">明るく楽しい雰囲気</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="corporate">
+                <div class="layout-preview">
+                  <span class="layout-name">コーポレート</span>
+                  <span class="layout-desc">ビジネス向けの信頼感</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="magazine">
+                <div class="layout-preview">
+                  <span class="layout-name">マガジン</span>
+                  <span class="layout-desc">雑誌風のレイアウト</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="athome">
+                <div class="layout-preview">
+                  <span class="layout-name">アットホーム</span>
+                  <span class="layout-desc">丸みのあるフレンドリーなデザイン</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="recruit-layout-style" value="local">
+                <div class="layout-preview">
+                  <span class="layout-name">地域密着</span>
+                  <span class="layout-desc">和風モダンの落ち着いたデザイン</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. カラー設定 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">2</span>
+              <h4>カラー設定</h4>
+            </div>
+            <span class="form-description">採用ページと全求人LPに適用されるカラーをカスタマイズできます（空欄の場合はレイアウトスタイルのデフォルトカラーが適用されます）</span>
+            <div class="custom-color-section">
+              <div class="custom-color-grid">
+                <div class="color-picker-item">
+                  <label for="recruit-custom-primary">メインカラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-primary" value="">
+                    <input type="text" id="recruit-custom-primary-text" placeholder="#2563eb" maxlength="7">
+                  </div>
+                </div>
+                <div class="color-picker-item">
+                  <label for="recruit-custom-accent">アクセントカラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-accent" value="">
+                    <input type="text" id="recruit-custom-accent-text" placeholder="#3b82f6" maxlength="7">
+                  </div>
+                </div>
+                <div class="color-picker-item">
+                  <label for="recruit-custom-bg">背景カラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-bg" value="#ffffff">
+                    <input type="text" id="recruit-custom-bg-text" placeholder="#ffffff" maxlength="7">
+                  </div>
+                </div>
+                <div class="color-picker-item">
+                  <label for="recruit-custom-text">テキストカラー</label>
+                  <div class="color-input-wrapper">
+                    <input type="color" id="recruit-custom-text" value="#1f2937">
+                    <input type="text" id="recruit-custom-text-text" placeholder="#1f2937" maxlength="7">
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="recruit-reset-colors" class="btn-link">カラーをリセット</button>
+            </div>
+          </div>
+
+          <!-- 3. ロゴ・ヘッダー設定 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">3</span>
+              <h4>ロゴ・ヘッダー設定</h4>
+            </div>
+            <div class="form-group">
+              <label for="recruit-logo-url">ロゴ画像</label>
+              <div class="logo-upload-container">
+                <div class="logo-preview-area" id="recruit-logo-preview">
+                  <span class="logo-placeholder">ロゴ未設定</span>
+                </div>
+                <div class="logo-upload-controls">
+                  <div class="input-with-button">
+                    <input type="text" id="recruit-logo-url" placeholder="https://example.com/logo.png">
+                    <button type="button" id="btn-upload-logo" class="btn-upload-small">
+                      <span class="upload-icon">📷</span> アップロード
+                    </button>
+                  </div>
+                  <span class="form-description">画像をアップロードするか、URLを直接入力してください（推奨: 高さ40px程度のPNG/SVG）</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="recruit-company-name-display">ヘッダー表示名</label>
+              <input type="text" id="recruit-company-name-display" placeholder="例: 株式会社サンプル">
+              <span class="form-description">ロゴがない場合にヘッダーに表示するテキスト（空欄の場合は会社名を使用）</span>
+            </div>
+            <div class="form-group">
+              <label for="recruit-phone-number">電話番号（CTAバー用）</label>
+              <input type="text" id="recruit-phone-number" placeholder="例: 0120-000-000">
+              <span class="form-description">固定CTAバーに表示する電話番号（空欄の場合は電話リンクを非表示）</span>
+            </div>
+            <div class="form-group">
+              <label for="recruit-cta-button-text">CTAボタンテキスト</label>
+              <input type="text" id="recruit-cta-button-text" placeholder="今すぐ応募する" value="今すぐ応募する">
+            </div>
+          </div>
+
+          <!-- 4. ファーストビュー -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">4</span>
+              <h4>ファーストビュー</h4>
+            </div>
+            <div class="form-group">
+              <label for="recruit-hero-title">タイトル</label>
+              <input type="text" id="recruit-hero-title" placeholder="例: ○○株式会社で働こう">
+            </div>
+            <div class="form-group">
+              <label for="recruit-hero-subtitle">サブタイトル</label>
+              <input type="text" id="recruit-hero-subtitle" placeholder="例: 私たちと一緒に働きませんか？">
+            </div>
+            <div class="form-group">
+              <label for="recruit-hero-image">ヒーロー画像URL</label>
+              <input type="text" id="recruit-hero-image" placeholder="https://example.com/image.jpg">
+              <span class="form-description">下のプリセットから選択するか、直接URLを入力してください</span>
+            </div>
+            <div class="form-group">
+              <label>プリセット画像を選択</label>
+              <div class="hero-image-presets" id="recruit-hero-image-presets">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+            </div>
+            <!-- 動画ボタン設定 -->
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="recruit-show-video-button">
+                <span>動画ボタンを表示する</span>
+              </label>
+              <span class="form-description">ヒーローセクションに「動画を見る」ボタンを表示します</span>
+            </div>
+            <div class="form-group" id="recruit-video-url-group" style="display: none;">
+              <label for="recruit-video-url">動画URL（YouTube）</label>
+              <input type="url" id="recruit-video-url" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
+              <span class="form-description">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</span>
+            </div>
+          </div>
+
+          <!-- 5. 会社紹介 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">5</span>
+              <h4>会社紹介</h4>
+            </div>
+            <div class="form-group">
+              <label for="recruit-company-intro">会社紹介文</label>
+              <textarea id="recruit-company-intro" rows="5" placeholder="会社の紹介文を入力..."></textarea>
+              <span class="form-description">空欄の場合は会社一覧に登録されている説明文が使用されます</span>
+            </div>
+          </div>
+
+          <!-- 6. 求人一覧設定 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">6</span>
+              <h4>求人一覧</h4>
+            </div>
+            <div class="form-group">
+              <label for="recruit-jobs-title">セクションタイトル</label>
+              <input type="text" id="recruit-jobs-title" placeholder="募集中の求人" value="募集中の求人">
+            </div>
+          </div>
+
+          <!-- 7. CTA設定 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">7</span>
+              <h4>CTA（応募誘導）</h4>
+            </div>
+            <div class="form-group">
+              <label for="recruit-cta-title">CTAタイトル</label>
+              <input type="text" id="recruit-cta-title" placeholder="あなたの応募をお待ちしています">
+            </div>
+            <div class="form-group">
+              <label for="recruit-cta-text">CTAテキスト</label>
+              <input type="text" id="recruit-cta-text" placeholder="気になる求人があれば、ぜひお気軽にご応募ください。">
+            </div>
+          </div>
+
+          <!-- 8. セクション管理 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">8</span>
+              <h4>セクション管理</h4>
+            </div>
+            <span class="form-description">セクションの並び順と表示/非表示を設定できます。ドラッグ＆ドロップで並び替え可能です。</span>
+            <ul id="recruit-sections-list" class="recruit-sections-list">
+              <!-- JavaScriptで動的に生成 -->
+            </ul>
+          </div>
+
+          <!-- 9. OGP設定 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">9</span>
+              <h4>OGP設定（SNSシェア用）</h4>
+            </div>
+            <div class="form-group">
+              <label for="recruit-ogp-title">OGPタイトル</label>
+              <input type="text" id="recruit-ogp-title" placeholder="空欄の場合はタイトルが使用されます">
+            </div>
+            <div class="form-group">
+              <label for="recruit-ogp-description">OGP説明文</label>
+              <textarea id="recruit-ogp-description" rows="2" placeholder="空欄の場合は会社紹介文が使用されます"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="recruit-ogp-image">OGP画像URL</label>
+              <input type="text" id="recruit-ogp-image" placeholder="https://example.com/ogp.jpg">
+              <span class="form-description">推奨サイズ: 1200×630px</span>
+            </div>
+          </div>
+
+          <!-- 10. リンク・バナーの取得 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">10</span>
+              <h4>リンク・バナーの取得</h4>
+            </div>
+            <span class="form-description">自社サイトなどに埋め込むためのリンクを作成します</span>
+            <div class="embed-links-container">
+              <div class="embed-link-item">
+                <label>テキストリンク</label>
+                <div class="embed-code-box">
+                  <code id="embed-text-link">&lt;a href=""&gt;採用情報を見る&lt;/a&gt;</code>
+                  <button type="button" class="btn-copy-embed" data-target="embed-text-link" title="コピー">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="embed-link-item">
+                <label>ボタンリンク</label>
+                <div class="embed-code-box">
+                  <code id="embed-button-link">&lt;a href="" style="..."&gt;採用情報&lt;/a&gt;</code>
+                  <button type="button" class="btn-copy-embed" data-target="embed-button-link" title="コピー">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="embed-link-item">
+                <label>QRコード</label>
+                <div class="qr-code-container">
+                  <div id="recruit-qr-code" class="qr-code-placeholder">
+                    <span>QRコードを生成</span>
+                  </div>
+                  <button type="button" id="btn-generate-qr" class="btn-secondary btn-small">QRコードを生成</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 11. SNS連携 -->
+          <div class="form-section lp-form-section">
+            <div class="lp-section-header">
+              <span class="lp-section-number">11</span>
+              <h4>SNS連携</h4>
+            </div>
+            <span class="form-description">SNSへの連携を行い、SNSコンテンツを採用ページに表示します</span>
+            <div class="sns-links-container">
+              <div class="form-group">
+                <label for="recruit-sns-twitter">X（Twitter）</label>
+                <input type="url" id="recruit-sns-twitter" placeholder="https://twitter.com/yourcompany">
+              </div>
+              <div class="form-group">
+                <label for="recruit-sns-instagram">Instagram</label>
+                <input type="url" id="recruit-sns-instagram" placeholder="https://instagram.com/yourcompany">
+              </div>
+              <div class="form-group">
+                <label for="recruit-sns-facebook">Facebook</label>
+                <input type="url" id="recruit-sns-facebook" placeholder="https://facebook.com/yourcompany">
+              </div>
+              <div class="form-group">
+                <label for="recruit-sns-youtube">YouTube</label>
+                <input type="url" id="recruit-sns-youtube" placeholder="https://youtube.com/@yourcompany">
+              </div>
+              <div class="form-group">
+                <label for="recruit-sns-line">LINE</label>
+                <input type="url" id="recruit-sns-line" placeholder="https://line.me/R/ti/p/@yourcompany">
+              </div>
+            </div>
+          </div>
+
+          <!-- 保存ボタン -->
+          <div class="form-actions">
+            <button id="btn-save-recruit-settings" class="btn-primary">採用ページ設定を保存</button>
+            <button id="btn-reset-recruit-settings" class="btn-secondary">リセット</button>
+          </div>
+
+          <div id="recruit-save-message" class="form-success" style="display: none;">採用ページ設定を保存しました</div>
+          <div id="recruit-error-message" class="form-error" style="display: none;"></div>
+            </div>
+          </div>
+          <!-- /左カラム：フォーム -->
+
+          <!-- 右カラム：リアルタイムプレビュー -->
+          <div class="recruit-editor-preview">
+            <div class="preview-panel-header">
+              <h4>リアルタイムプレビュー</h4>
+              <span class="preview-device-label">モバイル表示</span>
+            </div>
+            <div class="preview-panel-device">
+              <div class="preview-phone-frame">
+                <div class="preview-phone-notch"></div>
+                <div class="preview-phone-content" id="recruit-live-preview">
+                  <!-- ヘッダープレビュー -->
+                  <div class="preview-header" id="preview-header">
+                    <img id="preview-logo" class="preview-logo" src="" alt="" style="display: none;">
+                    <span id="preview-company-name" class="preview-company-name"></span>
+                  </div>
+                  <!-- ヒーロープレビュー -->
+                  <div class="preview-hero" id="preview-hero">
+                    <div class="preview-hero-overlay"></div>
+                    <div class="preview-hero-content">
+                      <h2 id="preview-hero-title" class="preview-hero-title"></h2>
+                      <p id="preview-hero-subtitle" class="preview-hero-subtitle"></p>
+                    </div>
+                  </div>
+                  <!-- コンテンツプレビュー -->
+                  <div class="preview-content">
+                    <div class="preview-section">
+                      <h3 id="preview-intro-label">会社紹介</h3>
+                      <p id="preview-intro-text" class="preview-intro-text"></p>
+                    </div>
+                    <div class="preview-section">
+                      <h3 id="preview-jobs-title">募集中の求人</h3>
+                      <div class="preview-job-cards">
+                        <div class="preview-job-card"></div>
+                        <div class="preview-job-card"></div>
+                      </div>
+                    </div>
+                    <div class="preview-cta" id="preview-cta">
+                      <h3 id="preview-cta-title"></h3>
+                      <button id="preview-cta-button" class="preview-cta-btn"></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="preview-note">※ 実際の表示とは異なる場合があります</p>
+          </div>
+          <!-- /右カラム：リアルタイムプレビュー -->
+        </div>
+        <!-- /2カラムレイアウト -->
+      </section>
+    </main>
+  </div>
+
+  <!-- 担当者追加モーダル -->
+  <div id="assignee-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>担当者を追加</h3>
+        <button class="modal-close" id="assignee-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-assignee-name">担当者名</label>
+          <input type="text" id="new-assignee-name" placeholder="例: 山田太郎">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="assignee-modal-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="assignee-modal-save">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 求人編集モーダル -->
+  <div id="job-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="job-modal-title">求人情報の編集</h3>
+        <button class="modal-close" id="job-modal-close">&times;</button>
+      </div>
+      <form id="job-edit-form">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-job-title">募集タイトル <span class="required">*</span></label>
+              <input type="text" id="edit-job-title" required placeholder="例: 製造スタッフ募集！月収32万円以上">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-job-location">勤務地 <span class="required">*</span></label>
+              <input type="text" id="edit-job-location" required placeholder="例: 愛知県豊田市">
+            </div>
+            <div class="form-group">
+              <label for="edit-job-salary">月収（円）</label>
+              <input type="number" id="edit-job-salary" placeholder="例: 320000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-job-bonus">賞与合計（円）</label>
+              <input type="number" id="edit-job-bonus" placeholder="例: 500000">
+            </div>
+            <div class="form-group">
+              <label for="edit-job-order">表示順</label>
+              <input type="number" id="edit-job-order" placeholder="1" min="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-job-type">職種</label>
+            <select id="edit-job-type">
+              <option value="">選択してください</option>
+              <option value="事務・管理・企画">事務・管理・企画</option>
+              <option value="営業・販売・サービス">営業・販売・サービス</option>
+              <option value="IT・クリエイティブ">IT・クリエイティブ</option>
+              <option value="製造・エンジニアリング">製造・エンジニアリング</option>
+              <option value="医療・福祉・教育">医療・福祉・教育</option>
+              <option value="物流・運輸">物流・運輸</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-job-features">特徴（カンマ区切り）</label>
+            <input type="text" id="edit-job-features" placeholder="例: 未経験歓迎, 寮完備, 交通費支給">
+          </div>
+          <div class="form-group">
+            <label for="edit-job-badges">バッジ（カンマ区切り）</label>
+            <input type="text" id="edit-job-badges" placeholder="例: 急募, 高収入">
+          </div>
+          <div class="form-group">
+            <label for="edit-job-description">仕事内容</label>
+            <textarea id="edit-job-description" rows="4" placeholder="仕事内容の詳細を入力..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="edit-job-requirements">応募資格</label>
+            <textarea id="edit-job-requirements" rows="3" placeholder="応募資格を入力..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="edit-job-benefits">福利厚生</label>
+            <textarea id="edit-job-benefits" rows="3" placeholder="福利厚生を入力..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-job-hours">勤務時間</label>
+              <input type="text" id="edit-job-hours" placeholder="例: 8:00〜17:00">
+            </div>
+            <div class="form-group">
+              <label for="edit-job-holidays">休日</label>
+              <input type="text" id="edit-job-holidays" placeholder="例: 土日祝, GW, 年末年始">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-job-start-date">掲載開始日</label>
+              <input type="date" id="edit-job-start-date">
+            </div>
+            <div class="form-group">
+              <label for="edit-job-end-date">掲載終了日</label>
+              <input type="date" id="edit-job-end-date">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="edit-job-visible" checked>
+              <span>公開する</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-danger" id="job-modal-delete" style="margin-right: auto; display: none;">削除</button>
+          <button type="button" class="btn-secondary" id="job-modal-cancel">キャンセル</button>
+          <button type="submit" class="btn-primary" id="job-modal-save">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- セクション追加モーダル -->
+  <div id="add-section-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>セクションを追加</h3>
+        <button class="modal-close" id="add-section-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">追加したいセクションタイプを選択してください</p>
+        <div class="section-type-grid" id="section-type-grid">
+          <!-- JSで動的に生成 -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" id="add-section-modal-cancel">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- セクションエディターモーダル -->
+  <div id="section-editor-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="section-editor-title">セクションを編集</h3>
+        <button class="modal-close" id="section-editor-close">&times;</button>
+      </div>
+      <div class="modal-body" id="section-editor-content">
+        <!-- JSで動的に生成 -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-danger" id="section-delete-btn">削除</button>
+        <button type="button" class="btn-secondary" id="section-editor-cancel">キャンセル</button>
+        <button type="button" class="btn-primary" id="section-editor-save">適用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</body>
+</html>

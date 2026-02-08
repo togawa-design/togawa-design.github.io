@@ -1,0 +1,550 @@
+      <section id="section-recruit-settings" class="admin-section">
+        <div class="section-header">
+          <h3>採用ページ設定</h3>
+        </div>
+
+        <div class="info-box">
+          <p>会社専用の採用ページの設定を行います。</p>
+          <p id="recruit-url-display" style="display: none;">URL: <a id="recruit-url-link" href="#" target="_blank" class="recruit-url"></a></p>
+        </div>
+
+        <div class="recruit-settings-form" id="recruit-settings-form">
+          <!-- 会社選択（admin専用） -->
+          <div class="lp-selection-panel" id="recruit-company-select-group">
+            <div class="lp-selection-header">
+              <h4>会社を選択</h4>
+              <div class="lp-search-box">
+                <input type="text" id="recruit-company-search" placeholder="会社名で検索...">
+              </div>
+            </div>
+            <div class="lp-company-grid" id="recruit-company-grid">
+              <div class="lp-loading-placeholder">読み込み中...</div>
+            </div>
+          </div>
+
+          <!-- 採用ページ編集エリア -->
+          <div id="recruit-editor" style="display: none;">
+            <!-- 選択中の会社情報 -->
+            <div class="recruit-selected-company">
+              <button type="button" class="lp-back-btn" id="recruit-back-to-companies">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                会社一覧に戻る
+              </button>
+              <h4 id="recruit-selected-company-name">選択中の会社</h4>
+            </div>
+
+            <!-- 2カラムレイアウト：フォーム + プレビュー -->
+            <div class="recruit-editor-layout">
+              <!-- 左カラム：フォーム -->
+              <div class="recruit-editor-form">
+                <!-- プレビューアクション -->
+                <div class="lp-preview-actions">
+                  <a href="#" id="recruit-preview-btn" target="_blank" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    新規タブで開く
+                  </a>
+                  <a href="#" id="recruit-edit-btn" target="_blank" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    編集モードで開く
+                  </a>
+                </div>
+
+            <!-- 1. 基本設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">1</span>
+                <h4>基本設定</h4>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="toggle-switch-label">
+                    <input type="checkbox" id="recruit-is-published" checked>
+                    <span class="toggle-switch"></span>
+                    <span>公開する</span>
+                  </label>
+                  <span class="form-description">オフにするとページが非公開になります</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="recruit-custom-slug">カスタムURL（オプション）</label>
+                <div class="input-with-prefix">
+                  <span class="input-prefix">/recruit/</span>
+                  <input type="text" id="recruit-custom-slug" placeholder="例: my-company">
+                </div>
+                <span class="form-description">空欄の場合は会社ドメインが使用されます</span>
+              </div>
+            </div>
+
+            <!-- 2. デザイン -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">2</span>
+                <h4>デザイン</h4>
+              </div>
+
+              <!-- テンプレート選択 -->
+              <div class="form-subsection">
+                <label class="form-subsection-label">テンプレート</label>
+                <span class="form-description">業種やイメージに合わせて最適なデザインを選べます</span>
+                <div class="layout-style-grid" id="recruit-layout-style-grid">
+                  <!-- JavaScriptで動的に生成 -->
+                </div>
+              </div>
+
+              <!-- カラー設定 -->
+              <div class="form-subsection">
+                <label class="form-subsection-label">カラー設定</label>
+                <span class="form-description">カスタムカラーを設定できます（空欄の場合はテンプレートのデフォルト）</span>
+                <div class="custom-color-section">
+                  <div class="custom-color-grid">
+                    <div class="color-picker-item">
+                      <label for="recruit-custom-primary">メインカラー</label>
+                      <div class="color-input-wrapper">
+                        <input type="color" id="recruit-custom-primary" value="">
+                        <input type="text" id="recruit-custom-primary-text" placeholder="#2563eb" maxlength="7">
+                      </div>
+                    </div>
+                    <div class="color-picker-item">
+                      <label for="recruit-custom-accent">アクセントカラー</label>
+                      <div class="color-input-wrapper">
+                        <input type="color" id="recruit-custom-accent" value="">
+                        <input type="text" id="recruit-custom-accent-text" placeholder="#3b82f6" maxlength="7">
+                      </div>
+                    </div>
+                    <div class="color-picker-item">
+                      <label for="recruit-custom-bg">背景カラー</label>
+                      <div class="color-input-wrapper">
+                        <input type="color" id="recruit-custom-bg" value="#ffffff">
+                        <input type="text" id="recruit-custom-bg-text" placeholder="#ffffff" maxlength="7">
+                      </div>
+                    </div>
+                    <div class="color-picker-item">
+                      <label for="recruit-custom-text">テキストカラー</label>
+                      <div class="color-input-wrapper">
+                        <input type="color" id="recruit-custom-text" value="#1f2937">
+                        <input type="text" id="recruit-custom-text-text" placeholder="#1f2937" maxlength="7">
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" id="recruit-reset-colors" class="btn-link">カラーをリセット</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. ヘッダー設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">3</span>
+                <h4>ヘッダー設定</h4>
+              </div>
+              <div class="form-group">
+                <label for="recruit-logo-url">ロゴ画像</label>
+                <div class="logo-upload-container">
+                  <div class="logo-preview-area" id="recruit-logo-preview">
+                    <span class="logo-placeholder">ロゴ未設定</span>
+                  </div>
+                  <div class="logo-upload-controls">
+                    <div class="input-with-button">
+                      <input type="text" id="recruit-logo-url" placeholder="https://example.com/logo.png">
+                      <button type="button" id="btn-upload-logo" class="btn-upload-small">
+                        <span class="upload-icon">📷</span> アップロード
+                      </button>
+                    </div>
+                    <span class="form-description">推奨: 高さ40px程度のPNG/SVG</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="recruit-company-name-display">ヘッダー表示名</label>
+                <input type="text" id="recruit-company-name-display" placeholder="例: 株式会社サンプル">
+                <span class="form-description">ロゴがない場合に表示（空欄の場合は会社名を使用）</span>
+              </div>
+            </div>
+
+            <!-- 4. ヒーローセクション -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">4</span>
+                <h4>ヒーロー（ファーストビュー）</h4>
+              </div>
+              <div class="form-group">
+                <label for="recruit-hero-title">タイトル</label>
+                <input type="text" id="recruit-hero-title" placeholder="例: ○○株式会社で働こう">
+              </div>
+              <div class="form-group">
+                <label for="recruit-hero-subtitle">サブタイトル</label>
+                <input type="text" id="recruit-hero-subtitle" placeholder="例: 私たちと一緒に働きませんか？">
+              </div>
+              <div class="form-group">
+                <label for="recruit-hero-image">ヒーロー画像</label>
+                <div class="hero-upload-container">
+                  <div class="hero-preview-area" id="recruit-hero-preview">
+                    <span class="hero-placeholder">ヒーロー画像未設定</span>
+                  </div>
+                  <div class="hero-upload-controls">
+                    <div class="input-with-button">
+                      <input type="text" id="recruit-hero-image" placeholder="https://example.com/image.jpg">
+                      <button type="button" id="btn-upload-hero" class="btn-upload-small">
+                        <span class="upload-icon">📷</span> アップロード
+                      </button>
+                    </div>
+                    <span class="form-description">画像をアップロードするか、URLを入力、またはプリセットから選択</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>プリセット画像を選択</label>
+                <div class="hero-image-presets" id="recruit-hero-image-presets">
+                  <!-- JavaScriptで動的に生成 -->
+                </div>
+              </div>
+              <!-- 動画ボタン設定 -->
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="recruit-show-video-button">
+                  <span>動画ボタンを表示する</span>
+                </label>
+              </div>
+              <div class="form-group" id="recruit-video-url-group" style="display: none;">
+                <label for="recruit-video-url">動画URL（YouTube）</label>
+                <input type="url" id="recruit-video-url" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
+                <span class="form-description">YouTubeの動画URLを入力してください。ボタンをクリックするとポップアップで動画が再生されます。</span>
+              </div>
+            </div>
+
+            <!-- 5. 会社紹介 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">5</span>
+                <h4>会社紹介</h4>
+              </div>
+              <div class="form-group">
+                <label for="recruit-company-intro">会社紹介文</label>
+                <textarea id="recruit-company-intro" rows="5" placeholder="会社の紹介文を入力..."></textarea>
+                <span class="form-description">空欄の場合は会社一覧に登録されている説明文が使用されます</span>
+              </div>
+            </div>
+
+            <!-- 6. 求人一覧設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">6</span>
+                <h4>求人一覧</h4>
+              </div>
+              <div class="form-group">
+                <label for="recruit-jobs-title">セクションタイトル</label>
+                <input type="text" id="recruit-jobs-title" placeholder="募集中の求人" value="募集中の求人">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="recruit-jobs-limit">表示件数</label>
+                  <select id="recruit-jobs-limit">
+                    <option value="0">すべて表示</option>
+                    <option value="3">3件</option>
+                    <option value="5">5件</option>
+                    <option value="10">10件</option>
+                    <option value="20">20件</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="recruit-jobs-sort">並び順</label>
+                  <select id="recruit-jobs-sort">
+                    <option value="newest">新着順</option>
+                    <option value="oldest">古い順</option>
+                    <option value="salary-high">給与高い順</option>
+                    <option value="salary-low">給与低い順</option>
+                    <option value="custom">カスタム（手動）</option>
+                  </select>
+                  <span class="form-description" id="recruit-jobs-sort-hint" style="display: none;">求人一覧画面で並び順を変更できます</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. CTA設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">7</span>
+                <h4>CTA（応募誘導）</h4>
+              </div>
+              <div class="form-group">
+                <label for="recruit-cta-title">CTAタイトル</label>
+                <input type="text" id="recruit-cta-title" placeholder="あなたの応募をお待ちしています">
+              </div>
+              <div class="form-group">
+                <label for="recruit-cta-text">CTAテキスト</label>
+                <input type="text" id="recruit-cta-text" placeholder="気になる求人があれば、ぜひお気軽にご応募ください。">
+              </div>
+            </div>
+
+            <!-- 8. カスタムセクション -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">8</span>
+                <h4>カスタムセクション</h4>
+              </div>
+              <span class="form-description">ページに独自のセクションを追加できます</span>
+              <div class="custom-sections-list" id="recruit-custom-sections">
+                <!-- 動的に追加 -->
+              </div>
+              <div class="add-section-buttons">
+                <button type="button" class="btn-open-template-selector" id="btn-open-template-selector">+ コンテンツを追加</button>
+              </div>
+            </div>
+
+            <!-- 9. セクション管理 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">9</span>
+                <h4>セクション管理</h4>
+              </div>
+              <span class="form-description">セクションの並び順と表示/非表示を設定。ドラッグ＆ドロップで並び替え。</span>
+              <ul id="recruit-sections-list" class="recruit-sections-list">
+                <!-- JavaScriptで動的に生成 -->
+              </ul>
+            </div>
+
+            <!-- 10. フッター設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">10</span>
+                <h4>フッター設定</h4>
+              </div>
+
+              <!-- CTAバー -->
+              <div class="form-subsection">
+                <label class="form-subsection-label">固定CTAバー</label>
+                <span class="form-description">ページ下部に固定表示されるCTAバーの設定</span>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="recruit-phone-number">電話番号</label>
+                    <input type="text" id="recruit-phone-number" placeholder="例: 0120-000-000">
+                    <span class="form-description">空欄の場合は電話リンクを非表示</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="recruit-cta-button-text">ボタンテキスト</label>
+                    <input type="text" id="recruit-cta-button-text" placeholder="今すぐ応募する" value="今すぐ応募する">
+                  </div>
+                </div>
+              </div>
+
+              <!-- SNS連携 -->
+              <div class="form-subsection">
+                <label class="form-subsection-label">SNS連携</label>
+                <span class="form-description">フッターに表示するSNSリンク</span>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="recruit-sns-twitter">X (Twitter)</label>
+                    <input type="url" id="recruit-sns-twitter" placeholder="https://x.com/...">
+                  </div>
+                  <div class="form-group">
+                    <label for="recruit-sns-instagram">Instagram</label>
+                    <input type="url" id="recruit-sns-instagram" placeholder="https://instagram.com/...">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="recruit-sns-facebook">Facebook</label>
+                    <input type="url" id="recruit-sns-facebook" placeholder="https://facebook.com/...">
+                  </div>
+                  <div class="form-group">
+                    <label for="recruit-sns-youtube">YouTube</label>
+                    <input type="url" id="recruit-sns-youtube" placeholder="https://youtube.com/...">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="recruit-sns-line">LINE</label>
+                    <input type="url" id="recruit-sns-line" placeholder="https://line.me/...">
+                  </div>
+                  <div class="form-group">
+                    <label for="recruit-sns-tiktok">TikTok</label>
+                    <input type="url" id="recruit-sns-tiktok" placeholder="https://tiktok.com/...">
+                  </div>
+                </div>
+              </div>
+
+              <!-- カスタムリンク -->
+              <div class="form-subsection">
+                <label class="form-subsection-label">カスタムリンク</label>
+                <span class="form-description">フッターに表示するカスタムリンク</span>
+                <div class="custom-links-list" id="recruit-custom-links">
+                  <!-- 動的に追加 -->
+                </div>
+                <button type="button" class="btn-link" id="btn-add-custom-link">+ リンクを追加</button>
+              </div>
+            </div>
+
+            <!-- 11. SEO・OGP設定 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">11</span>
+                <h4>SEO・OGP設定</h4>
+              </div>
+              <span class="form-description">SNSでシェアされたときの表示を設定</span>
+              <div class="form-group">
+                <label for="recruit-ogp-title">OGPタイトル</label>
+                <input type="text" id="recruit-ogp-title" placeholder="空欄の場合はタイトルが使用されます">
+              </div>
+              <div class="form-group">
+                <label for="recruit-ogp-description">OGP説明文</label>
+                <textarea id="recruit-ogp-description" rows="2" placeholder="空欄の場合は会社紹介文が使用されます"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="recruit-ogp-image">OGP画像URL</label>
+                <input type="text" id="recruit-ogp-image" placeholder="https://example.com/ogp.jpg">
+                <span class="form-description">推奨サイズ: 1200×630px</span>
+              </div>
+            </div>
+
+            <!-- 12. 埋込・共有 -->
+            <div class="form-section lp-form-section">
+              <div class="lp-section-header">
+                <span class="lp-section-number">12</span>
+                <h4>埋込・共有</h4>
+              </div>
+              <span class="form-description">採用ページのリンクやバナーを自社サイトに貼り付け</span>
+
+              <!-- 採用ページリンク -->
+              <div class="form-group">
+                <label>採用ページURL</label>
+                <div class="embed-link-box">
+                  <input type="text" id="recruit-embed-url" readonly class="embed-url-input">
+                  <button type="button" class="btn-copy-embed" id="btn-copy-recruit-url" title="コピー">📋 コピー</button>
+                </div>
+              </div>
+
+              <!-- バナー取得 -->
+              <div class="form-group">
+                <label>バナー</label>
+                <span class="form-description">バナーをコピーして自社サイトのHTMLに貼り付けてください</span>
+                <div class="embed-banners-grid" id="recruit-embed-banners">
+                  <!-- バナー1: シンプルボタン -->
+                  <div class="embed-banner-item">
+                    <div class="embed-banner-preview banner-style-button">
+                      <a href="#">採用情報はこちら</a>
+                    </div>
+                    <button type="button" class="btn-copy-banner" data-banner="button">コードをコピー</button>
+                  </div>
+
+                  <!-- バナー2: 大きめボタン -->
+                  <div class="embed-banner-item">
+                    <div class="embed-banner-preview banner-style-button-large">
+                      <a href="#">採用情報はこちら →</a>
+                    </div>
+                    <button type="button" class="btn-copy-banner" data-banner="button-large">コードをコピー</button>
+                  </div>
+
+                  <!-- バナー3: カード型 -->
+                  <div class="embed-banner-item">
+                    <div class="embed-banner-preview banner-style-card">
+                      <div class="banner-card-inner">
+                        <span class="banner-card-label">採用情報</span>
+                        <span class="banner-card-title">採用情報はこちら</span>
+                        <span class="banner-card-arrow">→</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-copy-banner" data-banner="card">コードをコピー</button>
+                  </div>
+
+                  <!-- バナー4: 求人募集中 -->
+                  <div class="embed-banner-item">
+                    <div class="embed-banner-preview banner-style-recruiting">
+                      <div class="banner-recruiting-inner">
+                        <span class="banner-recruiting-badge">ただいま</span>
+                        <span class="banner-recruiting-title">求人募集中！</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-copy-banner" data-banner="recruiting">コードをコピー</button>
+                  </div>
+
+                  <!-- バナー5: 特設ページ公開中 -->
+                  <div class="embed-banner-item">
+                    <div class="embed-banner-preview banner-style-special">
+                      <div class="banner-special-inner">
+                        <span class="banner-special-title">採用特設ページ</span>
+                        <span class="banner-special-subtitle">公開中！！</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-copy-banner" data-banner="special">コードをコピー</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+                <!-- 保存ボタン -->
+                <div class="form-actions">
+                  <button id="btn-save-recruit-settings" class="btn-primary">採用ページ設定を保存</button>
+                  <button id="btn-reset-recruit-settings" class="btn-secondary">リセット</button>
+                </div>
+              </div>
+              <!-- /左カラム：フォーム -->
+
+              <!-- 右カラム：リアルタイムプレビュー -->
+              <div class="recruit-editor-preview">
+                <div class="preview-panel-header">
+                  <h4>リアルタイムプレビュー</h4>
+                  <span class="preview-device-label">モバイル表示</span>
+                </div>
+                <div class="preview-panel-device">
+                  <div class="preview-phone-frame">
+                    <div class="preview-phone-notch"></div>
+                    <div class="preview-phone-content" id="recruit-live-preview">
+                      <!-- ヘッダープレビュー（固定） -->
+                      <div class="preview-header" id="preview-header">
+                        <img id="preview-logo" class="preview-logo" src="" alt="" style="display: none;">
+                        <span id="preview-company-name" class="preview-company-name"></span>
+                      </div>
+                      <!-- 並び替え可能なセクション -->
+                      <div class="preview-sections-container" id="preview-sections-container">
+                        <!-- ヒーロープレビュー -->
+                        <div class="preview-hero preview-reorderable" id="preview-hero" data-section="hero">
+                          <div class="preview-hero-overlay"></div>
+                          <div class="preview-hero-content">
+                            <h2 id="preview-hero-title" class="preview-hero-title"></h2>
+                            <p id="preview-hero-subtitle" class="preview-hero-subtitle"></p>
+                          </div>
+                        </div>
+                        <!-- 会社紹介プレビュー -->
+                        <div class="preview-section preview-reorderable" id="preview-company-intro" data-section="company-intro">
+                          <h3 id="preview-intro-label">会社紹介</h3>
+                          <p id="preview-intro-text" class="preview-intro-text"></p>
+                        </div>
+                        <!-- 求人一覧プレビュー -->
+                        <div class="preview-section preview-reorderable" id="preview-jobs" data-section="jobs">
+                          <h3 id="preview-jobs-title">募集中の求人</h3>
+                          <div class="preview-job-cards">
+                            <div class="preview-job-card">
+                              <div class="preview-job-img"></div>
+                              <div class="preview-job-body">
+                                <div class="preview-job-title">営業スタッフ募集</div>
+                                <div class="preview-job-info">月給 25万円〜</div>
+                              </div>
+                            </div>
+                            <div class="preview-job-card">
+                              <div class="preview-job-img"></div>
+                              <div class="preview-job-body">
+                                <div class="preview-job-title">事務スタッフ募集</div>
+                                <div class="preview-job-info">月給 22万円〜</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- CTAプレビュー -->
+                        <div class="preview-cta preview-reorderable" id="preview-cta" data-section="cta">
+                          <h3 id="preview-cta-title"></h3>
+                          <button id="preview-cta-button" class="preview-cta-btn"></button>
+                        </div>
+                        <!-- カスタムセクションプレビュー -->
+                        <div id="preview-custom-sections" class="preview-custom-sections preview-reorderable" data-section="custom-sections"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p class="preview-note">※ 実際の表示とは異なる場合があります</p>
+              </div>
+              <!-- /右カラム：リアルタイムプレビュー -->
+            </div>
+            <!-- /2カラムレイアウト -->
+          </div>
+        </div>
+      </section>

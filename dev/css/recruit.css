@@ -1,0 +1,4128 @@
+/**
+ * 会社専用採用ページ スタイル
+ */
+
+/* ========================================
+   変数
+   ======================================== */
+:root {
+  --recruit-primary: #6366f1;
+  --recruit-primary-dark: #4f46e5;
+  --recruit-text: #1f2937;
+  --recruit-text-light: #6b7280;
+  --recruit-bg: #f9fafb;
+  --recruit-white: #ffffff;
+  --recruit-border: #e5e7eb;
+  --recruit-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --recruit-radius: 12px;
+}
+
+/* ========================================
+   ボディ
+   ======================================== */
+.recruit-body {
+  background: var(--recruit-bg);
+  min-height: 100vh;
+}
+
+/* ========================================
+   ヘッダー
+   ======================================== */
+.recruit-header {
+  /* デフォルトでは非表示（会社設定がない場合のみJSで表示） */
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--recruit-border);
+}
+
+.recruit-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recruit-logo a {
+  text-decoration: none;
+  color: var(--recruit-text);
+}
+
+.recruit-logo .logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.recruit-logo .logo-img {
+  height: 28px;
+  width: auto;
+}
+
+.recruit-nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.recruit-nav-link {
+  color: var(--recruit-text-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.recruit-nav-link:hover {
+  color: var(--recruit-primary);
+}
+
+/* ========================================
+   ローディング
+   ======================================== */
+.recruit-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding-top: 60px;
+}
+
+/* ========================================
+   ヒーローセクション
+   ======================================== */
+.recruit-hero {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rem 1.5rem 4rem;
+  overflow: hidden;
+}
+
+.recruit-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: #1f2937;
+}
+
+.recruit-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.9) 100%);
+}
+
+.recruit-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: var(--recruit-white);
+  max-width: 800px;
+}
+
+.recruit-hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.recruit-hero-subtitle {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.recruit-hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.recruit-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.recruit-stat-number {
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.recruit-stat-label {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.recruit-hero-cta {
+  display: inline-block;
+  padding: 1rem 3rem;
+  background: var(--recruit-white);
+  color: var(--recruit-primary);
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.recruit-hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
+   セクション共通
+   ======================================== */
+.recruit-section {
+  padding: 4rem 1.5rem;
+}
+
+.recruit-section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.recruit-section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  color: var(--recruit-text);
+}
+
+/* ========================================
+   会社紹介セクション
+   ======================================== */
+.recruit-about {
+  background: var(--recruit-white);
+}
+
+.recruit-about-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .recruit-about-content {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+.recruit-about-image img {
+  width: 100%;
+  border-radius: var(--recruit-radius);
+  box-shadow: var(--recruit-shadow);
+}
+
+.recruit-about-text {
+  color: var(--recruit-text);
+  line-height: 1.8;
+}
+
+.recruit-about-text h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  color: var(--recruit-primary);
+}
+
+/* ========================================
+   求人一覧セクション
+   ======================================== */
+.recruit-jobs {
+  background: var(--recruit-bg);
+}
+
+/* 職種タブ */
+.recruit-job-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  background: var(--recruit-white);
+  border-radius: var(--recruit-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.recruit-job-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--recruit-text-light);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recruit-job-tab:hover {
+  background: var(--recruit-bg);
+  color: var(--recruit-text);
+}
+
+.recruit-job-tab.active {
+  background: var(--recruit-primary);
+  color: white;
+}
+
+.recruit-job-tab .tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+}
+
+.recruit-job-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 職種バッジ（カード内） */
+.recruit-job-card-type {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--recruit-primary);
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+/* 非表示カードのアニメーション */
+.recruit-job-card.hidden {
+  display: none;
+}
+
+.recruit-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.recruit-no-jobs {
+  text-align: center;
+  color: var(--recruit-text-light);
+  padding: 3rem;
+}
+
+/* ========================================
+   求人カード
+   ======================================== */
+.recruit-job-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--recruit-white);
+  border-radius: var(--recruit-radius);
+  overflow: hidden;
+  text-decoration: none;
+  box-shadow: var(--recruit-shadow);
+  transition: all 0.3s;
+  position: relative;
+}
+
+.recruit-job-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* 新着タグ */
+.recruit-job-new-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  color: #dc2626;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 10;
+}
+
+.recruit-job-card-image {
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  background-color: #e5e7eb;
+}
+
+.recruit-job-card-placeholder {
+  height: 100%;
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+}
+
+/* カードボディ（L-SET形式） */
+.recruit-job-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 後方互換性のため残す */
+.recruit-job-card-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.recruit-job-card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--recruit-text);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.recruit-job-card-location {
+  font-size: 0.875rem;
+  color: var(--recruit-text-light);
+  margin-bottom: 0.25rem;
+}
+
+.recruit-job-card-access {
+  font-size: 0.8rem;
+  color: var(--recruit-text-light);
+  margin-bottom: 0.75rem;
+}
+
+.recruit-job-card-access::before {
+  content: '🚃 ';
+}
+
+/* 給与・特典セクション（L-SET形式） */
+.recruit-job-card-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.recruit-benefit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recruit-benefit-item.highlight {
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 6px;
+  margin: -0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.recruit-benefit-label {
+  font-size: 0.75rem;
+  color: var(--recruit-text-light);
+  font-weight: 500;
+}
+
+.recruit-benefit-item.highlight .recruit-benefit-label {
+  color: #92400e;
+}
+
+.recruit-benefit-value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--recruit-text);
+}
+
+.recruit-benefit-item.highlight .recruit-benefit-value {
+  color: #92400e;
+}
+
+/* 後方互換性のため残す */
+.recruit-job-card-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.recruit-highlight {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+}
+
+.recruit-highlight.salary {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.recruit-highlight.bonus {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.recruit-job-card-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.recruit-feature-tag {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background: var(--recruit-bg);
+  color: var(--recruit-text-light);
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+/* 詳細ボタン（L-SET形式） */
+.recruit-job-card-btn {
+  display: block;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  background: var(--recruit-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-top: auto;
+  transition: background 0.2s;
+}
+
+.recruit-job-card-btn:hover {
+  background: var(--recruit-primary-dark);
+}
+
+/* 後方互換性のため残す */
+.recruit-job-card-link {
+  display: inline-block;
+  color: var(--recruit-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-top: auto;
+}
+
+/* ========================================
+   ページネーション
+   ======================================== */
+.recruit-pagination {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--recruit-border);
+}
+
+.recruit-pagination-info {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--recruit-text-light);
+  margin-bottom: 1rem;
+}
+
+.recruit-pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recruit-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--recruit-primary);
+  background: var(--recruit-white);
+  border: 1px solid var(--recruit-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recruit-pagination-btn:hover:not(:disabled) {
+  background: var(--recruit-primary);
+  color: #fff;
+}
+
+.recruit-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.recruit-pagination-pages {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.recruit-pagination-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--recruit-text);
+  background: var(--recruit-white);
+  border: 1px solid var(--recruit-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recruit-pagination-page:hover {
+  border-color: var(--recruit-primary);
+  color: var(--recruit-primary);
+}
+
+.recruit-pagination-page.active {
+  background: var(--recruit-primary);
+  border-color: var(--recruit-primary);
+  color: #fff;
+}
+
+.recruit-pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  color: var(--recruit-text-light);
+}
+
+/* モバイル時のページネーション */
+@media (max-width: 640px) {
+  .recruit-pagination-controls {
+    flex-wrap: wrap;
+  }
+
+  .recruit-pagination-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .recruit-pagination-page {
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.8125rem;
+  }
+}
+
+/* ========================================
+   CTAセクション（改善版）
+   ======================================== */
+.recruit-cta {
+  background: linear-gradient(135deg, var(--recruit-primary) 0%, var(--recruit-primary-dark) 100%);
+  color: var(--recruit-white);
+  text-align: center;
+  padding: 5rem 1.5rem;
+}
+
+.recruit-cta-title {
+  color: var(--recruit-white);
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.recruit-cta-text {
+  font-size: 1.125rem;
+  opacity: 0.9;
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
+}
+
+.recruit-cta-button {
+  display: inline-block;
+  padding: 1.125rem 3.5rem;
+  background: var(--recruit-white);
+  color: var(--recruit-primary);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  text-decoration: none;
+  border-radius: 50px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.recruit-cta-button:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* ========================================
+   カスタムセクション
+   ======================================== */
+.recruit-custom-section {
+  padding: 2rem 1.5rem;
+}
+
+.recruit-custom-heading {
+  background: var(--recruit-bg);
+}
+
+.recruit-custom-text {
+  background: var(--recruit-white);
+}
+
+.recruit-custom-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--recruit-text);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.recruit-custom-image {
+  background: var(--recruit-bg);
+  padding: 1rem 1.5rem;
+}
+
+.recruit-custom-image-content {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: var(--recruit-radius);
+}
+
+/* MESSAGE セクション */
+.recruit-custom-message {
+  background: var(--recruit-white);
+}
+
+.recruit-message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .recruit-message-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+}
+
+.recruit-message-image {
+  flex-shrink: 0;
+}
+
+.recruit-message-image img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: var(--recruit-radius);
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .recruit-message-image img {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+.recruit-message-text {
+  flex: 1;
+}
+
+.recruit-message-headline {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--recruit-primary);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.recruit-message-description {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--recruit-text);
+}
+
+/* ABOUT セクション */
+.recruit-custom-about {
+  background: var(--recruit-bg);
+}
+
+.recruit-about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .recruit-about-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+}
+
+.recruit-about-image {
+  flex-shrink: 0;
+}
+
+.recruit-about-image img {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  border-radius: var(--recruit-radius);
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+}
+
+.recruit-about-description {
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--recruit-text);
+}
+
+/* BUSINESS セクション */
+.recruit-custom-business {
+  background: var(--recruit-white);
+}
+
+.recruit-business-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .recruit-business-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.recruit-business-item {
+  background: var(--recruit-bg);
+  padding: 1.5rem;
+  border-radius: var(--recruit-radius);
+  text-align: center;
+}
+
+.recruit-business-item-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--recruit-primary);
+  margin: 0 0 0.75rem;
+}
+
+.recruit-business-item-description {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--recruit-text);
+  margin: 0;
+}
+
+/* PHOTOS セクション */
+.recruit-custom-photos {
+  background: var(--recruit-bg);
+}
+
+/* モバイル: 横スワイプカルーセル */
+.recruit-photos-grid {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  padding-bottom: 0.5rem;
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.recruit-photos-grid::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+.recruit-photos-item {
+  flex: 0 0 80%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--recruit-radius);
+  scroll-snap-align: center;
+}
+
+.recruit-photos-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.recruit-photos-item:hover img {
+  transform: scale(1.05);
+}
+
+/* PC: グリッド表示 */
+@media (min-width: 640px) {
+  .recruit-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 0;
+  }
+
+  .recruit-photos-item {
+    flex: none;
+    scroll-snap-align: none;
+  }
+}
+
+/* ========================================
+   フッター
+   ======================================== */
+.recruit-footer {
+  background: var(--recruit-text);
+  color: var(--recruit-white);
+  padding: 2rem 1.5rem;
+}
+
+.recruit-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.recruit-footer-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.recruit-footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.recruit-footer-links a:hover {
+  color: var(--recruit-white);
+}
+
+.recruit-footer-copyright {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
+}
+
+/* ========================================
+   エラー表示
+   ======================================== */
+.recruit-error {
+  text-align: center;
+  padding: 8rem 1.5rem;
+}
+
+.recruit-error h2 {
+  font-size: 1.5rem;
+  color: var(--recruit-text);
+  margin-bottom: 1rem;
+}
+
+.recruit-error p {
+  color: var(--recruit-text-light);
+  margin-bottom: 2rem;
+}
+
+.recruit-error-link {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: var(--recruit-primary);
+  color: var(--recruit-white);
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* ========================================
+   レスポンシブ（改善版）
+   ======================================== */
+@media (max-width: 768px) {
+  .recruit-header-inner {
+    padding: 0.75rem 1rem;
+  }
+
+  .recruit-nav {
+    display: none;
+  }
+
+  .recruit-hero {
+    min-height: 60vh;
+    padding: 6rem 1rem 3rem;
+  }
+
+  .recruit-hero-title {
+    font-size: 1.75rem;
+    line-height: 1.3;
+  }
+
+  .recruit-hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .recruit-stat-number {
+    font-size: 2.5rem;
+  }
+
+  .recruit-section {
+    padding: 3.5rem 1rem;
+  }
+
+  .recruit-section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .recruit-section-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+
+  /* 求人一覧（モバイル：縦並び） */
+  .recruit-jobs-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .recruit-job-card {
+    width: 100%;
+  }
+
+  .recruit-job-card-image {
+    height: 200px;
+  }
+
+  .recruit-job-card-body,
+  .recruit-job-card-content {
+    padding: 1.25rem;
+  }
+
+  .recruit-job-card-title {
+    font-size: 1.125rem;
+    line-height: 1.4;
+  }
+
+  .recruit-job-card-btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  /* ページネーション（モバイル：非表示） */
+  .recruit-pagination {
+    display: none;
+  }
+
+  /* 職種タブ（モバイル：横スクロール） */
+  .recruit-job-tabs {
+    gap: 0.375rem;
+    padding: 0.375rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .recruit-job-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .recruit-job-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* CTA セクション（モバイル） */
+  .recruit-cta {
+    padding: 3.5rem 1.25rem;
+  }
+
+  .recruit-cta-title {
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+
+  .recruit-cta-text {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .recruit-cta-button {
+    width: 100%;
+    max-width: 320px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+}
+
+/* ========================================
+   共通レイアウトコンポーネント
+   ヘッダー、フッター、固定CTAバー
+   ======================================== */
+
+/* --- サイトヘッダー --- */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  box-sizing: border-box;
+}
+
+.site-header-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-header-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 10px;
+}
+
+.site-header-logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.site-header-company-name {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #1e293b;
+  letter-spacing: -0.5px;
+}
+
+.site-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.site-header-nav-link {
+  text-decoration: none;
+  color: #1e293b;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.site-header-nav-link:hover {
+  color: var(--recruit-primary);
+}
+
+/* ヘッダーがある場合のbodyパディング */
+.has-fixed-header {
+  padding-top: 70px;
+}
+
+.has-fixed-header .recruit-header {
+  display: none; /* 元のヘッダーを非表示 */
+}
+
+/* --- サイトフッター --- */
+.site-footer {
+  background: #1e293b;
+  color: #fff;
+  padding: 60px 20px 120px;
+  text-align: center;
+}
+
+.site-footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.site-footer-company {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.site-footer-copyright {
+  opacity: 0.6;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* SNSアイコン */
+.site-footer-sns {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.footer-sns-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.footer-sns-link svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.footer-sns-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.footer-sns-twitter:hover { background: #000; }
+.footer-sns-instagram:hover { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.footer-sns-facebook:hover { background: #1877f2; }
+.footer-sns-youtube:hover { background: #ff0000; }
+.footer-sns-line:hover { background: #00c300; }
+.footer-sns-tiktok:hover { background: #000; }
+
+/* カスタムリンク */
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 2rem;
+  margin: 1rem 0;
+}
+
+.footer-custom-link {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.footer-custom-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.has-fixed-cta-bar .site-footer {
+  padding-bottom: 140px;
+}
+
+/* --- 固定CTAバー --- */
+.fixed-cta-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  z-index: 1900;
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+.fixed-cta-phone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.fixed-cta-phone:hover {
+  color: var(--recruit-primary);
+}
+
+.fixed-cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--recruit-primary);
+  color: #fff;
+  padding: 14px 40px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s;
+}
+
+.fixed-cta-button:hover {
+  background: var(--recruit-primary-dark);
+  transform: translateY(-2px);
+}
+
+.has-fixed-cta-bar {
+  padding-bottom: 80px;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .site-header {
+    height: 60px;
+  }
+
+  .has-fixed-header {
+    padding-top: 60px;
+  }
+
+  .site-header-logo-img {
+    height: 32px;
+  }
+
+  .site-header-company-name {
+    font-size: 1.1rem;
+  }
+
+  .fixed-cta-bar {
+    flex-direction: column;
+    padding: 12px 15px;
+    gap: 10px;
+  }
+
+  .fixed-cta-button {
+    width: 100%;
+    padding: 12px 20px;
+  }
+
+  .has-fixed-cta-bar {
+    padding-bottom: 110px;
+  }
+
+  .site-footer {
+    padding-bottom: 140px;
+  }
+}
+
+/* ========================================
+   統合テンプレートシステム（新）
+   4つの完成度の高いテンプレート
+   ======================================== */
+
+/* --- 共通: セクションラベル（モダンスタイル） --- */
+.recruit-section-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--recruit-primary);
+  display: block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+/* ========================================
+   テンプレート1: モダン（デフォルト）
+   洗練されたダークグレー + 青アクセント
+   製造業・IT・オフィスワーク向け
+   ======================================== */
+[data-template="modern"] {
+  --tpl-primary: #2d3436;
+  --tpl-primary-dark: #1e272e;
+  --tpl-accent: #0984e3;
+  --tpl-text: #2d3436;
+  --tpl-text-sub: #636e72;
+  --tpl-bg: #f8f9fa;
+  --tpl-highlight: #fff176;
+  --tpl-border: #eee;
+  --tpl-card-radius: 4px;
+}
+
+[data-template="modern"] .recruit-hero-overlay {
+  background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3));
+}
+
+[data-template="modern"] .recruit-hero-title {
+  font-weight: 900;
+}
+
+[data-template="modern"] .recruit-hero-cta {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 50px;
+}
+
+[data-template="modern"] .recruit-hero-cta:hover {
+  background: #0773c5;
+  transform: scale(1.05);
+}
+
+[data-template="modern"] .recruit-section-label {
+  color: var(--tpl-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+[data-template="modern"] .recruit-section-title {
+  font-weight: 800;
+  color: var(--tpl-primary);
+}
+
+/* モダン: 求人カード */
+[data-template="modern"] .recruit-job-card {
+  border: 1px solid var(--tpl-border);
+  border-radius: var(--tpl-card-radius);
+  box-shadow: none;
+}
+
+[data-template="modern"] .recruit-job-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+/* モダン: NEWタグ（ダークスタイル） */
+[data-template="modern"] .recruit-job-new-tag {
+  background: var(--tpl-primary);
+  color: #fff;
+  border-radius: 0;
+  font-size: 10px;
+  padding: 5px 12px;
+}
+
+/* モダン: 給与セクション（点線区切り） */
+[data-template="modern"] .recruit-job-card-benefits {
+  border-top: 1px dashed #ddd;
+  background: transparent;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+
+/* モダン: 特典総額ハイライト */
+[data-template="modern"] .recruit-benefit-item.highlight {
+  background: var(--tpl-highlight);
+  font-weight: bold;
+  padding: 2px 8px;
+  display: inline-block;
+  margin-top: 5px;
+  border-radius: 0;
+}
+
+[data-template="modern"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+[data-template="modern"] .recruit-benefit-item.highlight .recruit-benefit-value {
+  color: #1e272e;
+  font-size: 12px;
+}
+
+/* モダン: 給与表示（大きく） */
+[data-template="modern"] .recruit-benefit-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+/* モダン: 特徴タグ */
+[data-template="modern"] .recruit-feature-tag {
+  background: #f1f2f6;
+  color: var(--tpl-text-sub);
+  border: none;
+  border-radius: 0;
+  font-size: 11px;
+}
+
+/* モダン: CTA セクション */
+[data-template="modern"] .recruit-cta {
+  background: var(--tpl-primary);
+}
+
+[data-template="modern"] .recruit-cta-title {
+  font-weight: 800;
+}
+
+[data-template="modern"] .recruit-cta-button,
+[data-template="modern"] .fixed-cta-button {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 50px;
+}
+
+[data-template="modern"] .recruit-cta-button:hover,
+[data-template="modern"] .fixed-cta-button:hover {
+  background: #0773c5;
+  transform: scale(1.05);
+}
+
+/* ========================================
+   テンプレート2: アットホーム
+   温かみのある親しみやすいデザイン
+   飲食・介護・サービス業向け
+   ======================================== */
+[data-template="athome"] {
+  --tpl-primary: #e67e22;
+  --tpl-primary-dark: #d35400;
+  --tpl-accent: #f39c12;
+  --tpl-text: #5d4037;
+  --tpl-text-sub: #8d6e63;
+  --tpl-bg: #fffbf0;
+  --tpl-highlight: #fff176;
+  --tpl-card-radius: 25px;
+}
+
+[data-template="athome"] .recruit-hero {
+  background-color: var(--tpl-bg);
+}
+
+[data-template="athome"] .recruit-hero-bg {
+  border-radius: 40px;
+  margin: 20px;
+  height: calc(100% - 40px);
+}
+
+[data-template="athome"] .recruit-hero-overlay {
+  background: rgba(0,0,0,0.2);
+  border-radius: 40px;
+}
+
+[data-template="athome"] .recruit-hero-title {
+  font-weight: 800;
+}
+
+[data-template="athome"] .recruit-hero-cta {
+  background: var(--tpl-primary);
+  color: #fff;
+  border-radius: 50px;
+}
+
+[data-template="athome"] .recruit-hero-cta:hover {
+  background: var(--tpl-primary-dark);
+}
+
+[data-template="athome"] .recruit-section-label {
+  color: var(--tpl-primary);
+}
+
+[data-template="athome"] .recruit-section-title {
+  color: var(--tpl-primary);
+}
+
+/* アットホーム: 求人カード */
+[data-template="athome"] .recruit-job-card {
+  border-radius: var(--tpl-card-radius);
+  border: 2px solid transparent;
+  box-shadow: 0 2px 10px rgba(230,126,34,0.1);
+}
+
+[data-template="athome"] .recruit-job-card:hover {
+  border-color: var(--tpl-accent);
+  transform: scale(1.02);
+}
+
+[data-template="athome"] .recruit-job-card-image {
+  border-radius: var(--tpl-card-radius) var(--tpl-card-radius) 0 0;
+}
+
+/* アットホーム: NEWタグ */
+[data-template="athome"] .recruit-job-new-tag {
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 20px;
+  padding: 5px 15px;
+  font-size: 12px;
+}
+
+/* アットホーム: 特徴タグ */
+[data-template="athome"] .recruit-feature-tag {
+  background: #fff5e6;
+  color: var(--tpl-primary);
+  border: 1px solid #ffe0b3;
+  border-radius: 15px;
+  font-size: 11px;
+}
+
+/* アットホーム: 給与セクション */
+[data-template="athome"] .recruit-job-card-benefits {
+  border-top: 1px dashed #ddd;
+  padding-top: 15px;
+}
+
+[data-template="athome"] .recruit-benefit-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--tpl-text);
+}
+
+/* アットホーム: 特典総額ハイライト */
+[data-template="athome"] .recruit-benefit-item.highlight {
+  background: var(--tpl-highlight);
+  color: var(--tpl-primary-dark);
+  padding: 2px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+[data-template="athome"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+/* アットホーム: ボタン */
+[data-template="athome"] .recruit-job-card-btn {
+  background: var(--tpl-accent);
+  border-radius: 50px;
+  box-shadow: 0 6px 0 var(--tpl-primary-dark);
+}
+
+[data-template="athome"] .recruit-job-card-btn:hover {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 var(--tpl-primary-dark);
+}
+
+/* アットホーム: CTA */
+[data-template="athome"] .recruit-cta {
+  background: var(--tpl-bg);
+  color: var(--tpl-text);
+}
+
+[data-template="athome"] .recruit-cta-title {
+  color: var(--tpl-primary);
+}
+
+[data-template="athome"] .recruit-cta-text {
+  color: var(--tpl-text-sub);
+}
+
+[data-template="athome"] .recruit-cta-button,
+[data-template="athome"] .fixed-cta-button {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 50px;
+  box-shadow: 0 6px 0 var(--tpl-primary-dark);
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+
+[data-template="athome"] .recruit-cta-button:hover,
+[data-template="athome"] .fixed-cta-button:hover {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 var(--tpl-primary-dark);
+}
+
+/* ========================================
+   テンプレート3: キュート
+   ポップで可愛いパステル調デザイン
+   保育・美容・アパレル向け
+   ======================================== */
+[data-template="cute"] {
+  --tpl-primary: #ff8fa3;
+  --tpl-primary-dark: #e85d75;
+  --tpl-secondary: #74b9ff;
+  --tpl-accent: #fab1a0;
+  --tpl-text: #5d4037;
+  --tpl-text-sub: #8d6e63;
+  --tpl-bg: #fffaf0;
+  --tpl-highlight: #fff59d;
+  --tpl-card-radius: 40px;
+}
+
+[data-template="cute"] body {
+  background-color: var(--tpl-bg);
+  background-image: radial-gradient(#ffe0e9 2px, transparent 2px);
+  background-size: 30px 30px;
+}
+
+[data-template="cute"] .recruit-hero-bg {
+  border-radius: 50px 150px 50px 120px;
+}
+
+[data-template="cute"] .recruit-hero-overlay {
+  border-radius: 50px 150px 50px 120px;
+}
+
+[data-template="cute"] .recruit-hero-title {
+  font-weight: 900;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+[data-template="cute"] .recruit-hero-cta {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 30px;
+}
+
+[data-template="cute"] .recruit-hero-cta:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+[data-template="cute"] .recruit-section-label {
+  color: var(--tpl-primary);
+}
+
+[data-template="cute"] .recruit-section-title {
+  font-weight: 900;
+  position: relative;
+  display: inline-block;
+}
+
+[data-template="cute"] .recruit-section-title::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: var(--tpl-highlight);
+  z-index: -1;
+  border-radius: 10px;
+}
+
+/* キュート: 求人カード */
+[data-template="cute"] .recruit-job-card {
+  border-radius: var(--tpl-card-radius);
+  border: 2px solid #ffe0e9;
+  box-shadow: 0 10px 0 #ffe0e9;
+}
+
+[data-template="cute"] .recruit-job-card:hover {
+  transform: translateY(5px);
+  box-shadow: 0 5px 0 #ffe0e9;
+}
+
+[data-template="cute"] .recruit-job-card-image {
+  border-radius: calc(var(--tpl-card-radius) - 2px) calc(var(--tpl-card-radius) - 2px) 0 0;
+}
+
+/* キュート: NEWタグ（丸い・回転） */
+[data-template="cute"] .recruit-job-new-tag {
+  background: var(--tpl-primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  transform: rotate(-15deg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 0;
+}
+
+/* キュート: 特徴タグ */
+[data-template="cute"] .recruit-feature-tag {
+  background: #fff0f3;
+  color: var(--tpl-primary);
+  border: 1px solid #ffdae1;
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+/* キュート: 勤務地情報 */
+[data-template="cute"] .recruit-job-card-location,
+[data-template="cute"] .recruit-job-card-access {
+  background: #fdfdfd;
+  padding: 8px 15px;
+  border-radius: 20px;
+  margin-bottom: 5px;
+}
+
+/* キュート: 給与セクション */
+[data-template="cute"] .recruit-job-card-benefits {
+  border-top: 2px dotted #ffe0e9;
+  padding-top: 15px;
+}
+
+[data-template="cute"] .recruit-benefit-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--tpl-primary);
+}
+
+/* キュート: 特典総額ハイライト */
+[data-template="cute"] .recruit-benefit-item.highlight {
+  background: var(--tpl-highlight);
+  color: #d63031;
+  padding: 5px 15px;
+  border-radius: 15px;
+  border: 2px dashed #ff7675;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+[data-template="cute"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+/* キュート: ボタン */
+[data-template="cute"] .recruit-job-card-btn {
+  background: var(--tpl-primary);
+  border-radius: 50px;
+}
+
+[data-template="cute"] .recruit-job-card-btn:hover {
+  background: var(--tpl-primary-dark);
+}
+
+/* キュート: CTA */
+[data-template="cute"] .recruit-cta {
+  background: var(--tpl-accent);
+  border-radius: 60px 60px 0 0;
+  color: #fff;
+}
+
+[data-template="cute"] .recruit-cta-title {
+  font-weight: 900;
+  font-size: 2.2rem;
+}
+
+[data-template="cute"] .recruit-cta-button,
+[data-template="cute"] .fixed-cta-button {
+  background: #fff;
+  color: var(--tpl-accent);
+  border-radius: 50px;
+  font-weight: 900;
+  font-size: 1.3rem;
+  box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+}
+
+[data-template="cute"] .recruit-cta-button:hover,
+[data-template="cute"] .fixed-cta-button:hover {
+  transform: translateY(3px);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+}
+
+/* ========================================
+   テンプレート4: 信頼
+   誠実で信頼感のあるデザイン
+   製造・金融・コンサル向け
+   ======================================== */
+[data-template="trust"] {
+  --tpl-primary: #1a2a3a;
+  --tpl-primary-dark: #0d1821;
+  --tpl-accent: #0077c2;
+  --tpl-accent-light: #fbc02d;
+  --tpl-text: #333333;
+  --tpl-text-sub: #666666;
+  --tpl-bg: #f4f7f9;
+  --tpl-border: #e0e6ed;
+  --tpl-card-radius: 4px;
+}
+
+[data-template="trust"] .recruit-hero-overlay {
+  background: linear-gradient(rgba(26,42,58,0.8), rgba(26,42,58,0.8));
+}
+
+[data-template="trust"] .recruit-hero-title {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+[data-template="trust"] .recruit-hero-cta {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: var(--tpl-card-radius);
+}
+
+[data-template="trust"] .recruit-hero-cta:hover {
+  background: #005a94;
+}
+
+[data-template="trust"] .recruit-section-title {
+  font-weight: 700;
+  color: var(--tpl-primary);
+  position: relative;
+  text-align: center;
+}
+
+[data-template="trust"] .recruit-section-title::after {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 3px;
+  background: var(--tpl-accent);
+  margin: 15px auto 0;
+}
+
+/* 信頼: 求人カード */
+[data-template="trust"] .recruit-job-card {
+  border: 1px solid var(--tpl-border);
+  border-radius: var(--tpl-card-radius);
+  box-shadow: none;
+}
+
+[data-template="trust"] .recruit-job-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 信頼: NEWタグ */
+[data-template="trust"] .recruit-job-new-tag {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: 0;
+  font-size: 10px;
+  padding: 4px 12px;
+}
+
+/* 信頼: 特徴タグ */
+[data-template="trust"] .recruit-feature-tag {
+  background: transparent;
+  color: var(--tpl-text-sub);
+  border: 1px solid var(--tpl-border);
+  border-radius: 0;
+  font-size: 11px;
+}
+
+/* 信頼: 給与セクション */
+[data-template="trust"] .recruit-job-card-benefits {
+  border-top: 1px solid var(--tpl-border);
+  padding-top: 15px;
+}
+
+[data-template="trust"] .recruit-benefit-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--tpl-primary);
+}
+
+/* 信頼: 特典総額ハイライト */
+[data-template="trust"] .recruit-benefit-item.highlight {
+  background: var(--tpl-accent-light);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 10px;
+  border-radius: 2px;
+  margin-top: 5px;
+}
+
+[data-template="trust"] .recruit-benefit-item.highlight .recruit-benefit-label {
+  display: none;
+}
+
+/* 信頼: ボタン */
+[data-template="trust"] .recruit-job-card-btn {
+  background: var(--tpl-accent);
+  border-radius: var(--tpl-card-radius);
+}
+
+[data-template="trust"] .recruit-job-card-btn:hover {
+  background: #005a94;
+}
+
+/* 信頼: CTA */
+[data-template="trust"] .recruit-cta {
+  background: var(--tpl-primary);
+}
+
+[data-template="trust"] .recruit-cta-title {
+  font-weight: 700;
+}
+
+[data-template="trust"] .recruit-cta-button,
+[data-template="trust"] .fixed-cta-button {
+  background: var(--tpl-accent);
+  color: #fff;
+  border-radius: var(--tpl-card-radius);
+  font-weight: bold;
+}
+
+[data-template="trust"] .recruit-cta-button:hover,
+[data-template="trust"] .fixed-cta-button:hover {
+  background: #005a94;
+}
+
+/* ========================================
+   採用ページ編集モード
+   ======================================== */
+
+/* 編集モード時のbody調整 */
+.recruit-edit-mode {
+  margin-right: 380px;
+}
+
+.recruit-edit-mode .recruit-header {
+  right: 380px;
+}
+
+/* 編集パネル */
+.recruit-editor-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.recruit-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.recruit-editor-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.recruit-editor-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.recruit-editor-actions button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.recruit-editor-actions button:hover {
+  background: #e5e7eb;
+}
+
+/* プレビューモード切り替えボタン */
+.preview-mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  padding: 2px;
+  margin-right: 4px;
+}
+
+.btn-preview-mode {
+  width: 36px !important;
+  height: 28px !important;
+  font-size: 1rem;
+  background: transparent !important;
+  border-radius: 4px !important;
+  transition: all 0.2s;
+}
+
+.btn-preview-mode:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.btn-preview-mode.active {
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* タブナビゲーション */
+.recruit-editor-tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin-bottom: 8px;
+}
+
+.recruit-editor-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.recruit-editor-tab {
+  flex: 0 0 auto;
+  padding: 1rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.recruit-editor-tab:hover {
+  color: #374151;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.recruit-editor-tab.active {
+  color: var(--recruit-primary);
+  border-bottom-color: var(--recruit-primary);
+}
+
+/* エディターボディ */
+.recruit-editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+/* タブコンテンツ */
+.recruit-editor-tab-content {
+  display: none;
+}
+
+.recruit-editor-tab-content.active {
+  display: block;
+}
+
+/* エディターセクション */
+.editor-section {
+  margin-bottom: 1.75rem;
+}
+
+.editor-section:first-child {
+  margin-top: 0.5rem;
+}
+
+.editor-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* フォームグループ */
+.recruit-editor-panel .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.recruit-editor-panel .form-group label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+/* toggle-switchはflexレイアウトを維持 */
+.recruit-editor-panel .form-group label.toggle-switch {
+  display: flex;
+  font-size: inherit;
+  color: inherit;
+  margin-bottom: 0;
+}
+
+.recruit-editor-panel .form-group input[type="text"],
+.recruit-editor-panel .form-group input[type="url"],
+.recruit-editor-panel .form-group input[type="number"],
+.recruit-editor-panel .form-group input[type="email"],
+.recruit-editor-panel .form-group select,
+.recruit-editor-panel .form-group textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.recruit-editor-panel .form-group input[type="text"]:focus,
+.recruit-editor-panel .form-group input[type="url"]:focus,
+.recruit-editor-panel .form-group input[type="number"]:focus,
+.recruit-editor-panel .form-group input[type="email"]:focus,
+.recruit-editor-panel .form-group select:focus,
+.recruit-editor-panel .form-group textarea:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.recruit-editor-panel .form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* テンプレートグリッド（新） */
+.template-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.template-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.template-item:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.template-item.selected,
+.template-item:has(input:checked) {
+  border-color: var(--recruit-primary);
+  background: rgba(99, 102, 241, 0.05);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.template-item input[type="radio"] {
+  display: none;
+}
+
+.template-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.template-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.template-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.template-industries {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+  margin-top: 0.125rem;
+}
+
+/* レガシー互換: レイアウトスタイルグリッド */
+.layout-style-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.layout-style-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.layout-style-item:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.layout-style-item:has(input:checked) {
+  border-color: var(--recruit-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.layout-style-item input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--recruit-primary);
+}
+
+.layout-style-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.layout-style-desc {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+  margin-left: auto;
+}
+
+/* デザインパターングリッド */
+.design-pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.design-pattern-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.design-pattern-item:hover {
+  border-color: #d1d5db;
+}
+
+.design-pattern-item:has(input:checked) {
+  border-color: var(--recruit-primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.design-pattern-item input[type="radio"] {
+  display: none;
+}
+
+.design-pattern-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.design-pattern-preview.pattern-standard {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.design-pattern-preview.pattern-modern {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.design-pattern-preview.pattern-classic {
+  background: linear-gradient(135deg, #92400e, #78350f);
+}
+
+.design-pattern-preview.pattern-minimal {
+  background: linear-gradient(135deg, #374151, #1f2937);
+}
+
+.design-pattern-preview.pattern-colorful {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+}
+
+.design-pattern-preview.pattern-blue {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.design-pattern-preview.pattern-orange {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.design-pattern-name {
+  font-size: 0.6875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ヒーロー画像プリセット */
+.hero-image-presets {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.hero-preset-item {
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.hero-preset-item:hover {
+  border-color: #d1d5db;
+  transform: scale(1.02);
+}
+
+.hero-preset-item.selected {
+  border-color: var(--recruit-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.hero-preset-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ロゴプレビュー */
+.logo-preview-small {
+  width: 80px;
+  height: 80px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  background: #f9fafb;
+  overflow: hidden;
+}
+
+.logo-preview-small img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.logo-preview-small .logo-placeholder {
+  font-size: 0.6875rem;
+  color: #9ca3af;
+}
+
+/* 入力とボタンの組み合わせ */
+.recruit-editor-panel .input-with-button {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.recruit-editor-panel .input-with-button input {
+  flex: 1;
+}
+
+.recruit-editor-panel .btn-upload-small {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recruit-editor-panel .btn-upload-small:hover {
+  background: #f3f4f6;
+}
+
+.recruit-editor-panel .btn-upload-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* エディターフッター */
+.recruit-editor-footer {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.btn-save-recruit {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--recruit-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+
+.btn-save-recruit:hover {
+  background: var(--recruit-primary-dark);
+}
+
+.btn-save-recruit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* スピナー */
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.recruit-editor-panel .upload-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-top-color: var(--recruit-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* マージンユーティリティ */
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+/* ========================================
+   トグルスイッチ
+   ======================================== */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--recruit-primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::after {
+  transform: translateX(20px);
+}
+
+.toggle-label-text {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+/* ========================================
+   URL入力 (プレフィックス付き)
+   ======================================== */
+.input-with-prefix {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.input-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.input-with-prefix input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+.input-with-prefix input:focus {
+  outline: none;
+}
+
+/* ========================================
+   セレクトボックス
+   ======================================== */
+.recruit-editor-panel .form-group select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.recruit-editor-panel .form-group select:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+}
+
+/* ========================================
+   カスタムリンク
+   ======================================== */
+.custom-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.custom-link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-link-inputs {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.custom-link-inputs input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.custom-link-inputs input:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+}
+
+.btn-remove-link {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-remove-link:hover {
+  background: #fecaca;
+}
+
+.btn-add-link {
+  width: 100%;
+  padding: 0.5rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-link:hover {
+  background: #e5e7eb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+/* ========================================
+   SNSアイコン
+   ======================================== */
+.sns-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* ========================================
+   セクション説明文
+   ======================================== */
+.section-description {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* ========================================
+   フォームヒント
+   ======================================== */
+.form-hint {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  line-height: 1.4;
+}
+
+/* ========================================
+   カスタムセクション
+   ======================================== */
+.custom-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.custom-section-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.section-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-type-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.section-item-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.section-item-actions button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-move-section {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.btn-move-section:hover:not(:disabled) {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btn-move-section:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-remove-section {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-remove-section:hover {
+  background: #fecaca;
+}
+
+.section-item-content {
+  padding: 0.75rem;
+}
+
+.section-item-content input,
+.section-item-content textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  transition: border-color 0.2s;
+}
+
+.section-item-content input:focus,
+.section-item-content textarea:focus {
+  outline: none;
+  border-color: var(--recruit-primary);
+}
+
+.section-item-content textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* セクション追加ボタン */
+.add-section-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-add-section {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-section:hover {
+  background: #e5e7eb;
+  color: #374151;
+  border-color: #9ca3af;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .recruit-edit-mode {
+    margin-right: 0;
+  }
+
+  .recruit-edit-mode .recruit-header {
+    right: 0;
+  }
+
+  .recruit-editor-panel {
+    width: 100%;
+    height: 50vh;
+    top: auto;
+    bottom: 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .hero-image-presets {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .design-pattern-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ========================================
+   ヒーローボタンコンテナ
+   ======================================== */
+.recruit-hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0;
+}
+
+/* ========================================
+   動画ボタン
+   ======================================== */
+.recruit-video-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(5px);
+}
+
+.recruit-video-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+}
+
+.recruit-video-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.recruit-video-button-text {
+  font-size: 0.9375rem;
+}
+
+/* ========================================
+   動画モーダル
+   ======================================== */
+.recruit-video-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.recruit-video-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  animation: fadeIn 0.3s ease;
+}
+
+.recruit-video-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  animation: scaleIn 0.3s ease;
+}
+
+.recruit-video-modal-close {
+  position: absolute;
+  top: -50px;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recruit-video-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.recruit-video-modal-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 アスペクト比 */
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.recruit-video-modal-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .recruit-hero-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .recruit-video-button {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .recruit-video-modal-close {
+    top: -45px;
+    width: 36px;
+    height: 36px;
+    font-size: 1.25rem;
+  }
+}
+
+/* ========================================
+   編集モード: プレビューモード切り替え
+   ======================================== */
+
+/* モバイルプレビューモード */
+body.preview-mode-mobile .recruit-page-wrapper,
+body.preview-mode-mobile #recruit-content {
+  max-width: 375px;
+  margin: 0 auto;
+  box-shadow: 0 0 0 1px #e5e7eb, 0 8px 30px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  min-height: 100vh;
+}
+
+body.preview-mode-mobile .site-header {
+  max-width: 375px;
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+}
+
+body.preview-mode-mobile .fixed-cta-bar {
+  max-width: 375px;
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+}
+
+body.preview-mode-mobile .site-footer {
+  max-width: 375px;
+  margin: 0 auto;
+  padding: 40px 16px 100px;
+}
+
+/* フッターのモバイルプレビュー */
+body.preview-mode-mobile .site-footer-container {
+  padding: 0;
+}
+
+body.preview-mode-mobile .site-footer-company {
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+body.preview-mode-mobile .site-footer-links {
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 20px;
+}
+
+body.preview-mode-mobile .footer-custom-link {
+  font-size: 0.8125rem;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+  text-align: center;
+}
+
+body.preview-mode-mobile .footer-custom-link:last-child {
+  border-bottom: none;
+}
+
+body.preview-mode-mobile .site-footer-sns {
+  margin: 20px 0;
+  gap: 0.75rem;
+}
+
+body.preview-mode-mobile .footer-sns-link {
+  width: 36px;
+  height: 36px;
+  font-size: 0.875rem;
+}
+
+body.preview-mode-mobile .site-footer-copyright {
+  font-size: 0.75rem;
+  margin-top: 16px;
+}
+
+/* モバイルプレビュー時のコンテンツ調整 */
+body.preview-mode-mobile .recruit-hero {
+  min-height: 60vh;
+}
+
+body.preview-mode-mobile .recruit-hero-title {
+  font-size: 1.5rem;
+}
+
+body.preview-mode-mobile .recruit-hero-subtitle {
+  font-size: 0.875rem;
+}
+
+body.preview-mode-mobile .recruit-section-title {
+  font-size: 1.25rem;
+}
+
+body.preview-mode-mobile .recruit-jobs-grid {
+  grid-template-columns: 1fr;
+}
+
+body.preview-mode-mobile .recruit-job-card-content,
+body.preview-mode-mobile .recruit-job-card-body {
+  padding: 1rem;
+}
+
+body.preview-mode-mobile .recruit-job-card-title {
+  font-size: 1rem;
+}
+
+body.preview-mode-mobile .recruit-job-card-benefits {
+  padding: 0.5rem;
+}
+
+body.preview-mode-mobile .recruit-benefit-value {
+  font-size: 0.875rem;
+}
+
+body.preview-mode-mobile .recruit-job-card-btn {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+/* 働く環境セクションのモバイルプレビュー */
+body.preview-mode-mobile .recruit-photos-grid {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+body.preview-mode-mobile .recruit-photos-grid::-webkit-scrollbar {
+  display: none;
+}
+
+body.preview-mode-mobile .recruit-photos-item {
+  flex: 0 0 80%;
+  scroll-snap-align: center;
+}
+
+/* 私たちについてセクションのモバイルプレビュー */
+body.preview-mode-mobile .recruit-about-content {
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+body.preview-mode-mobile .recruit-about-image img {
+  max-width: 200px;
+}
+
+body.preview-mode-mobile .recruit-about-description {
+  font-size: 0.9rem;
+}
+
+/* 職種タブのモバイルプレビュー（横スクロール） */
+body.preview-mode-mobile .recruit-job-tabs {
+  gap: 0.375rem;
+  padding: 0.375rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+body.preview-mode-mobile .recruit-job-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+body.preview-mode-mobile .recruit-job-tab {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 求人一覧のモバイルプレビュー（横スクロール） */
+body.preview-mode-mobile .recruit-jobs-grid {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+body.preview-mode-mobile .recruit-jobs-grid::-webkit-scrollbar {
+  display: none;
+}
+
+body.preview-mode-mobile .recruit-job-card {
+  flex: 0 0 85%;
+  scroll-snap-align: center;
+  min-width: 280px;
+}
+
+/* モバイルプレビュー時はページネーションを非表示 */
+body.preview-mode-mobile .recruit-pagination {
+  display: none;
+}
+
+/* 編集モード + モバイルプレビュー時のレイアウト修正 */
+/* ヘッダーをプレビュー内に固定（エディタパネル380pxを考慮） */
+body.recruit-edit-mode.preview-mode-mobile .site-header,
+body.recruit-edit-mode.preview-mode-mobile .recruit-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 380px;
+  width: 375px;
+  max-width: 375px;
+  margin: 0 auto;
+  transform: none;
+  z-index: 100;
+}
+
+/* CTAバーをプレビュー内に固定 */
+body.recruit-edit-mode.preview-mode-mobile .fixed-cta-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 380px;
+  width: 375px;
+  max-width: 375px;
+  margin: 0 auto;
+  transform: none;
+  z-index: 100;
+}
+
+/* フッターをプレビュー内に収める */
+body.recruit-edit-mode.preview-mode-mobile .site-footer {
+  display: block !important;
+  width: 375px !important;
+  max-width: 375px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* PCプレビューモード（デフォルト） */
+body.preview-mode-pc .recruit-page-wrapper,
+body.preview-mode-pc #recruit-content {
+  max-width: none;
+}
+
+/* 編集パネルがある場合の調整 */
+body.recruit-edit-mode.preview-mode-mobile {
+  background: #f3f4f6;
+}
+
+/* プレビューコンテンツを375pxに制限（編集モード + モバイル） */
+body.recruit-edit-mode.preview-mode-mobile #recruit-content {
+  overflow: hidden !important;
+}
+
+/* body全体で375px外をマスク */
+body.recruit-edit-mode.preview-mode-mobile::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 380px;
+  width: calc((100vw - 380px - 375px) / 2);
+  background: #f3f4f6;
+  z-index: 50;
+  pointer-events: none;
+}
+
+body.recruit-edit-mode.preview-mode-mobile::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc((100vw - 380px - 375px) / 2);
+  background: #f3f4f6;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ========================================
+   埋込タブ: リンク・バナー取得
+   ======================================== */
+
+/* リンクボックス */
+.embed-link-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.embed-url-input {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 0.8125rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #374151;
+}
+
+.btn-copy-embed {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.btn-copy-embed:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* バナーリスト */
+.embed-banners-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.embed-banner-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.embed-banner-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #fff;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  min-height: 80px;
+}
+
+.embed-banner-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-copy-banner {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-copy-banner:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* バナースタイル: シンプルボタン */
+.banner-style-button a {
+  display: inline-block;
+  padding: 12px 24px;
+  background: #0ea5e9;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* バナースタイル: 大きめボタン */
+.banner-style-button-large a {
+  display: inline-block;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+}
+
+/* バナースタイル: カード型 */
+.banner-style-card .banner-card-inner {
+  display: block;
+  max-width: 260px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.banner-card-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.banner-card-title {
+  display: block;
+  font-size: 16px;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.banner-card-arrow {
+  display: block;
+  margin-top: 8px;
+  color: #0ea5e9;
+  font-size: 14px;
+}
+
+/* バナースタイル: 求人募集中 */
+.banner-style-recruiting .banner-recruiting-inner {
+  display: inline-block;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
+}
+
+.banner-recruiting-badge {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.banner-recruiting-title {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* バナースタイル: 特設ページ公開中 */
+.banner-style-special .banner-special-inner {
+  display: inline-block;
+  padding: 20px 32px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+.banner-special-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.banner-special-subtitle {
+  display: block;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+/* ========================================
+   テンプレート選択モーダル（編集モード用）
+   ======================================== */
+.template-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.template-modal {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.template-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--recruit-primary, #6366f1);
+  color: #fff;
+}
+
+.template-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.template-modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.template-modal-close:hover {
+  opacity: 1;
+}
+
+.template-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.template-modal-description {
+  margin: 0 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.template-list .template-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.template-list .template-item:hover {
+  border-color: var(--recruit-primary, #6366f1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.template-thumbnail {
+  flex-shrink: 0;
+  width: 100px;
+  height: 70px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.template-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.template-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-description {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.btn-add-template {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px solid var(--recruit-primary, #6366f1);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-template:hover {
+  background: var(--recruit-primary, #6366f1);
+  color: #fff;
+}
+
+.template-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.btn-template-cancel {
+  padding: 10px 32px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px solid var(--recruit-primary, #6366f1);
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-template-cancel:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* コンテンツ追加ボタン */
+.btn-open-template-selector {
+  width: 100%;
+  padding: 12px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 2px dashed var(--recruit-primary, #6366f1);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-open-template-selector:hover {
+  background: rgba(99, 102, 241, 0.05);
+  border-color: var(--recruit-primary, #6366f1);
+}
+
+/* ========================================
+   カスタムセクションフィールド（編集モード用）
+   ======================================== */
+#edit-custom-sections .custom-section-item {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+#edit-custom-sections .section-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ドラッグハンドル */
+#edit-custom-sections .section-drag-handle,
+.recruit-editor-panel .section-drag-handle,
+.custom-section-item .section-drag-handle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #6b7280;
+  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  user-select: none;
+  transition: color 0.2s;
+  letter-spacing: -3px;
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+#edit-custom-sections .section-drag-handle:hover,
+.recruit-editor-panel .section-drag-handle:hover,
+.custom-section-item .section-drag-handle:hover {
+  color: #374151;
+  background: #d1d5db;
+}
+
+#edit-custom-sections .section-drag-handle:active,
+.recruit-editor-panel .section-drag-handle:active,
+.custom-section-item .section-drag-handle:active {
+  cursor: grabbing;
+  color: var(--recruit-primary, #6366f1);
+  background: #c7d2fe;
+}
+
+#edit-custom-sections .section-type-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--recruit-primary, #6366f1);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ドラッグ状態 */
+#edit-custom-sections .custom-section-item.dragging {
+  opacity: 0.5;
+  border: 2px dashed var(--recruit-primary, #6366f1);
+}
+
+#edit-custom-sections .custom-section-item.drag-over {
+  border: 2px solid var(--recruit-primary, #6366f1);
+  background: #eef2ff;
+}
+
+#edit-custom-sections .section-item-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+#edit-custom-sections .section-item-actions button {
+  padding: 4px 8px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#edit-custom-sections .section-item-actions button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+#edit-custom-sections .section-item-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#edit-custom-sections .section-item-content {
+  padding: 12px;
+}
+
+/* セクションフィールド */
+.section-field {
+  margin-bottom: 12px;
+}
+
+.section-field:last-child {
+  margin-bottom: 0;
+}
+
+.section-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.section-field-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.section-field-input:focus {
+  outline: none;
+  border-color: var(--recruit-primary, #6366f1);
+}
+
+textarea.section-field-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.section-image-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  object-fit: contain;
+}
+
+/* 項目リスト（business用） */
+.section-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-item-entry {
+  position: relative;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.item-field {
+  margin-bottom: 8px;
+}
+
+.item-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.item-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.item-field-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.item-field-input:focus {
+  outline: none;
+  border-color: var(--recruit-primary, #6366f1);
+}
+
+.btn-remove-item {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #ef4444;
+}
+
+.btn-add-item {
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px dashed var(--recruit-primary, #6366f1);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-item:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* ギャラリー */
+.section-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.gallery-image-item {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.gallery-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-gallery-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.btn-add-gallery-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4/3;
+  background: #fff;
+  color: var(--recruit-primary, #6366f1);
+  border: 1px dashed var(--recruit-primary, #6366f1);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-gallery-image:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* ========================================
+   プレビューセクション並び替え（編集モード）
+   ======================================== */
+
+/* 編集モード時のセクション */
+.recruit-edit-mode .recruit-sortable-section {
+  position: relative;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.recruit-edit-mode .recruit-sortable-section:hover {
+  outline: 2px solid var(--recruit-primary, #6366f1);
+  outline-offset: -2px;
+}
+
+/* ドラッグハンドル */
+.recruit-section-drag-handle {
+  display: none;
+}
+
+.recruit-edit-mode .recruit-section-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: #fff;
+  color: #1f2937;
+  border: 2px solid #6366f1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: grab;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.recruit-edit-mode .recruit-section-drag-handle:hover {
+  background: #6366f1;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.recruit-edit-mode .recruit-section-drag-handle:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+  background: #4f46e5;
+  color: #fff;
+}
+
+.recruit-section-label {
+  font-weight: 700;
+}
+
+.recruit-section-drag-icon {
+  font-size: 16px;
+  color: #6366f1;
+}
+
+.recruit-edit-mode .recruit-section-drag-handle:hover .recruit-section-drag-icon,
+.recruit-edit-mode .recruit-section-drag-handle:active .recruit-section-drag-icon {
+  color: #fff;
+}
+
+/* ドラッグ中のスタイル */
+.recruit-edit-mode .recruit-section-dragging {
+  opacity: 0.5;
+  outline: 3px dashed var(--recruit-primary, #6366f1) !important;
+  outline-offset: -3px;
+}
+
+/* ヒーローセクションはz-indexが高いので調整 */
+.recruit-edit-mode .recruit-hero .recruit-section-drag-handle {
+  z-index: 1100;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .recruit-edit-mode .recruit-section-drag-handle {
+    top: 8px;
+    left: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
