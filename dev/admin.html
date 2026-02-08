@@ -16,18 +16,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/admin-BohDhCIU.js"></script>
+  <script type="module" crossorigin src="/dev/js/admin-DZiUt4ty.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/config-BRsu1Mb6.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-DlNuWP3J.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/config-pr2r6KvW.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-BB91om2o.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/firestore-service-DZVz1L2T.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/firestore-service-CkqluxkX.js">
   <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-Dwqb589-.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-B7QIHJno.js">
   <link rel="modulepreload" crossorigin href="/dev/js/modal-gG-182nw.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-BX3NZkE-.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/api-BRDAR-_B.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/core-3IvCbErT.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/job-edit-utils-DohcgKtj.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-cU_lMvcQ.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/api-IzJH-TGY.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/core-BWKjDW10.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/job-edit-utils-CG2H3x3O.js">
   <link rel="modulepreload" crossorigin href="/dev/js/index-CVa_OPUj.js">
 </head>
 <body class="admin-body">
@@ -48,8 +48,8 @@
       <!-- 会社ユーザーログインフォーム -->
       <form id="company-login-form" class="login-form">
         <div class="form-group">
-          <label for="company-username">ユーザーID</label>
-          <input type="text" id="company-username" name="username" required autocomplete="username" placeholder="例: toyota_user_xxxx">
+          <label for="company-email">メールアドレス / ユーザーID</label>
+          <input type="text" id="company-email" name="email" required autocomplete="username" placeholder="メールアドレス または ユーザーID">
         </div>
         <div class="form-group">
           <label for="company-password">パスワード</label>
@@ -57,6 +57,9 @@
         </div>
         <div id="company-login-error" class="login-error" style="display: none;"></div>
         <button type="submit" class="btn-login-submit">ログイン</button>
+        <div class="password-reset-link">
+          <a href="#" id="company-password-reset-link">パスワードをお忘れの方</a>
+        </div>
       </form>
 
       <!-- 管理者ログインフォーム -->
@@ -77,6 +80,17 @@
           Googleでログイン
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- 会社選択モーダル（複数会社所属ユーザー用） -->
+  <div id="company-select-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content company-select-modal">
+      <h2>会社を選択</h2>
+      <p class="modal-description">複数の会社に所属しています。ログインする会社を選択してください。</p>
+      <div id="company-select-list" class="company-select-list">
+        <!-- 動的に会社リストが挿入される -->
+      </div>
     </div>
   </div>
 
@@ -411,9 +425,9 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="cu-username">ユーザーID <span class="required">*</span></label>
-            <input type="text" id="cu-username" required placeholder="例: toyota_user" pattern="[a-z0-9_\\-]+" title="半角英数字、アンダースコア、ハイフンのみ">
-            <span class="form-description">半角英数字・アンダースコア・ハイフンのみ</span>
+            <label for="cu-email">メールアドレス <span class="required">*</span></label>
+            <input type="email" id="cu-email" required placeholder="例: user@example.com">
+            <span class="form-description">ログインに使用するメールアドレス</span>
           </div>
           <div class="form-group">
             <label for="cu-password">パスワード <span class="required">*</span></label>
@@ -421,12 +435,17 @@
               <input type="text" id="cu-password" required placeholder="パスワード" minlength="8">
               <button type="button" id="cu-generate-password" class="btn-small btn-secondary">自動生成</button>
             </div>
-            <span class="form-description">8文字以上推奨</span>
+            <span class="form-description">8文字以上必須</span>
           </div>
           <div class="form-group">
             <label for="cu-name">名前</label>
             <input type="text" id="cu-name" placeholder="例: 山田太郎">
             <span class="form-description">担当者名として表示されます</span>
+          </div>
+          <div class="form-group">
+            <label for="cu-username">表示用ユーザーID</label>
+            <input type="text" id="cu-username" placeholder="例: toyota_user" pattern="[a-z0-9_\\-]*" title="半角英数字、アンダースコア、ハイフンのみ">
+            <span class="form-description">空欄の場合はメールアドレスから自動生成されます</span>
           </div>
           <div class="form-group">
             <label for="cu-role">役割 <span class="required">*</span></label>
@@ -447,7 +466,7 @@
           <div id="cu-credentials-display" class="credentials-display" style="display: none;">
             <h4>発行されたログイン情報</h4>
             <div class="credentials-box">
-              <p><strong>ユーザーID:</strong> <code id="cu-issued-username"></code></p>
+              <p><strong>メールアドレス:</strong> <code id="cu-issued-email"></code></p>
               <p><strong>パスワード:</strong> <code id="cu-issued-password"></code></p>
             </div>
             <button type="button" id="cu-copy-credentials" class="btn-secondary">クリップボードにコピー</button>
