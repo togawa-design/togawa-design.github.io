@@ -793,6 +793,9 @@ function normalizeHeader(header) {
     // アクセス
     アクセス: "access",
     access: "access",
+    // 求人ロゴ
+    求人ロゴ: "jobLogo",
+    jobLogo: "jobLogo",
     // 動画設定
     動画表示: "showVideoButton",
     showVideoButton: "showVideoButton",
@@ -924,6 +927,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
       "salaryOther",
       "displayedFeatures",
       "access",
+      "jobLogo",
       "showVideoButton",
       "videoUrl",
     ];
@@ -940,6 +944,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
           salaryOther: "給与詳細（その他）",
           displayedFeatures: "表示する特徴",
           access: "アクセス",
+          jobLogo: "求人ロゴ",
           showVideoButton: "動画表示",
           videoUrl: "動画URL",
         };
@@ -976,6 +981,7 @@ function saveJob(companyDomain, jobData, rowIndex) {
         order: jobData.order || "",
         publishStartDate: jobData.publishStartDate || "",
         publishEndDate: jobData.publishEndDate || "",
+        jobLogo: jobData.jobLogo || "",
         showVideoButton: jobData.showVideoButton || "false",
         videoUrl: jobData.videoUrl || "",
       };
@@ -1246,6 +1252,68 @@ function updateRecruitSettings(settingsData) {
 function testGetRecruitSettings() {
   const result = getRecruitSettings("toyota");
   Logger.log(result);
+}
+
+// テスト用: 求人保存（実際の会社ドメインを使用）
+function testSaveJobWithRealDomain() {
+  // 最初の会社ドメインを取得
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(COMPANY_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  const DOMAIN_COL = 13; // M列
+  let companyDomain = null;
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][DOMAIN_COL - 1]) {
+      companyDomain = data[i][DOMAIN_COL - 1];
+      break;
+    }
+  }
+
+  if (!companyDomain) {
+    Logger.log("会社ドメインが見つかりません");
+    return;
+  }
+
+  Logger.log("テスト対象会社ドメイン: " + companyDomain);
+
+  // テスト用求人データ
+  const testJob = {
+    title: "テスト求人（削除してください）",
+    description: "テスト説明",
+    jobLogo: "https://example.com/test-logo.png",
+    isVisible: false
+  };
+
+  const result = saveJob(companyDomain, testJob);
+  Logger.log("保存結果: " + JSON.stringify(result));
+}
+
+// テスト用: 既存の求人を取得して確認
+function testGetJobsWithRealDomain() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(COMPANY_SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+
+  const DOMAIN_COL = 13;
+  let companyDomain = null;
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][DOMAIN_COL - 1]) {
+      companyDomain = data[i][DOMAIN_COL - 1];
+      break;
+    }
+  }
+
+  if (!companyDomain) {
+    Logger.log("会社ドメインが見つかりません");
+    return;
+  }
+
+  Logger.log("テスト対象会社ドメイン: " + companyDomain);
+  const result = getJobs(companyDomain);
+  Logger.log("求人一覧: " + JSON.stringify(result));
 }
 
 // ========================================
