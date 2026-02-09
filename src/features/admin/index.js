@@ -268,6 +268,13 @@ async function switchSection(sectionName, options = {}) {
   // 会社管理セクションに切り替えた場合はデータを読み込む
   if (sectionName === 'company-manage') {
     loadCompanyManageData();
+
+    // 動的読み込み対応: 新規会社登録ボタンのイベントハンドラー設定
+    const btnAddCompany = document.getElementById('btn-add-company');
+    if (btnAddCompany && !btnAddCompany.hasAttribute('data-listener-attached')) {
+      btnAddCompany.addEventListener('click', () => showCompanyModal());
+      btnAddCompany.setAttribute('data-listener-attached', 'true');
+    }
   }
 
   // LP設定セクションに切り替えた場合は会社リストを読み込む
@@ -324,6 +331,23 @@ async function switchSection(sectionName, options = {}) {
   // 会社ユーザー管理セクションに切り替えた場合はデータを読み込む
   if (sectionName === 'company-users') {
     loadCompanyUsersData();
+
+    // 動的読み込み対応: 新規ユーザー追加ボタンのイベントハンドラー設定
+    const btnAddCompanyUser = document.getElementById('btn-add-company-user');
+    if (btnAddCompanyUser && !btnAddCompanyUser.hasAttribute('data-listener-attached')) {
+      btnAddCompanyUser.addEventListener('click', () => showCompanyUserModal(null, '', ''));
+      btnAddCompanyUser.setAttribute('data-listener-attached', 'true');
+    }
+
+    // 動的読み込み対応: 一括発行ボタン
+    const btnBulkGenerate = document.getElementById('btn-bulk-generate');
+    if (btnBulkGenerate && !btnBulkGenerate.hasAttribute('data-listener-attached')) {
+      btnBulkGenerate.addEventListener('click', () => bulkGenerateUsers());
+      btnBulkGenerate.setAttribute('data-listener-attached', 'true');
+    }
+
+    // 動的読み込み対応: モーダル関連
+    setupCompanyUserModalEvents();
   }
 
   // 設定セクションに切り替えた場合
@@ -337,6 +361,9 @@ async function switchSection(sectionName, options = {}) {
       loadCompanyStaffData();
       setupCompanyStaffEvents();
     }
+
+    // 動的読み込み対応: フィード出力ボタンのイベントハンドラー設定
+    setupFeedDownloadButtons();
   }
 
   // Job-Manage埋め込みセクションに切り替えた場合は初期化
@@ -968,6 +995,151 @@ function bindEvents() {
     jmBackBtn.addEventListener('click', navigateBack);
   }
 
+}
+
+/**
+ * 会社ユーザー管理モーダルのイベントを動的にセットアップ
+ */
+function setupCompanyUserModalEvents() {
+  // モーダル閉じるボタン
+  const cuModalClose = document.getElementById('company-user-modal-close');
+  if (cuModalClose && !cuModalClose.hasAttribute('data-listener-attached')) {
+    cuModalClose.addEventListener('click', closeCompanyUserModal);
+    cuModalClose.setAttribute('data-listener-attached', 'true');
+  }
+
+  const cuModalCancel = document.getElementById('company-user-modal-cancel');
+  if (cuModalCancel && !cuModalCancel.hasAttribute('data-listener-attached')) {
+    cuModalCancel.addEventListener('click', closeCompanyUserModal);
+    cuModalCancel.setAttribute('data-listener-attached', 'true');
+  }
+
+  // モーダル保存フォーム
+  const cuForm = document.getElementById('company-user-form');
+  if (cuForm && !cuForm.hasAttribute('data-listener-attached')) {
+    cuForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveCompanyUser();
+    });
+    cuForm.setAttribute('data-listener-attached', 'true');
+  }
+
+  // ユーザー削除ボタン
+  const cuDelete = document.getElementById('company-user-delete');
+  if (cuDelete && !cuDelete.hasAttribute('data-listener-attached')) {
+    cuDelete.addEventListener('click', deleteCompanyUserHandler);
+    cuDelete.setAttribute('data-listener-attached', 'true');
+  }
+
+  // パスワード自動生成ボタン
+  const cuGeneratePassword = document.getElementById('cu-generate-password');
+  if (cuGeneratePassword && !cuGeneratePassword.hasAttribute('data-listener-attached')) {
+    cuGeneratePassword.addEventListener('click', () => {
+      const passwordInput = document.getElementById('cu-password');
+      if (passwordInput) {
+        passwordInput.value = generatePassword();
+      }
+    });
+    cuGeneratePassword.setAttribute('data-listener-attached', 'true');
+  }
+
+  // クリップボードコピーボタン
+  const cuCopyCredentials = document.getElementById('cu-copy-credentials');
+  if (cuCopyCredentials && !cuCopyCredentials.hasAttribute('data-listener-attached')) {
+    cuCopyCredentials.addEventListener('click', copyCredentialsToClipboard);
+    cuCopyCredentials.setAttribute('data-listener-attached', 'true');
+  }
+
+  // モーダル外クリックで閉じる
+  const cuModal = document.getElementById('company-user-modal');
+  if (cuModal && !cuModal.hasAttribute('data-listener-attached')) {
+    cuModal.addEventListener('click', (e) => {
+      if (e.target === cuModal) {
+        closeCompanyUserModal();
+      }
+    });
+    cuModal.setAttribute('data-listener-attached', 'true');
+  }
+}
+
+/**
+ * フィード出力ボタンのイベントを動的にセットアップ
+ */
+function setupFeedDownloadButtons() {
+  const feedStatus = document.getElementById('feed-status');
+  const showFeedLoading = () => {
+    if (feedStatus) {
+      feedStatus.style.display = 'block';
+      feedStatus.textContent = 'フィード生成中...';
+    }
+  };
+  const hideFeedLoading = () => {
+    if (feedStatus) feedStatus.style.display = 'none';
+  };
+
+  const btnDownloadIndeed = document.getElementById('btn-download-indeed');
+  if (btnDownloadIndeed && !btnDownloadIndeed.hasAttribute('data-listener-attached')) {
+    btnDownloadIndeed.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadIndeedXml();
+        alert('Indeed XMLフィードをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+    btnDownloadIndeed.setAttribute('data-listener-attached', 'true');
+  }
+
+  const btnDownloadGoogle = document.getElementById('btn-download-google');
+  if (btnDownloadGoogle && !btnDownloadGoogle.hasAttribute('data-listener-attached')) {
+    btnDownloadGoogle.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadGoogleJsonLd();
+        alert('Google JSON-LDをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+    btnDownloadGoogle.setAttribute('data-listener-attached', 'true');
+  }
+
+  const btnDownloadJobbox = document.getElementById('btn-download-jobbox');
+  if (btnDownloadJobbox && !btnDownloadJobbox.hasAttribute('data-listener-attached')) {
+    btnDownloadJobbox.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadJobBoxXml();
+        alert('求人ボックスXMLをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+    btnDownloadJobbox.setAttribute('data-listener-attached', 'true');
+  }
+
+  const btnDownloadCsv = document.getElementById('btn-download-csv');
+  if (btnDownloadCsv && !btnDownloadCsv.hasAttribute('data-listener-attached')) {
+    btnDownloadCsv.addEventListener('click', async () => {
+      try {
+        showFeedLoading();
+        await downloadCsv();
+        alert('CSVをダウンロードしました');
+      } catch (error) {
+        alert('フィード生成に失敗しました: ' + error.message);
+      } finally {
+        hideFeedLoading();
+      }
+    });
+    btnDownloadCsv.setAttribute('data-listener-attached', 'true');
+  }
 }
 
 // 応募者管理用の会社グリッドを表示
