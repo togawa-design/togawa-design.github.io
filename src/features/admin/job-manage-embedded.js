@@ -1098,7 +1098,17 @@ export function switchSubsection(tab) {
   }
 
   // セクション固有の初期化
-  if (tab === 'applicants') {
+  if (tab === 'jobs') {
+    // 求人データが未読み込みの場合は読み込む
+    if (jobsCache.length === 0) {
+      loadJobsData();
+    } else {
+      renderJobsTable();
+    }
+  } else if (tab === 'analytics') {
+    // 日付ピッカーを初期化
+    initJmDateRangePicker();
+  } else if (tab === 'applicants') {
     initApplicantsSection(companyDomain, companyName, 'jm-');
   } else if (tab === 'recruit') {
     initRecruitSettings(companyDomain);
@@ -1231,6 +1241,134 @@ function setupEventListeners() {
 
   // 並び替えモード
   setupSortModeEvents();
+
+  // アナリティクス関連
+  document.getElementById('jm-btn-load-analytics')?.addEventListener('click', loadJmAnalyticsData);
+  initJmDateRangePicker();
+}
+
+/**
+ * アナリティクスデータを読み込み
+ */
+async function loadJmAnalyticsData() {
+  const btn = document.getElementById('jm-btn-load-analytics');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '読み込み中...';
+  }
+
+  try {
+    const startInput = document.getElementById('jm-analytics-start-date');
+    const endInput = document.getElementById('jm-analytics-end-date');
+
+    const startDate = startInput?.value || '';
+    const endDate = endInput?.value || '';
+
+    if (!startDate || !endDate) {
+      showToast('期間を選択してください', 'error');
+      return;
+    }
+
+    // 期間を日数に変換
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Cloud Functions APIからデータを取得
+    const PAGE_ANALYTICS_API = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getPageAnalytics';
+
+    const params = new URLSearchParams({
+      type: 'overview',
+      days: days.toString(),
+      company_domain: companyDomain
+    });
+
+    const response = await fetch(`${PAGE_ANALYTICS_API}?${params}`);
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      const data = result.data;
+
+      // 概要データを更新
+      document.getElementById('jm-analytics-pv').textContent =
+        (data.totalPageViews || 0).toLocaleString();
+      document.getElementById('jm-analytics-users').textContent =
+        (data.totalUniqueVisitors || 0).toLocaleString();
+      document.getElementById('jm-analytics-pages-per-session').textContent =
+        data.totalUniqueVisitors > 0
+          ? (data.totalPageViews / data.totalUniqueVisitors).toFixed(1)
+          : '-';
+      document.getElementById('jm-analytics-avg-time').textContent =
+        data.avgTimeOnPage ? formatJmDuration(data.avgTimeOnPage) : '-';
+
+      // 求人別データを取得
+      const lpParams = new URLSearchParams({
+        type: 'lp',
+        days: days.toString(),
+        company_domain: companyDomain
+      });
+
+      const lpResponse = await fetch(`${PAGE_ANALYTICS_API}?${lpParams}`);
+      const lpResult = await lpResponse.json();
+
+      if (lpResult.success && lpResult.data) {
+        renderJmJobAnalyticsTable(lpResult.data);
+      }
+
+      showToast('データを取得しました');
+    } else {
+      // データがない場合
+      document.getElementById('jm-analytics-pv').textContent = '0';
+      document.getElementById('jm-analytics-users').textContent = '0';
+      document.getElementById('jm-analytics-pages-per-session').textContent = '-';
+      document.getElementById('jm-analytics-avg-time').textContent = '-';
+      renderJmJobAnalyticsTable([]);
+      showToast('データがありません');
+    }
+
+  } catch (error) {
+    console.error('[JobManageEmbedded] Analytics load error:', error);
+    showToast('データの取得に失敗しました', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'データ取得';
+    }
+  }
+}
+
+/**
+ * 秒数を時間表示にフォーマット
+ */
+function formatJmDuration(seconds) {
+  if (!seconds || isNaN(seconds)) return '-';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`;
+}
+
+/**
+ * 求人別アナリティクステーブルを描画
+ */
+function renderJmJobAnalyticsTable(data) {
+  const tbody = document.querySelector('#jm-analytics .analytics-table tbody');
+  if (!tbody) return;
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="no-data">データがありません</td></tr>';
+    return;
+  }
+
+  // APIからの配列形式に対応
+  tbody.innerHTML = data.map((lp, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${escapeHtml(lp.jobTitle || lp.jobId || '-')}</td>
+      <td>${(lp.pageViews || 0).toLocaleString()}</td>
+      <td>${(lp.ctaClicks || 0).toLocaleString()}</td>
+      <td>${lp.cvr || '0.0'}%</td>
+    </tr>
+  `).join('');
 }
 
 /**
@@ -1760,20 +1898,28 @@ async function showJmInterviewModal() {
     if (jmAssigneesCache.length === 0) {
       try {
         const db = firebase.firestore();
-        const snapshot = await db.collection('company_users')
-          .where('companyDomain', '==', companyDomain)
-          .where('isActive', '==', true)
-          .get();
 
-        jmAssigneesCache = [];
-        snapshot.forEach(doc => {
-          jmAssigneesCache.push({
-            id: doc.id,
-            ...doc.data()
+        // companyDomainが未設定の場合はスキップ
+        if (!companyDomain) {
+          console.warn('[showJmInterviewModal] companyDomain is not set, skipping assignees load');
+        } else {
+          const snapshot = await db.collection('company_users')
+            .where('companyDomain', '==', companyDomain)
+            .where('isActive', '==', true)
+            .get();
+
+          jmAssigneesCache = [];
+          snapshot.forEach(doc => {
+            jmAssigneesCache.push({
+              id: doc.id,
+              ...doc.data()
+            });
           });
-        });
+        }
       } catch (error) {
         console.error('Failed to load assignees:', error);
+        // エラー時は空の配列を使用（UIはそのまま続行）
+        jmAssigneesCache = [];
       }
     }
   }

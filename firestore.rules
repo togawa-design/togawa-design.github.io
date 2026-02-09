@@ -37,8 +37,8 @@ service cloud.firestore {
 
     // ===== company_users コレクション - 会社ユーザー =====
     match /company_users/{userId} {
-      // 管理者または自分自身のデータのみ読み取り可能
-      allow read: if isAdmin() || request.auth.uid == userId;
+      // 認証済みユーザーは読み取り可能（担当者一覧表示用）
+      allow read: if isAuthenticated();
       // 管理者のみ書き込み可能（ユーザー作成はCloud Functions経由）
       allow write: if isAdmin();
     }
@@ -153,6 +153,12 @@ service cloud.firestore {
     match /recruit_page_settings/{companyDomain} {
       allow read: if true;
       allow write: if hasCompanyAccess(companyDomain);
+    }
+
+    // ===== settings コレクション - 担当者設定など =====
+    match /settings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
 
     // 注意: 上記にマッチしないドキュメントへのアクセスは拒否されます
