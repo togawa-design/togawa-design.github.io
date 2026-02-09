@@ -1,5 +1,178 @@
 # 管理画面システム構成
 
+## システム構成図
+
+```mermaid
+flowchart TB
+    subgraph Users["ユーザー"]
+        Admin["👤 管理者<br/>(admin)"]
+        Company["👥 会社ユーザー<br/>(company)"]
+        EndUser["🧑‍💼 求職者"]
+    end
+
+    subgraph Frontend["フロントエンド (GitHub Pages)"]
+        subgraph AdminPages["管理系ページ"]
+            AdminHTML["admin.html<br/>管理者ダッシュボード"]
+            JobManageHTML["job-manage.html<br/>求人管理"]
+            ApplicantsHTML["applicants.html<br/>応募者管理"]
+        end
+
+        subgraph PublicPages["公開ページ"]
+            IndexHTML["index.html<br/>トップページ"]
+            JobsHTML["jobs.html<br/>求人一覧"]
+            JobDetailHTML["job-detail.html<br/>求人詳細"]
+            CompanyHTML["company.html<br/>会社詳細"]
+            LPHTML["lp.html<br/>ランディングページ"]
+            RecruitHTML["company-recruit.html<br/>採用ページ"]
+            MypageHTML["mypage.html<br/>マイページ"]
+        end
+    end
+
+    subgraph Build["ビルド環境"]
+        Vite["⚡ Vite"]
+        GHPages["📦 gh-pages"]
+    end
+
+    subgraph Firebase["Firebase"]
+        Auth["🔐 Firebase Auth<br/>認証"]
+        Firestore["🗄️ Firestore<br/>データベース"]
+        Storage["📁 Firebase Storage<br/>画像保存"]
+        Functions["⚙️ Cloud Functions<br/>メール送信"]
+    end
+
+    subgraph External["外部サービス"]
+        Indeed["Indeed<br/>求人フィード"]
+        GoogleJobs["Google Jobs<br/>求人フィード"]
+        GAS["Google Apps Script<br/>スプレッドシート連携"]
+    end
+
+    Admin --> AdminHTML
+    Company --> AdminHTML
+    Company --> JobManageHTML
+    EndUser --> PublicPages
+
+    AdminPages --> Auth
+    AdminPages --> Firestore
+    AdminPages --> Storage
+
+    PublicPages --> Firestore
+    PublicPages --> Auth
+
+    Functions --> |メール通知| EndUser
+    Vite --> |ビルド| GHPages
+    GHPages --> |デプロイ| Frontend
+
+    AdminPages --> |フィード生成| Indeed
+    AdminPages --> |フィード生成| GoogleJobs
+    Firestore <--> GAS
+```
+
+## データフロー図
+
+```mermaid
+flowchart LR
+    subgraph Input["入力"]
+        A1["管理者入力"]
+        A2["会社ユーザー入力"]
+        A3["求職者応募"]
+    end
+
+    subgraph Processing["処理"]
+        B1["認証処理<br/>auth.js"]
+        B2["データ操作<br/>firestore-service.js"]
+        B3["画像処理<br/>image-uploader.js"]
+    end
+
+    subgraph Storage["保存"]
+        C1["Firestore<br/>companies, jobs, applicants"]
+        C2["Firebase Storage<br/>画像ファイル"]
+        C3["sessionStorage<br/>セッション情報"]
+    end
+
+    subgraph Output["出力"]
+        D1["求人ページ表示"]
+        D2["管理画面表示"]
+        D3["求人フィード<br/>Indeed/Google Jobs"]
+        D4["メール通知"]
+    end
+
+    A1 --> B1 --> C3
+    A2 --> B1 --> C3
+    A3 --> B2 --> C1
+
+    B2 --> C1
+    B3 --> C2
+
+    C1 --> D1
+    C1 --> D2
+    C1 --> D3
+    C1 --> D4
+```
+
+## Firestoreコレクション構成
+
+```mermaid
+erDiagram
+    companies ||--o{ jobs : "has"
+    companies ||--o{ company_users : "has"
+    companies ||--o{ lp_settings : "has"
+    companies ||--o{ recruit_page_settings : "has"
+    jobs ||--o{ applicants : "receives"
+    admin_users ||--|| firebase_auth : "uses"
+
+    companies {
+        string domain PK
+        string name
+        string logo
+        object benefits
+        timestamp createdAt
+    }
+
+    jobs {
+        string id PK
+        string companyDomain FK
+        string title
+        string status
+        object salary
+        array areas
+        timestamp createdAt
+    }
+
+    applicants {
+        string id PK
+        string jobId FK
+        string name
+        string email
+        string status
+        timestamp appliedAt
+    }
+
+    company_users {
+        string username PK
+        string companyDomain FK
+        string password
+        boolean isActive
+    }
+
+    admin_users {
+        string uid PK
+        string email
+        string role
+    }
+
+    lp_settings {
+        string companyDomain PK
+        array sections
+        object theme
+    }
+
+    recruit_page_settings {
+        string companyDomain PK
+        object header
+        array sections
+    }
+```
+
 ## 概要
 
 本システムには2種類のユーザータイプが存在し、それぞれ異なる権限とアクセス範囲を持ちます。
