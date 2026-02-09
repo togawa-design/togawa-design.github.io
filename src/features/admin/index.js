@@ -331,6 +331,8 @@ async function switchSection(sectionName, options = {}) {
     const { isAdmin } = await import('./auth.js');
     if (isAdmin()) {
       loadAdminUsersData();
+      // 動的読み込み対応: 管理者追加ボタンのイベントハンドラー設定
+      setupAdminUserManagement();
     } else {
       loadCompanyStaffData();
       setupCompanyStaffEvents();
@@ -1479,7 +1481,8 @@ function copyCredentialsToClipboard() {
 // 管理者ユーザー管理のセットアップ
 function setupAdminUserManagement() {
   const addAdminBtn = document.getElementById('add-admin-user');
-  if (addAdminBtn) {
+  if (addAdminBtn && !addAdminBtn.hasAttribute('data-listener-attached')) {
+    addAdminBtn.setAttribute('data-listener-attached', 'true');
     addAdminBtn.addEventListener('click', async () => {
       const email = document.getElementById('admin-email')?.value?.trim();
       if (!email) {
