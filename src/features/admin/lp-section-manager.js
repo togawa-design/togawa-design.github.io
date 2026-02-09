@@ -1228,15 +1228,80 @@ function renderCustomEditor(section) {
   const variant = section.layout?.variant || 'text-only';
   const hasButton = !!section.data?.button;
 
+  // レイアウトプレビューのHTML生成
+  const layoutPreviews = {
+    'text-only': `
+      <div class="layout-preview text-only">
+        <div class="preview-text-block">
+          <div class="preview-line"></div>
+          <div class="preview-line medium"></div>
+          <div class="preview-line short"></div>
+        </div>
+      </div>
+    `,
+    'image-only': `
+      <div class="layout-preview image-only">
+        <div class="preview-image-block">
+          <span class="preview-image-icon">🖼️</span>
+        </div>
+      </div>
+    `,
+    'text-left-image-right': `
+      <div class="layout-preview text-left-image-right">
+        <div class="preview-text-block">
+          <div class="preview-line"></div>
+          <div class="preview-line medium"></div>
+          <div class="preview-line short"></div>
+        </div>
+        <div class="preview-image-block"></div>
+      </div>
+    `,
+    'text-right-image-left': `
+      <div class="layout-preview text-right-image-left">
+        <div class="preview-text-block">
+          <div class="preview-line"></div>
+          <div class="preview-line medium"></div>
+          <div class="preview-line short"></div>
+        </div>
+        <div class="preview-image-block"></div>
+      </div>
+    `,
+    'centered-with-button': `
+      <div class="layout-preview centered-with-button">
+        <div class="preview-text-block">
+          <div class="preview-line"></div>
+          <div class="preview-line short"></div>
+        </div>
+        <div class="preview-button"></div>
+      </div>
+    `,
+    'full-width-banner': `
+      <div class="layout-preview full-width-banner">
+        <div class="preview-overlay">
+          <div class="preview-line" style="width:50%"></div>
+          <div class="preview-line short" style="width:30%"></div>
+        </div>
+      </div>
+    `
+  };
+
   return `
     <div class="editor-section">
       <h4>レイアウト</h4>
-      <div class="variant-selector">
+      <p class="form-hint" style="margin-bottom:12px;">表示形式を選択してください</p>
+      <div class="layout-card-selector">
         ${Object.entries(CUSTOM_VARIANTS).map(([key, config]) => `
-          <label class="variant-option ${variant === key ? 'selected' : ''}">
+          <label class="layout-card">
             <input type="radio" name="custom-variant" value="${key}" ${variant === key ? 'checked' : ''}>
-            <span class="variant-icon">${config.icon}</span>
-            <span class="variant-name">${config.name}</span>
+            <div class="layout-card-content">
+              ${layoutPreviews[key] || ''}
+              <div class="layout-card-label">
+                <span class="layout-card-name">${config.name}</span>
+                <span class="layout-check">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                </span>
+              </div>
+            </div>
           </label>
         `).join('')}
       </div>
@@ -1246,36 +1311,69 @@ function renderCustomEditor(section) {
       <h4>コンテンツ</h4>
       <div class="form-group">
         <label for="editor-custom-title">タイトル</label>
-        <input type="text" id="editor-custom-title" value="${escapeHtml(section.data?.title || '')}">
+        <input type="text" id="editor-custom-title" value="${escapeHtml(section.data?.title || '')}" placeholder="セクションのタイトルを入力">
       </div>
       <div class="form-group">
-        <label for="editor-custom-content">本文</label>
-        <div id="editor-custom-content" class="rich-editor" contenteditable="true">${section.data?.content || ''}</div>
-        <p class="form-hint">**太字** や *斜体* が使えます</p>
+        <label>本文</label>
+        <div class="rich-editor-container">
+          <div class="rich-editor-toolbar">
+            <button type="button" class="toolbar-btn" data-command="bold" title="太字 (Ctrl+B)">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/></svg>
+            </button>
+            <button type="button" class="toolbar-btn" data-command="italic" title="斜体 (Ctrl+I)">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"/></svg>
+            </button>
+            <span class="toolbar-divider"></span>
+            <button type="button" class="toolbar-btn" data-command="removeFormat" title="書式をクリア">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.27 5L2 6.27l6.97 6.97L6.5 19h3l1.57-3.66L16.73 21 18 19.73 3.55 5.27 3.27 5zM6 5v.18L8.82 8h2.4l-.72 1.68 2.1 2.1L14.21 8H20V5H6z"/></svg>
+            </button>
+            <span class="toolbar-hint">選択してボタンをクリック</span>
+          </div>
+          <div id="editor-custom-content" class="rich-editor-content" contenteditable="true" data-placeholder="本文を入力してください...">${section.data?.content || ''}</div>
+        </div>
       </div>
-      <div class="form-group" id="custom-image-field">
-        <label>画像</label>
+    </div>
+
+    <div class="editor-section">
+      <div class="image-section-card" id="custom-image-field">
+        <div class="section-label">
+          <span class="section-label-icon">🖼️</span>
+          <span>画像</span>
+        </div>
         <div id="custom-image-uploader-container" data-current-url="${escapeHtml(section.data?.image || '')}"></div>
         <input type="hidden" id="editor-custom-image" value="${escapeHtml(section.data?.image || '')}">
       </div>
     </div>
 
     <div class="editor-section">
-      <h4>ボタン</h4>
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="editor-custom-has-button" ${hasButton ? 'checked' : ''}>
-          ボタンを追加
-        </label>
-      </div>
-      <div id="button-fields" style="${hasButton ? '' : 'display:none'}">
-        <div class="form-group">
-          <label for="editor-button-text">ボタンテキスト</label>
-          <input type="text" id="editor-button-text" value="${escapeHtml(section.data?.button?.text || '')}">
+      <div class="button-section-card">
+        <div class="section-label">
+          <span class="section-label-icon">🔘</span>
+          <span>ボタン</span>
         </div>
-        <div class="form-group">
-          <label for="editor-button-url">リンク先URL</label>
-          <input type="text" id="editor-button-url" value="${escapeHtml(section.data?.button?.url || '#')}">
+        <div class="button-toggle-row">
+          <div class="toggle-label">
+            <span class="toggle-label-icon">👆</span>
+            <span>ボタンを追加</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="editor-custom-has-button" ${hasButton ? 'checked' : ''}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div id="button-fields" class="button-fields" style="${hasButton ? '' : 'display:none'}">
+          <div class="form-group">
+            <label for="editor-button-text">ボタンテキスト</label>
+            <input type="text" id="editor-button-text" value="${escapeHtml(section.data?.button?.text || '')}" placeholder="例: 詳しく見る">
+          </div>
+          <div class="form-group">
+            <label for="editor-button-url">リンク先URL</label>
+            <input type="text" id="editor-button-url" value="${escapeHtml(section.data?.button?.url || '#')}" placeholder="https://...">
+          </div>
+          <div class="button-preview" id="button-preview">
+            <div class="button-preview-label">プレビュー</div>
+            <span class="preview-btn">${escapeHtml(section.data?.button?.text || 'ボタン')}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1470,7 +1568,14 @@ function renderCarouselEditor(section) {
     </div>
 
     <div class="editor-section">
-      <h4>画像一覧</h4>
+      <h4>画像一覧 ${images.length > 0 ? `<span style="font-weight:normal;color:#6b7280;font-size:13px;">(${images.length}枚)</span>` : ''}</h4>
+      ${images.length === 0 ? `
+        <div class="carousel-empty-state">
+          <div class="carousel-empty-icon">🖼️</div>
+          <div class="carousel-empty-title">画像がありません</div>
+          <div class="carousel-empty-desc">下のボタンから画像を追加してください</div>
+        </div>
+      ` : ''}
       <div id="editor-carousel-list" class="editor-items-list carousel-items">
         ${images.map((img, i) => renderCarouselItem(img, i)).join('')}
       </div>
@@ -1493,7 +1598,8 @@ function renderCarouselItem(image, index) {
     <div class="editor-item carousel-item" data-index="${index}">
       <div class="editor-item-header">
         <span class="drag-handle">⋮⋮</span>
-        <span>画像 ${index + 1}</span>
+        <span class="item-number">${index + 1}</span>
+        <span style="flex:1;">画像 ${index + 1}</span>
         <button type="button" class="btn-remove-item" data-index="${index}">×</button>
       </div>
       <div class="form-group">
@@ -1776,6 +1882,31 @@ function setupEditorEvents() {
       }
     });
   }
+
+  // ボタンテキストのプレビュー更新
+  const buttonTextInput = document.getElementById('editor-button-text');
+  if (buttonTextInput) {
+    buttonTextInput.addEventListener('input', () => {
+      const previewBtn = document.querySelector('#button-preview .preview-btn');
+      if (previewBtn) {
+        previewBtn.textContent = buttonTextInput.value || 'ボタン';
+      }
+    });
+  }
+
+  // リッチエディタツールバー
+  document.querySelectorAll('.rich-editor-toolbar .toolbar-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const command = btn.dataset.command;
+      if (command) {
+        document.execCommand(command, false, null);
+        // フォーカスをエディタに戻す
+        const editor = document.getElementById('editor-custom-content');
+        if (editor) editor.focus();
+      }
+    });
+  });
 
   // バリエーション選択
   document.querySelectorAll('input[name="custom-variant"]').forEach(radio => {

@@ -828,6 +828,109 @@ function getLPCustomColors() {
 // リアルタイムプレビュー初期化フラグ
 let lpLivePreviewInitialized = false;
 
+// フォームフィールドとプレビューセクションのマッピング
+const fieldToSectionMap = {
+  'lp-hero-title': '.lp-hero',
+  'lp-hero-subtitle': '.lp-hero',
+  'lp-hero-image': '.lp-hero',
+  'lp-cta-text': '.lp-apply',
+  'lp-video-url': '.lp-hero',
+  'lp-show-video-button': '.lp-hero',
+  'lp-custom-primary': '.lp-hero',
+  'lp-custom-accent': '.lp-hero',
+  'lp-custom-bg': '.lp-hero',
+  'lp-custom-text': '.lp-hero'
+};
+
+/**
+ * プレビューを指定セクションにスクロール
+ * @param {string} selector - スクロール先のCSSセレクタ
+ */
+function scrollPreviewToSection(selector) {
+  const iframe = document.getElementById('lp-preview-frame');
+  if (!iframe || !iframe.contentDocument) return;
+
+  try {
+    const targetEl = iframe.contentDocument.querySelector(selector);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (e) {
+    // クロスオリジンエラーの場合は無視
+  }
+}
+
+/**
+ * フォーカス時の自動スクロールをセットアップ
+ */
+function setupPreviewAutoScroll() {
+  // マップに定義されたフィールド
+  Object.entries(fieldToSectionMap).forEach(([fieldId, selector]) => {
+    const el = document.getElementById(fieldId);
+    if (el) {
+      el.addEventListener('focus', () => scrollPreviewToSection(selector));
+    }
+  });
+
+  // ポイント入力フィールド（動的に生成されるため委譲）
+  const pointsContainer = document.getElementById('point-inputs-container');
+  if (pointsContainer) {
+    pointsContainer.addEventListener('focusin', (e) => {
+      if (e.target.matches('.point-title, .point-desc')) {
+        scrollPreviewToSection('.lp-points');
+      }
+    });
+  }
+
+  // FAQ入力フィールド（動的に生成されるため委譲）
+  const faqList = document.getElementById('faq-list');
+  if (faqList) {
+    faqList.addEventListener('focusin', (e) => {
+      if (e.target.matches('.faq-question-input, .faq-answer-input')) {
+        scrollPreviewToSection('.lp-faq');
+      }
+    });
+  }
+
+  // カスタムセクション（動的に生成されるため委譲）
+  const customSectionsList = document.getElementById('lp-custom-sections-list');
+  if (customSectionsList) {
+    customSectionsList.addEventListener('focusin', (e) => {
+      const sectionItem = e.target.closest('.custom-section-item');
+      if (sectionItem) {
+        const sectionId = sectionItem.dataset.sectionId;
+        if (sectionId) {
+          scrollPreviewToSection(`[data-section-id="${sectionId}"], .lp-custom-section`);
+        }
+      }
+    });
+  }
+
+  // セクション管理リストのクリック/フォーカス
+  const sectionsList = document.getElementById('lp-sections-list');
+  if (sectionsList) {
+    sectionsList.addEventListener('click', (e) => {
+      const sectionItem = e.target.closest('.section-item');
+      if (sectionItem) {
+        const sectionType = sectionItem.dataset.sectionType;
+        const sectionMap = {
+          'hero': '.lp-hero',
+          'heroCta': '.lp-hero-cta',
+          'points': '.lp-points',
+          'jobs': '.lp-jobs',
+          'details': '.lp-details',
+          'faq': '.lp-faq',
+          'apply': '.lp-apply-section'
+        };
+        const selector = sectionMap[sectionType];
+        if (selector) {
+          scrollPreviewToSection(selector);
+        }
+      }
+    });
+  }
+}
+
 /**
  * リアルタイムプレビューのセットアップ
  */
@@ -889,6 +992,9 @@ function setupLPLivePreview() {
 
   // カラーピッカーをセットアップ
   setupLPColorPickers();
+
+  // 自動スクロールをセットアップ
+  setupPreviewAutoScroll();
 
   lpLivePreviewInitialized = true;
 
@@ -1864,7 +1970,6 @@ function getCurrentLPSettings() {
 
   // v2セクションデータを取得
   const lpContent = getCurrentLPContent();
-  const v2Sections = lpContent?.sections || [];
 
   const settings = {
     designPattern: document.querySelector('input[name="design-pattern"]:checked')?.value || 'modern',
@@ -1881,8 +1986,8 @@ function getCurrentLPSettings() {
     customAccent: customColors.accent,
     customBg: customColors.bg,
     customText: customColors.text,
-    // v2セクションデータ
-    v2Sections: v2Sections
+    // v2セクションデータ（LPRendererが使用）
+    lpContent: lpContent
   };
 
   // ポイントデータを設定に追加
