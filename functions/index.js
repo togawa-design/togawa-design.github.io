@@ -3270,6 +3270,139 @@ functions.http('createCompanyUser', (req, res) => {
 });
 
 /**
+ * 会社スタッフを作成（会社ユーザーが自社スタッフを追加）
+ * Firebase Auth でアカウントを作成し、Firestore にメタ情報を保存
+ */
+functions.http('createCompanyStaff', (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method === 'OPTIONS') return res.status(204).send('');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    try {
+      // 会社ユーザー認証チェック
+      const decodedToken = await verifyToken(req);
+      if (!decodedToken) {
+        return res.status(401).json({ success: false, error: '認証が必要です' });
+      }
+
+      const callerUid = decodedToken.uid;
+      const db = admin.firestore();
+
+      // 呼び出し元ユーザーの会社情報を取得
+      const callerDoc = await db.collection('company_users').doc(callerUid).get();
+      let callerCompanyDomain = null;
+
+      if (callerDoc.exists) {
+        callerCompanyDomain = callerDoc.data().companyDomain;
+      } else {
+        // UID以外のドキュメントを検索（email で検索）
+        const callerSnapshot = await db.collection('company_users')
+          .where('email', '==', decodedToken.email)
+          .limit(1)
+          .get();
+
+        if (!callerSnapshot.empty) {
+          callerCompanyDomain = callerSnapshot.docs[0].data().companyDomain;
+        }
+      }
+
+      if (!callerCompanyDomain) {
+        return res.status(403).json({ success: false, error: '会社ユーザーのみがスタッフを追加できます' });
+      }
+
+      const { email, password, name, username } = req.body;
+
+      // 必須パラメータチェック
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          error: 'email と password は必須です'
+        });
+      }
+
+      // パスワード長チェック
+      if (password.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: 'パスワードは8文字以上で入力してください'
+        });
+      }
+
+      // 同じメールアドレスが既に存在するかチェック
+      const existingQuery = await db.collection('company_users')
+        .where('email', '==', email)
+        .limit(1)
+        .get();
+
+      if (!existingQuery.empty) {
+        return res.status(400).json({
+          success: false,
+          error: 'このメールアドレスは既に使用されています'
+        });
+      }
+
+      // 会社名を取得
+      let companyName = callerCompanyDomain;
+      try {
+        const companyDoc = await db.collection('companies').doc(callerCompanyDomain).get();
+        if (companyDoc.exists) {
+          companyName = companyDoc.data().name || callerCompanyDomain;
+        }
+      } catch (e) {
+        console.warn('Failed to get company name:', e);
+      }
+
+      // Firebase Auth でユーザー作成
+      const userRecord = await admin.auth().createUser({
+        email: email,
+        password: password,
+        displayName: name || username || email.split('@')[0]
+      });
+
+      const uid = userRecord.uid;
+
+      // Firestore にユーザー情報を保存（パスワードは保存しない）
+      await db.collection('company_users').doc(uid).set({
+        uid: uid,
+        email: email,
+        username: username || email.split('@')[0],
+        companyDomain: callerCompanyDomain,
+        companyName: companyName,
+        name: name || '',
+        role: 'staff',
+        isActive: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      res.json({
+        success: true,
+        uid: uid,
+        email: email,
+        message: 'スタッフを作成しました'
+      });
+
+    } catch (error) {
+      console.error('createCompanyStaff error:', error);
+
+      // Firebase Auth エラーを日本語化
+      let errorMessage = error.message;
+      if (error.code === 'auth/email-already-exists') {
+        errorMessage = 'このメールアドレスは既に使用されています';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'メールアドレスの形式が正しくありません';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'パスワードが弱すぎます';
+      }
+
+      res.status(500).json({
+        success: false,
+        error: errorMessage
+      });
+    }
+  });
+});
+
+/**
  * 会社ユーザーを削除（管理者のみ）
  * Firebase Auth と Firestore の両方から削除
  */

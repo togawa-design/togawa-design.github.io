@@ -659,40 +659,6 @@ export async function addCompanyUser(email, password, companyDomain, name = '', 
     }
   } catch (error) {
     console.error('Failed to add company user:', error);
-
-    // Cloud Function が存在しない場合のフォールバック（開発用）
-    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      console.warn('Cloud Function not available, falling back to legacy method');
-      return await addCompanyUserLegacy(email, password, companyDomain, name, role, username);
-    }
-
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * 会社ユーザーを追加（レガシー方式 - 開発用）
- * 注意: この方式はパスワードを平文で保存するため、本番では使用しないこと
- */
-async function addCompanyUserLegacy(email, password, companyDomain, name, role, username) {
-  console.warn('Using legacy user creation method - passwords stored in plaintext');
-
-  try {
-    const docRef = await firebaseDb.collection('company_users').add({
-      email,
-      username: username || email.split('@')[0],
-      password, // 警告: 平文保存（レガシー互換用）
-      companyDomain,
-      name,
-      role,
-      isActive: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      _legacyAuth: true // レガシー認証フラグ
-    });
-
-    return { success: true, id: docRef.id, email, _isLegacy: true };
-  } catch (error) {
-    console.error('Failed to add company user (legacy):', error);
     return { success: false, error: error.message };
   }
 }
@@ -706,59 +672,44 @@ export async function addCompanyStaff(email, password, name = '', username = '')
     return { success: false, error: 'データベースが初期化されていません' };
   }
 
-  // 自分の会社ドメインを取得
-  const myCompanyDomain = getUserCompanyDomain();
-  if (!myCompanyDomain) {
-    return { success: false, error: '会社情報が見つかりません' };
-  }
-
   // メールアドレスの形式チェック
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return { success: false, error: 'メールアドレスの形式が正しくありません' };
   }
 
-  if (!password || password.length < 6) {
-    return { success: false, error: 'パスワードは6文字以上で入力してください' };
+  if (!password || password.length < 8) {
+    return { success: false, error: 'パスワードは8文字以上で入力してください' };
   }
 
   try {
-    // 同じメールアドレス＋会社ドメインが存在するかチェック
-    const existing = await firebaseDb.collection('company_users')
-      .where('email', '==', email)
-      .where('companyDomain', '==', myCompanyDomain)
-      .get();
-
-    if (!existing.empty) {
-      return { success: false, error: 'このメールアドレスは既に使用されています' };
+    // Cloud Function を呼び出してスタッフを作成（Firebase Auth経由）
+    const token = await getIdToken();
+    if (!token) {
+      return { success: false, error: '認証トークンが取得できません。再ログインしてください。' };
     }
 
-    // 会社情報を取得してcompanyNameを設定
-    let companyName = myCompanyDomain;
-    try {
-      const companyDoc = await firebaseDb.collection('companies').doc(myCompanyDomain).get();
-      if (companyDoc.exists) {
-        companyName = companyDoc.data().name || myCompanyDomain;
-      }
-    } catch (e) {
-      console.warn('Failed to get company name:', e);
-    }
-
-    // Firestoreにスタッフを追加（レガシー認証方式）
-    const docRef = await firebaseDb.collection('company_users').add({
-      email,
-      username: username || email.split('@')[0],
-      password, // レガシー認証用
-      companyDomain: myCompanyDomain,
-      companyName,
-      name: name || '',
-      role: 'staff',
-      isActive: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      _legacyAuth: true
+    const response = await fetch(`${config.cloudFunctionsBaseUrl}/createCompanyStaff`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        username: username || email.split('@')[0]
+      })
     });
 
-    return { success: true, id: docRef.id, email };
+    const result = await response.json();
+
+    if (result.success) {
+      return { success: true, id: result.uid, email };
+    } else {
+      return { success: false, error: result.error || 'スタッフの作成に失敗しました' };
+    }
   } catch (error) {
     console.error('Failed to add company staff:', error);
     return { success: false, error: error.message };
