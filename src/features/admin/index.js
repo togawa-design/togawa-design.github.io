@@ -313,6 +313,13 @@ async function switchSection(sectionName, options = {}) {
     initJobListings();
   }
 
+  // 詳細分析セクションに切り替えた場合はタブを初期化
+  if (sectionName === 'analytics-detail') {
+    initAnalyticsTabs();
+    // 初期データ読み込み
+    loadDashboardData();
+  }
+
   // 期間選択と更新ボタンはアナリティクスセクションのみ表示
   const headerActions = document.querySelector('.header-actions');
   if (headerActions) {
