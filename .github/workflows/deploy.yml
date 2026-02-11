@@ -35,7 +35,14 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # 環境識別
+          VITE_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+          # ベースパス
           VITE_BASE: ${{ github.ref_name == 'main' && '/' || '/dev/' }}
+          # Firebase設定（本番 vs 開発）
+          VITE_FIREBASE_API_KEY: ${{ github.ref_name == 'main' && 'AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ' || 'AIzaSyBVFGaoXtmkpJMju6XdNFxN969WcJCggKc' }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ github.ref_name == 'main' && 'generated-area-484613-e3-90bd4.firebaseapp.com' || 'lset-dev.firebaseapp.com' }}
+          VITE_FIREBASE_PROJECT_ID: ${{ github.ref_name == 'main' && 'generated-area-484613-e3-90bd4' || 'lset-dev' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

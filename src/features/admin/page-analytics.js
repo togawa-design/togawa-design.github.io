@@ -6,9 +6,10 @@
 import { escapeHtml, formatNumber } from '@shared/utils.js';
 import { isAdmin, getUserCompanyDomain } from './auth.js';
 import { getDateRange } from './date-picker.js';
+import { apiEndpoints } from '@shared/env-config.js';
 
 // ページアナリティクスAPIエンドポイント
-const PAGE_ANALYTICS_API = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getPageAnalytics';
+const PAGE_ANALYTICS_API = apiEndpoints.pageAnalytics;
 
 // 現在のページタイプ設定
 let currentPageType = 'all';

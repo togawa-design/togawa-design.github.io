@@ -3,8 +3,10 @@
  * Google Calendar APIとの連携を行う
  */
 
+import { cloudFunctionsBaseUrl } from '@shared/env-config.js';
+
 // Cloud Functions のベースURL
-const FUNCTIONS_BASE_URL = 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net';
+const FUNCTIONS_BASE_URL = cloudFunctionsBaseUrl;
 
 /**
  * Firebase IDトークンを取得

@@ -3,6 +3,7 @@
  * admin.html内でjob-manage機能を動作させるためのアダプターモジュール
  */
 
+import { apiEndpoints } from '@shared/env-config.js';
 import { setCurrentSubsection, getCurrentSubsection, getNewAbortController, clearAbortController, getPendingInitialTab, clearPendingInitialTab } from './admin-state.js';
 import {
   setCompanyInfo,
@@ -1275,7 +1276,7 @@ async function loadJmAnalyticsData() {
     const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
     // Cloud Functions APIからデータを取得
-    const PAGE_ANALYTICS_API = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getPageAnalytics';
+    const PAGE_ANALYTICS_API = apiEndpoints.pageAnalytics;
 
     const params = new URLSearchParams({
       type: 'overview',

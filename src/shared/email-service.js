@@ -21,8 +21,10 @@
  * const emails = await EmailService.getEmails('example', 'app123');
  */
 
+import { cloudFunctionsBaseUrl } from './env-config.js';
+
 // Cloud Functions エンドポイント
-const FUNCTIONS_BASE_URL = 'https://asia-northeast1-generated-area-484613-e3-90bd4.cloudfunctions.net';
+const FUNCTIONS_BASE_URL = cloudFunctionsBaseUrl;
 
 /**
  * メールサービスクラス

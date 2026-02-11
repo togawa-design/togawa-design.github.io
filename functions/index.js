@@ -9,12 +9,15 @@ const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
-// Firebase Admin初期化（クライアント側と同じFirebaseプロジェクトを使用）
+// Firebase Admin初期化（環境変数でプロジェクトを切り替え）
+// FIREBASE_PROJECT_ID: 本番=generated-area-484613-e3-90bd4, 開発=lset-dev
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'generated-area-484613-e3-90bd4';
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: 'generated-area-484613-e3-90bd4'
+    projectId: FIREBASE_PROJECT_ID
   });
 }
+console.log(`[Cloud Functions] Firebase Project: ${FIREBASE_PROJECT_ID}`);
 
 // CORS設定（許可するオリジンを本番環境に合わせて調整）
 const corsHandler = cors({

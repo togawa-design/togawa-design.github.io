@@ -1,9 +1,11 @@
-# This file specifies files that are *not* uploaded to Google Cloud
-# using gcloud. It follows the same syntax as .gitignore.
+# Cloud Functions デプロイ時に除外するファイル
 
-.gcloudignore
-.git
-.gitignore
-node_modules/
-*.log
+# 管理スクリプト
+add-admin.cjs
+deploy-dev.sh
+
+# ドキュメント
 *.md
+
+# 開発用ファイル
+.env*

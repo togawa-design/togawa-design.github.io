@@ -3,8 +3,10 @@
  * LP・採用ページの独立した計測をFirestoreに保存
  */
 
+import { apiEndpoints } from './env-config.js';
+
 // Cloud Functions APIエンドポイント
-const PAGE_ANALYTICS_ENDPOINT = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/trackPageAnalytics';
+const PAGE_ANALYTICS_ENDPOINT = apiEndpoints.trackPageAnalytics;
 
 // ビジターID（セッション内で一意）
 let visitorId = null;

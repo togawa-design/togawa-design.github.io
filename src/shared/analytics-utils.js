@@ -4,6 +4,7 @@
  */
 
 import { escapeHtml } from './utils.js';
+import { apiEndpoints } from './env-config.js';
 
 // ========================================
 // GA API 設定
@@ -12,7 +13,7 @@ import { escapeHtml } from './utils.js';
 /**
  * Google Analytics API エンドポイント
  */
-export const GA_API_ENDPOINT = 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData';
+export const GA_API_ENDPOINT = apiEndpoints.analytics;
 
 /**
  * GA APIからデータを取得

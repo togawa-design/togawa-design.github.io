@@ -1,6 +1,7 @@
 /**
  * Admin Dashboard - 設定
  */
+import { envConfig, firebaseConfig as envFirebaseConfig, cloudFunctionsBaseUrl, gaConfig, gasConfig, apiEndpoints } from '@shared/env-config';
 
 // ユーザーロール定義
 export const USER_ROLES = {
@@ -16,23 +17,19 @@ export const config = {
   sessionKey: 'rikueco_admin_session',
   userRoleKey: 'rikueco_user_role',
   userCompanyKey: 'rikueco_user_company',
-  gaPropertyId: 'G-E1XC94EG05',
-  gaApiKey: 'AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo',
-  apiEndpoint: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/getAnalyticsData',
-  cloudFunctionsBaseUrl: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net',
-  legacyLoginUrl: 'https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/legacyLogin',
-  firebaseConfig: {
-    apiKey: "AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ",
-    authDomain: "generated-area-484613-e3-90bd4.firebaseapp.com",
-    projectId: "generated-area-484613-e3-90bd4"
-  }
+  gaPropertyId: gaConfig.propertyId,
+  gaApiKey: gaConfig.apiKey,
+  apiEndpoint: apiEndpoints.analytics,
+  cloudFunctionsBaseUrl: cloudFunctionsBaseUrl,
+  legacyLoginUrl: apiEndpoints.legacyLogin,
+  firebaseConfig: envFirebaseConfig
 };
 
 export const spreadsheetConfig = {
-  sheetId: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
+  sheetId: gasConfig.spreadsheetId,
   companySheetName: '会社一覧',
   lpSettingsSheetName: 'LP設定',
-  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
+  gasApiUrl: gasConfig.apiUrl
 };
 
 // Firestoreを使用するかどうかのフラグ

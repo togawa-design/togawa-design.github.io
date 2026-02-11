@@ -4,11 +4,16 @@
  * - 画像圧縮・最適化
  */
 
+import { isDevelopment } from '@shared/env-config';
+
 // Cloudinary設定（unsigned upload preset使用）
 const CLOUDINARY_CONFIG = {
   cloudName: 'dnvtqyhuw',  // Cloudinaryのクラウド名
   uploadPreset: 'rikueko_unsigned'  // Unsigned upload preset名
 };
+
+// 環境別フォルダプレフィックス（開発: dev/, 本番: prod/）
+const ENV_PREFIX = isDevelopment ? 'dev' : 'prod';
 
 /**
  * 画像を圧縮・WebP変換する（縦横比維持、ファイルサイズ制限対応）
@@ -175,7 +180,7 @@ export async function uploadCompanyLogo(file, companyDomain) {
   const compressed = await compressLogo(file);
 
   // Cloudinaryにアップロード（タイムスタンプ付きでキャッシュ問題回避）
-  const folder = `companies/${companyDomain}`;
+  const folder = `${ENV_PREFIX}/companies/${companyDomain}`;
   const timestamp = Date.now();
   const url = await uploadToCloudinary(compressed, folder, `logo_${timestamp}`);
 
@@ -193,7 +198,7 @@ export async function uploadRecruitLogo(file, companyDomain) {
   const compressed = await compressLogo(file);
 
   // Cloudinaryにアップロード（採用ページ専用パス）
-  const folder = `recruit/${companyDomain}`;
+  const folder = `${ENV_PREFIX}/recruit/${companyDomain}`;
   const url = await uploadToCloudinary(compressed, folder, 'logo');
 
   return url;
@@ -216,7 +221,7 @@ export async function uploadRecruitHeroImage(file, companyDomain) {
   });
 
   // Cloudinaryにアップロード（採用ページ専用パス）
-  const folder = `recruit/${companyDomain}`;
+  const folder = `${ENV_PREFIX}/recruit/${companyDomain}`;
   const timestamp = Date.now();
   const url = await uploadToCloudinary(compressed, folder, `hero_${timestamp}`);
 
@@ -234,7 +239,7 @@ export async function uploadCompanyImage(file, companyDomain) {
   const compressed = await compressContentImage(file);
 
   // Cloudinaryにアップロード
-  const folder = `companies/${companyDomain}/images`;
+  const folder = `${ENV_PREFIX}/companies/${companyDomain}/images`;
   const url = await uploadToCloudinary(compressed, folder);
 
   return url;
@@ -252,7 +257,7 @@ export async function uploadJobImage(file, companyDomain, jobId) {
   const compressed = await compressContentImage(file);
 
   // Cloudinaryにアップロード
-  const folder = `jobs/${companyDomain}/${jobId}`;
+  const folder = `${ENV_PREFIX}/jobs/${companyDomain}/${jobId}`;
   const url = await uploadToCloudinary(compressed, folder);
 
   return url;
@@ -269,7 +274,7 @@ export async function uploadJobLogo(file, companyDomain) {
   const compressed = await compressLogo(file);
 
   // Cloudinaryにアップロード（タイムスタンプ付きでキャッシュ問題回避）
-  const folder = `jobs/${companyDomain}/logos`;
+  const folder = `${ENV_PREFIX}/jobs/${companyDomain}/logos`;
   const timestamp = Date.now();
   const url = await uploadToCloudinary(compressed, folder, `logo_${timestamp}`);
 
@@ -287,7 +292,7 @@ export async function uploadLPImage(file, companyDomain) {
   const compressed = await compressContentImage(file);
 
   // Cloudinaryにアップロード
-  const folder = `lp/${companyDomain}`;
+  const folder = `${ENV_PREFIX}/lp/${companyDomain}`;
   const url = await uploadToCloudinary(compressed, folder);
 
   return url;
