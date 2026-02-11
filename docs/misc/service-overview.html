@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L-SET 求人管理システム サービス概要</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+    :root {
+      --primary: #2b4c7e;
+      --primary-dark: #1a365d;
+      --accent: #f7941d;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text: #1f2937;
+      --text-light: #6b7280;
+      --bg: #f9fafb;
+      --white: #ffffff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+      background: var(--bg);
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--white);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    @media print {
+      .page {
+        box-shadow: none;
+      }
+    }
+
+    /* ヘッダー */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 50px;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .header-logo {
+      flex-shrink: 0;
+    }
+
+    .header-logo img {
+      height: 80px;
+      width: auto;
+    }
+
+    .header-content {
+      flex: 1;
+    }
+
+    .header-label {
+      font-size: 12px;
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+      opacity: 0.85;
+      text-transform: uppercase;
+    }
+
+    .header h1 {
+      font-size: 36px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .header-tagline {
+      font-size: 16px;
+      opacity: 0.95;
+    }
+
+    /* セクション共通 */
+    .section {
+      padding: 50px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 28px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid var(--accent);
+      display: inline-block;
+    }
+
+    /* 課題セクション */
+    .problems {
+      background: #fef3c7;
+    }
+
+    .problem-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .problem-item {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .problem-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .problem-item h3 {
+      font-size: 16px;
+      color: var(--warning);
+      margin-bottom: 8px;
+    }
+
+    .problem-item p {
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    /* 解決セクション */
+    .solution {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    }
+
+    .solution-box {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1);
+    }
+
+    .solution-box h3 {
+      font-size: 26px;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    .solution-box h3 span {
+      color: var(--accent);
+    }
+
+    .solution-box p {
+      font-size: 15px;
+      color: var(--text-light);
+    }
+
+    /* スクリーンショットセクション */
+    .screenshots {
+      background: var(--white);
+    }
+
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .screenshot-item {
+      background: var(--bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .screenshot-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      font-size: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screenshot-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+    }
+
+    .screenshot-image.placeholder::after {
+      content: "スクリーンショットを挿入";
+      position: absolute;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .screenshot-caption {
+      padding: 16px;
+      text-align: center;
+    }
+
+    .screenshot-caption h4 {
+      font-size: 15px;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .screenshot-caption p {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* 機能一覧 */
+    .features {
+      background: var(--bg);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--white);
+      padding: 24px;
+      border-radius: 12px;
+      border-left: 4px solid var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      color: var(--primary);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-card ul {
+      list-style: none;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    .feature-card li {
+      padding: 3px 0;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .feature-card li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    /* 導入効果 */
+    .benefits {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+    }
+
+    .benefits .section-title {
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .benefit-card {
+      background: rgba(255,255,255,0.12);
+      padding: 24px 16px;
+      border-radius: 12px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .benefit-number {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+
+    .benefit-unit {
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .benefit-label {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-top: 6px;
+    }
+
+    /* 料金 */
+    .pricing {
+      background: var(--white);
+    }
+
+    .price-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .price-table th {
+      background: var(--primary);
+      color: white;
+      padding: 14px;
+      font-weight: 500;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .price-table td {
+      padding: 14px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    .price-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .price-table .price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .price-table .price span {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-light);
+    }
+
+    .price-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* サポート */
+    .support {
+      background: var(--bg);
+    }
+
+    .support-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .support-card {
+      text-align: center;
+      padding: 28px 20px;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .support-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      font-size: 24px;
+    }
+
+    .support-card h3 {
+      font-size: 15px;
+      margin-bottom: 6px;
+      color: var(--primary);
+    }
+
+    .support-card p {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* 導入フロー */
+    .flow {
+      background: var(--white);
+    }
+
+    .flow-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .flow-steps::before {
+      content: "";
+      position: absolute;
+      top: 26px;
+      left: 50px;
+      right: 50px;
+      height: 3px;
+      background: #e5e7eb;
+      z-index: 0;
+    }
+
+    .flow-step {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+    }
+
+    .flow-number {
+      width: 52px;
+      height: 52px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 auto 12px;
+    }
+
+    .flow-step h3 {
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: var(--primary);
+    }
+
+    .flow-step p {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+
+    /* CTA */
+    .cta {
+      background: var(--primary-dark);
+      color: white;
+      text-align: center;
+      padding: 45px;
+    }
+
+    .cta h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .cta p {
+      font-size: 14px;
+      opacity: 0.85;
+      margin-bottom: 24px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .cta-btn {
+      padding: 14px 36px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .cta-btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .cta-btn-secondary {
+      background: transparent;
+      color: white;
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+
+    /* フッター */
+    .footer {
+      background: #111827;
+      color: #9ca3af;
+      padding: 24px 50px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .footer-logo img {
+      height: 36px;
+      filter: brightness(0) invert(1);
+    }
+
+    /* 印刷用 */
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      body {
+        background: white;
+      }
+
+      .page {
+        max-width: 100%;
+        box-shadow: none;
+      }
+
+      /* セクションが途中で切れないようにする */
+      .section {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .header {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .problem-item,
+      .solution-box,
+      .screenshot-item,
+      .feature-card,
+      .benefit-card,
+      .support-card,
+      .flow-steps {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .price-table {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .cta,
+      .footer {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      /* グリッド全体も切れないように */
+      .problem-list,
+      .screenshot-grid,
+      .feature-grid,
+      .benefit-grid,
+      .support-grid {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .cta-buttons {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- ヘッダー -->
+    <header class="header">
+      <div class="header-logo">
+        <img src="../images/logo.png" alt="L-SET">
+      </div>
+      <div class="header-content">
+        <p class="header-label">Recruitment Management System</p>
+        <h1>求人管理システム</h1>
+        <p class="header-tagline">求人掲載から採用管理まで、ワンストップで実現</p>
+      </div>
+    </header>
+
+    <!-- 課題 -->
+    <section class="section problems">
+      <h2 class="section-title">こんなお悩みありませんか？</h2>
+      <div class="problem-list">
+        <div class="problem-item">
+          <div class="problem-icon">📝</div>
+          <h3>求人の更新が面倒</h3>
+          <p>複数の求人媒体に個別に登録・更新するのが大変</p>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon">📊</div>
+          <h3>効果測定ができない</h3>
+          <p>どの求人が効果的か、データで把握できていない</p>
+        </div>
+        <div class="problem-item">
+          <div class="problem-icon">👥</div>
+          <h3>応募者管理が煩雑</h3>
+          <p>対応漏れや進捗管理がうまくいかない</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 解決 -->
+    <section class="section solution">
+      <div class="solution-box">
+        <h3><span>L-SET</span> が すべて解決します</h3>
+        <p>専用の管理画面から、求人掲載・応募者管理・アクセス解析まで一元管理。<br>採用業務の効率化と成果向上を実現します。</p>
+      </div>
+    </section>
+
+    <!-- スクリーンショット -->
+    <section class="section screenshots">
+      <h2 class="section-title">システム画面</h2>
+      <div class="screenshot-grid">
+        <div class="screenshot-item">
+          <div class="screenshot-image placeholder">
+            <!-- 実際の画像に差し替え: <img src="screenshots/job-list.png" alt="求人一覧"> -->
+          </div>
+          <div class="screenshot-caption">
+            <h4>求人一覧画面</h4>
+            <p>直感的に求人を管理、ステータスも一目で確認</p>
+          </div>
+        </div>
+        <div class="screenshot-item">
+          <div class="screenshot-image placeholder">
+            <!-- 実際の画像に差し替え: <img src="screenshots/applicants.png" alt="応募者管理"> -->
+          </div>
+          <div class="screenshot-caption">
+            <h4>応募者管理画面</h4>
+            <p>対応状況・履歴を一元管理、漏れなく対応</p>
+          </div>
+        </div>
+        <div class="screenshot-item">
+          <div class="screenshot-image placeholder">
+            <!-- 実際の画像に差し替え: <img src="screenshots/analytics.png" alt="アクセス解析"> -->
+          </div>
+          <div class="screenshot-caption">
+            <h4>アクセス解析</h4>
+            <p>PV・CVR・流入元など詳細なデータを可視化</p>
+          </div>
+        </div>
+        <div class="screenshot-item">
+          <div class="screenshot-image placeholder">
+            <!-- 実際の画像に差し替え: <img src="screenshots/lp.png" alt="LP"> -->
+          </div>
+          <div class="screenshot-caption">
+            <h4>採用ページ・LP</h4>
+            <p>テンプレートから簡単にプロ品質のページを作成</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 機能一覧 -->
+    <section class="section features">
+      <h2 class="section-title">主な機能</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3><span>📄</span> 求人管理</h3>
+          <ul>
+            <li>直感的な求人作成・編集画面</li>
+            <li>掲載期間の自動管理</li>
+            <li>ドラッグ&ドロップで表示順変更</li>
+            <li>求人の複製機能で効率化</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <h3><span>💬</span> 応募者管理</h3>
+          <ul>
+            <li>10段階のステータス管理</li>
+            <li>担当者アサイン機能</li>
+            <li>対応履歴・メモ機能</li>
+            <li>応募者へのメッセージ送信</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <h3><span>🎨</span> 採用ページ・LP</h3>
+          <ul>
+            <li>11種類のデザインテンプレート</li>
+            <li>カラー・ロゴのカスタマイズ</li>
+            <li>求人別LPの自動生成</li>
+            <li>編集モードでリアルタイム確認</li>
+          </ul>
+        </div>
+        <div class="feature-card">
+          <h3><span>📈</span> アクセス解析・連携</h3>
+          <ul>
+            <li>求人別PV・ユーザー数</li>
+            <li>コンバージョン率（CVR）測定</li>
+            <li>Indeed / Google しごと検索 対応</li>
+            <li>レポート出力（CSV/Excel）</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 導入効果 -->
+    <section class="section benefits">
+      <h2 class="section-title">導入効果</h2>
+      <div class="benefit-grid">
+        <div class="benefit-card">
+          <div class="benefit-number">50<span class="benefit-unit">%</span></div>
+          <div class="benefit-label">求人更新作業の削減</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-number">2<span class="benefit-unit">倍</span></div>
+          <div class="benefit-label">応募数の増加</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-number">0<span class="benefit-unit">件</span></div>
+          <div class="benefit-label">対応漏れ</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-number">24<span class="benefit-unit">h</span></div>
+          <div class="benefit-label">リアルタイム分析</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section pricing">
+      <h2 class="section-title">料金プラン</h2>
+      <table class="price-table">
+        <tr>
+          <th style="width: 25%;">プラン</th>
+          <th style="width: 50%;">内容</th>
+          <th style="width: 25%;">月額料金</th>
+        </tr>
+        <tr>
+          <td><strong>スタンダード</strong></td>
+          <td>求人管理・応募者管理・採用ページ</td>
+          <td class="price">お問い合わせ</td>
+        </tr>
+        <tr>
+          <td><strong>プロ</strong></td>
+          <td>スタンダード + アクセス解析・求人フィード連携</td>
+          <td class="price">お問い合わせ</td>
+        </tr>
+        <tr>
+          <td><strong>エンタープライズ</strong></td>
+          <td>プロ + 複数拠点管理・API連携・専任サポート</td>
+          <td class="price">お問い合わせ</td>
+        </tr>
+      </table>
+      <p class="price-note">※ 初期費用・カスタマイズ費用は別途お見積りとなります。</p>
+    </section>
+
+    <!-- サポート -->
+    <section class="section support">
+      <h2 class="section-title">サポート体制</h2>
+      <div class="support-grid">
+        <div class="support-card">
+          <div class="support-icon">📞</div>
+          <h3>導入サポート</h3>
+          <p>初期設定から運用開始まで<br>専任担当がサポート</p>
+        </div>
+        <div class="support-card">
+          <div class="support-icon">📖</div>
+          <h3>操作マニュアル</h3>
+          <p>わかりやすい操作ガイドを<br>ご用意しています</p>
+        </div>
+        <div class="support-card">
+          <div class="support-icon">💬</div>
+          <h3>問い合わせ対応</h3>
+          <p>メール・チャットで<br>迅速にサポート</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 導入フロー -->
+    <section class="section flow">
+      <h2 class="section-title">導入の流れ</h2>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-number">1</div>
+          <h3>お問い合わせ</h3>
+          <p>お気軽にご相談</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-number">2</div>
+          <h3>ヒアリング</h3>
+          <p>課題・ご要望を伺う</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-number">3</div>
+          <h3>ご提案</h3>
+          <p>最適なプランをご提案</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-number">4</div>
+          <h3>初期設定</h3>
+          <p>アカウント作成・設定</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-number">5</div>
+          <h3>運用開始</h3>
+          <p>サポート付きでスタート</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <h2>まずはお気軽にご相談ください</h2>
+      <p>デモのご依頼、お見積り、ご質問など承ります。</p>
+      <div class="cta-buttons">
+        <a href="#" class="cta-btn cta-btn-primary">お問い合わせ</a>
+        <a href="#" class="cta-btn cta-btn-secondary">資料ダウンロード</a>
+      </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+      <div class="footer-logo">
+        <img src="../images/logo.png" alt="L-SET">
+      </div>
+      <p>© 2024 L-SET. All rights reserved.</p>
+    </footer>
+  </div>
+</body>
+</html>

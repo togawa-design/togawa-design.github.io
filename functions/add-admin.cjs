@@ -52,18 +52,62 @@ const db = admin.firestore();
 
 async function addAdmin() {
   try {
-    // 既存のチェック
-    const existing = await db.collection('admin_users')
-      .where('email', '==', email)
-      .get();
+    // Firebase Auth でユーザーを取得または作成
+    let userRecord;
+    try {
+      userRecord = await admin.auth().getUserByEmail(email);
+      console.log(`既存のFirebase Authユーザーを発見: ${userRecord.uid}`);
+    } catch (authError) {
+      if (authError.code === 'auth/user-not-found') {
+        // ユーザーが存在しない場合は作成
+        userRecord = await admin.auth().createUser({ email });
+        console.log(`新規Firebase Authユーザーを作成: ${userRecord.uid}`);
+      } else {
+        throw authError;
+      }
+    }
 
-    if (!existing.empty) {
-      console.log(`このメールアドレスは既に登録されています: ${email}`);
+    const uid = userRecord.uid;
+
+    // 既存のadmin_usersドキュメントをチェック（UIDベース）
+    const existingDoc = await db.collection('admin_users').doc(uid).get();
+    if (existingDoc.exists) {
+      console.log(`このユーザーは既に管理者として登録されています`);
+      console.log(`  UID: ${uid}`);
+      console.log(`  Email: ${email}`);
       process.exit(0);
     }
 
-    // 管理者を追加
-    const docRef = await db.collection('admin_users').add({
+    // 古い形式（メールベース）のドキュメントがあれば削除
+    const oldDocs = await db.collection('admin_users')
+      .where('email', '==', email)
+      .get();
+
+    if (!oldDocs.empty) {
+      console.log(`古い形式のドキュメントを移行します...`);
+      for (const doc of oldDocs.docs) {
+        const oldData = doc.data();
+        // 新しいUIDベースのドキュメントを作成
+        await db.collection('admin_users').doc(uid).set({
+          ...oldData,
+          migratedFrom: doc.id,
+          migratedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        // 古いドキュメントを削除
+        await doc.ref.delete();
+        console.log(`  移行完了: ${doc.id} -> ${uid}`);
+      }
+      console.log('');
+      console.log('管理者データを移行しました:');
+      console.log(`  環境: ${project.name}`);
+      console.log(`  プロジェクト: ${project.projectId}`);
+      console.log(`  メール: ${email}`);
+      console.log(`  UID: ${uid}`);
+      process.exit(0);
+    }
+
+    // 新規管理者を追加（UIDをドキュメントIDとして使用）
+    await db.collection('admin_users').doc(uid).set({
       email: email,
       role: 'admin',
       companyDomain: null,
@@ -75,7 +119,7 @@ async function addAdmin() {
     console.log(`  環境: ${project.name}`);
     console.log(`  プロジェクト: ${project.projectId}`);
     console.log(`  メール: ${email}`);
-    console.log(`  ドキュメントID: ${docRef.id}`);
+    console.log(`  UID: ${uid}`);
     console.log('');
     console.log('このアカウントでGoogleログインすると、管理画面にアクセスできます。');
 
