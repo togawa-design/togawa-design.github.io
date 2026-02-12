@@ -142,6 +142,11 @@
   opacity: 0.9;
   margin-bottom: 2rem;
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recruit-hero-stats {
@@ -4125,4 +4130,388 @@ textarea.section-field-input {
     padding: 6px 10px;
     font-size: 11px;
   }
+}
+
+/* ========================================
+   編集モード UX改善 スタイル
+   ======================================== */
+
+/* 1. 未保存インジケーター */
+.recruit-editor-panel.has-changes .btn-save-recruit {
+  animation: pulse-save 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+}
+
+@keyframes pulse-save {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+.unsaved-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.recruit-editor-footer {
+  position: relative;
+}
+
+.save-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.save-status.saved {
+  color: #10b981;
+}
+
+.save-status.saving {
+  color: #6366f1;
+}
+
+/* 2. 保存ボタン固定表示（フッターは既にstickyなので対応済み） */
+.recruit-editor-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+}
+
+/* 5. パネル折りたたみ */
+.recruit-editor-panel.collapsed {
+  width: 48px !important;
+  min-width: 48px !important;
+}
+
+.recruit-editor-panel.collapsed .recruit-editor-header {
+  flex-direction: column;
+  padding: 0.75rem 0.5rem;
+}
+
+.recruit-editor-panel.collapsed .recruit-editor-title,
+.recruit-editor-panel.collapsed .recruit-editor-body,
+.recruit-editor-panel.collapsed .recruit-editor-footer,
+.recruit-editor-panel.collapsed .preview-mode-toggle {
+  display: none !important;
+}
+
+.recruit-editor-panel.collapsed .recruit-editor-actions {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn-collapse-panel {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-collapse-panel:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.recruit-editor-panel.collapsed .btn-collapse-panel {
+  transform: rotate(180deg);
+}
+
+/* 6. タブ別変更マーク */
+.recruit-editor-tab.has-changes::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  background: #f97316;
+  border-radius: 50%;
+}
+
+.recruit-editor-tab {
+  position: relative;
+}
+
+/* 7. セクション表示/非表示トグル */
+.section-visibility-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.section-visibility-toggle .section-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.section-visibility-toggle .toggle-mini {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: #d1d5db;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.section-visibility-toggle .toggle-mini.active {
+  background: #10b981;
+}
+
+.section-visibility-toggle .toggle-mini::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.section-visibility-toggle .toggle-mini.active::after {
+  transform: translateX(16px);
+}
+
+/* 9. 別タブでプレビューボタン */
+.btn-preview-new-tab {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-preview-new-tab:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+/* 10. 画像ホバープレビュー */
+.image-hover-preview {
+  position: fixed;
+  z-index: 10000;
+  max-width: 300px;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.image-hover-preview.visible {
+  opacity: 1;
+}
+
+/* 11. Undo/Redo ボタン */
+.undo-redo-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-undo,
+.btn-redo {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #6b7280;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-undo:hover:not(:disabled),
+.btn-redo:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.btn-undo:disabled,
+.btn-redo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 12. ヘルプツールチップ */
+.help-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 50%;
+  font-size: 10px;
+  cursor: help;
+}
+
+.help-tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  padding: 10px 14px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.5;
+  border-radius: 6px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  z-index: 1000;
+  width: max-content;
+  max-width: 320px;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.help-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 8px;
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+
+.help-tooltip:hover::before,
+.help-tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 13. クイック追加ボタン */
+.quick-add-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-quick-add {
+  padding: 6px 12px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-quick-add:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+/* キーボードショートカット表示 */
+.shortcut-hint {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #6b7280;
+  font-family: monospace;
+  margin-left: 8px;
+}
+
+/* 自動保存インジケーター */
+.autosave-indicator-editor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.autosave-indicator-editor.saving {
+  color: #6366f1;
+}
+
+.autosave-indicator-editor.saved {
+  color: #10b981;
+}
+
+.autosave-indicator-editor .autosave-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* フォームバリデーションエラー（エディタ内用） */
+.recruit-editor-panel .field-error {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.recruit-editor-panel .validation-hint {
+  font-size: 0.6875rem;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+/* アニメーション: フェードイン */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.editor-notification {
+  animation: fadeIn 0.2s ease-out;
 }
