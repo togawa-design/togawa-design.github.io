@@ -203,8 +203,9 @@ export function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `utils-toast utils-toast-${type}`;
+  const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
   toast.innerHTML = `
-    <span class="utils-toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+    <span class="utils-toast-icon">${icons[type] || icons.info}</span>
     <span class="utils-toast-message">${escapeHtml(message)}</span>
   `;
 
@@ -231,6 +232,7 @@ export function showToast(message, type = 'info') {
       }
       .utils-toast-success { background: #10b981; }
       .utils-toast-error { background: #ef4444; }
+      .utils-toast-warning { background: #f59e0b; }
       .utils-toast-info { background: #3b82f6; }
       .utils-toast-hide { animation: utils-toast-out 0.3s ease forwards; }
       @keyframes utils-toast-in { from { opacity: 0; transform: translateX(-50%) translateY(1rem); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }

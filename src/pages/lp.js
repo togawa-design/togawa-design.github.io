@@ -10,7 +10,6 @@ import {
 } from '@components/organisms/LayoutComponents.js';
 import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
 import '@shared/jobs-loader.js';
-import { useFirestore } from '@features/admin/config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
 
 // UTMパラメータのキー一覧
@@ -89,6 +88,9 @@ class CompanyLPPage {
     try {
       // JobsLoaderの読み込みを待機
       await this.waitForJobsLoader();
+
+      // Firestore初期化を待機
+      await window.JobsLoader.initFirestoreLoader();
 
       // 会社情報を取得
       const companies = await window.JobsLoader.fetchCompanies();
@@ -192,9 +194,9 @@ class CompanyLPPage {
           if (staticFooter) staticFooter.style.display = 'none';
         }
 
-        // 新形式の場合はメイン求人を先頭に
+        // 新形式の場合はメイン求人を先頭に（IDで比較して重複を防ぐ）
         const orderedJobs = this.mainJob
-          ? [this.mainJob, ...jobs.filter(j => j !== this.mainJob)]
+          ? [this.mainJob, ...jobs.filter(j => j.id !== this.mainJob.id)]
           : jobs;
         this.renderer.render(this.company, orderedJobs, this.lpSettings, contentEl);
 
@@ -342,178 +344,64 @@ class CompanyLPPage {
   }
 
   // LP設定を取得（求人ID単位・新形式）
-  // Firestoreまたは会社の管理シート内のLP設定シートから取得
+  // Firestoreから取得
   async fetchLPSettings(jobId) {
-    // Firestoreから読み込み
-    if (useFirestore) {
-      try {
-        FirestoreService.initFirestore();
-        // jobIdは「companyDomain_actualJobId」形式
-        const parts = jobId.split('_');
-        const companyDomain = parts[0];
+    try {
+      FirestoreService.initFirestore();
+      // jobIdは「companyDomain_actualJobId」形式
+      const parts = jobId.split('_');
+      const companyDomain = parts[0];
 
-        // 管理画面はjobIdをそのまま保存しているため、フルIDで取得を試みる
-        console.log('[LP] Firestore LP設定取得 (フルID):', companyDomain, jobId);
-        let result = await FirestoreService.getLPSettings(companyDomain, jobId);
+      // 管理画面はjobIdをそのまま保存しているため、フルIDで取得を試みる
+      console.log('[LP] Firestore LP設定取得 (フルID):', companyDomain, jobId);
+      let result = await FirestoreService.getLPSettings(companyDomain, jobId);
 
+      if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+        console.log('[LP] Firestore LP設定を発見 (フルID):', result.settings);
+        return result.settings;
+      }
+
+      // フォールバック: 旧形式（jobIdのみ）で試行
+      const actualJobId = parts.slice(1).join('_');
+      if (actualJobId && actualJobId !== jobId) {
+        console.log('[LP] Firestore LP設定取得 (フォールバック):', companyDomain, actualJobId);
+        result = await FirestoreService.getLPSettings(companyDomain, actualJobId);
         if (result.success && result.settings && Object.keys(result.settings).length > 0) {
-          console.log('[LP] Firestore LP設定を発見 (フルID):', result.settings);
+          console.log('[LP] Firestore LP設定を発見 (フォールバック):', result.settings);
           return result.settings;
         }
-
-        // フォールバック: 旧形式（jobIdのみ）で試行
-        const actualJobId = parts.slice(1).join('_');
-        if (actualJobId && actualJobId !== jobId) {
-          console.log('[LP] Firestore LP設定取得 (フォールバック):', companyDomain, actualJobId);
-          result = await FirestoreService.getLPSettings(companyDomain, actualJobId);
-          if (result.success && result.settings && Object.keys(result.settings).length > 0) {
-            console.log('[LP] Firestore LP設定を発見 (フォールバック):', result.settings);
-            return result.settings;
-          }
-        }
-
-        console.log('[LP] Firestore LP設定が見つかりません（デフォルト設定を使用）');
-        return null;
-      } catch (e) {
-        console.log('[LP] Firestore LP設定取得エラー:', e.message);
-        // Firestoreエラー時はフォールバックしない（データ不整合を防ぐ）
-        return null;
-      }
-    }
-
-    // GAS API（フォールバック）: 会社の管理シート内のLP設定シートから取得
-    try {
-      // 会社の管理シートURLからスプレッドシートIDを抽出
-      // manageSheetUrl または jobsSheet（管理シート）を使用
-      const manageSheetUrl = this.company?.manageSheetUrl || this.company?.jobsSheet;
-      console.log('[LP] 管理シートURL:', manageSheetUrl);
-      console.log('[LP] 会社データのmanageSheetUrl:', this.company?.manageSheetUrl);
-      console.log('[LP] 会社データのjobsSheet:', this.company?.jobsSheet);
-      if (!manageSheetUrl) {
-        console.log('[LP] 管理シートURLが見つかりません');
-        return null;
       }
 
-      // extractSpreadsheetIdはURLまたはIDの両方に対応
-      const companySheetId = window.JobsLoader.extractSpreadsheetId(manageSheetUrl);
-      if (!companySheetId) {
-        console.log('[LP] 管理シートIDを抽出できません');
-        return null;
-      }
-      console.log('[LP] 管理シートID:', companySheetId);
-
-      // シート名は日本語なのでURLエンコードが必要
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}`;
-      console.log('[LP] LP設定シートURL:', sheetUrl);
-
-      const response = await fetch(sheetUrl);
-      console.log('[LP] レスポンスステータス:', response.status);
-      if (!response.ok) {
-        console.log('[LP] LP設定シートが見つかりません（デフォルト設定を使用）');
-        return null;
-      }
-
-      const csvText = await response.text();
-      const lines = splitCSVToRows(csvText);
-      console.log('[LP] CSV取得成功, 行数:', lines.length);
-      const headers = window.JobsLoader.parseCSVLine(lines[0] || '');
-      console.log('[LP] ヘッダー:', headers);
-
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const values = window.JobsLoader.parseCSVLine(lines[i]);
-        const rowData = {};
-        headers.forEach((header, idx) => {
-          rowData[header.replace(/"/g, '').trim()] = values[idx] || '';
-        });
-
-        // 求人IDで検索
-        const rowJobId = rowData.jobId || rowData['求人ID'] || '';
-        console.log('[LP] 行', i, 'のjobId:', rowJobId, '検索中:', jobId);
-        if (rowJobId === jobId) {
-          console.log('[LP] LP設定を発見:', rowData);
-          return this.parseLPSettingsRow(rowData);
-        }
-      }
-      console.log('[LP] 該当するjobIdが見つかりませんでした');
+      console.log('[LP] Firestore LP設定が見つかりません（デフォルト設定を使用）');
+      return null;
     } catch (e) {
-      console.log('[LP] LP設定取得エラー:', e.message);
+      console.log('[LP] Firestore LP設定取得エラー:', e.message);
+      return null;
     }
-    return null;
   }
 
   // LP設定を取得（会社ドメイン単位・旧形式・後方互換）
-  // Firestoreでは会社の最初の求人のLP設定を取得、または管理シート内のLP設定シートから取得
+  // Firestoreから会社の最初の求人のLP設定を取得
   async fetchLPSettingsLegacy(companyDomain) {
-    // Firestoreから読み込み（最初の求人のLP設定を取得）
-    if (useFirestore) {
-      try {
-        FirestoreService.initFirestore();
-        // 会社の求人一覧を取得して最初の求人のLP設定を使用
-        const jobsResult = await FirestoreService.getJobs(companyDomain);
-        if (jobsResult.success && jobsResult.jobs && jobsResult.jobs.length > 0) {
-          const firstJob = jobsResult.jobs[0];
-          console.log('[LP Legacy] Firestore 最初の求人ID:', firstJob.id);
-          const result = await FirestoreService.getLPSettings(companyDomain, firstJob.id);
-          if (result.success && result.settings && Object.keys(result.settings).length > 0) {
-            console.log('[LP Legacy] Firestore LP設定を発見:', result.settings);
-            return result.settings;
-          }
-        }
-        console.log('[LP Legacy] Firestore LP設定が見つかりません（デフォルト設定を使用）');
-        return null;
-      } catch (e) {
-        console.log('[LP Legacy] Firestore LP設定取得エラー:', e.message);
-        return null;
-      }
-    }
-
-    // GAS API（フォールバック）: 会社の管理シート内のLP設定シートから取得
     try {
-      // 会社の管理シートURLからスプレッドシートIDを抽出
-      // manageSheetUrl または jobsSheet（管理シート）を使用
-      const manageSheetUrl = this.company?.manageSheetUrl || this.company?.jobsSheet;
-      console.log('[LP Legacy] 管理シートURL:', manageSheetUrl);
-      if (!manageSheetUrl) {
-        console.log('[LP Legacy] 管理シートURLが見つかりません');
-        return null;
-      }
-
-      // extractSpreadsheetIdはURLまたはIDの両方に対応
-      const companySheetId = window.JobsLoader.extractSpreadsheetId(manageSheetUrl);
-      if (!companySheetId) {
-        console.log('[LP Legacy] 管理シートIDを抽出できません');
-        return null;
-      }
-      // シート名は日本語なのでURLエンコードが必要
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}`;
-      const response = await fetch(sheetUrl);
-      if (!response.ok) {
-        console.log('[LP Legacy] LP設定シートが見つかりません（デフォルト設定を使用）');
-        return null;
-      }
-
-      const csvText = await response.text();
-      const lines = splitCSVToRows(csvText);
-      const headers = window.JobsLoader.parseCSVLine(lines[0] || '');
-
-      for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const values = window.JobsLoader.parseCSVLine(lines[i]);
-        const rowData = {};
-        headers.forEach((header, idx) => {
-          rowData[header.replace(/"/g, '').trim()] = values[idx] || '';
-        });
-
-        // 会社ドメインで検索（旧形式）
-        if (rowData.companyDomain === companyDomain || rowData['会社ドメイン'] === companyDomain) {
-          return this.parseLPSettingsRow(rowData);
+      FirestoreService.initFirestore();
+      // 会社の求人一覧を取得して最初の求人のLP設定を使用
+      const jobsResult = await FirestoreService.getJobs(companyDomain);
+      if (jobsResult.success && jobsResult.jobs && jobsResult.jobs.length > 0) {
+        const firstJob = jobsResult.jobs[0];
+        console.log('[LP Legacy] Firestore 最初の求人ID:', firstJob.id);
+        const result = await FirestoreService.getLPSettings(companyDomain, firstJob.id);
+        if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+          console.log('[LP Legacy] Firestore LP設定を発見:', result.settings);
+          return result.settings;
         }
       }
+      console.log('[LP Legacy] Firestore LP設定が見つかりません（デフォルト設定を使用）');
+      return null;
     } catch (e) {
-      console.log('LP設定取得エラー:', e.message);
+      console.log('[LP Legacy] Firestore LP設定取得エラー:', e.message);
+      return null;
     }
-    return null;
   }
 
   // LP設定行をパース
@@ -646,8 +534,8 @@ class CompanyLPPage {
     // レイアウトスタイルをbodyに設定
     document.body.setAttribute('data-layout-style', layoutStyle);
 
-    // ヘッダーを追加
-    if (hasHeader) {
+    // ヘッダーを追加（既存のヘッダーがない場合のみ）
+    if (hasHeader && !document.querySelector('.site-header')) {
       const recruitPageUrl = `company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
       const headerHtml = renderSiteHeader({
         logoUrl: rs.logoUrl || '',

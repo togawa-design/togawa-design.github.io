@@ -62,11 +62,11 @@ export class LPRenderer {
     // v2形式をチェック
     const lpContent = this.parseLPContent(lpSettings);
 
-    if (lpContent && lpContent.version === '2.0') {
-      // 新形式（v2）で描画
+    if (lpContent && lpContent.version === '2.0' && lpContent.sections?.length > 0) {
+      // 新形式（v2）で描画（セクションがある場合のみ）
       this.renderV2Sections(lpContent, company, mainJob, jobs, lpSettings, contentEl);
     } else {
-      // 旧形式で描画（後方互換性）
+      // 旧形式で描画（後方互換性、またはv2でセクションが空の場合）
       this.renderLegacySections(company, mainJob, jobs, lpSettings, contentEl);
     }
   }
@@ -305,8 +305,21 @@ export class LPRenderer {
           applyButtonText: lpSettings.ctaText || '今すぐ応募する',
           videoButtonText: lpSettings.videoButtonText || '求人内容を動画で見る'
         }, layoutStyle);
-      case 'points':
-        return sectionVisibility.points ? this.sectionRenderers.points(company, mainJob, lpSettings, layoutStyle) : '';
+      case 'points': {
+        if (!sectionVisibility.points) return '';
+        // カスタムレイアウトを取得
+        let pointsLayout = null;
+        if (lpSettings.pointsLayout) {
+          try {
+            pointsLayout = typeof lpSettings.pointsLayout === 'string'
+              ? JSON.parse(lpSettings.pointsLayout)
+              : lpSettings.pointsLayout;
+          } catch (e) {
+            console.error('pointsLayout parse error:', e);
+          }
+        }
+        return this.sectionRenderers.points(company, mainJob, lpSettings, layoutStyle, pointsLayout);
+      }
       case 'jobs':
         return sectionVisibility.jobs ? this.sectionRenderers.jobs(company, jobs, layoutStyle) : '';
       case 'details':

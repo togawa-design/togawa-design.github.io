@@ -29,6 +29,19 @@ export class RecruitEditor {
     this.onSettingsChange = null; // 設定変更時のコールバック
     this.previewDebounceTimer = null; // プレビュー更新のデバウンス用
     this.draggedSection = null; // ドラッグ中のセクション
+
+    // UX改善用
+    this.tabChanges = {}; // タブ別の変更追跡
+    this.undoStack = []; // Undo履歴
+    this.redoStack = []; // Redo履歴
+    this.maxUndoStackSize = 50;
+    this.autosaveTimer = null;
+    this.autosaveInterval = 30000; // 30秒
+    this.lastSavedTime = null;
+    this.isCollapsed = false;
+    this.initialSettings = null; // 初期設定（変更検知用）
+    this.sectionVisibility = {}; // セクション表示/非表示状態
+    this.currentTab = 'settings'; // 現在のタブ
   }
 
   /**
@@ -50,8 +63,12 @@ export class RecruitEditor {
     this.companyDomain = companyDomain;
     this.company = company;
     this.settings = settings || {};
+    this.initialSettings = JSON.stringify(this.settings); // 初期状態を保存
     this.onSettingsChange = onSettingsChange;
     this.isEnabled = true;
+
+    // 下書きの復元チェック
+    await this.checkDraftRestore();
 
     // 編集パネルを作成
     this.createEditorPanel();
@@ -62,6 +79,12 @@ export class RecruitEditor {
     // イベントリスナーを設定
     this.setupEventListeners();
 
+    // キーボードショートカットを設定
+    this.setupKeyboardShortcuts();
+
+    // 自動保存を開始
+    this.startAutosave();
+
     // bodyに編集モードクラスを追加
     document.body.classList.add('recruit-edit-mode');
 
@@ -70,7 +93,17 @@ export class RecruitEditor {
       this.setupPreviewSortable();
     });
 
-    console.log('[RecruitEditor] 編集モード有効化');
+    // 画像ホバープレビューを設定
+    this.setupImageHoverPreview();
+
+    // ヘルプツールチップを追加
+    this.addHelpTooltips();
+
+    // フォームバリデーションを設定
+    this.setupFormValidation();
+
+    // クイック追加ボタンを追加
+    this.addQuickAddButtons();
   }
 
   /**
@@ -90,6 +123,12 @@ export class RecruitEditor {
       <div class="recruit-editor-header">
         <h2 class="recruit-editor-title">採用ページ編集</h2>
         <div class="recruit-editor-actions">
+          <!-- Undo/Redo -->
+          <div class="undo-redo-buttons">
+            <button type="button" class="btn-undo" id="btn-undo" title="元に戻す (Ctrl+Z)" disabled>↶</button>
+            <button type="button" class="btn-redo" id="btn-redo" title="やり直す (Ctrl+Y)" disabled>↷</button>
+          </div>
+          <!-- プレビューモード切替 -->
           <div class="preview-mode-toggle" id="preview-mode-toggle">
             <button type="button" class="btn-preview-mode active" data-mode="pc" title="PC表示">
               🖥️
@@ -98,6 +137,15 @@ export class RecruitEditor {
               📱
             </button>
           </div>
+          <!-- 別タブでプレビュー -->
+          <button type="button" class="btn-preview-new-tab" id="btn-preview-new-tab" title="別タブでプレビュー">
+            ↗️
+          </button>
+          <!-- パネル折りたたみ -->
+          <button type="button" class="btn-collapse-panel" id="btn-collapse-panel" title="パネルを折りたたむ">
+            ◀
+          </button>
+          <!-- 閉じる -->
           <button type="button" class="btn-close-editor" id="btn-close-editor" title="閉じる">
             ✕
           </button>
@@ -173,6 +221,29 @@ export class RecruitEditor {
             </div>
             <button type="button" class="btn-add-link" id="btn-add-custom-link">+ リンクを追加</button>
           </div>
+
+          <div class="editor-section">
+            <h3 class="editor-section-title">セクション表示設定</h3>
+            <p class="section-description">各セクションの表示/非表示を切り替えられます</p>
+            <div class="section-visibility-list" id="section-visibility-list">
+              <div class="section-visibility-toggle" data-section="hero">
+                <span class="section-name">ヒーロー</span>
+                <div class="toggle-mini active" data-section="hero"></div>
+              </div>
+              <div class="section-visibility-toggle" data-section="company-intro">
+                <span class="section-name">会社紹介</span>
+                <div class="toggle-mini active" data-section="company-intro"></div>
+              </div>
+              <div class="section-visibility-toggle" data-section="jobs">
+                <span class="section-name">求人一覧</span>
+                <div class="toggle-mini active" data-section="jobs"></div>
+              </div>
+              <div class="section-visibility-toggle" data-section="cta">
+                <span class="section-name">CTA</span>
+                <div class="toggle-mini active" data-section="cta"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- デザインタブ -->
@@ -206,7 +277,7 @@ export class RecruitEditor {
             </div>
             <div class="form-group">
               <label for="edit-hero-subtitle">サブタイトル</label>
-              <input type="text" id="edit-hero-subtitle" placeholder="私たちと一緒に働きませんか？">
+              <textarea id="edit-hero-subtitle" rows="3" placeholder="私たちと一緒に働きませんか？&#10;（3行まで表示されます）"></textarea>
             </div>
             <div class="form-group">
               <label>ヒーロー画像</label>
@@ -433,12 +504,21 @@ export class RecruitEditor {
 
       <div class="recruit-editor-footer">
         <button type="button" class="btn-save-recruit" id="btn-save-recruit">
-          <span>💾</span> 保存
+          <span>💾</span> 保存 <span class="shortcut-hint">Ctrl+S</span>
         </button>
+        <div class="save-status" id="save-status">
+          <span class="autosave-indicator-editor" id="autosave-indicator">
+            <span class="autosave-dot"></span>
+            <span class="autosave-text">自動保存: オン</span>
+          </span>
+        </div>
       </div>
     `;
 
     document.body.appendChild(panel);
+
+    // 変更状態を更新
+    this.updateChangesIndicator();
   }
 
   /**
@@ -509,8 +589,14 @@ export class RecruitEditor {
     // ヒーロー画像プリセット選択状態
     this.updateHeroPresetSelection(s.heroImage || '');
 
+    // セクション表示設定を反映
+    this.updateSectionVisibilityUI();
+
     // 埋込タブ: URLを設定
     this.updateEmbedUrl();
+
+    // 初期状態をUndo履歴に追加
+    this.pushToUndoStack();
   }
 
   /**
@@ -540,11 +626,29 @@ export class RecruitEditor {
       this.save();
     });
 
+    // Undo/Redo ボタン
+    document.getElementById('btn-undo')?.addEventListener('click', () => {
+      this.undo();
+    });
+    document.getElementById('btn-redo')?.addEventListener('click', () => {
+      this.redo();
+    });
+
+    // 別タブでプレビュー
+    document.getElementById('btn-preview-new-tab')?.addEventListener('click', () => {
+      this.openPreviewInNewTab();
+    });
+
+    // パネル折りたたみ
+    document.getElementById('btn-collapse-panel')?.addEventListener('click', () => {
+      this.togglePanelCollapse();
+    });
+
     // テンプレート変更
     document.querySelectorAll('input[name="template"]').forEach(input => {
       input.addEventListener('change', () => {
         this.settings.template = input.value;
-        this.hasChanges = true;
+        this.markAsChanged();
         this.updateTemplateSelection(input.value);
         this.applyPreview();
       });
@@ -567,7 +671,7 @@ export class RecruitEditor {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', () => {
-          this.hasChanges = true;
+          this.markAsChanged();
           this.updateSettingsFromForm();
           this.debouncedPreview();
         });
@@ -576,7 +680,7 @@ export class RecruitEditor {
 
     // 公開設定チェックボックス
     document.getElementById('edit-is-published')?.addEventListener('change', () => {
-      this.hasChanges = true;
+      this.markAsChanged();
       this.updateSettingsFromForm();
       this.applyPreview();
     });
@@ -584,7 +688,7 @@ export class RecruitEditor {
     // 募集の設定 (select)
     ['edit-jobs-limit', 'edit-jobs-sort'].forEach(id => {
       document.getElementById(id)?.addEventListener('change', () => {
-        this.hasChanges = true;
+        this.markAsChanged();
         this.updateSettingsFromForm();
         this.applyPreview();
       });
@@ -593,6 +697,16 @@ export class RecruitEditor {
     // カスタムリンク追加ボタン
     document.getElementById('btn-add-custom-link')?.addEventListener('click', () => {
       this.addCustomLink();
+    });
+
+    // セクション表示/非表示トグル
+    document.querySelectorAll('.section-visibility-toggle .toggle-mini').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const section = toggle.dataset.section;
+        toggle.classList.toggle('active');
+        const isVisible = toggle.classList.contains('active');
+        this.setSectionVisibility(section, isVisible);
+      });
     });
 
     // カスタムセクション追加ボタン（テンプレートセレクター）
@@ -652,6 +766,7 @@ export class RecruitEditor {
    * タブ切り替え
    */
   switchTab(tabId) {
+    this.currentTab = tabId;
     document.querySelectorAll('.recruit-editor-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.tab === tabId);
     });
@@ -752,14 +867,27 @@ export class RecruitEditor {
       this.updateSettingsFromForm();
       await saveRecruitSettings(this.settings);
 
+      // 保存成功
       this.hasChanges = false;
+      this.lastSavedTime = new Date();
+      this.initialSettings = JSON.stringify(this.settings);
+
+      // 下書きをクリア
+      this.clearDraft();
+
+      // タブの変更状態をクリア
+      this.clearTabChanges();
+
+      // インジケーターを更新
+      this.updateChangesIndicator();
+
       showToast('設定を保存しました', 'success');
     } catch (error) {
       console.error('[RecruitEditor] 保存エラー:', error);
       showToast('保存に失敗しました: ' + error.message, 'error');
     } finally {
       saveBtn.disabled = false;
-      saveBtn.innerHTML = '<span>💾</span> 保存';
+      saveBtn.innerHTML = '<span>💾</span> 保存 <span class="shortcut-hint">Ctrl+S</span>';
     }
   }
 
@@ -880,6 +1008,9 @@ export class RecruitEditor {
       });
       if (!confirmed) return;
     }
+
+    // クリーンアップ
+    this.cleanup();
 
     // 編集モードを終了（通常モードに戻る）
     window.location.href = `company-recruit.html?id=${encodeURIComponent(this.companyDomain)}`;
@@ -1708,6 +1839,591 @@ export class RecruitEditor {
       // 必要に応じてセクション管理UIを更新
       // 現在は簡易実装のため、保存時に反映される
     }
+  }
+
+  // ========================================
+  // UX改善メソッド
+  // ========================================
+
+  /**
+   * 3. キーボードショートカットを設定
+   */
+  setupKeyboardShortcuts() {
+    this.keyboardHandler = (e) => {
+      // Ctrl+S / Cmd+S: 保存
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        this.save();
+      }
+      // Ctrl+Z / Cmd+Z: Undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        this.undo();
+      }
+      // Ctrl+Y / Cmd+Shift+Z: Redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        this.redo();
+      }
+      // Escape: パネル折りたたみ
+      if (e.key === 'Escape' && this.isEnabled) {
+        this.togglePanelCollapse();
+      }
+    };
+    document.addEventListener('keydown', this.keyboardHandler);
+  }
+
+  /**
+   * 4. 自動保存を開始
+   */
+  startAutosave() {
+    this.autosaveTimer = setInterval(() => {
+      if (this.hasChanges) {
+        this.saveDraft();
+      }
+    }, this.autosaveInterval);
+  }
+
+  /**
+   * 自動保存を停止
+   */
+  stopAutosave() {
+    if (this.autosaveTimer) {
+      clearInterval(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
+  }
+
+  /**
+   * 下書きを保存（localStorage）
+   */
+  saveDraft() {
+    if (!this.companyDomain) return;
+
+    const draftKey = `recruit_draft_${this.companyDomain}`;
+    this.updateSettingsFromForm();
+
+    const draft = {
+      settings: this.settings,
+      timestamp: Date.now()
+    };
+
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      this.updateAutosaveIndicator('saved');
+    } catch (e) {
+      console.warn('[RecruitEditor] 下書き保存に失敗:', e);
+    }
+  }
+
+  /**
+   * 下書きを削除
+   */
+  clearDraft() {
+    if (!this.companyDomain) return;
+    const draftKey = `recruit_draft_${this.companyDomain}`;
+    localStorage.removeItem(draftKey);
+  }
+
+  /**
+   * 下書きの復元チェック
+   */
+  async checkDraftRestore() {
+    if (!this.companyDomain) return;
+
+    const draftKey = `recruit_draft_${this.companyDomain}`;
+    const draftJson = localStorage.getItem(draftKey);
+
+    if (!draftJson) return;
+
+    try {
+      const draft = JSON.parse(draftJson);
+      const draftTime = new Date(draft.timestamp);
+      const now = new Date();
+      const diffHours = (now - draftTime) / (1000 * 60 * 60);
+
+      // 24時間以内の下書きのみ復元対象
+      if (diffHours > 24) {
+        this.clearDraft();
+        return;
+      }
+
+      const timeStr = draftTime.toLocaleString('ja-JP');
+      const confirmed = await showConfirmDialog({
+        title: '下書きの復元',
+        message: `${timeStr} に保存された下書きがあります。復元しますか？`,
+        confirmText: '復元する',
+        cancelText: '破棄する'
+      });
+
+      if (confirmed) {
+        this.settings = draft.settings;
+        showToast('下書きを復元しました', 'success');
+      } else {
+        this.clearDraft();
+      }
+    } catch (e) {
+      console.warn('[RecruitEditor] 下書き復元に失敗:', e);
+      this.clearDraft();
+    }
+  }
+
+  /**
+   * 自動保存インジケーターを更新
+   */
+  updateAutosaveIndicator(status) {
+    const indicator = document.getElementById('autosave-indicator');
+    if (!indicator) return;
+
+    const textEl = indicator.querySelector('.autosave-text');
+    indicator.classList.remove('saving', 'saved');
+
+    if (status === 'saving') {
+      indicator.classList.add('saving');
+      if (textEl) textEl.textContent = '保存中...';
+    } else if (status === 'saved') {
+      indicator.classList.add('saved');
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+      if (textEl) textEl.textContent = `下書き保存: ${timeStr}`;
+    }
+  }
+
+  /**
+   * 5. パネル折りたたみ切り替え
+   */
+  togglePanelCollapse() {
+    const panel = document.getElementById('recruit-editor-panel');
+    if (!panel) return;
+
+    this.isCollapsed = !this.isCollapsed;
+    panel.classList.toggle('collapsed', this.isCollapsed);
+
+    const btn = document.getElementById('btn-collapse-panel');
+    if (btn) {
+      btn.textContent = this.isCollapsed ? '▶' : '◀';
+      btn.title = this.isCollapsed ? 'パネルを展開' : 'パネルを折りたたむ';
+    }
+  }
+
+  /**
+   * 1. 変更状態インジケーターを更新
+   */
+  updateChangesIndicator() {
+    const panel = document.getElementById('recruit-editor-panel');
+    const saveBtn = document.getElementById('btn-save-recruit');
+
+    if (panel) {
+      panel.classList.toggle('has-changes', this.hasChanges);
+    }
+
+    if (saveBtn) {
+      // 未保存バッジ
+      let badge = saveBtn.querySelector('.unsaved-badge');
+      if (this.hasChanges && !badge) {
+        badge = document.createElement('span');
+        badge.className = 'unsaved-badge';
+        saveBtn.style.position = 'relative';
+        saveBtn.appendChild(badge);
+      } else if (!this.hasChanges && badge) {
+        badge.remove();
+      }
+    }
+  }
+
+  /**
+   * 6. タブの変更状態を追跡
+   */
+  markTabAsChanged(tabId) {
+    this.tabChanges[tabId] = true;
+    const tab = document.querySelector(`.recruit-editor-tab[data-tab="${tabId}"]`);
+    if (tab) {
+      tab.classList.add('has-changes');
+    }
+  }
+
+  /**
+   * タブの変更状態をクリア
+   */
+  clearTabChanges() {
+    this.tabChanges = {};
+    document.querySelectorAll('.recruit-editor-tab.has-changes').forEach(tab => {
+      tab.classList.remove('has-changes');
+    });
+  }
+
+  /**
+   * 11. Undo履歴に追加
+   */
+  pushToUndoStack() {
+    this.updateSettingsFromForm();
+    const state = JSON.stringify(this.settings);
+
+    // 同じ状態は追加しない
+    if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === state) {
+      return;
+    }
+
+    this.undoStack.push(state);
+
+    // スタックサイズ制限
+    if (this.undoStack.length > this.maxUndoStackSize) {
+      this.undoStack.shift();
+    }
+
+    // Redoスタックをクリア
+    this.redoStack = [];
+
+    this.updateUndoRedoButtons();
+  }
+
+  /**
+   * Undo実行
+   */
+  undo() {
+    if (this.undoStack.length <= 1) return;
+
+    // 現在の状態をRedoスタックに保存
+    const current = this.undoStack.pop();
+    this.redoStack.push(current);
+
+    // 前の状態を復元
+    const previous = this.undoStack[this.undoStack.length - 1];
+    if (previous) {
+      this.settings = JSON.parse(previous);
+      this.populateForm();
+      this.applyPreview();
+      showToast('元に戻しました', 'success');
+    }
+
+    this.updateUndoRedoButtons();
+  }
+
+  /**
+   * Redo実行
+   */
+  redo() {
+    if (this.redoStack.length === 0) return;
+
+    const next = this.redoStack.pop();
+    this.undoStack.push(next);
+
+    this.settings = JSON.parse(next);
+    this.populateForm();
+    this.applyPreview();
+    showToast('やり直しました', 'success');
+
+    this.updateUndoRedoButtons();
+  }
+
+  /**
+   * Undo/Redoボタンの状態を更新
+   */
+  updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('btn-undo');
+    const redoBtn = document.getElementById('btn-redo');
+
+    if (undoBtn) {
+      undoBtn.disabled = this.undoStack.length <= 1;
+    }
+    if (redoBtn) {
+      redoBtn.disabled = this.redoStack.length === 0;
+    }
+  }
+
+  /**
+   * 9. 別タブでプレビューを開く
+   */
+  openPreviewInNewTab() {
+    const url = `${window.location.origin}/company-recruit.html?id=${encodeURIComponent(this.companyDomain)}`;
+    window.open(url, '_blank');
+  }
+
+  /**
+   * 10. 画像ホバープレビューを設定
+   */
+  setupImageHoverPreview() {
+    // プレビュー要素を作成
+    let previewEl = document.getElementById('image-hover-preview');
+    if (!previewEl) {
+      previewEl = document.createElement('img');
+      previewEl.id = 'image-hover-preview';
+      previewEl.className = 'image-hover-preview';
+      document.body.appendChild(previewEl);
+    }
+
+    // 画像入力フィールドにホバーイベントを設定
+    document.addEventListener('mouseover', (e) => {
+      const input = e.target.closest('input[type="text"], input[type="url"]');
+      if (!input) return;
+
+      const value = input.value?.trim();
+      if (!value || !this.isImageUrl(value)) return;
+
+      previewEl.src = value;
+      previewEl.classList.add('visible');
+      this.positionHoverPreview(e, previewEl);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      const input = e.target.closest('input[type="text"], input[type="url"]');
+      if (input) {
+        previewEl.classList.remove('visible');
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (previewEl.classList.contains('visible')) {
+        this.positionHoverPreview(e, previewEl);
+      }
+    });
+  }
+
+  /**
+   * 画像URLかどうか判定
+   */
+  isImageUrl(url) {
+    if (!url) return false;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+    const lowerUrl = url.toLowerCase();
+    return imageExtensions.some(ext => lowerUrl.includes(ext)) ||
+           lowerUrl.includes('storage.googleapis.com') ||
+           lowerUrl.includes('firebasestorage');
+  }
+
+  /**
+   * ホバープレビューの位置を設定
+   */
+  positionHoverPreview(e, previewEl) {
+    const offset = 15;
+    let x = e.clientX + offset;
+    let y = e.clientY + offset;
+
+    // 画面外にはみ出さないように調整
+    const rect = previewEl.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) {
+      x = e.clientX - rect.width - offset;
+    }
+    if (y + rect.height > window.innerHeight) {
+      y = e.clientY - rect.height - offset;
+    }
+
+    previewEl.style.left = `${x}px`;
+    previewEl.style.top = `${y}px`;
+  }
+
+  /**
+   * 変更をマーク（hasChanges + タブ変更 + Undo履歴）
+   */
+  markAsChanged() {
+    if (!this.hasChanges) {
+      this.pushToUndoStack(); // 変更前の状態を保存
+    }
+    this.hasChanges = true;
+    this.markTabAsChanged(this.currentTab);
+    this.updateChangesIndicator();
+  }
+
+  /**
+   * 7. セクションの表示/非表示を設定
+   */
+  setSectionVisibility(sectionId, isVisible) {
+    this.sectionVisibility[sectionId] = isVisible;
+
+    // 設定に反映
+    this.settings.sectionVisibility = JSON.stringify(this.sectionVisibility);
+
+    this.markAsChanged();
+    this.applyPreview();
+
+    showToast(`${this.getSectionLabel(sectionId)}を${isVisible ? '表示' : '非表示'}にしました`, 'success');
+  }
+
+  /**
+   * セクションラベルを取得
+   */
+  getSectionLabel(sectionId) {
+    const labels = {
+      'hero': 'ヒーロー',
+      'company-intro': '会社紹介',
+      'jobs': '求人一覧',
+      'cta': 'CTA'
+    };
+    return labels[sectionId] || sectionId;
+  }
+
+  /**
+   * セクション表示設定をUIに反映
+   */
+  updateSectionVisibilityUI() {
+    // 設定からsectionVisibilityを読み込み
+    if (this.settings.sectionVisibility) {
+      try {
+        this.sectionVisibility = JSON.parse(this.settings.sectionVisibility);
+      } catch (e) {
+        this.sectionVisibility = {};
+      }
+    }
+
+    // トグルUIを更新
+    document.querySelectorAll('.section-visibility-toggle .toggle-mini').forEach(toggle => {
+      const section = toggle.dataset.section;
+      const isVisible = this.sectionVisibility[section] !== false;
+      toggle.classList.toggle('active', isVisible);
+    });
+  }
+
+  /**
+   * クリーンアップ（編集モード終了時）
+   */
+  cleanup() {
+    this.stopAutosave();
+    if (this.keyboardHandler) {
+      document.removeEventListener('keydown', this.keyboardHandler);
+    }
+
+    const hoverPreview = document.getElementById('image-hover-preview');
+    if (hoverPreview) {
+      hoverPreview.remove();
+    }
+  }
+
+  /**
+   * 12. ヘルプツールチップを追加
+   */
+  addHelpTooltips() {
+    const tooltips = {
+      'edit-hero-title': '採用ページのメインタイトル。会社の魅力を一言で伝えましょう',
+      'edit-hero-subtitle': 'タイトルの補足説明。求職者への呼びかけに効果的',
+      'edit-hero-image': '背景画像。職場の雰囲気が伝わる写真がおすすめ',
+      'edit-logo-url': 'ヘッダーに表示されるロゴ画像',
+      'edit-phone-number': '画面下部のCTAバーに表示される電話番号',
+      'edit-ogp-title': 'SNSでシェアされたときのタイトル',
+      'edit-ogp-description': 'SNSでシェアされたときの説明文',
+      'edit-custom-slug': 'カスタムURLを設定すると短いURLでアクセス可能'
+    };
+
+    Object.entries(tooltips).forEach(([id, text]) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+
+      const label = input.closest('.form-group')?.querySelector('label');
+      if (!label || label.querySelector('.help-tooltip')) return;
+
+      const tooltip = document.createElement('span');
+      tooltip.className = 'help-tooltip';
+      tooltip.textContent = '?';
+      tooltip.setAttribute('data-tooltip', text);
+      label.appendChild(tooltip);
+    });
+  }
+
+  /**
+   * 8. フォームバリデーション（URL、電話番号）
+   */
+  validateField(input) {
+    const value = input.value?.trim();
+    if (!value) {
+      input.classList.remove('field-error');
+      const hint = input.parentElement?.querySelector('.validation-hint');
+      if (hint) hint.remove();
+      return true;
+    }
+
+    let isValid = true;
+    let errorMessage = '';
+
+    // URL検証
+    if (input.type === 'url' || input.id?.includes('url') || input.id?.includes('image')) {
+      try {
+        new URL(value);
+      } catch {
+        isValid = false;
+        errorMessage = 'URLの形式が正しくありません';
+      }
+    }
+
+    // 電話番号検証
+    if (input.id === 'edit-phone-number' && value) {
+      const phoneRegex = /^[0-9\-\s\(\)]+$/;
+      if (!phoneRegex.test(value)) {
+        isValid = false;
+        errorMessage = '電話番号の形式が正しくありません';
+      }
+    }
+
+    // エラー表示
+    input.classList.toggle('field-error', !isValid);
+    let hint = input.parentElement?.querySelector('.validation-hint');
+    if (!isValid) {
+      if (!hint) {
+        hint = document.createElement('div');
+        hint.className = 'validation-hint';
+        input.parentElement?.appendChild(hint);
+      }
+      hint.textContent = errorMessage;
+    } else if (hint) {
+      hint.remove();
+    }
+
+    return isValid;
+  }
+
+  /**
+   * フォームバリデーションを設定
+   */
+  setupFormValidation() {
+    const urlInputs = document.querySelectorAll(
+      '#recruit-editor-panel input[type="url"], ' +
+      '#recruit-editor-panel input[id*="url"], ' +
+      '#recruit-editor-panel input[id*="image"], ' +
+      '#recruit-editor-panel #edit-phone-number'
+    );
+
+    urlInputs.forEach(input => {
+      input.addEventListener('blur', () => this.validateField(input));
+    });
+  }
+
+  /**
+   * 13. クイック追加セクション
+   */
+  addQuickAddButtons() {
+    const container = document.getElementById('edit-custom-sections');
+    if (!container) return;
+
+    // 既存のクイック追加ボタンがあれば削除
+    const existing = container.previousElementSibling;
+    if (existing?.classList.contains('quick-add-buttons')) {
+      existing.remove();
+    }
+
+    // よく使うセクションテンプレート
+    const quickTemplates = [
+      { id: 'message', label: '代表メッセージ', icon: '💬' },
+      { id: 'about', label: '会社概要', icon: '🏢' },
+      { id: 'photos', label: '写真ギャラリー', icon: '📷' }
+    ];
+
+    const buttonsHtml = `
+      <div class="quick-add-buttons">
+        ${quickTemplates.map(t => `
+          <button type="button" class="btn-quick-add" data-template="${t.id}">
+            ${t.icon} ${t.label}
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    container.insertAdjacentHTML('beforebegin', buttonsHtml);
+
+    // イベントリスナー
+    document.querySelectorAll('.btn-quick-add').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const templateId = btn.dataset.template;
+        this.addCustomSection(templateId);
+      });
+    });
   }
 }
 

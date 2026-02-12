@@ -31,7 +31,8 @@ export function renderSiteHeader(options = {}) {
     ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(companyName)}" class="site-header-logo-img">`
     : '';
 
-  const nameContent = companyName
+  // ロゴ画像がある場合は会社名テキストを表示しない（ロゴ画像に社名が含まれることが多いため）
+  const nameContent = !logoUrl && companyName
     ? `<span class="site-header-company-name">${escapeHtml(companyName)}</span>`
     : '';
 

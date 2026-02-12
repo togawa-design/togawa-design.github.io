@@ -2,14 +2,13 @@
  * LP編集機能
  * Wixライクなビジュアルエディタ
  */
-import { escapeHtml } from '@shared/utils.js';
+import { escapeHtml, showToast } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
 import { SECTION_TYPES, generateSectionId, canAddSection } from './sectionTypes.js';
 import { renderPointsSection } from '@components/organisms/PointsSection.js';
 import { renderHeroSection } from '@components/organisms/HeroSection.js';
-
-// GAS API URL（スプレッドシートに保存用）
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
+import { uploadLPImage, compressImage } from '@features/admin/image-uploader.js';
+import { saveLPSettings as saveToFirestore } from '@shared/firestore-service.js';
 
 // デザインパターン定義（採用ページと統一テンプレート）
 const DESIGN_PATTERNS = [
@@ -223,6 +222,32 @@ export class LPEditor {
     this.currentLayoutStyle = 'default';
     this.company = null;
     this.mainJob = null;
+
+    // UX機能用プロパティ
+    this.undoStack = [];
+    this.redoStack = [];
+    this.maxUndoStackSize = 50;
+    this.autosaveTimer = null;
+    this.autosaveInterval = 30000; // 30秒
+    this.hasChanges = false;
+    this.initialSettings = null;
+    this.keyboardHandler = null;
+    this.saveStateTimer = null;
+  }
+
+  /**
+   * 編集をトラック（デバウンス付きでsaveState呼び出し）
+   */
+  trackChange() {
+    this.markAsChanged();
+
+    // デバウンス: 500ms後にsaveState
+    if (this.saveStateTimer) {
+      clearTimeout(this.saveStateTimer);
+    }
+    this.saveStateTimer = setTimeout(() => {
+      this.saveState();
+    }, 500);
   }
 
   enable(lpSettings, companyDomain, jobInfo = null, company = null, mainJob = null) {
@@ -246,12 +271,28 @@ export class LPEditor {
 
     document.body.classList.add('lp-edit-mode');
 
+    // 初期状態を保存
+    this.initialSettings = JSON.stringify(this.lpSettings);
+    this.hasChanges = false;
+
     this.renderToolbar();
     this.renderSidebar();
     this.setupEditableElements();
     this.setupSectionSortable();
     this.setupSectionSelection();
     this.addSectionEditButtons();
+
+    // 自動保存を開始
+    this.startAutosave();
+
+    // 下書きがあれば復元確認
+    this.checkDraft();
+
+    // 初期状態をUndoスタックに保存
+    this.saveState();
+
+    // 画像ホバープレビューを設定
+    this.setupImageHoverPreview();
   }
 
   /**
@@ -346,7 +387,13 @@ export class LPEditor {
     panel.id = 'lp-editor-panel';
     panel.innerHTML = `
       <div class="lp-editor-header">
-        <h2 class="lp-editor-title">LP編集</h2>
+        <div class="lp-editor-header-top">
+          <h2 class="lp-editor-title">LP編集</h2>
+          <div class="lp-editor-undo-redo">
+            <button type="button" class="btn-undo" id="btn-lp-undo" title="元に戻す (Ctrl+Z)" disabled>↶</button>
+            <button type="button" class="btn-redo" id="btn-lp-redo" title="やり直す (Ctrl+Y)" disabled>↷</button>
+          </div>
+        </div>
         <div class="lp-editor-actions">
           <div class="preview-mode-toggle" id="lp-preview-mode-toggle">
             <button type="button" class="btn-preview-mode active" data-mode="pc" title="PC表示">
@@ -356,8 +403,15 @@ export class LPEditor {
               📱
             </button>
           </div>
+          <!-- 別タブでプレビュー -->
+          <button type="button" class="btn-preview-new-tab" id="btn-lp-preview-new-tab" title="別タブでプレビュー">
+            ↗️
+          </button>
           <button type="button" class="btn-preview-lp" id="btn-preview-lp" title="プレビュー">
             <span>👁</span>
+          </button>
+          <button type="button" class="btn-collapse-panel" id="btn-collapse-lp-panel" title="パネルを折りたたむ">
+            ◀
           </button>
           <button type="button" class="btn-close-editor" id="btn-close-lp-editor" title="閉じる">
             <span>✕</span>
@@ -371,15 +425,86 @@ export class LPEditor {
           <button type="button" class="lp-editor-tab active" data-tab="design">デザイン</button>
           <button type="button" class="lp-editor-tab" data-tab="content">コンテンツ</button>
           <button type="button" class="lp-editor-tab" data-tab="sections">セクション</button>
+          <button type="button" class="lp-editor-tab" data-tab="settings">設定</button>
         </div>
 
         <!-- デザインタブ -->
         <div class="lp-editor-tab-content active" data-tab-content="design">
-          <div class="editor-section">
-            <h3 class="editor-section-title">テンプレート</h3>
-            <p class="editor-section-desc">業種やイメージに合わせて最適なデザインを選べます</p>
-            <div class="layout-style-grid" id="lp-layout-selector">
-              ${this.renderLayoutStyleOptions()}
+          <div class="editor-section editor-section-collapsible">
+            <div class="editor-section-header-collapsible" data-collapse="template">
+              <h3 class="editor-section-title">テンプレート</h3>
+              <span class="editor-section-toggle">▼</span>
+            </div>
+            <div class="editor-section-body" id="collapse-template">
+              <p class="editor-section-desc">業種やイメージに合わせて最適なデザインを選べます</p>
+              <div class="layout-style-grid" id="lp-layout-selector">
+                ${this.renderLayoutStyleOptions()}
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-section editor-section-collapsible">
+            <div class="editor-section-header-collapsible" data-collapse="colors">
+              <h3 class="editor-section-title">カスタムカラー</h3>
+              <span class="editor-section-toggle">▼</span>
+            </div>
+            <div class="editor-section-body" id="collapse-colors" style="display: none;">
+              <p class="editor-section-desc">テンプレートの色を調整できます</p>
+              <div class="color-settings-grid">
+                <div class="color-setting-item">
+                  <label class="color-label">
+                    <span class="color-label-text">メインカラー</span>
+                    <span class="help-icon" data-tooltip="ボタンやアクセントに使用される色">?</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="lp-color-primary" class="color-picker" value="${this.lpSettings?.customPrimary || '#6366f1'}">
+                    <input type="text" id="lp-color-primary-text" class="color-text" value="${this.lpSettings?.customPrimary || ''}" placeholder="例: #6366f1">
+                  </div>
+                </div>
+                <div class="color-setting-item">
+                  <label class="color-label">
+                    <span class="color-label-text">アクセントカラー</span>
+                    <span class="help-icon" data-tooltip="装飾や強調に使用される色">?</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="lp-color-accent" class="color-picker" value="${this.lpSettings?.customAccent || '#8b5cf6'}">
+                    <input type="text" id="lp-color-accent-text" class="color-text" value="${this.lpSettings?.customAccent || ''}" placeholder="例: #8b5cf6">
+                  </div>
+                </div>
+                <div class="color-setting-item">
+                  <label class="color-label">
+                    <span class="color-label-text">背景色</span>
+                    <span class="help-icon" data-tooltip="セクションの背景色">?</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="lp-color-bg" class="color-picker" value="${this.lpSettings?.customBg || '#f8fafc'}">
+                    <input type="text" id="lp-color-bg-text" class="color-text" value="${this.lpSettings?.customBg || ''}" placeholder="例: #f8fafc">
+                  </div>
+                </div>
+                <div class="color-setting-item">
+                  <label class="color-label">
+                    <span class="color-label-text">テキスト色</span>
+                    <span class="help-icon" data-tooltip="本文テキストの色">?</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="lp-color-text" class="color-picker" value="${this.lpSettings?.customText || '#1f2937'}">
+                    <input type="text" id="lp-color-text-text" class="color-text" value="${this.lpSettings?.customText || ''}" placeholder="例: #1f2937">
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn-reset-colors" id="lp-reset-colors">デフォルトに戻す</button>
+            </div>
+          </div>
+
+          <!-- ポイントセクションスタイル -->
+          <div class="editor-section editor-section-collapsible">
+            <div class="editor-section-header-collapsible" data-collapse="points-style">
+              <h3 class="editor-section-title">ポイントセクション</h3>
+              <span class="editor-section-toggle">▼</span>
+            </div>
+            <div class="editor-section-body" id="collapse-points-style" style="display: none;">
+              <p class="editor-section-desc">ポイント（特徴）のスタイルをカスタマイズ</p>
+              ${this.renderSidebarPointsStyle()}
             </div>
           </div>
         </div>
@@ -398,8 +523,17 @@ export class LPEditor {
               <input type="text" id="lp-edit-hero-subtitle" placeholder="例: 未経験歓迎・寮完備" value="${this.escapeAttr(this.lpSettings?.heroSubtitle || '')}">
             </div>
             <div class="editor-form-group">
-              <label for="lp-edit-hero-image">背景画像URL</label>
-              <input type="text" id="lp-edit-hero-image" placeholder="https://..." value="${this.escapeAttr(this.lpSettings?.heroImage || '')}">
+              <label>背景画像</label>
+              <div class="editor-image-upload-area" id="lp-hero-image-upload-area">
+                ${this.lpSettings?.heroImage
+                  ? `<img src="${this.escapeAttr(this.lpSettings.heroImage)}" alt="背景画像" class="editor-image-preview">`
+                  : `<div class="editor-image-placeholder">
+                      <span class="editor-image-icon">📷</span>
+                      <span class="editor-image-text">クリックして画像を設定</span>
+                    </div>`
+                }
+              </div>
+              <button type="button" class="editor-image-clear-btn" id="lp-hero-image-clear" ${!this.lpSettings?.heroImage ? 'style="display:none"' : ''}>画像をクリア</button>
             </div>
           </div>
 
@@ -451,6 +585,7 @@ export class LPEditor {
         <div class="lp-editor-tab-content" data-tab-content="sections">
           <div class="editor-section">
             <h3 class="editor-section-title">セクション一覧</h3>
+            <p class="editor-section-desc">ドラッグ&ドロップで並び替えできます</p>
             <div class="lp-sidebar-sections" id="lp-sidebar-sections">
               ${this.renderSidebarSectionList()}
             </div>
@@ -460,11 +595,126 @@ export class LPEditor {
             </button>
           </div>
         </div>
+
+        <!-- 設定タブ -->
+        <div class="lp-editor-tab-content" data-tab-content="settings">
+          <!-- 動画設定 -->
+          <div class="editor-section editor-section-collapsible">
+            <div class="editor-section-header-collapsible" data-collapse="video">
+              <h3 class="editor-section-title">動画設定</h3>
+              <span class="editor-section-toggle">▼</span>
+            </div>
+            <div class="editor-section-body" id="collapse-video">
+              <div class="editor-form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="lp-show-video" ${this.lpSettings?.showVideoButton === 'true' ? 'checked' : ''}>
+                  <span>動画ボタンを表示する</span>
+                </label>
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-video-url">
+                  動画URL
+                </label>
+                <div class="video-url-input-wrapper">
+                  <input type="url" id="lp-video-url" placeholder="https://youtube.com/watch?v=..." value="${this.escapeAttr(this.lpSettings?.videoUrl || '')}">
+                  <button type="button" class="video-url-clear-btn" id="lp-video-url-clear" title="クリア" ${!this.lpSettings?.videoUrl ? 'style="display:none"' : ''}>×</button>
+                </div>
+                <div class="video-url-validation" id="lp-video-url-validation"></div>
+                <p class="editor-hint video-url-hint">
+                  <span class="video-service-icon">▶</span> YouTube、Vimeo、TikTok、MP4/WebMに対応
+                </p>
+              </div>
+              <div class="video-preview-container" id="lp-video-preview-container">
+                ${this.lpSettings?.videoUrl ? this.generateVideoPreviewCompact(this.lpSettings.videoUrl) : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- OGP/SEO設定 -->
+          <div class="editor-section editor-section-collapsible">
+            <div class="editor-section-header-collapsible" data-collapse="ogp">
+              <h3 class="editor-section-title">OGP/SEO</h3>
+              <span class="editor-section-toggle">▼</span>
+            </div>
+            <div class="editor-section-body" id="collapse-ogp" style="display: none;">
+              <p class="editor-section-desc">SNSシェア時の表示を設定します</p>
+              <div class="editor-form-group">
+                <label for="lp-ogp-title">
+                  OGPタイトル
+                  <span class="help-icon" data-tooltip="SNSでシェアされた時のタイトル">?</span>
+                </label>
+                <input type="text" id="lp-ogp-title" placeholder="求人タイトル | 会社名" value="${this.escapeAttr(this.lpSettings?.ogpTitle || '')}">
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-ogp-description">OGP説明文</label>
+                <textarea id="lp-ogp-description" rows="2" placeholder="求人の魅力を簡潔に...">${this.escapeAttr(this.lpSettings?.ogpDescription || '')}</textarea>
+              </div>
+              <div class="editor-form-group">
+                <label>OGP画像</label>
+                <div class="editor-image-upload-area" id="lp-ogp-image-upload-area">
+                  ${this.lpSettings?.ogpImage
+                    ? `<img src="${this.escapeAttr(this.lpSettings.ogpImage)}" alt="OGP画像" class="editor-image-preview">`
+                    : `<div class="editor-image-placeholder">
+                        <span class="editor-image-icon">📷</span>
+                        <span class="editor-image-text">クリックして画像を設定</span>
+                      </div>`
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- トラッキング設定 -->
+          <div class="editor-section editor-section-collapsible">
+            <div class="editor-section-header-collapsible" data-collapse="tracking">
+              <h3 class="editor-section-title">トラッキング</h3>
+              <span class="editor-section-toggle">▼</span>
+            </div>
+            <div class="editor-section-body" id="collapse-tracking" style="display: none;">
+              <p class="editor-section-desc">広告効果測定用のピクセルIDを設定</p>
+              <div class="editor-form-group">
+                <label for="lp-meta-pixel">
+                  Meta Pixel ID
+                  <span class="help-icon" data-tooltip="Facebook/Instagram広告用">?</span>
+                </label>
+                <input type="text" id="lp-meta-pixel" placeholder="例: 123456789012345" value="${this.escapeAttr(this.lpSettings?.metaPixelId || '')}">
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-tiktok-pixel">TikTok Pixel ID</label>
+                <input type="text" id="lp-tiktok-pixel" placeholder="例: ABCDEFG123" value="${this.escapeAttr(this.lpSettings?.tiktokPixelId || '')}">
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-google-ads-id">Google Ads ID</label>
+                <input type="text" id="lp-google-ads-id" placeholder="例: AW-123456789" value="${this.escapeAttr(this.lpSettings?.googleAdsId || '')}">
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-google-ads-label">Google Ads ラベル</label>
+                <input type="text" id="lp-google-ads-label" placeholder="例: abCdEfGhIjK" value="${this.escapeAttr(this.lpSettings?.googleAdsLabel || '')}">
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-line-tag">LINE Tag ID</label>
+                <input type="text" id="lp-line-tag" placeholder="例: 12345678-abcd-efgh" value="${this.escapeAttr(this.lpSettings?.lineTagId || '')}">
+              </div>
+              <div class="editor-form-group">
+                <label for="lp-clarity">Microsoft Clarity ID</label>
+                <input type="text" id="lp-clarity" placeholder="例: abc123def" value="${this.escapeAttr(this.lpSettings?.clarityProjectId || '')}">
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="lp-editor-footer">
+        <div class="lp-editor-footer-status">
+          <span class="autosave-indicator-editor" id="lp-autosave-indicator">
+            <span class="autosave-dot"></span>
+            <span class="autosave-text">自動保存: オン</span>
+          </span>
+        </div>
         <button type="button" class="btn-save-lp" id="lp-sidebar-save">
-          <span>💾</span> 保存
+          <span class="btn-save-icon">💾</span>
+          <span class="btn-save-text">保存</span>
+          <span class="shortcut-hint">Ctrl+S</span>
         </button>
       </div>
     `;
@@ -501,6 +751,16 @@ export class LPEditor {
 
     // 保存ボタン
     panel.querySelector('#lp-sidebar-save').addEventListener('click', () => this.saveChanges());
+
+    // Undo/Redoボタン
+    panel.querySelector('#btn-lp-undo')?.addEventListener('click', () => this.undo());
+    panel.querySelector('#btn-lp-redo')?.addEventListener('click', () => this.redo());
+
+    // パネル折りたたみボタン
+    panel.querySelector('#btn-collapse-lp-panel')?.addEventListener('click', () => this.togglePanelCollapse());
+
+    // 別タブでプレビュー
+    panel.querySelector('#btn-lp-preview-new-tab')?.addEventListener('click', () => this.openPreviewInNewTab());
 
     // テンプレート選択イベント
     this.setupLayoutStyleEvents();
@@ -591,6 +851,7 @@ export class LPEditor {
       heroTitleInput.addEventListener('input', (e) => {
         this.editedData.heroTitle = e.target.value;
         this.updateHeroPreview();
+        this.trackChange();
       });
     }
 
@@ -598,20 +859,57 @@ export class LPEditor {
       heroSubtitleInput.addEventListener('input', (e) => {
         this.editedData.heroSubtitle = e.target.value;
         this.updateHeroPreview();
+        this.trackChange();
       });
     }
 
-    if (heroImageInput) {
-      heroImageInput.addEventListener('input', (e) => {
-        this.editedData.heroImage = e.target.value;
-        this.updateHeroPreview();
+    // ヒーロー画像アップロードエリア → 画像エディターモーダルを開く
+    const heroImageUploadArea = panel.querySelector('#lp-hero-image-upload-area');
+    const heroImageClearBtn = panel.querySelector('#lp-hero-image-clear');
+
+    if (heroImageUploadArea) {
+      // サイドバーのプレビュー更新用関数
+      this.updateSidebarHeroImagePreview = (url) => {
+        const area = panel.querySelector('#lp-hero-image-upload-area');
+        const clearBtn = panel.querySelector('#lp-hero-image-clear');
+        if (!area) return;
+
+        if (url) {
+          area.innerHTML = `<img src="${this.escapeAttr(url)}" alt="背景画像" class="editor-image-preview">`;
+          if (clearBtn) clearBtn.style.display = 'block';
+        } else {
+          area.innerHTML = `
+            <div class="editor-image-placeholder">
+              <span class="editor-image-icon">📷</span>
+              <span class="editor-image-text">クリックして画像を設定</span>
+            </div>
+          `;
+          if (clearBtn) clearBtn.style.display = 'none';
+        }
+      };
+
+      // クリックで画像エディターモーダルを開く
+      heroImageUploadArea.addEventListener('click', () => {
+        // ヒーロー背景要素を取得（またはダミー要素を作成）
+        const heroBg = document.querySelector('.lp-hero-bg') || heroImageUploadArea;
+        this.startImageEditingForSidebar(heroBg, 'heroImage', '背景画像');
       });
+
+      // クリアボタン
+      if (heroImageClearBtn) {
+        heroImageClearBtn.addEventListener('click', () => {
+          this.editedData.heroImage = '';
+          this.updateSidebarHeroImagePreview('');
+          this.updateHeroPreview();
+        });
+      }
     }
 
     if (ctaTextInput) {
       ctaTextInput.addEventListener('input', (e) => {
         this.editedData.ctaText = e.target.value;
         this.updateCtaPreview();
+        this.trackChange();
       });
     }
 
@@ -619,6 +917,811 @@ export class LPEditor {
     this.setupSidebarPointsEvents(panel);
     this.setupSidebarFAQEvents(panel);
     this.setupSidebarCustomEvents(panel);
+
+    // 折りたたみセクション
+    this.setupCollapsibleSections(panel);
+
+    // カスタムカラー設定
+    this.setupColorSettings(panel);
+
+    // サイドバーポイントスタイル設定
+    this.setupSidebarPointsStyle(panel);
+
+    // 動画設定
+    this.setupVideoSettings(panel);
+
+    // OGP/SEO設定
+    this.setupOGPSettings(panel);
+
+    // トラッキング設定
+    this.setupTrackingSettings(panel);
+
+    // キーボードショートカット
+    this.setupKeyboardShortcuts();
+  }
+
+  /**
+   * 折りたたみセクションのイベント設定
+   */
+  setupCollapsibleSections(panel) {
+    panel.querySelectorAll('.editor-section-header-collapsible').forEach(header => {
+      header.addEventListener('click', () => {
+        const targetId = header.dataset.collapse;
+        const body = document.getElementById(`collapse-${targetId}`);
+        const toggle = header.querySelector('.editor-section-toggle');
+        if (body) {
+          const isOpen = body.style.display !== 'none';
+          body.style.display = isOpen ? 'none' : 'block';
+          toggle.textContent = isOpen ? '▼' : '▲';
+          header.closest('.editor-section-collapsible').classList.toggle('open', !isOpen);
+        }
+      });
+    });
+  }
+
+  /**
+   * カスタムカラー設定のイベント設定
+   */
+  setupColorSettings(panel) {
+    const colorFields = ['primary', 'accent', 'bg', 'text'];
+
+    colorFields.forEach(field => {
+      const colorPicker = panel.querySelector(`#lp-color-${field}`);
+      const colorText = panel.querySelector(`#lp-color-${field}-text`);
+
+      if (colorPicker && colorText) {
+        // カラーピッカー変更時
+        colorPicker.addEventListener('input', (e) => {
+          colorText.value = e.target.value;
+          this.editedData[`custom${field.charAt(0).toUpperCase() + field.slice(1)}`] = e.target.value;
+          this.applyCustomColors();
+          this.trackChange();
+        });
+
+        // テキスト入力変更時
+        colorText.addEventListener('input', (e) => {
+          const value = e.target.value;
+          if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+            colorPicker.value = value;
+            this.editedData[`custom${field.charAt(0).toUpperCase() + field.slice(1)}`] = value;
+            this.applyCustomColors();
+            this.trackChange();
+          }
+        });
+      }
+    });
+
+    // リセットボタン
+    const resetBtn = panel.querySelector('#lp-reset-colors');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        colorFields.forEach(field => {
+          const colorPicker = panel.querySelector(`#lp-color-${field}`);
+          const colorText = panel.querySelector(`#lp-color-${field}-text`);
+          if (colorPicker) colorPicker.value = '';
+          if (colorText) colorText.value = '';
+          this.editedData[`custom${field.charAt(0).toUpperCase() + field.slice(1)}`] = '';
+        });
+        this.applyCustomColors();
+        this.trackChange();
+        showToast('カラーをリセットしました', 'success');
+      });
+    }
+  }
+
+  /**
+   * カスタムカラーをプレビューに適用
+   */
+  applyCustomColors() {
+    const root = document.documentElement;
+    const primary = this.editedData.customPrimary || this.lpSettings?.customPrimary;
+    const accent = this.editedData.customAccent || this.lpSettings?.customAccent;
+    const bg = this.editedData.customBg || this.lpSettings?.customBg;
+    const text = this.editedData.customText || this.lpSettings?.customText;
+
+    if (primary) root.style.setProperty('--lp-primary', primary);
+    if (accent) root.style.setProperty('--lp-accent', accent);
+    if (bg) root.style.setProperty('--lp-bg', bg);
+    if (text) root.style.setProperty('--lp-text', text);
+  }
+
+  /**
+   * サイドバーポイントスタイル設定のイベント設定
+   */
+  setupSidebarPointsStyle(panel) {
+    const styleContainer = panel.querySelector('.sidebar-points-style');
+    if (!styleContainer) return;
+
+    // 現在のレイアウト設定を取得/更新するヘルパー
+    const updateLayout = (key, value) => {
+      const layout = this.getPointsLayout();
+      layout[key] = value;
+      this.editedData.pointsLayout = JSON.stringify(layout);
+      this.updatePointsDisplay();
+      this.trackChange();
+    };
+
+    // ボタングループのイベント設定
+    const setupButtonGroup = (containerId, key, parseValue = v => v) => {
+      const container = panel.querySelector(`#${containerId}`);
+      if (!container) return;
+      container.querySelectorAll('.style-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          updateLayout(key, parseValue(btn.dataset.value));
+
+          // direction変更時はカラム数表示を切り替え
+          if (containerId === 'sidebar-points-direction') {
+            const columnsGroup = panel.querySelector('#sidebar-points-columns-group');
+            if (columnsGroup) {
+              columnsGroup.style.display = btn.dataset.value === 'horizontal' ? 'none' : '';
+            }
+          }
+        });
+      });
+    };
+
+    // 各ボタングループ
+    setupButtonGroup('sidebar-points-direction', 'direction');
+    setupButtonGroup('sidebar-points-columns', 'columns', v => parseInt(v, 10));
+    setupButtonGroup('sidebar-points-shadow', 'cardShadow');
+    setupButtonGroup('sidebar-points-title-size', 'titleSize');
+    setupButtonGroup('sidebar-points-desc-size', 'descSize');
+
+    // レンジスライダー
+    const setupRange = (inputId, key, suffix = 'px') => {
+      const input = panel.querySelector(`#${inputId}`);
+      if (!input) return;
+      input.addEventListener('input', () => {
+        const value = parseInt(input.value, 10);
+        const label = input.closest('.sidebar-style-group').querySelector('.style-value');
+        if (label) label.textContent = value + suffix;
+        updateLayout(key, value);
+      });
+    };
+
+    setupRange('sidebar-points-radius', 'cardBorderRadius');
+    setupRange('sidebar-points-border', 'cardBorderWidth');
+
+    // カラーピッカー
+    const setupColor = (inputId, key) => {
+      const input = panel.querySelector(`#${inputId}`);
+      if (!input) return;
+      input.addEventListener('input', () => {
+        const colorValue = input.closest('.sidebar-color-input').querySelector('.color-value');
+        if (colorValue) colorValue.textContent = input.value;
+        updateLayout(key, input.value);
+      });
+    };
+
+    setupColor('sidebar-points-accent', 'accentColor');
+    setupColor('sidebar-points-bg', 'cardBackgroundColor');
+    setupColor('sidebar-points-title-color', 'titleColor');
+
+    // リセットボタン
+    const resetBtn = panel.querySelector('#sidebar-points-reset');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        // デフォルト値に戻す
+        this.editedData.pointsLayout = '';
+        this.updatePointsDisplay();
+        this.trackChange();
+        // UIを更新
+        const styleBody = panel.querySelector('#collapse-points-style');
+        if (styleBody) {
+          styleBody.innerHTML = `
+            <p class="editor-section-desc">ポイント（特徴）のスタイルをカスタマイズ</p>
+            ${this.renderSidebarPointsStyle()}
+          `;
+          this.setupSidebarPointsStyle(panel);
+        }
+        showToast('ポイントスタイルをリセットしました', 'success');
+      });
+    }
+  }
+
+  /**
+   * 動画設定のイベント設定
+   */
+  setupVideoSettings(panel) {
+    const showVideoCheckbox = panel.querySelector('#lp-show-video');
+    const videoUrlInput = panel.querySelector('#lp-video-url');
+    const clearBtn = panel.querySelector('#lp-video-url-clear');
+    const validationEl = panel.querySelector('#lp-video-url-validation');
+    const previewContainer = panel.querySelector('#lp-video-preview-container');
+
+    if (showVideoCheckbox) {
+      showVideoCheckbox.addEventListener('change', (e) => {
+        this.editedData.showVideoButton = e.target.checked ? 'true' : 'false';
+        this.trackChange();
+      });
+    }
+
+    if (videoUrlInput) {
+      // デバウンス用タイマー
+      let debounceTimer = null;
+
+      videoUrlInput.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        this.editedData.videoUrl = url;
+        this.trackChange();
+
+        // クリアボタンの表示切替
+        if (clearBtn) {
+          clearBtn.style.display = url ? 'flex' : 'none';
+        }
+
+        // デバウンスでプレビュー更新
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          this.updateVideoPreviewAndValidation(url, previewContainer, validationEl, videoUrlInput);
+        }, 300);
+      });
+
+      // 初期表示時のバリデーション
+      if (videoUrlInput.value) {
+        this.updateVideoPreviewAndValidation(videoUrlInput.value.trim(), previewContainer, validationEl, videoUrlInput);
+      }
+    }
+
+    // クリアボタン
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (videoUrlInput) {
+          videoUrlInput.value = '';
+          this.editedData.videoUrl = '';
+          this.trackChange();
+        }
+        clearBtn.style.display = 'none';
+        if (previewContainer) previewContainer.innerHTML = '';
+        if (validationEl) {
+          validationEl.innerHTML = '';
+          validationEl.className = 'video-url-validation';
+        }
+        if (videoUrlInput) {
+          videoUrlInput.classList.remove('is-valid', 'is-invalid');
+        }
+      });
+    }
+  }
+
+  /**
+   * 動画URLのプレビューとバリデーションを更新
+   */
+  updateVideoPreviewAndValidation(url, previewContainer, validationEl, inputEl) {
+    if (!url) {
+      if (previewContainer) previewContainer.innerHTML = '';
+      if (validationEl) {
+        validationEl.innerHTML = '';
+        validationEl.className = 'video-url-validation';
+      }
+      if (inputEl) inputEl.classList.remove('is-valid', 'is-invalid');
+      return;
+    }
+
+    const validation = this.validateVideoUrl(url);
+
+    // バリデーション表示
+    if (validationEl) {
+      if (validation.valid) {
+        validationEl.innerHTML = '<span class="validation-success">✓ 有効な動画URL</span>';
+        validationEl.className = 'video-url-validation valid';
+      } else {
+        validationEl.innerHTML = `<span class="validation-error">${this.escapeHtml(validation.message)}</span>`;
+        validationEl.className = 'video-url-validation invalid';
+      }
+    }
+
+    // 入力フィールドの状態
+    if (inputEl) {
+      inputEl.classList.toggle('is-valid', validation.valid);
+      inputEl.classList.toggle('is-invalid', !validation.valid);
+    }
+
+    // プレビュー更新
+    if (previewContainer) {
+      previewContainer.innerHTML = validation.valid ? this.generateVideoPreviewCompact(url) : '';
+    }
+  }
+
+  /**
+   * OGP/SEO設定のイベント設定
+   */
+  setupOGPSettings(panel) {
+    const ogpTitleInput = panel.querySelector('#lp-ogp-title');
+    const ogpDescInput = panel.querySelector('#lp-ogp-description');
+    const ogpImageArea = panel.querySelector('#lp-ogp-image-upload-area');
+
+    if (ogpTitleInput) {
+      ogpTitleInput.addEventListener('input', (e) => {
+        this.editedData.ogpTitle = e.target.value;
+        this.trackChange();
+      });
+    }
+
+    if (ogpDescInput) {
+      ogpDescInput.addEventListener('input', (e) => {
+        this.editedData.ogpDescription = e.target.value;
+        this.trackChange();
+      });
+    }
+
+    if (ogpImageArea) {
+      ogpImageArea.addEventListener('click', () => {
+        this.startImageEditingForSidebar(ogpImageArea, 'ogpImage', 'OGP画像');
+      });
+    }
+  }
+
+  /**
+   * トラッキング設定のイベント設定
+   */
+  setupTrackingSettings(panel) {
+    const trackingFields = [
+      { id: 'lp-meta-pixel', key: 'metaPixelId' },
+      { id: 'lp-tiktok-pixel', key: 'tiktokPixelId' },
+      { id: 'lp-google-ads-id', key: 'googleAdsId' },
+      { id: 'lp-google-ads-label', key: 'googleAdsLabel' },
+      { id: 'lp-line-tag', key: 'lineTagId' },
+      { id: 'lp-clarity', key: 'clarityProjectId' }
+    ];
+
+    trackingFields.forEach(({ id, key }) => {
+      const input = panel.querySelector(`#${id}`);
+      if (input) {
+        input.addEventListener('input', (e) => {
+          this.editedData[key] = e.target.value;
+          this.trackChange();
+        });
+      }
+    });
+  }
+
+  /**
+   * キーボードショートカットの設定
+   */
+  setupKeyboardShortcuts() {
+    this.keyboardHandler = (e) => {
+      if (!this.isActive) return;
+
+      // Ctrl+S または Cmd+S で保存
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        this.saveChanges();
+      }
+      // Ctrl+Z または Cmd+Z で元に戻す
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        this.undo();
+      }
+      // Ctrl+Y または Cmd+Shift+Z でやり直す
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        this.redo();
+      }
+      // Escape でエディターを閉じる
+      if (e.key === 'Escape') {
+        const activeEditor = document.getElementById('lp-active-editor');
+        if (activeEditor) {
+          this.closeInlineEditor();
+        }
+      }
+    };
+    document.addEventListener('keydown', this.keyboardHandler);
+  }
+
+  // ==================== Undo/Redo機能 ====================
+
+  /**
+   * 現在の状態をUndoスタックに保存
+   */
+  saveState() {
+    const state = JSON.stringify(this.editedData);
+
+    // 同じ状態なら保存しない
+    if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] === state) {
+      return;
+    }
+
+    this.undoStack.push(state);
+
+    // スタックサイズを制限
+    if (this.undoStack.length > this.maxUndoStackSize) {
+      this.undoStack.shift();
+    }
+
+    // Redoスタックをクリア
+    this.redoStack = [];
+
+    this.updateUndoRedoButtons();
+    this.markAsChanged();
+  }
+
+  /**
+   * 元に戻す
+   */
+  undo() {
+    if (this.undoStack.length <= 1) return;
+
+    // 現在の状態をRedoスタックに移動
+    const current = this.undoStack.pop();
+    this.redoStack.push(current);
+
+    // 前の状態を復元
+    const previous = this.undoStack[this.undoStack.length - 1];
+    this.editedData = JSON.parse(previous);
+
+    this.updateUndoRedoButtons();
+    this.refreshPreview();
+    showToast('元に戻しました', 'success');
+  }
+
+  /**
+   * やり直す
+   */
+  redo() {
+    if (this.redoStack.length === 0) return;
+
+    const next = this.redoStack.pop();
+    this.undoStack.push(next);
+
+    this.editedData = JSON.parse(next);
+
+    this.updateUndoRedoButtons();
+    this.refreshPreview();
+    showToast('やり直しました', 'success');
+  }
+
+  /**
+   * Undo/Redoボタンの状態を更新
+   */
+  updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('btn-lp-undo');
+    const redoBtn = document.getElementById('btn-lp-redo');
+
+    if (undoBtn) {
+      undoBtn.disabled = this.undoStack.length <= 1;
+    }
+    if (redoBtn) {
+      redoBtn.disabled = this.redoStack.length === 0;
+    }
+  }
+
+  /**
+   * プレビューを更新
+   */
+  refreshPreview() {
+    // ヒーローセクションの更新
+    if (this.editedData.heroTitle !== undefined) {
+      const heroTitle = document.querySelector('.lp-hero-title');
+      if (heroTitle) heroTitle.textContent = this.editedData.heroTitle;
+    }
+    if (this.editedData.heroSubtitle !== undefined) {
+      const heroSubtitle = document.querySelector('.lp-hero-subtitle');
+      if (heroSubtitle) heroSubtitle.textContent = this.editedData.heroSubtitle;
+    }
+    // CTAボタンの更新
+    if (this.editedData.ctaText !== undefined) {
+      document.querySelectorAll('.lp-hero-cta-btn, .lp-apply-btn').forEach(btn => {
+        const textSpan = btn.querySelector('span') || btn;
+        textSpan.textContent = this.editedData.ctaText;
+      });
+    }
+  }
+
+  // ==================== 自動保存機能 ====================
+
+  /**
+   * 自動保存を開始
+   */
+  startAutosave() {
+    this.autosaveTimer = setInterval(() => {
+      if (this.hasChanges) {
+        this.saveDraft();
+      }
+    }, this.autosaveInterval);
+  }
+
+  /**
+   * 自動保存を停止
+   */
+  stopAutosave() {
+    if (this.autosaveTimer) {
+      clearInterval(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
+  }
+
+  /**
+   * 下書きを保存
+   */
+  saveDraft() {
+    if (!this.currentJobId) return;
+
+    const draft = {
+      editedData: this.editedData,
+      timestamp: Date.now()
+    };
+
+    const key = `lp_draft_${this.currentJobId}`;
+
+    try {
+      localStorage.setItem(key, JSON.stringify(draft));
+      this.updateAutosaveIndicator('saved');
+    } catch (e) {
+      // QuotaExceededError: 古い下書きを削除して再試行
+      if (e.name === 'QuotaExceededError') {
+        console.warn('[LPEditor] localStorage quota exceeded, clearing old drafts');
+        this.clearOldDrafts();
+        try {
+          localStorage.setItem(key, JSON.stringify(draft));
+          this.updateAutosaveIndicator('saved');
+        } catch (e2) {
+          console.error('[LPEditor] Failed to save draft even after cleanup:', e2);
+          this.updateAutosaveIndicator('error');
+        }
+      } else {
+        console.error('[LPEditor] Failed to save draft:', e);
+        this.updateAutosaveIndicator('error');
+      }
+    }
+  }
+
+  /**
+   * 古い下書きをクリア
+   */
+  clearOldDrafts() {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('lp_draft_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  }
+
+  /**
+   * 下書きを確認して復元するか尋ねる
+   */
+  async checkDraft() {
+    if (!this.currentJobId) return;
+
+    const key = `lp_draft_${this.currentJobId}`;
+    const draftStr = localStorage.getItem(key);
+
+    if (!draftStr) return;
+
+    try {
+      const draft = JSON.parse(draftStr);
+      const age = Date.now() - draft.timestamp;
+
+      // 24時間以上前の下書きは無視
+      if (age > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(key);
+        return;
+      }
+
+      const timeAgo = this.formatTimeAgo(draft.timestamp);
+
+      const restore = await showConfirmDialog({
+        title: '下書きを復元',
+        message: `${timeAgo}に保存された下書きがあります。復元しますか？`,
+        confirmText: '復元する',
+        cancelText: '破棄する'
+      });
+
+      if (restore) {
+        this.editedData = draft.editedData || {};
+        this.refreshPreview();
+        this.saveState();
+        showToast('下書きを復元しました', 'success');
+      } else {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.error('[LPEditor] 下書きの復元に失敗:', e);
+      localStorage.removeItem(key);
+    }
+  }
+
+  /**
+   * 下書きをクリア
+   */
+  clearDraft() {
+    if (!this.currentJobId) return;
+    const key = `lp_draft_${this.currentJobId}`;
+    localStorage.removeItem(key);
+  }
+
+  /**
+   * 自動保存インジケーターを更新
+   */
+  updateAutosaveIndicator(status) {
+    const indicator = document.getElementById('lp-autosave-indicator');
+    if (!indicator) return;
+
+    const textEl = indicator.querySelector('.autosave-text');
+    indicator.classList.remove('saving', 'saved');
+
+    if (status === 'saving') {
+      indicator.classList.add('saving');
+      if (textEl) textEl.textContent = '保存中...';
+    } else if (status === 'saved') {
+      indicator.classList.add('saved');
+      if (textEl) textEl.textContent = `保存済み ${this.formatTime(new Date())}`;
+
+      // 3秒後に通常表示に戻す
+      setTimeout(() => {
+        indicator.classList.remove('saved');
+        if (textEl) textEl.textContent = '自動保存: オン';
+      }, 3000);
+    }
+  }
+
+  /**
+   * 時間を「○分前」形式でフォーマット
+   */
+  formatTimeAgo(timestamp) {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours > 0) {
+      return `${hours}時間前`;
+    } else if (minutes > 0) {
+      return `${minutes}分前`;
+    } else {
+      return '数秒前';
+    }
+  }
+
+  /**
+   * 時間を「HH:MM」形式でフォーマット
+   */
+  formatTime(date) {
+    return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ==================== パネル折りたたみ ====================
+
+  /**
+   * パネルの折りたたみを切り替え
+   */
+  togglePanelCollapse() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+
+    const panel = document.getElementById('lp-editor-panel');
+    const content = document.getElementById('lp-content');
+    const btn = document.getElementById('btn-collapse-lp-panel');
+
+    if (panel) {
+      panel.classList.toggle('collapsed', this.sidebarCollapsed);
+    }
+    if (content) {
+      content.classList.toggle('lp-content-sidebar-collapsed', this.sidebarCollapsed);
+    }
+    if (btn) {
+      btn.textContent = this.sidebarCollapsed ? '▶' : '◀';
+      btn.title = this.sidebarCollapsed ? 'パネルを展開' : 'パネルを折りたたむ';
+    }
+  }
+
+  /**
+   * 別タブでプレビューを開く
+   */
+  openPreviewInNewTab() {
+    // LP URLを構築（jobId と companyDomain を使用）
+    const params = new URLSearchParams();
+    if (this.jobId) {
+      params.set('job', this.jobId);
+    }
+    if (this.companyDomain) {
+      params.set('company', this.companyDomain);
+    }
+
+    const url = `${window.location.origin}/lp.html?${params.toString()}`;
+    window.open(url, '_blank');
+  }
+
+  // ==================== 変更検知 ====================
+
+  /**
+   * 変更があったことをマーク
+   */
+  markAsChanged() {
+    this.hasChanges = Object.keys(this.editedData).length > 0;
+    this.updateChangesIndicator();
+  }
+
+  /**
+   * 変更インジケーターを更新
+   */
+  updateChangesIndicator() {
+    const saveBtn = document.getElementById('lp-sidebar-save');
+    if (!saveBtn) return;
+
+    if (this.hasChanges) {
+      saveBtn.classList.add('has-changes');
+      // 未保存バッジを追加
+      let badge = saveBtn.querySelector('.unsaved-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'unsaved-badge';
+        saveBtn.appendChild(badge);
+      }
+    } else {
+      saveBtn.classList.remove('has-changes');
+      const badge = saveBtn.querySelector('.unsaved-badge');
+      if (badge) badge.remove();
+    }
+  }
+
+  // ==================== 画像ホバープレビュー ====================
+
+  /**
+   * 画像ホバープレビューを設定
+   */
+  setupImageHoverPreview() {
+    // プレビュー要素を作成
+    let previewEl = document.getElementById('lp-image-hover-preview');
+    if (!previewEl) {
+      previewEl = document.createElement('img');
+      previewEl.id = 'lp-image-hover-preview';
+      previewEl.className = 'image-hover-preview';
+      document.body.appendChild(previewEl);
+    }
+
+    // 画像URL入力フィールドにホバーイベントを追加
+    document.querySelectorAll('input[type="url"], input[type="text"]').forEach(input => {
+      const value = input.value;
+      if (!value || !value.match(/\.(jpg|jpeg|png|gif|webp|svg)/i)) return;
+
+      input.addEventListener('mouseenter', (e) => {
+        const imgUrl = e.target.value;
+        if (!imgUrl || !imgUrl.match(/^https?:\/\//)) return;
+
+        previewEl.src = imgUrl;
+        previewEl.classList.add('visible');
+        this.positionHoverPreview(e, previewEl);
+      });
+
+      input.addEventListener('mouseleave', () => {
+        previewEl.classList.remove('visible');
+      });
+
+      input.addEventListener('mousemove', (e) => {
+        if (previewEl.classList.contains('visible')) {
+          this.positionHoverPreview(e, previewEl);
+        }
+      });
+    });
+  }
+
+  /**
+   * ホバープレビューの位置を調整
+   */
+  positionHoverPreview(e, previewEl) {
+    const padding = 20;
+    let x = e.clientX + padding;
+    let y = e.clientY + padding;
+
+    const rect = previewEl.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // 右端を超える場合は左側に表示
+    if (x + rect.width > viewportWidth) {
+      x = e.clientX - rect.width - padding;
+    }
+    // 下端を超える場合は上側に表示
+    if (y + rect.height > viewportHeight) {
+      y = e.clientY - rect.height - padding;
+    }
+
+    previewEl.style.left = `${x}px`;
+    previewEl.style.top = `${y}px`;
   }
 
   /**
@@ -650,6 +1753,7 @@ export class LPEditor {
         this.editedData[`pointTitle${idx}`] = e.target.value;
         this.updateSidebarPointHeader(idx);
         this.updatePointsPreview();
+        this.trackChange();
       });
     });
 
@@ -659,6 +1763,7 @@ export class LPEditor {
         const idx = e.target.dataset.idx;
         this.editedData[`pointDesc${idx}`] = e.target.value;
         this.updatePointsPreview();
+        this.trackChange();
       });
     });
 
@@ -674,6 +1779,7 @@ export class LPEditor {
           this.editedData[`pointDesc${idx}`] = '';
           this.updateSidebarPointHeader(idx);
           this.updatePointsPreview();
+          this.trackChange();
         }
       });
     });
@@ -1435,6 +2541,111 @@ export class LPEditor {
   }
 
   /**
+   * サイドバー用ポイントスタイル設定をレンダリング
+   */
+  renderSidebarPointsStyle() {
+    const layout = this.getPointsLayout();
+    return `
+      <div class="sidebar-points-style">
+        <!-- レイアウト方向 -->
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">レイアウト</label>
+          <div class="sidebar-style-buttons" id="sidebar-points-direction">
+            <button type="button" class="style-btn ${layout.direction === 'vertical' ? 'active' : ''}" data-value="vertical" title="縦並び">
+              <span class="style-btn-icon">⬇</span>
+            </button>
+            <button type="button" class="style-btn ${layout.direction === 'horizontal' ? 'active' : ''}" data-value="horizontal" title="横スクロール">
+              <span class="style-btn-icon">➡</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- カラム数 -->
+        <div class="sidebar-style-group" id="sidebar-points-columns-group" ${layout.direction === 'horizontal' ? 'style="display:none"' : ''}>
+          <label class="sidebar-style-label">カラム数</label>
+          <div class="sidebar-style-buttons" id="sidebar-points-columns">
+            <button type="button" class="style-btn ${layout.columns === 2 ? 'active' : ''}" data-value="2">2</button>
+            <button type="button" class="style-btn ${layout.columns === 3 ? 'active' : ''}" data-value="3">3</button>
+            <button type="button" class="style-btn ${layout.columns === 4 ? 'active' : ''}" data-value="4">4</button>
+          </div>
+        </div>
+
+        <!-- カードスタイル -->
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">影</label>
+          <div class="sidebar-style-buttons" id="sidebar-points-shadow">
+            <button type="button" class="style-btn ${layout.cardShadow === 'none' ? 'active' : ''}" data-value="none">なし</button>
+            <button type="button" class="style-btn ${layout.cardShadow === 'sm' ? 'active' : ''}" data-value="sm">小</button>
+            <button type="button" class="style-btn ${layout.cardShadow === 'md' ? 'active' : ''}" data-value="md">中</button>
+            <button type="button" class="style-btn ${layout.cardShadow === 'lg' ? 'active' : ''}" data-value="lg">大</button>
+          </div>
+        </div>
+
+        <!-- 角丸 -->
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">角丸 <span class="style-value">${layout.cardBorderRadius}px</span></label>
+          <input type="range" class="sidebar-style-range" id="sidebar-points-radius" min="0" max="32" step="4" value="${layout.cardBorderRadius}">
+        </div>
+
+        <!-- 枠線 -->
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">枠線 <span class="style-value">${layout.cardBorderWidth}px</span></label>
+          <input type="range" class="sidebar-style-range" id="sidebar-points-border" min="0" max="4" step="1" value="${layout.cardBorderWidth}">
+        </div>
+
+        <!-- カラー設定 -->
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">アクセント色</label>
+          <div class="sidebar-color-input">
+            <input type="color" id="sidebar-points-accent" value="${layout.accentColor}">
+            <span class="color-value">${layout.accentColor}</span>
+          </div>
+        </div>
+
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">カード背景</label>
+          <div class="sidebar-color-input">
+            <input type="color" id="sidebar-points-bg" value="${layout.cardBackgroundColor}">
+            <span class="color-value">${layout.cardBackgroundColor}</span>
+          </div>
+        </div>
+
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">タイトル色</label>
+          <div class="sidebar-color-input">
+            <input type="color" id="sidebar-points-title-color" value="${layout.titleColor}">
+            <span class="color-value">${layout.titleColor}</span>
+          </div>
+        </div>
+
+        <!-- テキストサイズ -->
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">タイトルサイズ</label>
+          <div class="sidebar-style-buttons" id="sidebar-points-title-size">
+            <button type="button" class="style-btn ${layout.titleSize === 'sm' ? 'active' : ''}" data-value="sm">S</button>
+            <button type="button" class="style-btn ${layout.titleSize === 'md' ? 'active' : ''}" data-value="md">M</button>
+            <button type="button" class="style-btn ${layout.titleSize === 'lg' ? 'active' : ''}" data-value="lg">L</button>
+            <button type="button" class="style-btn ${layout.titleSize === 'xl' ? 'active' : ''}" data-value="xl">XL</button>
+          </div>
+        </div>
+
+        <div class="sidebar-style-group">
+          <label class="sidebar-style-label">説明文サイズ</label>
+          <div class="sidebar-style-buttons" id="sidebar-points-desc-size">
+            <button type="button" class="style-btn ${layout.descSize === 'xs' ? 'active' : ''}" data-value="xs">XS</button>
+            <button type="button" class="style-btn ${layout.descSize === 'sm' ? 'active' : ''}" data-value="sm">S</button>
+            <button type="button" class="style-btn ${layout.descSize === 'md' ? 'active' : ''}" data-value="md">M</button>
+            <button type="button" class="style-btn ${layout.descSize === 'lg' ? 'active' : ''}" data-value="lg">L</button>
+          </div>
+        </div>
+
+        <!-- リセットボタン -->
+        <button type="button" class="btn-reset-style" id="sidebar-points-reset">デフォルトに戻す</button>
+      </div>
+    `;
+  }
+
+  /**
    * サイドバー用FAQリストをレンダリング
    */
   renderSidebarFAQ() {
@@ -2007,7 +3218,7 @@ export class LPEditor {
         return this.renderCustomSectionHtml(section);
       default:
         // その他のセクションは管理画面で追加
-        alert(`「${SECTION_TYPES[section.type]?.name || section.type}」セクションは管理画面から追加してください。`);
+        showToast(`「${SECTION_TYPES[section.type]?.name || section.type}」セクションは管理画面から追加してください。`, 'info');
         return null;
     }
   }
@@ -2307,7 +3518,7 @@ export class LPEditor {
       return;
     }
 
-    alert(`「${this.getSectionLabel(sectionType)}」セクションを編集するには、管理画面のLP設定から行ってください。`);
+    showToast(`「${this.getSectionLabel(sectionType)}」セクションを編集するには、管理画面のLP設定から行ってください。`, 'info');
   }
 
   /**
@@ -2324,21 +3535,40 @@ export class LPEditor {
       points.push({ idx: i, title, desc });
     }
 
+    // 現在のレイアウト設定を取得
+    const layout = this.getPointsLayout();
+
     const editor = document.createElement('div');
     editor.className = 'lp-points-editor-overlay';
     editor.id = 'lp-points-editor';
     editor.innerHTML = `
-      <div class="lp-points-editor">
+      <div class="lp-points-editor lp-points-editor--with-tabs">
         <div class="lp-points-editor-header">
           <h3>ポイントセクションを編集</h3>
           <button type="button" class="lp-points-editor-close">&times;</button>
         </div>
+
+        <!-- タブナビゲーション -->
+        <div class="lp-points-editor-tabs">
+          <button type="button" class="lp-points-editor-tab active" data-tab="content">コンテンツ</button>
+          <button type="button" class="lp-points-editor-tab" data-tab="style">スタイル設定</button>
+        </div>
+
         <div class="lp-points-editor-body">
-          <p class="lp-points-editor-hint">最大6つのポイントを設定できます。空のポイントは表示されません。</p>
-          <div class="lp-points-editor-list" id="lp-points-editor-list">
-            ${points.map(p => this.renderPointEditorItem(p)).join('')}
+          <!-- コンテンツタブ -->
+          <div class="lp-points-editor-tab-content active" data-tab-content="content">
+            <p class="lp-points-editor-hint">最大6つのポイントを設定できます。空のポイントは表示されません。</p>
+            <div class="lp-points-editor-list" id="lp-points-editor-list">
+              ${points.map(p => this.renderPointEditorItem(p)).join('')}
+            </div>
+          </div>
+
+          <!-- スタイル設定タブ -->
+          <div class="lp-points-editor-tab-content" data-tab-content="style">
+            ${this.renderPointsStyleSettings(layout)}
           </div>
         </div>
+
         <div class="lp-points-editor-footer">
           <button type="button" class="lp-points-editor-btn lp-points-editor-btn-secondary" id="lp-points-editor-cancel">キャンセル</button>
           <button type="button" class="lp-points-editor-btn lp-points-editor-btn-primary" id="lp-points-editor-apply">適用</button>
@@ -2347,6 +3577,17 @@ export class LPEditor {
     `;
 
     document.body.appendChild(editor);
+
+    // タブ切り替え
+    editor.querySelectorAll('.lp-points-editor-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        editor.querySelectorAll('.lp-points-editor-tab').forEach(t => t.classList.remove('active'));
+        editor.querySelectorAll('.lp-points-editor-tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        editor.querySelector(`[data-tab-content="${tabName}"]`)?.classList.add('active');
+      });
+    });
 
     // イベントリスナー
     editor.querySelector('.lp-points-editor-close').addEventListener('click', () => this.closePointsEditor());
@@ -2366,6 +3607,290 @@ export class LPEditor {
         if (item) {
           item.querySelector('.lp-point-editor-title').value = '';
           item.querySelector('.lp-point-editor-desc').value = '';
+        }
+      });
+    });
+
+    // スタイル設定のイベントリスナー
+    this.setupPointsStyleEvents(editor);
+  }
+
+  /**
+   * ポイントのレイアウト設定を取得
+   */
+  getPointsLayout() {
+    const defaultLayout = {
+      direction: 'vertical',
+      columns: 3,
+      gap: 24,
+      padding: 32,
+      cardBorderRadius: 16,
+      cardBackgroundColor: '#ffffff',
+      cardBorderWidth: 1,
+      cardBorderColor: '#e5e7eb',
+      cardShadow: 'md',
+      sectionTitleSize: 'lg',
+      titleColor: '#1f2937',
+      titleSize: 'md',
+      descSize: 'sm',
+      titleAlign: 'left',
+      accentColor: '#6366f1'
+    };
+
+    // editedDataから取得（JSON文字列なのでパースが必要）
+    if (this.editedData.pointsLayout) {
+      try {
+        const edited = typeof this.editedData.pointsLayout === 'string'
+          ? JSON.parse(this.editedData.pointsLayout)
+          : this.editedData.pointsLayout;
+        return { ...defaultLayout, ...edited };
+      } catch (e) {
+        console.error('editedData.pointsLayout parse error:', e);
+      }
+    }
+
+    // lpSettingsから取得
+    if (this.lpSettings?.pointsLayout) {
+      try {
+        const saved = typeof this.lpSettings.pointsLayout === 'string'
+          ? JSON.parse(this.lpSettings.pointsLayout)
+          : this.lpSettings.pointsLayout;
+        return { ...defaultLayout, ...saved };
+      } catch (e) {
+        console.error('pointsLayout parse error:', e);
+      }
+    }
+
+    return defaultLayout;
+  }
+
+  /**
+   * ポイントスタイル設定UIをレンダリング
+   */
+  renderPointsStyleSettings(layout) {
+    return `
+      <div class="points-style-settings">
+        <!-- レイアウト -->
+        <div class="style-section">
+          <h4 class="style-section-title">レイアウト</h4>
+
+          <div class="style-field">
+            <label>方向</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.direction === 'vertical' ? 'active' : ''}" data-field="direction" data-value="vertical">縦並び</button>
+              <button type="button" class="style-btn ${layout.direction === 'horizontal' ? 'active' : ''}" data-field="direction" data-value="horizontal">横並び</button>
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>列数</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.columns === 2 ? 'active' : ''}" data-field="columns" data-value="2">2列</button>
+              <button type="button" class="style-btn ${layout.columns === 3 ? 'active' : ''}" data-field="columns" data-value="3">3列</button>
+              <button type="button" class="style-btn ${layout.columns === 4 ? 'active' : ''}" data-field="columns" data-value="4">4列</button>
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>間隔 <span class="style-value" id="gap-value">${layout.gap}px</span></label>
+            <input type="range" class="style-slider" data-field="gap" min="8" max="48" step="4" value="${layout.gap}">
+          </div>
+
+          <div class="style-field">
+            <label>内余白 <span class="style-value" id="padding-value">${layout.padding}px</span></label>
+            <input type="range" class="style-slider" data-field="padding" min="16" max="64" step="8" value="${layout.padding}">
+          </div>
+        </div>
+
+        <!-- カードスタイル -->
+        <div class="style-section">
+          <h4 class="style-section-title">カードスタイル</h4>
+
+          <div class="style-field">
+            <label>角丸 <span class="style-value" id="cardBorderRadius-value">${layout.cardBorderRadius}px</span></label>
+            <input type="range" class="style-slider" data-field="cardBorderRadius" min="0" max="32" step="4" value="${layout.cardBorderRadius}">
+          </div>
+
+          <div class="style-field">
+            <label>背景色</label>
+            <div class="style-color-input">
+              <input type="color" class="style-color" data-field="cardBackgroundColor" value="${layout.cardBackgroundColor}">
+              <input type="text" class="style-color-text" data-field="cardBackgroundColor" value="${layout.cardBackgroundColor}" pattern="^#[0-9A-Fa-f]{6}$">
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>枠線 <span class="style-value" id="cardBorderWidth-value">${layout.cardBorderWidth}px</span></label>
+            <div class="style-border-row">
+              <input type="range" class="style-slider style-slider-sm" data-field="cardBorderWidth" min="0" max="4" step="1" value="${layout.cardBorderWidth}">
+              <input type="color" class="style-color style-color-sm" data-field="cardBorderColor" value="${layout.cardBorderColor}">
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>影</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.cardShadow === 'none' ? 'active' : ''}" data-field="cardShadow" data-value="none">なし</button>
+              <button type="button" class="style-btn ${layout.cardShadow === 'sm' ? 'active' : ''}" data-field="cardShadow" data-value="sm">小</button>
+              <button type="button" class="style-btn ${layout.cardShadow === 'md' ? 'active' : ''}" data-field="cardShadow" data-value="md">中</button>
+              <button type="button" class="style-btn ${layout.cardShadow === 'lg' ? 'active' : ''}" data-field="cardShadow" data-value="lg">大</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- テキストスタイル -->
+        <div class="style-section">
+          <h4 class="style-section-title">テキストスタイル</h4>
+
+          <div class="style-field">
+            <label>セクション見出しサイズ</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.sectionTitleSize === 'sm' ? 'active' : ''}" data-field="sectionTitleSize" data-value="sm">小</button>
+              <button type="button" class="style-btn ${layout.sectionTitleSize === 'md' ? 'active' : ''}" data-field="sectionTitleSize" data-value="md">中</button>
+              <button type="button" class="style-btn ${layout.sectionTitleSize === 'lg' ? 'active' : ''}" data-field="sectionTitleSize" data-value="lg">大</button>
+              <button type="button" class="style-btn ${layout.sectionTitleSize === 'xl' ? 'active' : ''}" data-field="sectionTitleSize" data-value="xl">特大</button>
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>カードタイトル色</label>
+            <div class="style-color-input">
+              <input type="color" class="style-color" data-field="titleColor" value="${layout.titleColor}">
+              <input type="text" class="style-color-text" data-field="titleColor" value="${layout.titleColor}" pattern="^#[0-9A-Fa-f]{6}$">
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>カードタイトルサイズ</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.titleSize === 'sm' ? 'active' : ''}" data-field="titleSize" data-value="sm">小</button>
+              <button type="button" class="style-btn ${layout.titleSize === 'md' ? 'active' : ''}" data-field="titleSize" data-value="md">中</button>
+              <button type="button" class="style-btn ${layout.titleSize === 'lg' ? 'active' : ''}" data-field="titleSize" data-value="lg">大</button>
+              <button type="button" class="style-btn ${layout.titleSize === 'xl' ? 'active' : ''}" data-field="titleSize" data-value="xl">特大</button>
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>説明文サイズ</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.descSize === 'xs' ? 'active' : ''}" data-field="descSize" data-value="xs">極小</button>
+              <button type="button" class="style-btn ${layout.descSize === 'sm' ? 'active' : ''}" data-field="descSize" data-value="sm">小</button>
+              <button type="button" class="style-btn ${layout.descSize === 'md' ? 'active' : ''}" data-field="descSize" data-value="md">中</button>
+              <button type="button" class="style-btn ${layout.descSize === 'lg' ? 'active' : ''}" data-field="descSize" data-value="lg">大</button>
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>配置</label>
+            <div class="style-button-group">
+              <button type="button" class="style-btn ${layout.titleAlign === 'left' ? 'active' : ''}" data-field="titleAlign" data-value="left">左揃え</button>
+              <button type="button" class="style-btn ${layout.titleAlign === 'center' ? 'active' : ''}" data-field="titleAlign" data-value="center">中央</button>
+            </div>
+          </div>
+
+          <div class="style-field">
+            <label>アクセントカラー</label>
+            <div class="style-color-input">
+              <input type="color" class="style-color" data-field="accentColor" value="${layout.accentColor}">
+              <input type="text" class="style-color-text" data-field="accentColor" value="${layout.accentColor}" pattern="^#[0-9A-Fa-f]{6}$">
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * ポイントスタイル設定のイベントを設定
+   */
+  setupPointsStyleEvents(editor) {
+    // ボタングループ
+    editor.querySelectorAll('.style-btn[data-field]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const field = btn.dataset.field;
+        let value = btn.dataset.value;
+
+        // 数値に変換が必要な場合
+        if (field === 'columns') {
+          value = parseInt(value, 10);
+        }
+
+        // 同じフィールドのボタンのactiveを切り替え
+        editor.querySelectorAll(`.style-btn[data-field="${field}"]`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // 一時保存
+        if (!this._tempPointsLayout) {
+          this._tempPointsLayout = this.getPointsLayout();
+        }
+        this._tempPointsLayout[field] = value;
+      });
+    });
+
+    // スライダー
+    editor.querySelectorAll('.style-slider[data-field]').forEach(slider => {
+      slider.addEventListener('input', () => {
+        const field = slider.dataset.field;
+        const value = parseInt(slider.value, 10);
+
+        // 値表示を更新
+        const valueEl = editor.querySelector(`#${field}-value`);
+        if (valueEl) {
+          valueEl.textContent = `${value}px`;
+        }
+
+        // 一時保存
+        if (!this._tempPointsLayout) {
+          this._tempPointsLayout = this.getPointsLayout();
+        }
+        this._tempPointsLayout[field] = value;
+      });
+    });
+
+    // カラーピッカー
+    editor.querySelectorAll('.style-color[data-field]').forEach(colorInput => {
+      colorInput.addEventListener('input', () => {
+        const field = colorInput.dataset.field;
+        const value = colorInput.value;
+
+        // テキスト入力も同期
+        const textInput = editor.querySelector(`.style-color-text[data-field="${field}"]`);
+        if (textInput) {
+          textInput.value = value;
+        }
+
+        // 一時保存
+        if (!this._tempPointsLayout) {
+          this._tempPointsLayout = this.getPointsLayout();
+        }
+        this._tempPointsLayout[field] = value;
+      });
+    });
+
+    // カラーテキスト入力
+    editor.querySelectorAll('.style-color-text[data-field]').forEach(textInput => {
+      textInput.addEventListener('change', () => {
+        const field = textInput.dataset.field;
+        let value = textInput.value.trim();
+
+        // #がない場合は追加
+        if (value && !value.startsWith('#')) {
+          value = '#' + value;
+        }
+
+        // 有効な色かチェック
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+          // カラーピッカーも同期
+          const colorInput = editor.querySelector(`.style-color[data-field="${field}"]`);
+          if (colorInput) {
+            colorInput.value = value;
+          }
+
+          // 一時保存
+          if (!this._tempPointsLayout) {
+            this._tempPointsLayout = this.getPointsLayout();
+          }
+          this._tempPointsLayout[field] = value;
         }
       });
     });
@@ -3125,6 +4650,107 @@ export class LPEditor {
   }
 
   /**
+   * サイドバー用のコンパクト動画プレビューを生成
+   */
+  generateVideoPreviewCompact(url) {
+    if (!url) return '';
+
+    const validation = this.validateVideoUrl(url);
+
+    if (!validation.valid) {
+      return `<div class="video-preview-error">
+        <span class="video-preview-error-icon">⚠</span>
+        <span>${this.escapeHtml(validation.message)}</span>
+      </div>`;
+    }
+
+    // YouTubeサムネイル
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = this.extractYouTubeId(url);
+      if (videoId) {
+        return `<div class="video-preview-thumbnail" data-service="youtube">
+          <img src="https://img.youtube.com/vi/${videoId}/mqdefault.jpg" alt="YouTube動画" loading="lazy">
+          <div class="video-preview-overlay">
+            <span class="video-preview-play">▶</span>
+            <span class="video-preview-service">YouTube</span>
+          </div>
+        </div>`;
+      }
+    }
+
+    // Vimeo
+    if (url.includes('vimeo.com')) {
+      const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if (match) {
+        return `<div class="video-preview-thumbnail" data-service="vimeo">
+          <div class="video-preview-placeholder vimeo">
+            <span class="video-preview-play">▶</span>
+            <span class="video-preview-service">Vimeo</span>
+          </div>
+        </div>`;
+      }
+    }
+
+    // TikTok
+    if (url.includes('tiktok.com')) {
+      return `<div class="video-preview-thumbnail" data-service="tiktok">
+        <div class="video-preview-placeholder tiktok">
+          <span class="video-preview-play">▶</span>
+          <span class="video-preview-service">TikTok</span>
+        </div>
+      </div>`;
+    }
+
+    // MP4/WebM
+    if (url.match(/\.(mp4|webm|ogg)$/i)) {
+      return `<div class="video-preview-thumbnail" data-service="direct">
+        <div class="video-preview-placeholder direct">
+          <span class="video-preview-play">▶</span>
+          <span class="video-preview-service">動画ファイル</span>
+        </div>
+      </div>`;
+    }
+
+    return '';
+  }
+
+  /**
+   * 動画URLをバリデーション
+   */
+  validateVideoUrl(url) {
+    if (!url) {
+      return { valid: true, message: '' };
+    }
+
+    // URLの基本形式チェック
+    try {
+      new URL(url);
+    } catch {
+      return { valid: false, message: '有効なURLを入力してください' };
+    }
+
+    // 対応サービスチェック
+    const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+    const isVimeo = url.includes('vimeo.com');
+    const isTikTok = url.includes('tiktok.com');
+    const isDirect = url.match(/\.(mp4|webm|ogg)$/i);
+
+    if (!isYouTube && !isVimeo && !isTikTok && !isDirect) {
+      return { valid: false, message: '対応していない動画サービスです（YouTube, Vimeo, TikTok, MP4/WebM）' };
+    }
+
+    // YouTube IDの検証
+    if (isYouTube) {
+      const videoId = this.extractYouTubeId(url);
+      if (!videoId) {
+        return { valid: false, message: 'YouTubeの動画URLを正しく入力してください' };
+      }
+    }
+
+    return { valid: true, message: '' };
+  }
+
+  /**
    * 動画エディタを閉じる
    */
   closeVideoEditor() {
@@ -3339,6 +4965,7 @@ export class LPEditor {
     const editor = document.getElementById('lp-points-editor');
     if (!editor) return;
 
+    // コンテンツを保存
     const items = editor.querySelectorAll('.lp-point-editor-item');
     items.forEach(item => {
       const idx = item.dataset.idx;
@@ -3349,11 +4976,18 @@ export class LPEditor {
       this.editedData[`pointDesc${idx}`] = desc;
     });
 
+    // レイアウト設定を保存
+    if (this._tempPointsLayout) {
+      this.editedData.pointsLayout = { ...this._tempPointsLayout };
+      this._tempPointsLayout = null;
+    }
+
     console.log('[LPEditor] ポイントを更新:', this.editedData);
 
     // DOM上のポイントも更新（セクション全体を再レンダリング）
     this.updatePointsDisplay();
 
+    this.trackChange();
     this.closePointsEditor();
     this.showSuccessMessage('ポイントを更新しました');
   }
@@ -3387,8 +5021,18 @@ export class LPEditor {
     // 編集データをマージしたLP設定を作成
     const mergedSettings = this.getMergedSettings();
 
-    // ポイントセクションを再レンダリング
-    const newHtml = renderPointsSection(this.company, this.mainJob, mergedSettings, this.currentLayoutStyle);
+    // カスタムレイアウトを取得
+    const customLayout = this.getPointsLayout();
+    const hasCustomLayout = this.editedData.pointsLayout || this.lpSettings?.pointsLayout;
+
+    // ポイントセクションを再レンダリング（カスタムレイアウトがあれば適用）
+    const newHtml = renderPointsSection(
+      this.company,
+      this.mainJob,
+      mergedSettings,
+      this.currentLayoutStyle,
+      hasCustomLayout ? customLayout : null
+    );
 
     // 一時的なコンテナで新しいHTMLをパース
     const temp = document.createElement('div');
@@ -3435,7 +5079,7 @@ export class LPEditor {
    */
   duplicateSection(section) {
     const sectionType = this.detectSectionType(section);
-    alert(`「${this.getSectionLabel(sectionType)}」セクションを複製するには、管理画面のLP設定から行ってください。`);
+    showToast(`「${this.getSectionLabel(sectionType)}」セクションを複製するには、管理画面のLP設定から行ってください。`, 'info');
   }
 
   /**
@@ -3686,11 +5330,23 @@ export class LPEditor {
     }
   }
 
-  startImageEditing(el, field, label) {
+  /**
+   * サイドバーから画像エディターを開く（適用後にサイドバーのプレビューも更新）
+   */
+  startImageEditingForSidebar(el, field, label) {
+    this.startImageEditing(el, field, label, (url) => {
+      // サイドバーのプレビューも更新
+      if (this.updateSidebarHeroImagePreview) {
+        this.updateSidebarHeroImagePreview(url);
+      }
+    });
+  }
+
+  startImageEditing(el, field, label, onApply = null) {
     // 既存のエディタを閉じる
     this.closeInlineEditor();
 
-    const currentValue = this.editedData[field] || '';
+    const currentValue = this.editedData[field] || this.lpSettings?.[field] || '';
 
     // プリセット画像のHTMLを生成
     const presetsHtml = this.presetImages.map((img, idx) => `
@@ -3707,11 +5363,27 @@ export class LPEditor {
       <label class="lp-inline-editor-label">${escapeHtml(label)}</label>
 
       <div class="lp-image-tabs">
-        <button type="button" class="lp-image-tab active" data-tab="preset">プリセット</button>
+        <button type="button" class="lp-image-tab active" data-tab="upload">アップロード</button>
+        <button type="button" class="lp-image-tab" data-tab="preset">プリセット</button>
         <button type="button" class="lp-image-tab" data-tab="url">URL入力</button>
       </div>
 
-      <div class="lp-image-tab-content" data-content="preset">
+      <div class="lp-image-tab-content" data-content="upload">
+        <div class="lp-image-upload-area" data-drop-zone>
+          <input type="file" accept="image/*" class="lp-image-file-input" style="display: none;">
+          <div class="lp-upload-placeholder">
+            <span class="lp-upload-icon">📷</span>
+            <p>クリックまたはドラッグ&ドロップ</p>
+            <p class="lp-upload-hint">PNG, JPG, WebP (最大5MB)</p>
+          </div>
+          <div class="lp-upload-loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>アップロード中...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-image-tab-content" data-content="preset" style="display: none;">
         <div class="lp-preset-grid">
           ${presetsHtml}
         </div>
@@ -3764,6 +5436,74 @@ export class LPEditor {
       });
     });
 
+    // アップロード機能
+    const uploadArea = editor.querySelector('.lp-image-upload-area');
+    const fileInput = editor.querySelector('.lp-image-file-input');
+    const uploadLoading = editor.querySelector('.lp-upload-loading');
+    const uploadPlaceholder = editor.querySelector('.lp-upload-placeholder');
+
+    const handleUpload = async (file) => {
+      if (!file || !file.type.startsWith('image/')) {
+        showToast('画像ファイルを選択してください', 'error');
+        return;
+      }
+
+      // 5MB制限チェック
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('ファイルサイズは5MB以下にしてください', 'error');
+        return;
+      }
+
+      uploadLoading.style.display = 'flex';
+      uploadPlaceholder.style.display = 'none';
+
+      try {
+        const companyDomain = this.currentCompanyDomain || 'unknown';
+        const url = await uploadLPImage(file, companyDomain);
+
+        selectedUrl = url;
+        input.value = url;
+        preview.innerHTML = `<img src="${escapeHtml(url)}" alt="プレビュー">`;
+        showToast('画像をアップロードしました', 'success');
+      } catch (error) {
+        console.error('[LPEditor] Upload failed:', error);
+        showToast('アップロードに失敗しました: ' + error.message, 'error');
+      } finally {
+        uploadLoading.style.display = 'none';
+        uploadPlaceholder.style.display = 'block';
+      }
+    };
+
+    // クリックでファイル選択
+    uploadArea.addEventListener('click', (e) => {
+      if (e.target.closest('.lp-upload-loading')) return;
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleUpload(file);
+      fileInput.value = ''; // リセット
+    });
+
+    // ドラッグ&ドロップ
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) handleUpload(file);
+    });
+
     // プリセット画像クリック
     editor.querySelectorAll('.lp-preset-image').forEach(preset => {
       preset.addEventListener('click', () => {
@@ -3797,6 +5537,8 @@ export class LPEditor {
       this.editedData[field] = selectedUrl;
       console.log(`[LPEditor] 画像を設定: ${field} = ${selectedUrl}`);
       el.style.backgroundImage = selectedUrl ? `url('${selectedUrl}')` : '';
+      // コールバックがあれば呼び出し
+      if (onApply) onApply(selectedUrl);
       close();
     });
 
@@ -3842,17 +5584,11 @@ export class LPEditor {
         </div>
         <div class="lp-save-modal-body">
           ${changesHtml}
-          <p class="lp-save-modal-message" style="margin-top: 16px; font-size: 13px; color: #666;">
-            ※ 直接保存するとスプレッドシートに変更が反映されます
-          </p>
         </div>
         <div class="lp-save-modal-footer">
           <button type="button" class="lp-save-modal-btn lp-save-modal-btn-secondary" id="lp-save-modal-close">閉じる</button>
-          <a href="/admin.html#lp-settings" class="lp-save-modal-btn lp-save-modal-btn-secondary" target="_blank" style="text-decoration: none;">
-            管理画面を開く
-          </a>
           <button type="button" class="lp-save-modal-btn lp-save-modal-btn-primary" id="lp-save-modal-save" ${!hasChanges ? 'disabled' : ''}>
-            直接保存
+            保存
           </button>
         </div>
       </div>
@@ -3864,9 +5600,9 @@ export class LPEditor {
     modal.querySelector('.lp-save-modal-close').addEventListener('click', () => modal.remove());
     modal.querySelector('#lp-save-modal-close').addEventListener('click', () => modal.remove());
 
-    // 直接保存ボタンのイベント
+    // 保存ボタンのイベント
     modal.querySelector('#lp-save-modal-save').addEventListener('click', async () => {
-      await this.saveToSpreadsheet(modal);
+      await this.saveSettings(modal);
     });
 
     // オーバーレイクリックで閉じる
@@ -3876,18 +5612,18 @@ export class LPEditor {
   }
 
   /**
-   * スプレッドシートに直接保存
+   * Firestoreに保存
    */
-  async saveToSpreadsheet(modal) {
+  async saveSettings(modal) {
     if (!this.currentJobId) {
-      alert('求人IDが見つかりません');
+      showToast('求人IDが見つかりません', 'error');
       return;
     }
 
     const saveBtn = modal.querySelector('#lp-save-modal-save');
     if (saveBtn) {
       saveBtn.disabled = true;
-      saveBtn.textContent = '保存中...';
+      saveBtn.innerHTML = '<span class="loading-spinner-small"></span> 保存中...';
     }
 
     try {
@@ -3898,22 +5634,8 @@ export class LPEditor {
       console.log('[LPEditor] 保存する設定:', settings);
       console.log('[LPEditor] 編集データ:', this.editedData);
 
-      // GAS APIに送信
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        action: 'saveLPSettings',
-        settings: settings
-      }))));
-
-      const url = `${GAS_API_URL}?action=post&data=${encodeURIComponent(payload)}`;
-      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-      const responseText = await response.text();
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error(`GASからの応答が不正です: ${responseText.substring(0, 200)}`);
-      }
+      // Firestoreに保存
+      const result = await saveToFirestore(settings.companyDomain, this.currentJobId, settings);
 
       if (!result.success) {
         throw new Error(result.error || '不明なエラー');
@@ -3921,23 +5643,33 @@ export class LPEditor {
 
       // 成功
       modal.remove();
-      this.showSuccessMessage('保存しました！変更がスプレッドシートに反映されました。');
+      this.showSuccessMessage('保存しました！');
 
       // 編集データをクリア
       this.editedData = {};
+      this.hasChanges = false;
+
+      // 下書きをクリア
+      this.clearDraft();
+
+      // Undoスタックをリセット
+      this.undoStack = [JSON.stringify({})];
+      this.redoStack = [];
+      this.updateUndoRedoButtons();
+      this.updateChangesIndicator();
 
     } catch (error) {
       console.error('保存エラー:', error);
 
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = '直接保存';
+        saveBtn.textContent = '保存';
       }
 
       // ローカルストレージにフォールバック
       const useLocal = await showConfirmDialog({
         title: '保存エラー',
-        message: `スプレッドシートへの保存に失敗しました。\n\nエラー: ${error.message}\n\nローカルに保存しますか？`,
+        message: `保存に失敗しました。\n\nエラー: ${error.message}\n\nローカルに保存しますか？`,
         confirmText: 'ローカルに保存',
         cancelText: 'キャンセル'
       });
@@ -3983,15 +5715,38 @@ export class LPEditor {
       settings[`pointDesc${i}`] = this.editedData[`pointDesc${i}`] ?? baseSettings[`pointDesc${i}`] ?? '';
     }
 
+    // カスタムカラー設定
+    settings.customPrimary = this.editedData.customPrimary ?? baseSettings.customPrimary ?? '';
+    settings.customAccent = this.editedData.customAccent ?? baseSettings.customAccent ?? '';
+    settings.customBg = this.editedData.customBg ?? baseSettings.customBg ?? '';
+    settings.customText = this.editedData.customText ?? baseSettings.customText ?? '';
+
+    // 動画設定
+    settings.showVideoButton = this.editedData.showVideoButton ?? baseSettings.showVideoButton ?? 'false';
+    settings.videoUrl = this.editedData.videoUrl ?? baseSettings.videoUrl ?? '';
+
     // 広告トラッキング設定
-    settings.tiktokPixelId = baseSettings.tiktokPixelId ?? '';
-    settings.googleAdsId = baseSettings.googleAdsId ?? '';
-    settings.googleAdsLabel = baseSettings.googleAdsLabel ?? '';
+    settings.metaPixelId = this.editedData.metaPixelId ?? baseSettings.metaPixelId ?? '';
+    settings.tiktokPixelId = this.editedData.tiktokPixelId ?? baseSettings.tiktokPixelId ?? '';
+    settings.googleAdsId = this.editedData.googleAdsId ?? baseSettings.googleAdsId ?? '';
+    settings.googleAdsLabel = this.editedData.googleAdsLabel ?? baseSettings.googleAdsLabel ?? '';
+    settings.lineTagId = this.editedData.lineTagId ?? baseSettings.lineTagId ?? '';
+    settings.clarityProjectId = this.editedData.clarityProjectId ?? baseSettings.clarityProjectId ?? '';
 
     // OGP設定
-    settings.ogpTitle = baseSettings.ogpTitle ?? '';
-    settings.ogpDescription = baseSettings.ogpDescription ?? '';
-    settings.ogpImage = baseSettings.ogpImage ?? '';
+    settings.ogpTitle = this.editedData.ogpTitle ?? baseSettings.ogpTitle ?? '';
+    settings.ogpDescription = this.editedData.ogpDescription ?? baseSettings.ogpDescription ?? '';
+    settings.ogpImage = this.editedData.ogpImage ?? baseSettings.ogpImage ?? '';
+
+    // ポイントセクションのレイアウト設定
+    // editedData.pointsLayoutは既にJSON文字列なのでそのまま使用
+    if (this.editedData.pointsLayout) {
+      settings.pointsLayout = this.editedData.pointsLayout;
+    } else if (baseSettings.pointsLayout) {
+      settings.pointsLayout = typeof baseSettings.pointsLayout === 'string'
+        ? baseSettings.pointsLayout
+        : JSON.stringify(baseSettings.pointsLayout);
+    }
 
     // LP構成データ（カルーセル・動画のデータをマージ）
     let lpContent = null;

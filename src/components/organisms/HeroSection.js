@@ -7,7 +7,8 @@ import { escapeHtml } from '@shared/utils.js';
 export function renderHeroSection(company, mainJob, lpSettings, layoutStyle = 'modern') {
   const heroTitle = lpSettings.heroTitle || mainJob.title || `${company.company}で働こう`;
   const heroSubtitle = lpSettings.heroSubtitle || '';
-  const heroImage = lpSettings.heroImage || company.imageUrl || '';
+  // heroImageはLP設定からのみ取得（company.imageUrlはロゴなのでフォールバックしない）
+  const heroImage = lpSettings.heroImage || '';
 
   // 特典情報を生成
   const highlights = [];

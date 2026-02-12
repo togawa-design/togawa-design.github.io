@@ -42,8 +42,24 @@ export const SECTION_TYPES = {
       points: []
     },
     defaultLayout: {
-      columns: 3,
-      style: 'cards'
+      // レイアウト
+      direction: 'vertical',      // vertical / horizontal
+      columns: 3,                  // 2 / 3 / 4
+      gap: 24,                     // 8-48px
+      padding: 32,                 // 16-64px
+      // カードスタイル
+      cardBorderRadius: 16,        // 0-32px
+      cardBackgroundColor: '#ffffff',
+      cardBorderWidth: 1,          // 0-4px
+      cardBorderColor: '#e5e7eb',
+      cardShadow: 'md',            // none / sm / md / lg
+      // テキストスタイル
+      sectionTitleSize: 'lg',      // sm / md / lg / xl（セクション見出し）
+      titleColor: '#1f2937',
+      titleSize: 'md',             // sm / md / lg / xl（カードタイトル）
+      descSize: 'sm',              // xs / sm / md / lg（説明文）
+      titleAlign: 'left',          // left / center
+      accentColor: '#6366f1'       // 番号・アクセントの色
     }
   },
   jobs: {

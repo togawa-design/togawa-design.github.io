@@ -53,6 +53,9 @@ class CompanyRecruitPage {
       // JobsLoaderの読み込みを待機
       await this.waitForJobsLoader();
 
+      // Firestoreローダーを初期化（これがないとCSVにフォールバックする）
+      await window.JobsLoader.initFirestoreLoader();
+
       // 会社情報と採用ページ設定を並列で取得
       const [companies, recruitSettings] = await Promise.all([
         window.JobsLoader.fetchCompanies(),
@@ -61,10 +64,17 @@ class CompanyRecruitPage {
 
       this.recruitSettings = recruitSettings || {};
 
-      this.company = companies?.find(c =>
-        c.companyDomain?.trim() === this.companyDomain &&
-        window.JobsLoader.isCompanyVisible(c)
-      );
+      // 編集モードでは公開状態をスキップして会社を検索
+      if (this.isEditMode) {
+        this.company = companies?.find(c =>
+          c.companyDomain?.trim() === this.companyDomain
+        );
+      } else {
+        this.company = companies?.find(c =>
+          c.companyDomain?.trim() === this.companyDomain &&
+          window.JobsLoader.isCompanyVisible(c)
+        );
+      }
 
       if (!this.company) {
         this.showError('指定された会社は見つかりませんでした。');
@@ -394,7 +404,7 @@ class CompanyRecruitPage {
     // 採用ページ設定があればそちらを優先
     const heroImage = rs.heroImage || company.imageUrl || '';
     const heroTitle = rs.heroTitle || `${escapeHtml(company.company)}で働こう`;
-    const heroSubtitle = (rs.heroSubtitle || (company.description ? this.truncateText(company.description, 100) : '私たちと一緒に働きませんか？')).replace(/&nbsp;/g, ' ');
+    const heroSubtitle = (rs.heroSubtitle || (company.description ? this.truncateText(company.description, 300) : '私たちと一緒に働きませんか？')).replace(/&nbsp;/g, ' ');
 
     // 動画ボタン設定
     const showVideoButton = String(rs.showVideoButton).toLowerCase() === 'true';
@@ -1040,8 +1050,8 @@ class CompanyRecruitPage {
     // テンプレートをbodyに設定
     document.body.setAttribute('data-template', template);
 
-    // ヘッダーを追加
-    if (hasHeader) {
+    // ヘッダーを追加（既存のヘッダーがない場合のみ）
+    if (hasHeader && !document.querySelector('.site-header')) {
       const headerHtml = renderSiteHeader({
         logoUrl: rs.logoUrl || '',
         companyName: rs.companyNameDisplay || this.company?.company || '',
