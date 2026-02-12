@@ -19,11 +19,12 @@ import {
 import { initApplicantsSection, getCurrentApplicant } from '@features/applicants/index.js';
 import { initRecruitSettings } from '@features/job-manage/recruit-settings.js';
 import * as CalendarService from '@features/calendar/calendar-service.js';
-import { config } from '@features/job-manage/auth.js';
 import { showToast, escapeHtml } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
 import { generateIndeedXml, generateGoogleJobsJsonLd, generateJobBoxXml, generateCsv, downloadFile } from '@features/admin/job-feed-generator.js';
 import { selectImageFile, uploadJobLogo } from '@features/admin/image-uploader.js';
+import { setupFormSaveShortcut } from '@shared/keyboard-shortcuts.js';
+import { setupAutoSave } from '@shared/auto-save.js';
 
 // 求人編集共通ユーティリティ
 import {
@@ -41,7 +42,6 @@ import {
 } from '@shared/job-service.js';
 
 // Firestoreサービス
-import { useFirestore } from '@features/admin/config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
 
 // 初期化状態
@@ -53,6 +53,10 @@ let isInitializing = false;
 // 求人編集用の状態
 let currentEditingJob = null;
 let isNewJob = false;
+
+// 自動保存・ショートカット用のクリーンアップ関数
+let jobEditAutoSaveInstance = null;
+let jobEditShortcutCleanup = null;
 
 // カレンダー連携用の状態
 let jmCalendarIntegrationsCache = {};
@@ -146,31 +150,9 @@ async function loadJobsData() {
   const abortController = getNewAbortController();
 
   try {
-    let result;
-
-    if (useFirestore) {
-      // Firestoreから取得
-      FirestoreService.initFirestore();
-      result = await FirestoreService.getJobs(companyDomain);
-    } else {
-      // GAS APIから取得（旧方式）
-      const gasApiUrl = config.gasApiUrl;
-      if (!gasApiUrl) {
-        if (jobsList) {
-          jobsList.innerHTML = '<div class="error-message">GAS API URLが設定されていません</div>';
-        }
-        return;
-      }
-
-      const url = `${gasApiUrl}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
-      const response = await fetch(url, { signal: abortController.signal });
-
-      if (!response.ok) {
-        throw new Error('データの取得に失敗しました');
-      }
-
-      result = await response.json();
-    }
+    // Firestoreから取得
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.getJobs(companyDomain);
 
     if (!result.success) {
       throw new Error(result.error || '求人データの取得に失敗しました');
@@ -308,6 +290,9 @@ function renderJobCard(job) {
         <button class="btn-job-action btn-edit-job" title="編集">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
         </button>
+        <button class="btn-job-action btn-duplicate-job" title="複製">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </button>
         <button class="btn-job-action btn-preview-job" title="プレビュー">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         </button>
@@ -341,6 +326,18 @@ function setupJobCardEvents() {
       const jobId = card?.dataset.jobId;
       if (jobId) {
         window.open(`lp.html?j=${companyDomain}_${jobId}`, '_blank');
+      }
+    });
+  });
+
+  // 複製ボタン
+  document.querySelectorAll('#jm-jobs-list .btn-duplicate-job').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.job-listing-card');
+      const jobId = card?.dataset.jobId;
+      if (jobId) {
+        await duplicateJob(jobId);
       }
     });
   });
@@ -389,6 +386,58 @@ function showJobEditLoading() {
 
   // サブセクション切り替え（先に編集画面を表示）
   switchSubsection('job-edit');
+}
+
+/**
+ * 求人編集フォームの自動保存とキーボードショートカットを設定
+ * @param {string|null} jobId - 編集中の求人ID（新規の場合はnull）
+ */
+function setupJobEditHelpers(jobId) {
+  // 既存のクリーンアップ
+  cleanupJobEditHelpers();
+
+  const form = document.getElementById('jm-job-edit-form');
+  if (!form) return;
+
+  // Ctrl+S で保存
+  jobEditShortcutCleanup = setupFormSaveShortcut(form, () => {
+    saveJob();
+  });
+
+  // 自動保存（30秒ごと）
+  jobEditAutoSaveInstance = setupAutoSave(form, 'job-edit', jobId, {
+    interval: 30000,
+    showRestorePrompt: true,
+    onSave: () => {
+      console.log('[JobEdit] 下書きを自動保存しました');
+    }
+  });
+
+  // 新規作成時または編集開始時に下書きがあれば復元確認
+  if (jobId) {
+    // 編集モードでは自動復元しない（既存データがあるため）
+  } else {
+    // 新規作成時は下書き復元を確認
+    autoSave.restore();
+  }
+}
+
+/**
+ * 求人編集フォームのヘルパーをクリーンアップ
+ * @param {boolean} clearDraft - 下書きもクリアするか
+ */
+function cleanupJobEditHelpers(clearDraft = false) {
+  if (jobEditAutoSaveInstance) {
+    if (clearDraft) {
+      jobEditAutoSaveInstance.clear();
+    }
+    jobEditAutoSaveInstance.cleanup();
+    jobEditAutoSaveInstance = null;
+  }
+  if (jobEditShortcutCleanup) {
+    jobEditShortcutCleanup();
+    jobEditShortcutCleanup = null;
+  }
 }
 
 /**
@@ -487,6 +536,9 @@ function showJobEditNew() {
 
   // サブセクション切り替え
   switchSubsection('job-edit');
+
+  // 自動保存・ショートカット設定（新規）
+  setupJobEditHelpers(null);
 }
 
 /**
@@ -544,6 +596,9 @@ function editJob(jobId) {
 
   // サブセクション切り替え
   switchSubsection('job-edit');
+
+  // 自動保存・ショートカット設定（編集）
+  setupJobEditHelpers(jobId);
 }
 
 /**
@@ -738,6 +793,9 @@ function setupFeaturesCheckboxEvents() {
  * 求人一覧に戻る
  */
 function backToJobsList() {
+  // 自動保存・ショートカットをクリーンアップ
+  cleanupJobEditHelpers();
+
   currentEditingJob = null;
   isNewJob = false;
   switchSubsection('jobs');
@@ -746,73 +804,63 @@ function backToJobsList() {
 /**
  * 動画設定をLP設定に同期
  * 求人編集で動画を設定した場合、LP設定にも反映させる
- * 既存のsaveLPSettingsアクションを使用
  */
 async function syncVideoToLP(jobId, jobData, showVideoButton, videoUrl) {
-  const gasApiUrl = config.gasApiUrl;
-  if (!gasApiUrl) return;
-
   try {
-    // LP設定の同期データを作成
-    // 初期値としてheroCTAセクションを含むlpContentを設定
-    const initialLpContent = {
-      version: 2,
-      sections: [
-        {
-          id: 'hero-cta-1',
-          type: 'heroCta',
-          data: {
-            title: `${jobData.title || ''}で一緒に働きませんか？`,
-            subtitle: '',
-            backgroundImage: '',
-            showVideoButton: showVideoButton === 'true',
-            videoUrl: videoUrl || ''
+    // 既存のLP設定を取得
+    const existingResult = await FirestoreService.getLPSettings(companyDomain, jobId);
+
+    let lpSettings;
+    if (existingResult.success && existingResult.settings) {
+      // 既存設定がある場合は動画設定のみ更新
+      lpSettings = {
+        ...existingResult.settings,
+        showVideoButton: showVideoButton,
+        videoUrl: videoUrl
+      };
+    } else {
+      // 新規の場合は初期設定を作成
+      const initialLpContent = {
+        version: 2,
+        sections: [
+          {
+            id: 'hero-cta-1',
+            type: 'heroCta',
+            data: {
+              title: `${jobData.title || ''}で一緒に働きませんか？`,
+              subtitle: '',
+              backgroundImage: '',
+              showVideoButton: showVideoButton === 'true',
+              videoUrl: videoUrl || ''
+            }
+          },
+          {
+            id: 'job-info-1',
+            type: 'jobInfo',
+            data: {}
+          },
+          {
+            id: 'cta-1',
+            type: 'cta',
+            data: {
+              title: '今すぐ応募する'
+            }
           }
-        },
-        {
-          id: 'job-info-1',
-          type: 'jobInfo',
-          data: {}
-        },
-        {
-          id: 'cta-1',
-          type: 'cta',
-          data: {
-            title: '今すぐ応募する'
-          }
-        }
-      ]
-    };
+        ]
+      };
 
-    const lpSettings = {
-      jobId: jobId,
-      companyDomain: companyDomain,
-      company: companyName,
-      jobTitle: jobData.title || '',
-      showVideoButton: showVideoButton,
-      videoUrl: videoUrl,
-      lpContent: JSON.stringify(initialLpContent),
-      // 動画同期フラグ（既存設定がある場合は動画のみ更新するためのフラグ）
-      syncVideoOnly: true
-    };
-
-    // 既存のsaveLPSettingsアクションを使用
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-      action: 'saveLPSettings',
-      settings: lpSettings
-    }))));
-
-    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-    const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-    const responseText = await response.text();
-
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      console.warn('[JobManageEmbedded] LP同期レスポンスのパースエラー');
-      return;
+      lpSettings = {
+        jobId: jobId,
+        companyDomain: companyDomain,
+        company: companyName,
+        jobTitle: jobData.title || '',
+        showVideoButton: showVideoButton,
+        videoUrl: videoUrl,
+        lpContent: JSON.stringify(initialLpContent)
+      };
     }
+
+    const result = await FirestoreService.saveLPSettings(companyDomain, jobId, lpSettings);
 
     if (result.success) {
       console.log('[JobManageEmbedded] 動画設定をLPに同期しました');
@@ -908,65 +956,11 @@ async function saveJob() {
       saveBtn.textContent = '保存中...';
     }
 
-    let result;
-
-    if (useFirestore) {
-      // Firestoreに保存
-      FirestoreService.initFirestore();
-      const existingDocId = isNewJob ? null : (currentEditingJob?._docId || currentEditingJob?.id);
-      result = await FirestoreService.saveJob(companyDomain, jobData, existingDocId);
-      console.log('[JobManageEmbedded] Firestore保存結果:', result);
-    } else {
-      // GAS APIに保存（旧方式）
-      const gasApiUrl = config.gasApiUrl;
-      if (!gasApiUrl) {
-        showToast('GAS API URLが設定されていません', 'error');
-        return;
-      }
-
-      // 空の値を除去してペイロードサイズを削減（GAS URL長制限対策）
-      const filteredJobData = Object.fromEntries(
-        Object.entries(jobData).filter(([key, value]) => {
-          if (value === null || value === undefined || value === '') return false;
-          if (key === 'badges') return false; // バッジは常に空なので除外
-          return true;
-        })
-      );
-
-      const requestData = {
-        action: 'saveJob',
-        companyDomain: companyDomain,
-        job: filteredJobData,
-        rowIndex: isNewJob ? null : currentEditingJob?._rowIndex
-      };
-      console.log('[JobManageEmbedded] 保存リクエスト:', requestData);
-
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(requestData))));
-      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-      console.log('[JobManageEmbedded] URL長:', url.length, 'bytes');
-
-      // URL長制限をチェック（GASは約8KB程度まで対応可能）
-      if (url.length > 8000) {
-        throw new Error(`データが大きすぎます。求人説明などのテキストを短くしてください。（URL長: ${url.length}文字）`);
-      }
-
-      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          throw new Error(`リクエストが大きすぎます。求人説明などのテキストを短くしてください。`);
-        }
-        throw new Error(`サーバーエラー: ${response.status} ${response.statusText}`);
-      }
-
-      const responseText = await response.text();
-      try {
-        result = JSON.parse(responseText);
-      } catch {
-        throw new Error('GASからの応答が不正です: ' + responseText.substring(0, 200));
-      }
-      console.log('[JobManageEmbedded] GAS保存結果:', result);
-    }
+    // Firestoreに保存
+    FirestoreService.initFirestore();
+    const existingDocId = isNewJob ? null : (currentEditingJob?._docId || currentEditingJob?.id);
+    const result = await FirestoreService.saveJob(companyDomain, jobData, existingDocId);
+    console.log('[JobManageEmbedded] Firestore保存結果:', result);
 
     if (!result.success) {
       throw new Error(result.error || '保存に失敗しました');
@@ -978,6 +972,11 @@ async function saveJob() {
       if (jobId) {
         await syncVideoToLP(jobId, jobData, showVideoButton, videoUrl);
       }
+    }
+
+    // 保存成功時は下書きをクリア
+    if (jobEditAutoSaveInstance) {
+      jobEditAutoSaveInstance.clear();
     }
 
     showToast(isNewJob ? '求人を作成しました' : '求人情報を更新しました', 'success');
@@ -1021,37 +1020,10 @@ async function deleteJob() {
       deleteBtn.textContent = '削除中...';
     }
 
-    let result;
-
-    if (useFirestore) {
-      // Firestoreから削除
-      FirestoreService.initFirestore();
-      const jobId = currentEditingJob._docId || currentEditingJob.id;
-      result = await FirestoreService.deleteJob(companyDomain, jobId);
-    } else {
-      // GAS APIで削除（旧方式）
-      const gasApiUrl = config.gasApiUrl;
-      if (!gasApiUrl) {
-        showToast('GAS API URLが設定されていません', 'error');
-        return;
-      }
-
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        action: 'deleteJob',
-        companyDomain: companyDomain,
-        rowIndex: currentEditingJob._rowIndex
-      }))));
-
-      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-      const responseText = await response.text();
-
-      try {
-        result = JSON.parse(responseText);
-      } catch {
-        throw new Error('GASからの応答が不正です');
-      }
-    }
+    // Firestoreから削除
+    FirestoreService.initFirestore();
+    const jobId = currentEditingJob._docId || currentEditingJob.id;
+    const result = await FirestoreService.deleteJob(companyDomain, jobId);
 
     if (!result.success) {
       throw new Error(result.error || '削除に失敗しました');
@@ -1069,6 +1041,68 @@ async function deleteJob() {
       deleteBtn.disabled = false;
       deleteBtn.textContent = '削除';
     }
+  }
+}
+
+/**
+ * 求人を複製
+ * @param {string} jobId - 複製元の求人ID
+ */
+async function duplicateJob(jobId) {
+  // 元の求人を検索
+  const originalJob = jobsCache.find(j => String(j.id) === String(jobId) || String(j._docId) === String(jobId));
+  if (!originalJob) {
+    showToast('求人が見つかりません', 'error');
+    return;
+  }
+
+  // 確認ダイアログ
+  const confirmed = await showConfirmDialog({
+    title: '求人の複製',
+    message: `「${originalJob.title || '求人'}」を複製しますか？`,
+    confirmText: '複製する',
+    cancelText: 'キャンセル'
+  });
+  if (!confirmed) return;
+
+  try {
+    // 複製データを作成（IDと日付を除去）
+    const duplicateData = { ...originalJob };
+    delete duplicateData.id;
+    delete duplicateData._docId;
+    delete duplicateData.createdAt;
+    delete duplicateData.updatedAt;
+
+    // タイトルに「(コピー)」を追加
+    duplicateData.title = `${originalJob.title || '求人'} (コピー)`;
+
+    // 非公開で作成
+    duplicateData.visible = 'false';
+
+    // 応募数・閲覧数をリセット
+    duplicateData.applicationCount = 0;
+    duplicateData.viewCount = 0;
+
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.saveJob(companyDomain, duplicateData, null);
+
+    if (!result.success) {
+      throw new Error(result.error || '複製に失敗しました');
+    }
+
+    showToast('求人を複製しました', 'success');
+
+    // データを再読み込み
+    await loadJobsData();
+
+    // 複製した求人の編集画面を開く
+    if (result.jobId) {
+      editJob(result.jobId);
+    }
+
+  } catch (error) {
+    console.error('[JobManageEmbedded] 求人複製エラー:', error);
+    showToast('求人の複製に失敗しました: ' + error.message, 'error');
   }
 }
 
@@ -2490,7 +2524,7 @@ async function saveSortOrder() {
       }
     });
 
-    // 各求人のorderを更新（GASに保存）
+    // 各求人のorderを更新（Firestoreに保存）
     for (const update of updates) {
       await saveJobOrder(update.jobId, update.order);
     }
@@ -2513,33 +2547,19 @@ async function saveSortOrder() {
  * 求人のorderを保存
  */
 async function saveJobOrder(jobId, order) {
-  const job = jobsCache.find(j => String(j.id) === String(jobId));
+  const job = jobsCache.find(j => String(j.id) === String(jobId) || String(j._docId) === String(jobId));
   if (!job) return;
 
   // 既存のjobDataを取得して、orderのみ更新
   const jobData = { ...job, order: String(order) };
-  const rowIndex = job._rowIndex;
-  // _rowIndexはGAS側で不要なので除外
+  // 内部用プロパティを除外
   delete jobData._rowIndex;
+  delete jobData._docId;
 
-  // GASのスプレッドシートAPIを使用して保存（CORS対応: GETリクエスト + Base64エンコード）
-  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-    action: 'saveJob',
-    companyDomain: companyDomain,
-    job: jobData,
-    rowIndex: rowIndex
-  }))));
-
-  const url = `${config.gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-  const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-  const responseText = await response.text();
-
-  let result;
-  try {
-    result = JSON.parse(responseText);
-  } catch {
-    throw new Error('Invalid response from server');
-  }
+  // Firestoreに保存
+  FirestoreService.initFirestore();
+  const existingDocId = job._docId || job.id;
+  const result = await FirestoreService.saveJob(companyDomain, jobData, existingDocId);
 
   if (!result.success) {
     throw new Error(result.error || 'Failed to save job order');

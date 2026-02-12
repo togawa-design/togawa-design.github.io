@@ -4,8 +4,6 @@
 import { escapeHtml } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
 import { fetchCompanyDetailData } from '@shared/analytics-utils.js';
-import { config } from './auth.js';
-import { useFirestore } from '@features/admin/config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
 import {
   companyDomain,
@@ -300,58 +298,19 @@ export async function loadJobsData() {
   const abortController = getNewAbortController();
 
   try {
-    let jobs = [];
-
     // Firestoreから読み込み
-    if (useFirestore) {
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.getJobs(companyDomain);
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.getJobs(companyDomain);
 
-      if (!result.success) {
-        throw new Error(result.error || '求人データの取得に失敗しました');
-      }
-
-      // 行インデックスを追加（互換性のため）
-      jobs = (result.jobs || []).map((job, index) => ({
-        ...job,
-        _rowIndex: index
-      }));
-    } else {
-      // GAS APIから読み込み（フォールバック）
-      const gasApiUrl = config.gasApiUrl;
-      if (!gasApiUrl) {
-        const errorMsg = 'GAS API URLが設定されていません。<a href="admin.html">管理画面</a>の設定から設定してください。';
-        if (listContainer) {
-          listContainer.innerHTML = `<div class="job-cards-loading">${errorMsg}</div>`;
-        }
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">${errorMsg}</td></tr>`;
-        }
-        return;
-      }
-
-      const url = `${gasApiUrl}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
-      const response = await fetch(url, { signal: abortController.signal });
-
-      if (!response.ok) {
-        throw new Error('データの取得に失敗しました');
-      }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || '求人データの取得に失敗しました');
-      }
-
-      jobs = result.jobs || [];
-
-      if (result.sheetUrl && !sheetUrl) {
-        setSheetUrl(result.sheetUrl);
-      }
-      if (result.manageSheetUrl && !sheetUrl) {
-        setSheetUrl(result.manageSheetUrl);
-      }
+    if (!result.success) {
+      throw new Error(result.error || '求人データの取得に失敗しました');
     }
+
+    // 行インデックスを追加（互換性のため）
+    const jobs = (result.jobs || []).map((job, index) => ({
+      ...job,
+      _rowIndex: index
+    }));
 
     setJobsCache(jobs);
 
@@ -844,54 +803,12 @@ export async function saveJobData() {
     }
 
     // Firestoreに保存
-    if (useFirestore) {
-      FirestoreService.initFirestore();
+    FirestoreService.initFirestore();
 
-      // jobIdを決定
-      const jobId = isNewJob ? null : (currentEditingJob?.id || null);
+    // jobIdを決定
+    const jobId = isNewJob ? null : (currentEditingJob?.id || null);
 
-      const result = await FirestoreService.saveJob(companyDomain, jobData, jobId);
-
-      if (!result.success) {
-        alert('保存に失敗しました: ' + (result.error || '不明なエラー'));
-        return;
-      }
-
-      closeJobModal();
-      await loadJobsData();
-
-      alert(isNewJob ? '求人を作成しました' : '求人情報を更新しました');
-      return;
-    }
-
-    // GAS APIに保存（フォールバック）
-    const gasApiUrl = config.gasApiUrl;
-    if (!gasApiUrl) {
-      alert('GAS API URLが設定されていません。設定画面でURLを設定してください。');
-      return;
-    }
-
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-      action: 'saveJob',
-      companyDomain: companyDomain,
-      job: jobData,
-      rowIndex: isNewJob ? null : currentEditingJob._rowIndex
-    }))));
-    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      redirect: 'follow'
-    });
-
-    const responseText = await response.text();
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      throw new Error(`GASからの応答が不正です: ${responseText.substring(0, 200)}`);
-    }
+    const result = await FirestoreService.saveJob(companyDomain, jobData, jobId);
 
     if (!result.success) {
       alert('保存に失敗しました: ' + (result.error || '不明なエラー'));
@@ -941,56 +858,15 @@ export async function deleteJob() {
     }
 
     // Firestoreから削除
-    if (useFirestore) {
-      FirestoreService.initFirestore();
+    FirestoreService.initFirestore();
 
-      const jobId = currentEditingJob?.id;
-      if (!jobId) {
-        alert('求人IDが見つかりません');
-        return;
-      }
-
-      const result = await FirestoreService.deleteJob(companyDomain, jobId);
-
-      if (!result.success) {
-        alert('削除に失敗しました: ' + (result.error || '不明なエラー'));
-        return;
-      }
-
-      closeJobModal();
-      await loadJobsData();
-
-      alert('求人を削除しました');
+    const jobId = currentEditingJob?.id;
+    if (!jobId) {
+      alert('求人IDが見つかりません');
       return;
     }
 
-    // GAS APIで削除（フォールバック）
-    const gasApiUrl = config.gasApiUrl;
-    if (!gasApiUrl) {
-      alert('GAS API URLが設定されていません');
-      return;
-    }
-
-    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-      action: 'deleteJob',
-      companyDomain: companyDomain,
-      rowIndex: currentEditingJob._rowIndex
-    }))));
-    const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      redirect: 'follow'
-    });
-
-    const responseText = await response.text();
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      throw new Error('GASからの応答が不正です');
-    }
+    const result = await FirestoreService.deleteJob(companyDomain, jobId);
 
     if (!result.success) {
       alert('削除に失敗しました: ' + (result.error || '不明なエラー'));
@@ -1303,7 +1179,7 @@ export async function saveSortOrder() {
       }
     });
 
-    // 各求人のorderを更新（GASに保存）
+    // 各求人のorderを更新（Firestoreに保存）
     for (const update of updates) {
       await saveJobOrderToSheet(update.job, update.order);
     }
@@ -1327,41 +1203,22 @@ export async function saveSortOrder() {
  */
 async function saveJobOrderToSheet(job, order) {
   const jobData = { ...job, order: String(order) };
-  const rowIndex = job._rowIndex;
-  // _rowIndexはGAS側で不要なので除外
+  // 内部用プロパティを除外
   delete jobData._rowIndex;
+  delete jobData._docId;
 
   // Firestoreに保存
-  if (useFirestore) {
-    FirestoreService.initFirestore();
+  FirestoreService.initFirestore();
 
-    const jobId = job.id;
-    if (!jobId) {
-      throw new Error('求人IDが見つかりません');
-    }
-
-    const result = await FirestoreService.saveJob(companyDomain, jobData, jobId);
-
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to save job order');
-    }
-    return;
+  const jobId = job.id || job._docId;
+  if (!jobId) {
+    throw new Error('求人IDが見つかりません');
   }
 
-  // GAS APIに保存（フォールバック）
-  const response = await fetch(config.gasApiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'saveJob',
-      companyDomain: companyDomain,
-      job: jobData,
-      rowIndex: rowIndex
-    })
-  });
+  const result = await FirestoreService.saveJob(companyDomain, jobData, jobId);
 
-  if (!response.ok) {
-    throw new Error(`Failed to save job order: ${response.status}`);
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to save job order');
   }
 }
 

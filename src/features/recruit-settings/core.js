@@ -730,13 +730,13 @@ export function handleReset(savedSettings, companyName = '', companyDescription 
 export function updatePreviewLink(companyDomain) {
   const previewBtn = document.getElementById('recruit-preview-btn');
   if (previewBtn && companyDomain) {
-    previewBtn.href = `company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
+    previewBtn.href = `/company-recruit.html?id=${encodeURIComponent(companyDomain)}`;
   }
 
   // 編集モードボタンも更新
   const editBtn = document.getElementById('recruit-edit-btn');
   if (editBtn && companyDomain) {
-    editBtn.href = `company-recruit.html?id=${encodeURIComponent(companyDomain)}&edit`;
+    editBtn.href = `/company-recruit.html?id=${encodeURIComponent(companyDomain)}&edit`;
   }
 }
 

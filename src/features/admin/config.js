@@ -1,7 +1,7 @@
 /**
  * Admin Dashboard - 設定
  */
-import { envConfig, firebaseConfig as envFirebaseConfig, cloudFunctionsBaseUrl, gaConfig, gasConfig, apiEndpoints } from '@shared/env-config';
+import { firebaseConfig as envFirebaseConfig, cloudFunctionsBaseUrl, gaConfig, apiEndpoints } from '@shared/env-config';
 
 // ユーザーロール定義
 export const USER_ROLES = {
@@ -24,18 +24,6 @@ export const config = {
   legacyLoginUrl: apiEndpoints.legacyLogin,
   firebaseConfig: envFirebaseConfig
 };
-
-export const spreadsheetConfig = {
-  sheetId: gasConfig.spreadsheetId,
-  companySheetName: '会社一覧',
-  lpSettingsSheetName: 'LP設定',
-  gasApiUrl: gasConfig.apiUrl
-};
-
-// Firestoreを使用するかどうかのフラグ
-// true: Firestoreを使用（新方式）
-// false: GAS APIを使用（旧方式）
-export const useFirestore = true; // Firestore使用中
 
 // パターンラベル取得
 export function getPatternLabel(pattern) {

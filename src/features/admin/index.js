@@ -18,8 +18,9 @@ import { initRecruitSettings, setPendingCompany } from './recruit-settings.js';
 import { initJobListings, setCompanyFilter } from './job-listings.js';
 import { downloadIndeedXml, downloadGoogleJsonLd, downloadJobBoxXml, downloadCsv } from './job-feed-generator.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
-import { escapeHtml } from '@shared/utils.js';
+import { escapeHtml, showToast } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
+import { initKeyboardShortcuts } from '@shared/keyboard-shortcuts.js';
 
 // Job-Manage Embedded
 import {
@@ -301,6 +302,26 @@ async function switchSection(sectionName, options = {}) {
       });
       lpResetBtn.setAttribute('data-listener-attached', 'true');
     }
+
+    // 動的読み込み対応: 折りたたみパネルの初期化
+    document.querySelectorAll('#section-lp-settings .collapsible-header').forEach(header => {
+      if (!header.hasAttribute('data-listener-attached')) {
+        header.addEventListener('click', () => {
+          const parent = header.closest('.collapsible');
+          if (parent) {
+            parent.classList.toggle('collapsed');
+          }
+        });
+        header.setAttribute('data-listener-attached', 'true');
+      }
+    });
+
+    // 広告トラッキングとOGPセクションは初期状態で閉じておく
+    document.querySelectorAll('#ad-tracking-section, #ogp-section').forEach(section => {
+      if (!section.classList.contains('collapsed')) {
+        section.classList.add('collapsed');
+      }
+    });
   }
 
   // 採用ページ設定セクションに切り替えた場合は初期化
@@ -505,7 +526,7 @@ function setupCompanySelectModal() {
       showDashboard();
       navigateToJobManage(result.companyDomain, result.companyName, 'overview', null, 'jobs');
     } else {
-      alert(result.error || '会社の選択に失敗しました');
+      showToast(result.error || '会社の選択に失敗しました', 'error');
     }
   });
 
@@ -622,14 +643,14 @@ function bindEvents() {
       const emailOrUsername = document.getElementById('company-email')?.value || '';
 
       if (!emailOrUsername) {
-        alert('メールアドレスまたはユーザーIDを入力してください');
+        showToast('メールアドレスまたはユーザーIDを入力してください', 'error');
         return;
       }
 
       // メールアドレス形式かチェック
       const isEmail = emailOrUsername.includes('@');
       if (!isEmail) {
-        alert('パスワードリセットにはメールアドレスが必要です。\nユーザーIDでログインしている場合は、管理者にお問い合わせください。');
+        showToast('パスワードリセットにはメールアドレスが必要です。ユーザーIDでログインしている場合は、管理者にお問い合わせください。', 'error');
         return;
       }
 
@@ -637,9 +658,9 @@ function bindEvents() {
       const result = await sendPasswordResetEmail(emailOrUsername);
 
       if (result.success) {
-        alert('パスワードリセットメールを送信しました。メールをご確認ください。');
+        showToast('パスワードリセットメールを送信しました', 'success');
       } else {
-        alert(result.error || 'パスワードリセットメールの送信に失敗しました');
+        showToast(result.error || 'パスワードリセットメールの送信に失敗しました', 'error');
       }
     });
   }
@@ -798,6 +819,21 @@ function bindEvents() {
   // LP設定: 動画ボタン設定
   initVideoButtonSection();
 
+  // LP設定: キーボードショートカット（Ctrl+S で保存）
+  const lpEditor = document.getElementById('lp-editor');
+  if (lpEditor) {
+    initKeyboardShortcuts({
+      onSave: () => {
+        // LP設定セクションが表示されている場合のみ保存
+        const lpSection = document.getElementById('section-lp-settings');
+        if (lpSection && !lpSection.classList.contains('hidden')) {
+          saveLPSettings();
+        }
+      },
+      scope: lpEditor
+    });
+  }
+
   // LP設定: セクション表示/非表示切り替え
   document.querySelectorAll('#lp-section-order input[type="checkbox"]').forEach(checkbox => {
     checkbox.addEventListener('change', () => updateLPPreview());
@@ -825,9 +861,9 @@ function bindEvents() {
       const newPassword = document.getElementById('new-password')?.value;
       if (newPassword && newPassword.length >= 4) {
         localStorage.setItem('admin_password', newPassword);
-        alert('パスワードを変更しました');
+        showToast('パスワードを変更しました', 'success');
       } else {
-        alert('パスワードは4文字以上で入力してください');
+        showToast('パスワードは4文字以上で入力してください', 'error');
       }
     });
   }
@@ -850,9 +886,9 @@ function bindEvents() {
       try {
         showFeedLoading();
         await downloadIndeedXml();
-        alert('Indeed XMLフィードをダウンロードしました');
+        showToast('Indeed XMLフィードをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -865,9 +901,9 @@ function bindEvents() {
       try {
         showFeedLoading();
         await downloadGoogleJsonLd();
-        alert('Google JSON-LDをダウンロードしました');
+        showToast('Google JSON-LDをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -880,9 +916,9 @@ function bindEvents() {
       try {
         showFeedLoading();
         await downloadJobBoxXml();
-        alert('求人ボックスXMLをダウンロードしました');
+        showToast('求人ボックスXMLをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -895,9 +931,9 @@ function bindEvents() {
       try {
         showFeedLoading();
         await downloadCsv();
-        alert('CSVをダウンロードしました');
+        showToast('CSVをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -1090,9 +1126,9 @@ function setupFeedDownloadButtons() {
       try {
         showFeedLoading();
         await downloadIndeedXml();
-        alert('Indeed XMLフィードをダウンロードしました');
+        showToast('Indeed XMLフィードをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -1106,9 +1142,9 @@ function setupFeedDownloadButtons() {
       try {
         showFeedLoading();
         await downloadGoogleJsonLd();
-        alert('Google JSON-LDをダウンロードしました');
+        showToast('Google JSON-LDをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -1122,9 +1158,9 @@ function setupFeedDownloadButtons() {
       try {
         showFeedLoading();
         await downloadJobBoxXml();
-        alert('求人ボックスXMLをダウンロードしました');
+        showToast('求人ボックスXMLをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -1138,9 +1174,9 @@ function setupFeedDownloadButtons() {
       try {
         showFeedLoading();
         await downloadCsv();
-        alert('CSVをダウンロードしました');
+        showToast('CSVをダウンロードしました', 'success');
       } catch (error) {
-        alert('フィード生成に失敗しました: ' + error.message);
+        showToast('フィード生成に失敗しました: ' + error.message, 'error');
       } finally {
         hideFeedLoading();
       }
@@ -1430,14 +1466,14 @@ async function saveCompanyUser() {
   const isActive = document.getElementById('cu-is-active')?.checked;
 
   if (!companyDomain || !email) {
-    alert('必須項目を入力してください');
+    showToast('必須項目を入力してください', 'error');
     return;
   }
 
   // メールアドレス形式チェック
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    alert('メールアドレスの形式が正しくありません');
+    showToast('メールアドレスの形式が正しくありません', 'error');
     return;
   }
 
@@ -1460,18 +1496,18 @@ async function saveCompanyUser() {
         throw new Error(result.error);
       }
 
-      alert('ユーザー情報を更新しました');
+      showToast('ユーザー情報を更新しました', 'success');
       closeCompanyUserModal();
 
     } else {
       // 新規作成
       if (!password) {
-        alert('パスワードを入力してください');
+        showToast('パスワードを入力してください', 'error');
         return;
       }
 
       if (password.length < 8) {
-        alert('パスワードは8文字以上で入力してください');
+        showToast('パスワードは8文字以上で入力してください', 'error');
         return;
       }
 
@@ -1499,9 +1535,9 @@ async function saveCompanyUser() {
 
       // レガシー認証の場合は警告を表示
       if (result._isLegacy) {
-        alert('ユーザーを作成しました（レガシーモード）。\n\n注意: Cloud Function が設定されていないため、パスワードは暗号化されていません。\nセキュリティ強化のため、Cloud Function の設定を推奨します。');
+        showToast('ユーザーを作成しました（レガシーモード）。Cloud Functionの設定を推奨します。', 'warning');
       } else {
-        alert('ユーザーを作成しました。ログイン情報を控えてください。');
+        showToast('ユーザーを作成しました', 'success');
       }
     }
 
@@ -1509,7 +1545,7 @@ async function saveCompanyUser() {
 
   } catch (error) {
     console.error('ユーザー保存エラー:', error);
-    alert('保存に失敗しました: ' + error.message);
+    showToast('保存に失敗しました: ' + error.message, 'error');
   } finally {
     if (saveBtn && !currentEditingUserId) {
       // 新規作成時は保存ボタンを「完了」のままにする
@@ -1539,13 +1575,13 @@ async function deleteCompanyUserHandler() {
       throw new Error(result.error);
     }
 
-    alert('ユーザーを削除しました');
+    showToast('ユーザーを削除しました', 'success');
     closeCompanyUserModal();
     await loadCompanyUsersData();
 
   } catch (error) {
     console.error('ユーザー削除エラー:', error);
-    alert('削除に失敗しました: ' + error.message);
+    showToast('削除に失敗しました: ' + error.message, 'error');
   }
 }
 
@@ -1567,20 +1603,17 @@ async function resetPassword(userId, username) {
       throw new Error(result.error);
     }
 
-    // パスワードを表示
-    const message = `新しいパスワードを発行しました。\n\nユーザーID: ${username}\nパスワード: ${newPassword}\n\n※このパスワードは再表示できません。必ず控えてください。`;
-
     // クリップボードにコピー
     try {
       await navigator.clipboard.writeText(`ユーザーID: ${username}\nパスワード: ${newPassword}`);
-      alert(message + '\n\n（クリップボードにコピーしました）');
+      showToast('新しいパスワードをクリップボードにコピーしました', 'success');
     } catch {
-      alert(message);
+      showToast('パスワードを再発行しました', 'success');
     }
 
   } catch (error) {
     console.error('パスワード再発行エラー:', error);
-    alert('パスワードの再発行に失敗しました: ' + error.message);
+    showToast('パスワードの再発行に失敗しました: ' + error.message, 'error');
   }
 }
 
@@ -1618,7 +1651,7 @@ async function bulkGenerateUsers() {
   }
 
   if (results.length === 0) {
-    alert('発行対象の会社がありませんでした。');
+    showToast('発行対象の会社がありませんでした', 'info');
     return;
   }
 
@@ -1637,7 +1670,7 @@ async function bulkGenerateUsers() {
   a.click();
   URL.revokeObjectURL(url);
 
-  alert(`${results.length}社にユーザーIDを発行しました。\nログイン情報はダウンロードされたテキストファイルを確認してください。`);
+  showToast(`${results.length}社にユーザーIDを発行しました`, 'success');
 
   await loadCompanyUsersData();
 }
@@ -1650,9 +1683,9 @@ function copyCredentialsToClipboard() {
   if (email && password) {
     const text = `メールアドレス: ${email}\nパスワード: ${password}`;
     navigator.clipboard.writeText(text).then(() => {
-      alert('クリップボードにコピーしました');
+      showToast('クリップボードにコピーしました', 'success');
     }).catch(() => {
-      alert('コピーに失敗しました');
+      showToast('コピーに失敗しました', 'error');
     });
   }
 }
@@ -1665,7 +1698,7 @@ function setupAdminUserManagement() {
     addAdminBtn.addEventListener('click', async () => {
       const email = document.getElementById('admin-email')?.value?.trim();
       if (!email) {
-        alert('メールアドレスを入力してください');
+        showToast('メールアドレスを入力してください', 'error');
         return;
       }
 
@@ -1677,14 +1710,14 @@ function setupAdminUserManagement() {
         const result = await addAdminUserByEmail(email);
 
         if (result.success) {
-          alert(`管理者を追加しました: ${email}\n\nこのユーザーはGoogleログインで管理画面にアクセスできるようになります。`);
+          showToast(`管理者を追加しました: ${email}`, 'success');
           document.getElementById('admin-email').value = '';
           await loadAdminUsersData();
         } else {
-          alert(result.error || '追加に失敗しました');
+          showToast(result.error || '追加に失敗しました', 'error');
         }
       } catch (error) {
-        alert('エラーが発生しました: ' + error.message);
+        showToast('エラーが発生しました: ' + error.message, 'error');
       } finally {
         addAdminBtn.disabled = false;
         addAdminBtn.textContent = '管理者を追加';
@@ -1750,13 +1783,13 @@ async function loadAdminUsersData() {
           const result = await deleteAdminUser(userId);
 
           if (result.success) {
-            alert('管理者を削除しました');
+            showToast('管理者を削除しました', 'success');
             await loadAdminUsersData();
           } else {
-            alert(result.error || '削除に失敗しました');
+            showToast(result.error || '削除に失敗しました', 'error');
           }
         } catch (error) {
-          alert('エラーが発生しました: ' + error.message);
+          showToast('エラーが発生しました: ' + error.message, 'error');
         } finally {
           btn.disabled = false;
           btn.textContent = '削除';
@@ -1823,13 +1856,13 @@ async function loadCompanyStaffData() {
           const result = await deleteCompanyStaff(staffId);
 
           if (result.success) {
-            alert('スタッフを削除しました');
+            showToast('スタッフを削除しました', 'success');
             await loadCompanyStaffData();
           } else {
-            alert(result.error || '削除に失敗しました');
+            showToast(result.error || '削除に失敗しました', 'error');
           }
         } catch (error) {
-          alert('エラーが発生しました: ' + error.message);
+          showToast('エラーが発生しました: ' + error.message, 'error');
         } finally {
           btn.disabled = false;
           btn.textContent = '削除';
@@ -1854,12 +1887,12 @@ function setupCompanyStaffEvents() {
       const password = document.getElementById('staff-password')?.value;
 
       if (!email) {
-        alert('メールアドレスを入力してください');
+        showToast('メールアドレスを入力してください', 'error');
         return;
       }
 
       if (!password || password.length < 6) {
-        alert('パスワードは6文字以上で入力してください');
+        showToast('パスワードは6文字以上で入力してください', 'error');
         return;
       }
 
@@ -1871,17 +1904,17 @@ function setupCompanyStaffEvents() {
         const result = await addCompanyStaff(email, password, name, username);
 
         if (result.success) {
-          alert(`スタッフを追加しました: ${email}`);
+          showToast(`スタッフを追加しました: ${email}`, 'success');
           document.getElementById('staff-email').value = '';
           document.getElementById('staff-name').value = '';
           document.getElementById('staff-username').value = '';
           document.getElementById('staff-password').value = '';
           await loadCompanyStaffData();
         } else {
-          alert(result.error || '追加に失敗しました');
+          showToast(result.error || '追加に失敗しました', 'error');
         }
       } catch (error) {
-        alert('エラーが発生しました: ' + error.message);
+        showToast('エラーが発生しました: ' + error.message, 'error');
       } finally {
         addStaffBtn.disabled = false;
         addStaffBtn.textContent = 'スタッフを追加';
@@ -1901,27 +1934,25 @@ export function initAdminDashboard() {
   // Firebase初期化
   initFirebase();
 
-  // Firestoreローダーを初期化
-  JobsLoader.initFirestoreLoader();
-
-  // セッション確認
-  if (checkSession()) {
-    showDashboard();
-    // Firebase認証が完了したらデータを読み込む
-    document.addEventListener('authReady', async () => {
-      await JobsLoader.initFirestoreLoader(); // 念のため再初期化
-      loadDashboardData();
-    }, { once: true });
-    // フォールバック: 認証に時間がかかる場合は3秒後に読み込み
-    setTimeout(async () => {
-      if (!getIdToken()) {
-        await JobsLoader.initFirestoreLoader();
+  // Firestoreローダーを初期化（awaitで完了を待つ）
+  JobsLoader.initFirestoreLoader().then(() => {
+    // セッション確認
+    if (checkSession()) {
+      showDashboard();
+      // Firebase認証が完了したらデータを読み込む
+      document.addEventListener('authReady', async () => {
         loadDashboardData();
-      }
-    }, 3000);
-  } else {
-    showLogin();
-  }
+      }, { once: true });
+      // フォールバック: 認証に時間がかかる場合は3秒後に読み込み
+      setTimeout(async () => {
+        if (!getIdToken()) {
+          loadDashboardData();
+        }
+      }, 3000);
+    } else {
+      showLogin();
+    }
+  });
 
   // イベントバインド
   bindEvents();
@@ -1959,12 +1990,6 @@ export function initAdminDashboard() {
 if (typeof window !== 'undefined') {
   window.AdminDashboard = {
     config,
-    spreadsheetConfig: {
-      sheetId: '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0',
-      companySheetName: '会社一覧',
-      lpSettingsSheetName: 'LP設定',
-      gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
-    },
     init: initAdminDashboard,
     switchSection,
     getIdToken,

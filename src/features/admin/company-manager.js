@@ -2,9 +2,8 @@
  * Admin Dashboard - 会社管理モジュール
  */
 
-import { escapeHtml } from '@shared/utils.js';
-import { spreadsheetConfig, getPatternLabel, heroImagePresets, useFirestore } from './config.js';
-import { parseCSVLine, normalizeHeader } from './csv-utils.js';
+import { escapeHtml, showToast } from '@shared/utils.js';
+import { getPatternLabel, heroImagePresets } from './config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
 
 // キャッシュ
@@ -25,45 +24,15 @@ export async function loadCompanyManageData() {
   }
 
   try {
-    let companies = [];
-
     // Firestoreから読み込み
-    if (useFirestore) {
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.getCompanies();
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.getCompanies();
 
-      if (result.success) {
-        companies = result.companies || [];
-      } else {
-        throw new Error(result.error || '会社データの取得に失敗しました');
-      }
-    } else {
-      // CSVから読み込み（フォールバック）
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetConfig.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(spreadsheetConfig.companySheetName)}`;
-      const response = await fetch(csvUrl);
-      if (!response.ok) throw new Error('データの取得に失敗しました');
-
-      const csvText = await response.text();
-      companies = parseCompanyCSV(csvText);
-
-      // ローカルストレージの更新データをマージ
-      companies = companies.map(company => {
-        if (company.companyDomain) {
-          const storedData = localStorage.getItem(`company_data_${company.companyDomain}`);
-          if (storedData) {
-            try {
-              const updatedData = JSON.parse(storedData);
-              return { ...company, ...updatedData };
-            } catch (e) {
-              console.error('ローカルストレージのパースエラー:', e);
-            }
-          }
-        }
-        return company;
-      });
+    if (!result.success) {
+      throw new Error(result.error || '会社データの取得に失敗しました');
     }
 
-    companiesCache = companies;
+    companiesCache = result.companies || [];
 
     if (tbody) {
       if (companies.length === 0) {
@@ -157,132 +126,75 @@ export async function saveCompanyData() {
   };
 
   if (!companyData.company || !companyData.companyDomain) {
-    alert('会社名と会社ドメインは必須です');
+    showToast('会社名と会社ドメインは必須です', 'error');
     return;
   }
 
   if (!/^[a-z0-9-]+$/.test(companyData.companyDomain)) {
-    alert('会社ドメインは半角英数字とハイフンのみ使用できます');
+    showToast('会社ドメインは半角英数字とハイフンのみ使用できます', 'error');
     return;
   }
 
   if (isNewCompany) {
     const existing = companiesCache?.find(c => c.companyDomain === companyData.companyDomain);
     if (existing) {
-      alert('このドメインは既に使用されています');
+      showToast('このドメインは既に使用されています', 'error');
       return;
     }
   }
 
   // Firestoreに保存
-  if (useFirestore) {
-    try {
-      const saveBtn = document.getElementById('company-modal-save');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = '保存中...';
-      }
-
-      FirestoreService.initFirestore();
-
-      // Firestore用にデータを整形
-      const firestoreData = {
-        company: companyData.company,
-        companyAddress: companyData.companyAddress || '',
-        description: companyData.description,
-        imageUrl: companyData.imageUrl,
-        designPattern: companyData.designPattern,
-        order: parseInt(companyData.order) || 0,
-        showCompany: companyData.showCompany === '○' || companyData.showCompany === '◯'
-      };
-
-      const result = await FirestoreService.saveCompany(companyDomain, firestoreData);
-
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '保存';
-      }
-
-      if (!result.success) {
-        alert('Firestoreへの保存に失敗しました: ' + (result.error || '不明なエラー'));
-        return;
-      }
-
-      localStorage.removeItem(`company_data_${companyData.companyDomain}`);
-
-      if (isNewCompany) {
-        companiesCache.push(companyData);
-      } else {
-        const idx = companiesCache.findIndex(c => c.companyDomain === companyData.companyDomain);
-        if (idx !== -1) {
-          companiesCache[idx] = companyData;
-        }
-      }
-
-      closeCompanyModal();
-      renderCompanyTable();
-
-      alert(`会社情報を保存しました。\n\n会社名: ${companyData.company}\nドメイン: ${companyData.companyDomain}`);
-
-    } catch (error) {
-      console.error('Firestore保存エラー:', error);
-      alert('Firestoreへの保存中にエラーが発生しました: ' + error.message);
+  try {
+    const saveBtn = document.getElementById('company-modal-save');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = '保存中...';
     }
-    return;
-  }
 
-  // GAS APIに保存（フォールバック）
-  const gasApiUrl = spreadsheetConfig.gasApiUrl;
-  if (gasApiUrl) {
-    try {
-      const saveBtn = document.getElementById('company-modal-save');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = '保存中...';
-      }
+    FirestoreService.initFirestore();
 
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        action: 'saveCompany',
-        company: companyData
-      }))));
-      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
+    // Firestore用にデータを整形
+    const firestoreData = {
+      company: companyData.company,
+      companyAddress: companyData.companyAddress || '',
+      description: companyData.description,
+      imageUrl: companyData.imageUrl,
+      designPattern: companyData.designPattern,
+      order: parseInt(companyData.order) || 0,
+      showCompany: companyData.showCompany === '○' || companyData.showCompany === '◯'
+    };
 
-      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-      const result = await response.json();
+    const result = await FirestoreService.saveCompany(companyDomain, firestoreData);
 
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '保存';
-      }
-
-      if (!result.success) {
-        alert('スプレッドシートへの保存に失敗しました: ' + (result.error || '不明なエラー'));
-        return;
-      }
-
-      localStorage.removeItem(`company_data_${companyData.companyDomain}`);
-
-      if (isNewCompany) {
-        companiesCache.push(companyData);
-      } else {
-        const idx = companiesCache.findIndex(c => c.companyDomain === companyData.companyDomain);
-        if (idx !== -1) {
-          companiesCache[idx] = companyData;
-        }
-      }
-
-      closeCompanyModal();
-      renderCompanyTable();
-
-      alert(`会社情報をスプレッドシートに保存しました。\n\n会社名: ${companyData.company}\nドメイン: ${companyData.companyDomain}`);
-
-    } catch (error) {
-      console.error('GAS API呼び出しエラー:', error);
-      alert('スプレッドシートへの保存中にエラーが発生しました。ローカルに保存します。');
-      saveCompanyDataLocal(companyData);
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '保存';
     }
-  } else {
-    saveCompanyDataLocal(companyData);
+
+    if (!result.success) {
+      showToast('Firestoreへの保存に失敗しました: ' + (result.error || '不明なエラー'), 'error');
+      return;
+    }
+
+    localStorage.removeItem(`company_data_${companyData.companyDomain}`);
+
+    if (isNewCompany) {
+      companiesCache.push(companyData);
+    } else {
+      const idx = companiesCache.findIndex(c => c.companyDomain === companyData.companyDomain);
+      if (idx !== -1) {
+        companiesCache[idx] = companyData;
+      }
+    }
+
+    closeCompanyModal();
+    renderCompanyTable();
+
+    showToast('会社情報を保存しました', 'success');
+
+  } catch (error) {
+    console.error('Firestore保存エラー:', error);
+    showToast('Firestoreへの保存中にエラーが発生しました: ' + error.message, 'error');
   }
 }
 
@@ -303,7 +215,7 @@ function saveCompanyDataLocal(companyData) {
   closeCompanyModal();
   renderCompanyTable();
 
-  alert(`会社情報をローカルに保存しました。\n\n注意: スプレッドシートに自動保存するには、設定画面でGAS API URLを設定してください。\n\n会社名: ${companyData.company}\nドメイン: ${companyData.companyDomain}`);
+  showToast('会社情報をローカルに保存しました', 'warning');
 }
 
 // 会社テーブルを再描画
@@ -368,7 +280,7 @@ function navigateToRecruitSettings(companyDomain) {
 export function openJobsArea(companyDomain) {
   const company = companiesCache?.find(c => c.companyDomain === companyDomain);
   if (!company) {
-    alert('会社情報が見つかりません');
+    showToast('会社情報が見つかりません', 'error');
     return;
   }
 

@@ -2,12 +2,11 @@
  * 求人一覧機能
  * 会社ごとにわかりやすく求人一覧を表示
  */
-import { escapeHtml } from '@shared/utils.js';
+import { escapeHtml, showToast } from '@shared/utils.js';
 import * as JobsLoader from '@shared/jobs-loader.js';
 import { getJobStatus } from '@shared/job-service.js';
 import { isAdmin, getUserCompanyDomain } from './auth.js';
 import * as FirestoreService from '@shared/firestore-service.js';
-import { useFirestore } from '@features/admin/config.js';
 
 // 状態管理
 let allJobs = [];
@@ -593,7 +592,7 @@ async function duplicateJob(companyDomain, jobId) {
   // 元の求人を検索
   const originalJob = allJobs.find(j => j.companyDomain === companyDomain && String(j.id) === String(jobId));
   if (!originalJob) {
-    alert('求人が見つかりません');
+    showToast('求人が見つかりません', 'error');
     return;
   }
 
@@ -620,23 +619,18 @@ async function duplicateJob(companyDomain, jobId) {
     duplicateData.applicationCount = 0;
     duplicateData.viewCount = 0;
 
-    if (useFirestore) {
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.saveJob(companyDomain, duplicateData, null);
-      console.log('[JobListings] 複製結果:', result);
-    } else {
-      alert('複製機能はFirestoreモードでのみ利用可能です');
-      return;
-    }
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.saveJob(companyDomain, duplicateData, null);
+    console.log('[JobListings] 複製結果:', result);
 
     // 成功メッセージ
-    alert('求人を複製しました');
+    showToast('求人を複製しました', 'success');
 
     // データを再読み込み
     await loadJobListingsData();
   } catch (error) {
     console.error('求人複製エラー:', error);
-    alert('求人の複製に失敗しました');
+    showToast('求人の複製に失敗しました', 'error');
   }
 }
 

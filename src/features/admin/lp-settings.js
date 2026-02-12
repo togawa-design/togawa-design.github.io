@@ -3,7 +3,8 @@
  */
 
 import { escapeHtml, showToast } from '@shared/utils.js';
-import { spreadsheetConfig, heroImagePresets, useFirestore } from './config.js';
+import { setupCharCounters, initAutosaveIndicator, markRequiredFields } from '@shared/form-ux.js';
+import { heroImagePresets } from './config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
 import { uploadLPImage, selectImageFile } from './image-uploader.js';
 import { parseCSVLine } from './csv-utils.js';
@@ -227,90 +228,32 @@ async function loadJobsForCompany(companyDomain) {
   }
 
   // Firestoreから求人を読み込む
-  if (useFirestore) {
-    try {
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.getJobs(companyDomain);
-
-      if (!result.success) {
-        console.warn(`[LP設定] Firestore求人読み込みエラー: ${result.error}`);
-        if (jobGrid) {
-          jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込みに失敗しました</p></div>';
-        }
-        return;
-      }
-
-      const jobs = (result.jobs || []).map(job => ({
-        id: `${companyDomain}_${job.id}`,
-        jobId: job.id,
-        title: job.title || '(タイトルなし)',
-        company: company.company,
-        companyDomain: companyDomain,
-        manageSheetUrl: company.manageSheetUrl,
-        rawData: job
-      }));
-
-      allJobsCache = jobs;
-      renderJobCards(jobs);
-
-      // 互換性のため非表示のselectも更新
-      if (jobSelect) {
-        let html = '<option value="">-- 求人を選択 --</option>';
-        for (const job of jobs) {
-          html += `<option value="${escapeHtml(job.id)}">${escapeHtml(job.title)}</option>`;
-        }
-        jobSelect.innerHTML = html;
-      }
-
-    } catch (e) {
-      console.warn(`[LP設定] Firestore求人読み込みエラー: ${companyDomain}`, e);
-      if (jobGrid) {
-        jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込み中にエラーが発生しました</p></div>';
-      }
-    }
-    return;
-  }
-
-  // 従来のCSV読み込み
-  const sheetName = company.jobsSheet?.trim();
-  const manageSheetUrl = company.manageSheetUrl?.trim();
-
-  let csvUrl = '';
-
-  if (sheetName) {
-    csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetConfig.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-  } else if (manageSheetUrl) {
-    const sheetIdMatch = manageSheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (sheetIdMatch) {
-      const externalSheetId = sheetIdMatch[1];
-      csvUrl = `https://docs.google.com/spreadsheets/d/${externalSheetId}/gviz/tq?tqx=out:csv`;
-    }
-  }
-
-  if (!csvUrl) {
-    console.warn(`[LP設定] 求人シートURLが見つかりません: ${companyDomain}`);
-    if (jobGrid) {
-      jobGrid.innerHTML = '<div class="lp-no-results"><p>求人シートが設定されていません</p></div>';
-    }
-    return;
-  }
-
   try {
-    const response = await fetch(csvUrl);
-    if (!response.ok) {
-      console.warn(`[LP設定] 求人シートの読み込みに失敗: ${response.status}`);
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.getJobs(companyDomain);
+
+    if (!result.success) {
+      console.warn(`[LP設定] Firestore求人読み込みエラー: ${result.error}`);
       if (jobGrid) {
         jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込みに失敗しました</p></div>';
       }
       return;
     }
 
-    const csvText = await response.text();
-    const jobs = parseJobsCSV(csvText, company);
-    allJobsCache = jobs;
+    const jobs = (result.jobs || []).map(job => ({
+      id: `${companyDomain}_${job.id}`,
+      jobId: job.id,
+      title: job.title || '(タイトルなし)',
+      company: company.company,
+      companyDomain: companyDomain,
+      manageSheetUrl: company.manageSheetUrl,
+      rawData: job
+    }));
 
+    allJobsCache = jobs;
     renderJobCards(jobs);
 
+    // 互換性のため非表示のselectも更新
     if (jobSelect) {
       let html = '<option value="">-- 求人を選択 --</option>';
       for (const job of jobs) {
@@ -320,7 +263,7 @@ async function loadJobsForCompany(companyDomain) {
     }
 
   } catch (e) {
-    console.warn(`[LP設定] 求人読み込みエラー: ${companyDomain}`, e);
+    console.warn(`[LP設定] Firestore求人読み込みエラー: ${companyDomain}`, e);
     if (jobGrid) {
       jobGrid.innerHTML = '<div class="lp-no-results"><p>求人データの読み込み中にエラーが発生しました</p></div>';
     }
@@ -497,148 +440,26 @@ export async function loadLPSettings(jobId) {
 
   try {
     // Firestoreから読み込み
-    if (useFirestore) {
-      const companyDomain = currentJobData?.companyDomain || selectedCompanyDomain;
-      console.log('[LP設定] Firestoreから読み込み:', companyDomain, jobId);
+    const companyDomain = currentJobData?.companyDomain || selectedCompanyDomain;
+    console.log('[LP設定] Firestoreから読み込み:', companyDomain, jobId);
 
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.getLPSettings(companyDomain, jobId);
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.getLPSettings(companyDomain, jobId);
 
-      if (result.success && result.settings && Object.keys(result.settings).length > 0) {
-        const settings = result.settings;
-        applyLPSettingsToForm(settings);
-        console.log('[LP設定] Firestoreから設定を読み込みました');
-      } else {
-        console.log('[LP設定] Firestoreに設定がありません、デフォルト表示');
-        clearLPForm();
-      }
-
-      setFormLoadingState(false);
-      return;
-    }
-
-    // 従来の方法: 会社の管理シートからLP設定を読み込む
-    // manageSheetUrl または jobsSheet（管理シート）を使用
-    const sheetUrl = currentJobData.manageSheetUrl?.trim() || currentJobData.jobsSheet?.trim();
-    console.log('[LP設定] 管理シートURL:', sheetUrl);
-
-    if (!sheetUrl) {
-      console.log('[LP設定] 管理シートURLが見つかりません');
+    if (result.success && result.settings && Object.keys(result.settings).length > 0) {
+      const settings = result.settings;
+      applyLPSettingsToForm(settings);
+      console.log('[LP設定] Firestoreから設定を読み込みました');
+    } else {
+      console.log('[LP設定] Firestoreに設定がありません、デフォルト表示');
       clearLPForm();
-      return;
     }
 
-    // スプレッドシートIDを抽出（URLまたはIDの両方に対応）
-    let companySheetId = null;
-    const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (sheetIdMatch) {
-      companySheetId = sheetIdMatch[1];
-    } else if (/^[a-zA-Z0-9_-]+$/.test(sheetUrl)) {
-      // IDのみの場合
-      companySheetId = sheetUrl;
-    }
+    // UX機能を初期化
+    initLPUXFeatures();
 
-    if (!companySheetId) {
-      console.log('[LP設定] 管理シートIDを抽出できません');
-      clearLPForm();
-      return;
-    }
-
-    // キャッシュを防ぐためにタイムスタンプを追加
-    const cacheKey = Date.now();
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${companySheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('LP設定')}&_t=${cacheKey}`;
-    console.log('[LP設定] LP設定シートURL:', csvUrl);
-
-    const response = await fetch(csvUrl, { cache: 'no-store' });
-
-    if (response.ok) {
-      const csvText = await response.text();
-      const settings = parseLPSettingsCSV(csvText, jobId);
-
-      if (settings) {
-        setInputValue('lp-hero-title', settings.heroTitle);
-        setInputValue('lp-hero-subtitle', settings.heroSubtitle);
-        setInputValue('lp-hero-image', settings.heroImage);
-
-        // ポイントを動的にレンダリング
-        const points = [];
-        for (let i = 1; i <= 6; i++) {
-          const title = settings[`pointTitle${i}`] || '';
-          const desc = settings[`pointDesc${i}`] || '';
-          if (title || desc) {
-            points.push({ title, desc });
-          }
-        }
-        renderPointInputs(points.length > 0 ? points : [{ title: '', desc: '' }, { title: '', desc: '' }, { title: '', desc: '' }]);
-
-        setInputValue('lp-cta-text', settings.ctaText || '今すぐ応募する');
-        setInputValue('lp-faq', settings.faq);
-
-        // FAQエディターをレンダリング
-        const faqs = parseFAQString(settings.faq);
-        renderFAQInputs(faqs);
-
-        if (settings.designPattern) {
-          const patternRadio = document.querySelector(`input[name="design-pattern"][value="${settings.designPattern}"]`);
-          if (patternRadio) patternRadio.checked = true;
-        }
-
-        if (settings.sectionOrder) {
-          applySectionOrder(settings.sectionOrder);
-        }
-
-        if (settings.sectionVisibility) {
-          applySectionVisibility(settings.sectionVisibility);
-        }
-
-        // 広告トラッキング設定
-        setInputValue('lp-tiktok-pixel', settings.tiktokPixelId);
-        setInputValue('lp-google-ads-id', settings.googleAdsId);
-        setInputValue('lp-google-ads-label', settings.googleAdsLabel);
-        setInputValue('lp-meta-pixel', settings.metaPixelId);
-        setInputValue('lp-line-tag', settings.lineTagId);
-        setInputValue('lp-clarity', settings.clarityProjectId);
-
-        // OGP設定
-        setInputValue('lp-ogp-title', settings.ogpTitle);
-        setInputValue('lp-ogp-description', settings.ogpDescription);
-        setInputValue('lp-ogp-image', settings.ogpImage);
-
-        // 動画ボタン設定
-        const showVideoCheckbox = document.getElementById('lp-show-video-button');
-        const videoUrlGroup = document.getElementById('video-url-group');
-        if (showVideoCheckbox) {
-          showVideoCheckbox.checked = String(settings.showVideoButton).toLowerCase() === 'true' || settings.showVideoButton === true;
-          if (videoUrlGroup) {
-            videoUrlGroup.style.display = showVideoCheckbox.checked ? 'block' : 'none';
-          }
-        }
-        setInputValue('lp-video-url', settings.videoUrl);
-
-        // カスタムカラー設定を反映
-        setLPCustomColors({
-          primary: settings.customPrimary || '',
-          accent: settings.customAccent || '',
-          bg: settings.customBg || '',
-          text: settings.customText || ''
-        });
-
-        updateHeroImagePresetSelection(settings.heroImage || '');
-        updateHeroImageUploadPreview(settings.heroImage || '');
-
-        // セクションマネージャーを初期化してデータを読み込み
-        initSectionManagerIfNeeded();
-        loadSectionsFromSettings(settings);
-        renderSectionsList();
-
-        // リアルタイムプレビューをセットアップ
-        setupLPLivePreview();
-
-        return;
-      }
-    }
   } catch (e) {
-    console.log('LP設定シートが見つかりません');
+    console.log('[LP設定] 読み込みエラー:', e);
   } finally {
     // 読み込み完了
     setFormLoadingState(false);
@@ -1625,7 +1446,7 @@ export async function saveLPSettings() {
   console.log('[LP保存] jobId:', jobId);
 
   if (!jobId) {
-    alert('求人を選択してください');
+    showToast('求人を選択してください', 'error');
     console.log('[LP保存] jobIdがないため中断');
     return;
   }
@@ -1635,7 +1456,7 @@ export async function saveLPSettings() {
   console.log('[LP保存] jobData:', jobData);
 
   if (!jobData) {
-    alert('求人データが見つかりません');
+    showToast('求人データが見つかりません', 'error');
     console.log('[LP保存] jobDataがないため中断');
     return;
   }
@@ -1718,99 +1539,37 @@ export async function saveLPSettings() {
   console.log('[LP保存] videoUrl:', settings.videoUrl);
 
   // Firestoreに保存
-  if (useFirestore) {
-    try {
-      const saveBtn = document.getElementById('btn-save-lp-settings');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = '保存中...';
-      }
-
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.saveLPSettings(settings.companyDomain, jobId, settings);
-
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'LP設定を保存';
-      }
-
-      if (!result.success) {
-        alert('Firestoreへの保存に失敗しました: ' + (result.error || '不明なエラー'));
-        return;
-      }
-
-      // 動画設定を求人にも同期
-      if (settings.showVideoButton || settings.videoUrl) {
-        await syncVideoToJob(jobId, settings.showVideoButton, settings.videoUrl, jobData);
-      }
-
-      localStorage.removeItem(`lp_settings_${jobId}`);
-      showToast('LP設定を保存しました', 'success');
-
-    } catch (error) {
-      console.error('Firestore保存エラー:', error);
-      alert('Firestoreへの保存中にエラーが発生しました: ' + error.message);
+  try {
+    const saveBtn = document.getElementById('btn-save-lp-settings');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = '保存中...';
     }
-    return;
-  }
 
-  // 従来のGAS API保存
-  const gasApiUrl = spreadsheetConfig.gasApiUrl;
-  if (gasApiUrl) {
-    try {
-      const saveBtn = document.getElementById('btn-save-lp-settings');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = '保存中...';
-      }
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.saveLPSettings(settings.companyDomain, jobId, settings);
 
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        action: 'saveLPSettings',
-        settings: settings
-      }))));
-      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-
-      const response = await fetch(url, { method: 'GET', redirect: 'follow' });
-      const responseText = await response.text();
-      console.log('[LP保存] GASレスポンス:', responseText);
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-        console.log('[LP保存] パース済みレスポンス:', result);
-      } catch (parseError) {
-        if (saveBtn) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'LP設定を保存';
-        }
-        throw new Error(`GASからの応答が不正です: ${responseText.substring(0, 200)}`);
-      }
-
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'LP設定を保存';
-      }
-
-      if (!result.success) {
-        alert('スプレッドシートへの保存に失敗しました: ' + (result.error || '不明なエラー'));
-        return;
-      }
-
-      // 動画設定を求人シートにも同期
-      if (settings.showVideoButton || settings.videoUrl) {
-        await syncVideoToJob(jobId, settings.showVideoButton, settings.videoUrl, jobData);
-      }
-
-      localStorage.removeItem(`lp_settings_${jobId}`);
-      alert(`LP設定をスプレッドシートに保存しました。\n\n求人: ${jobData.title}\n会社: ${jobData.company}\nデザインパターン: ${settings.designPattern}`);
-
-    } catch (error) {
-      console.error('GAS API呼び出しエラー:', error);
-      alert('スプレッドシートへの保存中にエラーが発生しました。ローカルに保存します。');
-      saveLPSettingsLocal(settings, jobId, jobData);
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'LP設定を保存';
     }
-  } else {
-    saveLPSettingsLocal(settings, jobId, jobData);
+
+    if (!result.success) {
+      showToast('Firestoreへの保存に失敗しました: ' + (result.error || '不明なエラー'), 'error');
+      return;
+    }
+
+    // 動画設定を求人にも同期
+    if (settings.showVideoButton || settings.videoUrl) {
+      await syncVideoToJob(jobId, settings.showVideoButton, settings.videoUrl, jobData);
+    }
+
+    localStorage.removeItem(`lp_settings_${jobId}`);
+    showToast('LP設定を保存しました', 'success');
+
+  } catch (error) {
+    console.error('Firestore保存エラー:', error);
+    showToast('Firestoreへの保存中にエラーが発生しました: ' + error.message, 'error');
   }
 }
 
@@ -1818,7 +1577,7 @@ export async function saveLPSettings() {
 function saveLPSettingsLocal(settings, jobId, jobData) {
   const lpSettingsKey = `lp_settings_${jobId}`;
   localStorage.setItem(lpSettingsKey, JSON.stringify(settings));
-  alert(`LP設定をローカルに保存しました。\n\n注意: スプレッドシートに自動保存するには、設定画面でGAS API URLを設定してください。\n\n求人: ${jobData?.title || jobId}\nデザインパターン: ${settings.designPattern}`);
+  showToast('LP設定をローカルに保存しました', 'warning');
 }
 
 // セクションの順番を取得
@@ -2533,6 +2292,28 @@ function getDragAfterElement(container, y) {
 
 // セクションマネージャー初期化をエクスポート
 export { initSectionManagerIfNeeded };
+
+/**
+ * LP設定のUX機能を初期化
+ */
+function initLPUXFeatures() {
+  // 文字数カウンター
+  setupCharCounters([
+    { selector: '#lp-hero-title', maxLength: 40 },
+    { selector: '#lp-hero-subtitle', maxLength: 80 },
+    { selector: '#lp-cta-button-text', maxLength: 20 },
+    { selector: '#lp-ogp-title', maxLength: 60 },
+    { selector: '#lp-ogp-description', maxLength: 160 }
+  ]);
+
+  // 必須フィールドマーク
+  markRequiredFields('#lp-editor', [
+    'lp-hero-title'
+  ]);
+
+  // 自動保存インジケーター
+  initAutosaveIndicator('lp-autosave-indicator');
+}
 
 // LP設定セクションの初期化フラグをリセット（セクション再読み込み時に使用）
 export function resetLPLivePreviewState() {

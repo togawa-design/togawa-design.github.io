@@ -3,13 +3,7 @@
  */
 import { escapeHtml } from '@shared/utils.js';
 import { uploadCompanyLogo, uploadCompanyImage, compressContentImage } from '@features/admin/image-uploader.js';
-import { useFirestore } from '@features/admin/config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
-
-// 設定
-const config = {
-  gasApiUrl: 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec'
-};
 
 // 状態
 let isNewMode = true;
@@ -236,56 +230,10 @@ async function loadCompanyData() {
     sessionStorage.removeItem('editing_company_data');
   }
 
-  // 2. localStorageから取得（更新データがある場合）- Firestoreモード以外
-  if (!useFirestore) {
-    const localData = localStorage.getItem(`company_data_${companyDomain}`);
-    if (localData) {
-      try {
-        const company = JSON.parse(localData);
-        originalData = company;
-        populateForm(company);
-        return;
-      } catch (e) {
-        console.error('localStorageデータのパースエラー:', e);
-      }
-    }
-  }
-
-  // 3. Firestoreから取得
-  if (useFirestore) {
-    try {
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.getCompany(companyDomain);
-
-      if (!result.success || !result.company) {
-        alert('会社データが見つかりません');
-        window.location.href = 'admin.html';
-        return;
-      }
-
-      originalData = result.company;
-      populateForm(result.company);
-      return;
-    } catch (error) {
-      console.error('Firestore読み込みエラー:', error);
-      alert('データの読み込みに失敗しました: ' + error.message);
-      return;
-    }
-  }
-
-  // 4. GAS APIから取得（フォールバック）
-  const gasApiUrl = config.gasApiUrl;
-  if (!gasApiUrl) {
-    alert('会社データが見つかりません');
-    window.location.href = 'admin.html';
-    return;
-  }
-
+  // 2. Firestoreから取得
   try {
-    // getCompany APIで単一会社を直接取得（高速）
-    const url = `${gasApiUrl}?action=getCompany&domain=${encodeURIComponent(companyDomain)}`;
-    const response = await fetch(url);
-    const result = await response.json();
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.getCompany(companyDomain);
 
     if (!result.success || !result.company) {
       alert('会社データが見つかりません');
@@ -297,7 +245,7 @@ async function loadCompanyData() {
     populateForm(result.company);
 
   } catch (error) {
-    console.error('会社データ読み込みエラー:', error);
+    console.error('Firestore読み込みエラー:', error);
     alert('データの読み込みに失敗しました: ' + error.message);
   }
 }
@@ -360,53 +308,28 @@ async function saveCompany() {
 
   try {
     // Firestoreに保存
-    if (useFirestore) {
-      FirestoreService.initFirestore();
+    FirestoreService.initFirestore();
 
-      // Firestore用にデータを整形
-      const firestoreData = {
-        company: companyData.company,
-        companyAddress: companyData.companyAddress || '',
-        description: companyData.description,
-        jobDescription: companyData.jobDescription,
-        workingHours: companyData.workingHours,
-        workLocation: companyData.workLocation,
-        logoUrl: companyData.logoUrl,
-        imageUrl: companyData.imageUrl,
-        designPattern: companyData.designPattern,
-        order: parseInt(companyData.order) || 0,
-        showCompany: companyData.showCompany === '○' || companyData.showCompany === '◯'
-      };
+    // Firestore用にデータを整形
+    const firestoreData = {
+      company: companyData.company,
+      companyAddress: companyData.companyAddress || '',
+      description: companyData.description,
+      jobDescription: companyData.jobDescription,
+      workingHours: companyData.workingHours,
+      workLocation: companyData.workLocation,
+      logoUrl: companyData.logoUrl,
+      imageUrl: companyData.imageUrl,
+      designPattern: companyData.designPattern,
+      order: parseInt(companyData.order) || 0,
+      showCompany: companyData.showCompany === '○' || companyData.showCompany === '◯'
+    };
 
-      const result = await FirestoreService.saveCompany(companyData.companyDomain, firestoreData);
+    const result = await FirestoreService.saveCompany(companyData.companyDomain, firestoreData);
 
-      if (!result.success) {
-        throw new Error(result.error || '保存に失敗しました');
-      }
-
-      alert(isNewMode ? '会社を登録しました' : '会社情報を更新しました');
-      window.location.href = 'admin.html';
-      return;
+    if (!result.success) {
+      throw new Error(result.error || '保存に失敗しました');
     }
-
-    // GAS APIに保存（フォールバック）
-    const gasApiUrl = config.gasApiUrl;
-    if (gasApiUrl) {
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        action: 'saveCompany',
-        company: companyData
-      }))));
-
-      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || '保存に失敗しました');
-      }
-    }
-
-    localStorage.setItem(`company_data_${companyData.companyDomain}`, JSON.stringify(companyData));
 
     alert(isNewMode ? '会社を登録しました' : '会社情報を更新しました');
     window.location.href = 'admin.html';
@@ -454,37 +377,12 @@ async function deleteCompany() {
 
   try {
     // Firestoreから削除
-    if (useFirestore) {
-      FirestoreService.initFirestore();
-      const result = await FirestoreService.deleteCompany(companyDomain);
+    FirestoreService.initFirestore();
+    const result = await FirestoreService.deleteCompany(companyDomain);
 
-      if (!result.success) {
-        throw new Error(result.error || '削除に失敗しました');
-      }
-
-      alert('会社を削除しました');
-      window.location.href = 'admin.html';
-      return;
+    if (!result.success) {
+      throw new Error(result.error || '削除に失敗しました');
     }
-
-    // GAS APIで削除（フォールバック）
-    const gasApiUrl = config.gasApiUrl;
-    if (gasApiUrl) {
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify({
-        action: 'deleteCompany',
-        domain: companyDomain
-      }))));
-
-      const url = `${gasApiUrl}?action=post&data=${encodeURIComponent(payload)}`;
-      const response = await fetch(url);
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || '削除に失敗しました');
-      }
-    }
-
-    localStorage.removeItem(`company_data_${companyDomain}`);
 
     alert('会社を削除しました');
     window.location.href = 'admin.html';

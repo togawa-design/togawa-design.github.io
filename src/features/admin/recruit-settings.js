@@ -5,6 +5,13 @@
 import { escapeHtml, showConfirm } from '@shared/utils.js';
 import { isAdmin, getUserCompanyDomain } from './auth.js';
 import {
+  initProgressIndicator,
+  setupCharCounters,
+  initDevicePreviewToggle,
+  initAutosaveIndicator,
+  markRequiredFields
+} from '@shared/form-ux.js';
+import {
   loadRecruitSettings,
   populateForm,
   populateFormWithDefaults,
@@ -208,10 +215,54 @@ async function selectCompany(company) {
 
     // リアルタイムプレビューをセットアップ
     setupLivePreview();
+
+    // UX改善: 進捗インジケーターを初期化
+    initRecruitProgressIndicator();
   } finally {
     // 読み込み完了
     setFormLoadingState(false);
   }
+}
+
+/**
+ * 採用ページ設定の進捗インジケーターを初期化
+ */
+function initRecruitProgressIndicator() {
+  initProgressIndicator({
+    containerId: 'recruit-form-progress',
+    fillId: 'recruit-progress-fill',
+    countId: 'recruit-progress-count',
+    totalSections: 12,
+    checkComplete: () => {
+      let completed = 0;
+      // 各セクションの完了状態をチェック
+      // 1. 基本設定 - 常に完了
+      completed++;
+      // 2. デザイン - テンプレート選択されていれば完了
+      if (document.querySelector('#recruit-layout-style-grid .template-option.selected')) completed++;
+      // 3. ヘッダー - ロゴまたは会社名があれば完了
+      if (document.getElementById('recruit-header-logo')?.value || document.getElementById('recruit-header-company-name')?.value) completed++;
+      // 4. ヒーロー - タイトルがあれば完了
+      if (document.getElementById('recruit-hero-title')?.value) completed++;
+      // 5. 会社紹介 - テキストがあれば完了
+      if (document.getElementById('recruit-company-intro')?.value) completed++;
+      // 6. 求人一覧 - 常に完了（デフォルト設定あり）
+      completed++;
+      // 7. CTA - タイトルがあれば完了
+      if (document.getElementById('recruit-cta-title')?.value) completed++;
+      // 8. カスタムセクション - オプションなので常に完了扱い
+      completed++;
+      // 9. セクション管理 - 常に完了
+      completed++;
+      // 10. フッター - オプションなので常に完了扱い
+      completed++;
+      // 11. SEO - オプションなので常に完了扱い
+      completed++;
+      // 12. 埋め込み - 常に完了
+      completed++;
+      return completed;
+    }
+  });
 }
 
 /**
@@ -394,6 +445,29 @@ function setupEventListeners() {
       copyToClipboard(code);
     });
   });
+
+  // UX改善: デバイスプレビュー切替
+  initDevicePreviewToggle({
+    toggleContainerSelector: '.preview-device-toggle',
+    previewPanelSelector: '#recruit-preview-panel'
+  });
+
+  // UX改善: 文字数カウンター
+  setupCharCounters([
+    { selector: '#recruit-hero-title', maxLength: 40 },
+    { selector: '#recruit-hero-subtitle', maxLength: 80 },
+    { selector: '#recruit-cta-title', maxLength: 30 },
+    { selector: '#recruit-meta-title', maxLength: 60 },
+    { selector: '#recruit-meta-description', maxLength: 160 }
+  ]);
+
+  // UX改善: 必須フィールドマーク
+  markRequiredFields('#recruit-settings-form', [
+    'recruit-hero-title'
+  ]);
+
+  // UX改善: 自動保存インジケーター
+  initAutosaveIndicator('recruit-autosave-indicator');
 }
 
 /**

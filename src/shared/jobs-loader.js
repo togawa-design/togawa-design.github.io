@@ -1,33 +1,38 @@
 /**
- * Google Sheets連携 - 求人データローダー (ES Module版)
- * Firestore対応版
+ * 求人データローダー (ES Module版)
+ * Firestore専用
  */
 
 // Firestoreサービス（動的インポートで循環参照を回避）
 let FirestoreService = null;
-let useFirestore = false;
+let initPromise = null; // 初期化Promiseを保持
 
 // Firestore設定を初期化
 export async function initFirestoreLoader() {
-  try {
-    const configModule = await import('../features/admin/config.js');
-    useFirestore = configModule.useFirestore;
-    if (useFirestore) {
+  // 既に初期化中の場合は同じPromiseを返す
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
       FirestoreService = await import('./firestore-service.js');
       FirestoreService.initFirestore();
+    } catch (e) {
+      console.warn('[JobsLoader] Firestore初期化スキップ:', e.message);
     }
-  } catch (e) {
-    console.warn('[JobsLoader] Firestore初期化スキップ:', e.message);
-    useFirestore = false;
+  })();
+
+  return initPromise;
+}
+
+// 初期化完了を待つヘルパー
+async function ensureInitialized() {
+  if (initPromise) {
+    await initPromise;
   }
 }
 
-// Google SheetのID
-export const SHEET_ID = '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0';
-export const SHEET_NAME = '会社一覧';
-export const STATS_SHEET_NAME = 'Stats';
+// 定数
 export const DEFAULT_IMAGE = 'images/default-job.svg';
-export const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
 
 // キャッシュ（5分間有効）
 const CACHE_TTL = 5 * 60 * 1000;
@@ -35,16 +40,6 @@ const cache = {
   companies: { data: null, timestamp: 0 },
   jobs: new Map() // jobsSheetIdをキーとしてキャッシュ
 };
-
-// CSVを取得するURL
-export const getCsvUrl = () =>
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
-
-export const getStatsUrl = () =>
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${STATS_SHEET_NAME}`;
-
-export const getSheetUrl = (sheetName) =>
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 
 // CSVの1行をパース
 export function parseCSVLine(line) {
@@ -209,6 +204,9 @@ export function extractSpreadsheetId(input) {
 
 // 会社一覧データを取得（キャッシュ付き）
 export async function fetchCompanies() {
+  // 初期化完了を待つ
+  await ensureInitialized();
+
   const now = Date.now();
 
   // キャッシュが有効な場合はキャッシュを返す
@@ -217,40 +215,32 @@ export async function fetchCompanies() {
   }
 
   try {
-    let data;
-
-    if (useFirestore && FirestoreService) {
-      // Firestoreから取得
-      const result = await FirestoreService.getCompanies();
-      if (result.success) {
-        // デバッグ: 会社データのフィールドを確認
-        console.log('[JobsLoader] Firestore companies raw data:', result.companies);
-        // Firestoreデータをスプレッドシート形式に変換
-        data = result.companies.map(c => ({
-          id: c.companyDomain,
-          company: c.company,
-          description: c.description || '',
-          jobDescription: c.jobDescription || '',
-          workingHours: c.workingHours || '',
-          companyAddress: c.companyAddress || '',
-          workLocation: c.workLocation || '',
-          designPattern: c.designPattern || '',
-          imageUrl: c.imageUrl || c.logoUrl || '',
-          order: c.order || 0,
-          showCompany: c.showCompany ? '○' : '',
-          companyDomain: c.companyDomain,
-          jobsSheet: c.manageSheetUrl || c.companyDomain // Firestore使用時はドメインをキーとして使用
-        }));
-      } else {
-        throw new Error(result.error || 'Firestoreから会社一覧の取得に失敗');
-      }
-    } else {
-      // CSVから取得（旧方式）
-      const response = await fetch(getCsvUrl());
-      if (!response.ok) throw new Error('会社一覧の取得に失敗しました');
-      const csvText = await response.text();
-      data = parseCSV(csvText);
+    if (!FirestoreService) {
+      throw new Error('Firestoreが初期化されていません');
     }
+
+    // Firestoreから取得
+    const result = await FirestoreService.getCompanies();
+    if (!result.success) {
+      throw new Error(result.error || 'Firestoreから会社一覧の取得に失敗');
+    }
+
+    // Firestoreデータをスプレッドシート形式に変換
+    const data = result.companies.map(c => ({
+      id: c.companyDomain,
+      company: c.company,
+      description: c.description || '',
+      jobDescription: c.jobDescription || '',
+      workingHours: c.workingHours || '',
+      companyAddress: c.companyAddress || '',
+      workLocation: c.workLocation || '',
+      designPattern: c.designPattern || '',
+      imageUrl: c.imageUrl || c.logoUrl || '',
+      order: c.order || 0,
+      showCompany: c.showCompany ? '○' : '',
+      companyDomain: c.companyDomain,
+      jobsSheet: c.companyDomain // companyDomainをキーとして使用
+    }));
 
     // キャッシュを更新
     cache.companies.data = data;
@@ -264,12 +254,15 @@ export async function fetchCompanies() {
 }
 
 // 会社の求人データを取得（キャッシュ付き）
-// jobsSheetIdOrUrl: スプレッドシートURL/ID または companyDomain（Firestore使用時）
-export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
-  if (!jobsSheetIdOrUrl) return null;
+// companyDomain: 会社ドメイン
+export async function fetchCompanyJobs(companyDomain) {
+  if (!companyDomain) return null;
+
+  // 初期化完了を待つ
+  await ensureInitialized();
 
   const now = Date.now();
-  const cacheKey = jobsSheetIdOrUrl.trim();
+  const cacheKey = companyDomain.trim();
 
   // キャッシュが有効な場合はキャッシュを返す
   const cached = cache.jobs.get(cacheKey);
@@ -278,34 +271,17 @@ export async function fetchCompanyJobs(jobsSheetIdOrUrl) {
   }
 
   try {
-    let data;
-
-    // Firestore使用時、かつスプレッドシートURLでない場合はFirestoreから取得
-    if (useFirestore && FirestoreService && !jobsSheetIdOrUrl.includes('spreadsheets')) {
-      const companyDomain = jobsSheetIdOrUrl.trim();
-      const result = await FirestoreService.getJobs(companyDomain);
-      if (result.success) {
-        data = result.jobs;
-      } else {
-        throw new Error(result.error || 'Firestoreから求人の取得に失敗');
-      }
-    } else {
-      // CSVから取得（旧方式）
-      const sheetId = extractSpreadsheetId(jobsSheetIdOrUrl.trim());
-      if (!sheetId) return null;
-
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
-      const response = await fetch(csvUrl);
-      if (!response.ok) throw new Error('求人データの取得に失敗しました');
-      const csvText = await response.text();
-      // ヘッダー行を確認して、データ開始行を判定
-      const lines = csvText.split('\n');
-      const firstHeader = lines[0]?.split(',')[0] || '';
-      // ヘッダーが「英語 日本語」形式（1行ヘッダー）か確認
-      const isCombinedHeader = firstHeader.includes(' ') && !firstHeader.startsWith('"管理');
-      const dataStartRow = isCombinedHeader ? 1 : 2;
-      data = parseCSV(csvText, 0, dataStartRow);
+    if (!FirestoreService) {
+      throw new Error('Firestoreが初期化されていません');
     }
+
+    // Firestoreから取得
+    const result = await FirestoreService.getJobs(cacheKey);
+    if (!result.success) {
+      throw new Error(result.error || 'Firestoreから求人の取得に失敗');
+    }
+
+    const data = result.jobs;
 
     // キャッシュを更新
     cache.jobs.set(cacheKey, { data, timestamp: now });
@@ -411,13 +387,11 @@ export async function fetchAllJobs() {
   for (const company of companies) {
     if (!isCompanyVisible(company)) continue;
 
-    // Firestore使用時はcompanyDomainを使用、それ以外はjobsSheetを使用
-    const jobsSource = useFirestore && company.companyDomain
-      ? company.companyDomain
-      : company.jobsSheet?.trim();
-    if (!jobsSource) continue;
+    // companyDomainを使用
+    const companyDomain = company.companyDomain;
+    if (!companyDomain) continue;
 
-    const jobs = await fetchCompanyJobs(jobsSource);
+    const jobs = await fetchCompanyJobs(companyDomain);
     if (jobs) {
       jobs.forEach(job => {
         job.company = company.company;
@@ -529,19 +503,6 @@ export async function getJobsByOccupation(occupation) {
   });
 }
 
-// 実績データを取得
-export async function fetchStats() {
-  try {
-    const response = await fetch(getStatsUrl());
-    if (!response.ok) throw new Error('実績データの取得に失敗しました');
-    const csvText = await response.text();
-    return parseStatsCSV(csvText);
-  } catch (error) {
-    console.error('実績データの取得エラー:', error);
-    return null;
-  }
-}
-
 // 求人統計を取得（掲載求人数、平均時給、平均月収）
 // localStorageでタブ間共有キャッシュ（30分）
 export async function fetchJobStats() {
@@ -558,24 +519,17 @@ export async function fetchJobStats() {
       }
     }
 
-    let stats;
-
-    if (useFirestore && FirestoreService) {
-      // Firestoreから統計を計算
-      const result = await FirestoreService.getJobStats();
-      if (result.success) {
-        stats = result.stats;
-      } else {
-        throw new Error(result.error || 'Firestoreから統計取得に失敗');
-      }
-    } else {
-      // GAS APIから取得（旧方式）
-      const response = await fetch(`${GAS_API_URL}?action=getJobStats`);
-      if (!response.ok) throw new Error('求人統計の取得に失敗しました');
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error || '求人統計の取得に失敗しました');
-      stats = result.stats;
+    if (!FirestoreService) {
+      throw new Error('Firestoreが初期化されていません');
     }
+
+    // Firestoreから統計を計算
+    const result = await FirestoreService.getJobStats();
+    if (!result.success) {
+      throw new Error(result.error || 'Firestoreから統計取得に失敗');
+    }
+
+    const stats = result.stats;
 
     // キャッシュに保存
     localStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -590,27 +544,6 @@ export async function fetchJobStats() {
   }
 }
 
-// 実績CSVをパース
-function parseStatsCSV(csvText) {
-  const lines = csvText.split('\n');
-  const stats = {};
-
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-
-    const values = parseCSVLine(lines[i]);
-    const key = values[0] ? values[0].replace(/"/g, '').trim() : '';
-    const value = values[1] ? values[1].replace(/"/g, '').trim() : '';
-    const label = values[2] ? values[2].replace(/"/g, '').trim() : '';
-
-    if (key) {
-      stats[key] = { value, label };
-    }
-  }
-
-  return stats;
-}
-
 // デザインパターンのCSSクラスを取得
 export function getDesignPatternClass(pattern) {
   const validPatterns = ['modern', 'classic', 'minimal', 'colorful'];
@@ -623,18 +556,7 @@ export function getDesignPatternClass(pattern) {
 
 // JobsLoaderオブジェクト（後方互換用）
 const JobsLoader = {
-  SHEET_ID,
-  SHEET_NAME,
-  STATS_SHEET_NAME,
   DEFAULT_IMAGE,
-  GAS_API_URL,
-  get csvUrl() { return getCsvUrl(); },
-  get statsUrl() { return getStatsUrl(); },
-  getSheetUrl,
-  parseCSVLine,
-  normalizeHeader,
-  parseCSV,
-  extractSpreadsheetId,
   fetchCompanies,
   fetchCompanyJobs,
   fetchJobs: fetchCompanies, // 後方互換
@@ -649,9 +571,9 @@ const JobsLoader = {
   getJobsByLocation,
   getJobsByKeyword,
   getJobsByOccupation,
-  fetchStats,
   fetchJobStats,
   getDesignPatternClass,
+  initFirestoreLoader,
   escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
