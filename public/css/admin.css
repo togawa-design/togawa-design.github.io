@@ -984,6 +984,466 @@
   text-align: right;
 }
 
+/* ========================================
+   採用管理タブ（admin専用）
+   ======================================== */
+
+/* アラートセクション */
+.recruitment-alerts-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.recruitment-alerts-section h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.section-note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.no-alerts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  color: #15803d;
+  font-weight: 500;
+}
+
+.alert-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid #f59e0b;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.alert-card.alert-warning {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+}
+
+.alert-card.alert-danger {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.alert-icon {
+  font-size: 18px;
+}
+
+.alert-title {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.alert-body {
+  padding-left: 26px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.alert-body p {
+  margin: 4px 0;
+}
+
+/* 採用ファネルセクション */
+.recruitment-funnel-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.recruitment-funnel-section h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.funnel-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.funnel-filter label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.funnel-filter select {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #fff;
+}
+
+.recruitment-funnel-chart .funnel-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recruitment-funnel-chart .funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recruitment-funnel-chart .funnel-label {
+  width: 60px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  text-align: right;
+}
+
+.recruitment-funnel-chart .funnel-bar-wrapper {
+  flex: 1;
+  background: #f1f5f9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.recruitment-funnel-chart .funnel-bar {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 12px;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.recruitment-funnel-chart .funnel-count {
+  font-size: 14px;
+}
+
+.recruitment-funnel-chart .funnel-rate {
+  width: 60px;
+  text-align: right;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.funnel-stats-grid {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.funnel-stat-card {
+  flex: 1;
+  text-align: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.funnel-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.funnel-stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* リードタイムセクション */
+.lead-time-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.lead-time-section h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.lead-time-section .stat-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* リードタイム分布グラフセクション */
+.lead-time-distribution-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.lead-time-distribution-section h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.lead-time-distribution-section .section-note {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.distribution-chart {
+  min-height: 200px;
+}
+
+.distribution-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 180px;
+  padding: 0 20px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.distribution-bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 100px;
+}
+
+.distribution-bar {
+  width: 50px;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s ease;
+  min-height: 4px;
+  position: relative;
+}
+
+.distribution-bar.warning {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+}
+
+.distribution-bar.danger {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+
+.distribution-bar-value {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.distribution-bar-label {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+}
+
+.distribution-legend {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.distribution-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.distribution-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.distribution-legend-color.good {
+  background: #10b981;
+}
+
+.distribution-legend-color.warning {
+  background: #f59e0b;
+}
+
+.distribution-legend-color.danger {
+  background: #ef4444;
+}
+
+/* 担当者別パフォーマンスセクション */
+.assignee-performance-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.assignee-performance-section h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+#assignee-performance-table tbody td:nth-child(3),
+#assignee-performance-table tbody td:nth-child(4),
+#assignee-performance-table tbody td:nth-child(5) {
+  text-align: right;
+}
+
+.performance-good {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.performance-warning {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.performance-danger {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* 企業別採用状況セクション */
+.company-recruitment-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.company-recruitment-section h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.company-recruitment-section .section-note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* クリック可能なテーブル行 */
+.admin-table.clickable-rows tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.admin-table.clickable-rows tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.admin-table.clickable-rows tbody tr:active {
+  background-color: #e2e8f0;
+}
+
+/* 企業別詳細ビュー */
+.company-recruitment-detail {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.company-recruitment-detail .detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.company-recruitment-detail .detail-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #1e293b;
+}
+
+.company-recruitment-detail .btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.company-recruitment-detail .btn-back:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.company-recruitment-detail h4 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #334155;
+}
+
+.company-recruitment-detail .recruitment-funnel-section,
+.company-recruitment-detail .lead-time-section,
+.company-recruitment-detail .lead-time-distribution-section,
+.company-recruitment-detail .assignee-performance-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 /* 横棒チャート */
 .horizontal-bar-chart {
   display: flex;
@@ -13561,4 +14021,271 @@ textarea.section-field-input {
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* ====================================
+   UX改善: スティッキー保存バー
+   ==================================== */
+.sticky-save-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, #fff 80%, transparent);
+  padding: 16px 0 8px;
+  margin-top: 24px;
+  z-index: 50;
+}
+
+.sticky-save-bar .form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  background: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-save-bar .autosave-indicator {
+  margin-left: auto;
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sticky-save-bar .autosave-indicator.saving {
+  color: #f59e0b;
+}
+
+.sticky-save-bar .autosave-indicator.saved {
+  color: #10b981;
+}
+
+/* ====================================
+   UX改善: 進捗インジケーター
+   ==================================== */
+.form-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.form-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.form-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.form-progress-text {
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.form-progress-text strong {
+  color: #374151;
+}
+
+/* ====================================
+   UX改善: 必須フィールドマーク
+   ==================================== */
+.required-mark {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+label.required::after {
+  content: " *";
+  color: #ef4444;
+}
+
+/* ====================================
+   UX改善: 文字数カウンター
+   ==================================== */
+.input-with-counter {
+  position: relative;
+}
+
+.char-counter {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 11px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.char-counter.warning {
+  color: #f59e0b;
+}
+
+.char-counter.error {
+  color: #ef4444;
+}
+
+/* テキストエリアの場合 */
+textarea + .char-counter {
+  bottom: 12px;
+}
+
+/* ====================================
+   UX改善: デバイスプレビュー切替
+   ==================================== */
+.preview-device-toggle {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.preview-device-toggle button {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-device-toggle button:hover {
+  background: #e5e7eb;
+}
+
+.preview-device-toggle button.active {
+  background: #fff;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-device-toggle button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* プレビューフレームのデスクトップモード */
+.recruit-editor-preview[data-device="desktop"] .preview-phone-frame {
+  width: 100%;
+  max-width: none;
+  border-radius: 8px;
+  aspect-ratio: 16/10;
+}
+
+.recruit-editor-preview[data-device="desktop"] .preview-phone-notch {
+  display: none;
+}
+
+.recruit-editor-preview[data-device="desktop"] .preview-phone-content {
+  padding-top: 0;
+}
+
+/* タブレットモード */
+.recruit-editor-preview[data-device="tablet"] .preview-phone-frame {
+  width: 280px;
+  aspect-ratio: 3/4;
+  border-radius: 16px;
+}
+
+.recruit-editor-preview[data-device="tablet"] .preview-phone-notch {
+  display: none;
+}
+
+/* ====================================
+   UX改善: セクション完了バッジ
+   ==================================== */
+.section-complete-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 11px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.section-complete-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.section-incomplete-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #fef3c7;
+  color: #d97706;
+  font-size: 11px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+/* ====================================
+   UX改善: フォームヘルプツールチップ
+   ==================================== */
+.help-tooltip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #e5e7eb;
+  border-radius: 50%;
+  font-size: 10px;
+  color: #6b7280;
+  cursor: help;
+  margin-left: 6px;
+  position: relative;
+}
+
+.help-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: #1f2937;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 1000;
+  width: max-content;
+  max-width: 300px;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.help-tooltip:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 8px;
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
 }

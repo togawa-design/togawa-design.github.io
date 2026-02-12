@@ -702,10 +702,18 @@ async function saveInterview() {
 
     // 応募者のステータスを「面接調整中」に更新
     const db = initFirebase();
+    const applicant = applicantsCache.find(a => a.id === currentApplicantId);
+    const newHistoryEntry = {
+      status: 'interviewing',
+      timestamp: new Date(),
+      previousStatus: applicant?.status || 'new'
+    };
+
     await db.collection('applications').doc(currentApplicantId).update({
       status: 'interviewing',
       interviewId: result.interviewId,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      statusHistory: firebase.firestore.FieldValue.arrayUnion(newHistoryEntry)
     });
 
     // キャッシュを更新
@@ -713,6 +721,10 @@ async function saveInterview() {
     if (index !== -1) {
       applicantsCache[index].status = 'interviewing';
       applicantsCache[index].interviewId = result.interviewId;
+      if (!applicantsCache[index].statusHistory) {
+        applicantsCache[index].statusHistory = [];
+      }
+      applicantsCache[index].statusHistory.push(newHistoryEntry);
     }
 
     closeInterviewModal();
@@ -1549,15 +1561,31 @@ async function changeStatus(newStatus) {
   try {
     const db = initFirebase();
 
+    // 現在の応募者データを取得してステータス履歴を追加
+    const applicant = applicantsCache.find(a => a.id === currentApplicantId);
+
+    // 新しいステータス履歴エントリを追加
+    const newHistoryEntry = {
+      status: newStatus,
+      timestamp: new Date(),
+      previousStatus: applicant?.status || 'new'
+    };
+
     await db.collection('applications').doc(currentApplicantId).update({
       status: newStatus,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      statusHistory: firebase.firestore.FieldValue.arrayUnion(newHistoryEntry)
     });
 
     // キャッシュを更新
     const index = applicantsCache.findIndex(a => a.id === currentApplicantId);
     if (index !== -1) {
       applicantsCache[index].status = newStatus;
+      // statusHistoryもキャッシュに追加
+      if (!applicantsCache[index].statusHistory) {
+        applicantsCache[index].statusHistory = [];
+      }
+      applicantsCache[index].statusHistory.push(newHistoryEntry);
     }
 
     // ボタンの状態を更新

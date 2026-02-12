@@ -83,6 +83,18 @@ function applyAnalyticsUIRestrictions() {
     companyRanking.style.display = 'none';
   }
 
+  // 詳細分析セクションの「採用管理」タブを非表示（admin専用）
+  const recruitmentManagementTab = document.getElementById('tab-recruitment-management');
+  if (recruitmentManagementTab) {
+    recruitmentManagementTab.style.display = 'none';
+  }
+
+  // 「採用管理」タブコンテンツを非表示
+  const recruitmentManagementTabContent = document.getElementById('recruitment-management-tab');
+  if (recruitmentManagementTabContent) {
+    recruitmentManagementTabContent.classList.remove('active');
+  }
+
   // 詳細分析セクションの「企業別」タブを非表示
   const companiesTab = document.getElementById('tab-companies');
   if (companiesTab) {
@@ -574,6 +586,10 @@ async function loadTabData(tabId) {
   const apiEndpoint = config.apiEndpoint;
 
   switch (tabId) {
+    case 'recruitment-management-tab':
+      // 採用管理タブ：アラートとファネルデータを読み込む
+      await loadRecruitmentManagementData();
+      break;
     case 'traffic-behavior-tab':
       // 流入・行動タブ：エンゲージメントと流入元データを両方読み込む
       await Promise.all([
@@ -1662,6 +1678,931 @@ export function initCompanyDetailSection() {
     backBtn.addEventListener('click', backToCompanies);
     backBtn.setAttribute('data-listener-attached', 'true');
   }
+}
+
+// ========================================
+// 採用管理タブ（admin専用）
+// ========================================
+
+// 採用管理データのキャッシュ（ドリルダウン用）
+let recruitmentApplicationsCache = [];
+
+/**
+ * 採用管理データを読み込み
+ */
+async function loadRecruitmentManagementData() {
+  try {
+    // Firestoreから応募者データを取得
+    const db = firebase.firestore();
+    const snapshot = await db.collection('applications')
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const applications = [];
+    snapshot.forEach(doc => {
+      applications.push({ id: doc.id, ...doc.data() });
+    });
+
+    // キャッシュに保存
+    recruitmentApplicationsCache = applications;
+
+    // アラートとファネルを描画
+    renderRecruitmentAlerts(applications);
+    renderRecruitmentFunnel(applications);
+    renderLeadTimeStats(applications);
+    renderLeadTimeDistribution(applications);
+    renderAssigneePerformance(applications);
+    renderCompanyRecruitmentTable(applications);
+
+    // 戻るボタンのイベント設定
+    initRecruitmentDetailEvents();
+
+  } catch (error) {
+    console.error('[Admin] Failed to load recruitment data:', error);
+    const alertsContainer = document.getElementById('recruitment-alerts');
+    if (alertsContainer) {
+      alertsContainer.innerHTML = '<div class="error-message">データの読み込みに失敗しました</div>';
+    }
+  }
+}
+
+/**
+ * 対応アラートを描画
+ * 48時間以上未対応の応募者を表示
+ */
+function renderRecruitmentAlerts(applications) {
+  const container = document.getElementById('recruitment-alerts');
+  if (!container) return;
+
+  const now = new Date();
+  const alertThreshold = 48 * 60 * 60 * 1000; // 48時間
+
+  // 新規ステータスで48時間以上経過した応募者を抽出
+  const delayedApps = applications.filter(app => {
+    if (app.status !== 'new' && app.status !== undefined) return false;
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+    const elapsed = now - createdAt;
+    return elapsed > alertThreshold;
+  });
+
+  if (delayedApps.length === 0) {
+    container.innerHTML = '<div class="no-alerts"><span class="alert-icon">✓</span> 対応が必要なアラートはありません</div>';
+    return;
+  }
+
+  container.innerHTML = delayedApps.map(app => {
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+    const elapsed = Math.floor((now - createdAt) / (1000 * 60 * 60));
+    const applicantName = app.applicantName || app.applicant?.name || '名前未設定';
+    const companyName = app.companyName || app.companyDomain || '-';
+
+    return `
+      <div class="alert-card alert-warning">
+        <div class="alert-header">
+          <span class="alert-icon">⚠️</span>
+          <span class="alert-title">${escapeHtml(applicantName)} - ${escapeHtml(app.jobTitle || '求人未設定')}</span>
+        </div>
+        <div class="alert-body">
+          <p>企業: ${escapeHtml(companyName)}</p>
+          <p>応募から <strong>${elapsed}時間</strong> 経過（初回連絡未完了）</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * 採用ファネルを描画
+ */
+function renderRecruitmentFunnel(applications) {
+  const container = document.getElementById('recruitment-funnel-chart');
+  const statsContainer = document.getElementById('funnel-stats');
+  if (!container) return;
+
+  // 期間フィルター取得
+  const periodSelect = document.getElementById('funnel-period');
+  const days = parseInt(periodSelect?.value || '30');
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+
+  // 期間内のデータをフィルター
+  const filteredApps = applications.filter(app => {
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+    return createdAt >= cutoffDate;
+  });
+
+  // ステータス別カウント
+  const statusCounts = {
+    total: filteredApps.length,
+    new: 0,
+    contacted: 0,
+    interviewing: 0,
+    interviewed: 0,
+    hired: 0,
+    joined: 0
+  };
+
+  filteredApps.forEach(app => {
+    const status = app.status || 'new';
+    // ステータスを累積でカウント
+    if (['new', 'contacted', 'interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.new++;
+    }
+    if (['contacted', 'interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.contacted++;
+    }
+    if (['interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.interviewing++;
+    }
+    if (['interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.interviewed++;
+    }
+    if (['hired', 'joined'].includes(status)) {
+      statusCounts.hired++;
+    }
+    if (status === 'joined') {
+      statusCounts.joined++;
+    }
+  });
+
+  // ファネルチャートを描画
+  const stages = [
+    { label: '応募', count: statusCounts.new, color: '#3b82f6' },
+    { label: '連絡済', count: statusCounts.contacted, color: '#8b5cf6' },
+    { label: '面接', count: statusCounts.interviewing + statusCounts.interviewed, color: '#f59e0b' },
+    { label: '内定', count: statusCounts.hired, color: '#10b981' },
+    { label: '入社', count: statusCounts.joined, color: '#059669' }
+  ];
+
+  const maxCount = Math.max(...stages.map(s => s.count), 1);
+
+  container.innerHTML = `
+    <div class="funnel-stages">
+      ${stages.map((stage, index) => {
+        const width = Math.max((stage.count / maxCount) * 100, 10);
+        const rate = index === 0 ? 100 : (stages[0].count > 0 ? (stage.count / stages[0].count * 100).toFixed(1) : 0);
+        return `
+          <div class="funnel-stage">
+            <div class="funnel-label">${stage.label}</div>
+            <div class="funnel-bar-wrapper">
+              <div class="funnel-bar" style="width: ${width}%; background: ${stage.color};">
+                <span class="funnel-count">${formatNumber(stage.count)}</span>
+              </div>
+            </div>
+            <div class="funnel-rate">${rate}%</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // ファネル統計を描画
+  if (statsContainer) {
+    const conversionRate = statusCounts.new > 0
+      ? ((statusCounts.hired / statusCounts.new) * 100).toFixed(1)
+      : 0;
+    const joinRate = statusCounts.hired > 0
+      ? ((statusCounts.joined / statusCounts.hired) * 100).toFixed(1)
+      : 0;
+
+    statsContainer.innerHTML = `
+      <div class="funnel-stat-card">
+        <div class="funnel-stat-value">${conversionRate}%</div>
+        <div class="funnel-stat-label">応募→内定率</div>
+      </div>
+      <div class="funnel-stat-card">
+        <div class="funnel-stat-value">${joinRate}%</div>
+        <div class="funnel-stat-label">内定→入社率</div>
+      </div>
+    `;
+  }
+
+  // 期間変更時のイベントリスナー
+  if (periodSelect && !periodSelect.hasAttribute('data-listener-attached')) {
+    periodSelect.addEventListener('change', () => {
+      loadRecruitmentManagementData();
+    });
+    periodSelect.setAttribute('data-listener-attached', 'true');
+  }
+}
+
+/**
+ * リードタイム統計を描画
+ */
+function renderLeadTimeStats(applications) {
+  // ステータス遷移履歴がある応募者のみ対象
+  const appsWithHistory = applications.filter(app => app.statusHistory && app.statusHistory.length > 0);
+
+  // 各リードタイムを計算
+  const leadTimes = {
+    firstResponse: [],
+    interviewSetup: [],
+    decision: [],
+    total: []
+  };
+
+  appsWithHistory.forEach(app => {
+    const history = app.statusHistory;
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+
+    // 初回レスポンス（new → contacted）
+    const contactedEntry = history.find(h => h.status === 'contacted');
+    if (contactedEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate ? contactedEntry.timestamp.toDate() : new Date(contactedEntry.timestamp);
+      leadTimes.firstResponse.push((contactedAt - createdAt) / (1000 * 60 * 60)); // 時間
+    }
+
+    // 面談設定（contacted → interviewing）
+    const interviewingEntry = history.find(h => h.status === 'interviewing');
+    if (contactedEntry && interviewingEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate ? contactedEntry.timestamp.toDate() : new Date(contactedEntry.timestamp);
+      const interviewingAt = interviewingEntry.timestamp?.toDate ? interviewingEntry.timestamp.toDate() : new Date(interviewingEntry.timestamp);
+      leadTimes.interviewSetup.push((interviewingAt - contactedAt) / (1000 * 60 * 60 * 24)); // 日
+    }
+
+    // 選考判断（interviewed → hired/ng）
+    const interviewedEntry = history.find(h => h.status === 'interviewed');
+    const decisionEntry = history.find(h => h.status === 'hired' || h.status === 'ng' || h.status === 'rejected');
+    if (interviewedEntry && decisionEntry) {
+      const interviewedAt = interviewedEntry.timestamp?.toDate ? interviewedEntry.timestamp.toDate() : new Date(interviewedEntry.timestamp);
+      const decisionAt = decisionEntry.timestamp?.toDate ? decisionEntry.timestamp.toDate() : new Date(decisionEntry.timestamp);
+      leadTimes.decision.push((decisionAt - interviewedAt) / (1000 * 60 * 60 * 24)); // 日
+    }
+
+    // 全体（new → joined）
+    const joinedEntry = history.find(h => h.status === 'joined');
+    if (joinedEntry) {
+      const joinedAt = joinedEntry.timestamp?.toDate ? joinedEntry.timestamp.toDate() : new Date(joinedEntry.timestamp);
+      leadTimes.total.push((joinedAt - createdAt) / (1000 * 60 * 60 * 24)); // 日
+    }
+  });
+
+  // 平均を計算
+  const calcAvg = (arr) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
+  const avgFirstResponse = calcAvg(leadTimes.firstResponse);
+  const avgInterviewSetup = calcAvg(leadTimes.interviewSetup);
+  const avgDecision = calcAvg(leadTimes.decision);
+  const avgTotal = calcAvg(leadTimes.total);
+
+  // 表示を更新
+  const updateEl = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  updateEl('lead-time-first-response', avgFirstResponse !== null ? `${avgFirstResponse.toFixed(1)}時間` : '-');
+  updateEl('lead-time-interview-setup', avgInterviewSetup !== null ? `${avgInterviewSetup.toFixed(1)}日` : '-');
+  updateEl('lead-time-decision', avgDecision !== null ? `${avgDecision.toFixed(1)}日` : '-');
+  updateEl('lead-time-total', avgTotal !== null ? `${avgTotal.toFixed(1)}日` : '-');
+}
+
+/**
+ * リードタイム分布グラフを描画
+ */
+function renderLeadTimeDistribution(applications) {
+  const container = document.getElementById('lead-time-distribution-chart');
+  if (!container) return;
+
+  // statusHistoryがある応募者から初回レスポンス時間を計算
+  const responseTimes = [];
+  applications.forEach(app => {
+    if (!app.statusHistory || app.statusHistory.length === 0) return;
+
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+    const contactedEntry = app.statusHistory.find(h => h.status === 'contacted');
+
+    if (contactedEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate
+        ? contactedEntry.timestamp.toDate()
+        : new Date(contactedEntry.timestamp);
+      const hours = (contactedAt - createdAt) / (1000 * 60 * 60);
+      if (hours >= 0) {
+        responseTimes.push(hours);
+      }
+    }
+  });
+
+  // 分布を計算（0-6h, 6-12h, 12-24h, 24-48h, 48h+）
+  const buckets = [
+    { label: '0-6h', min: 0, max: 6, count: 0, class: '' },
+    { label: '6-12h', min: 6, max: 12, count: 0, class: '' },
+    { label: '12-24h', min: 12, max: 24, count: 0, class: 'warning' },
+    { label: '24-48h', min: 24, max: 48, count: 0, class: 'warning' },
+    { label: '48h+', min: 48, max: Infinity, count: 0, class: 'danger' }
+  ];
+
+  responseTimes.forEach(time => {
+    for (const bucket of buckets) {
+      if (time >= bucket.min && time < bucket.max) {
+        bucket.count++;
+        break;
+      }
+    }
+  });
+
+  const total = responseTimes.length;
+  const maxCount = Math.max(...buckets.map(b => b.count), 1);
+
+  if (total === 0) {
+    container.innerHTML = '<div class="no-data">レスポンスデータがまだありません</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="distribution-bars">
+      ${buckets.map(bucket => {
+        const percentage = total > 0 ? ((bucket.count / total) * 100).toFixed(0) : 0;
+        const height = maxCount > 0 ? Math.max((bucket.count / maxCount) * 150, 4) : 4;
+        return `
+          <div class="distribution-bar-group">
+            <div class="distribution-bar ${bucket.class}" style="height: ${height}px;">
+              <span class="distribution-bar-value">${percentage}%</span>
+            </div>
+            <div class="distribution-bar-label">${bucket.label}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div class="distribution-legend">
+      <div class="distribution-legend-item">
+        <span class="distribution-legend-color good"></span>
+        <span>理想（12h以内）</span>
+      </div>
+      <div class="distribution-legend-item">
+        <span class="distribution-legend-color warning"></span>
+        <span>注意（12-48h）</span>
+      </div>
+      <div class="distribution-legend-item">
+        <span class="distribution-legend-color danger"></span>
+        <span>要改善（48h+）</span>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * 担当者別パフォーマンスを描画
+ */
+function renderAssigneePerformance(applications) {
+  const tbody = document.querySelector('#assignee-performance-table tbody');
+  if (!tbody) return;
+
+  // 担当者ごとに集計
+  const assigneeStats = {};
+
+  applications.forEach(app => {
+    // 担当者名を取得（assignee, handler, 担当者 など複数フィールドに対応）
+    const assignee = app.assignee || app.handler || app.担当者 || '未割当';
+
+    if (!assigneeStats[assignee]) {
+      assigneeStats[assignee] = {
+        name: assignee,
+        total: 0,
+        contacted: 0,
+        hired: 0,
+        joined: 0,
+        responseTimes: []
+      };
+    }
+
+    assigneeStats[assignee].total++;
+    const status = app.status || 'new';
+
+    // 連絡済み以降のステータスをカウント
+    if (['contacted', 'interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      assigneeStats[assignee].contacted++;
+    }
+    if (['hired', 'joined'].includes(status)) {
+      assigneeStats[assignee].hired++;
+    }
+    if (status === 'joined') {
+      assigneeStats[assignee].joined++;
+    }
+
+    // レスポンス時間を計算
+    if (app.statusHistory && app.statusHistory.length > 0) {
+      const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+      const contactedEntry = app.statusHistory.find(h => h.status === 'contacted');
+      if (contactedEntry) {
+        const contactedAt = contactedEntry.timestamp?.toDate
+          ? contactedEntry.timestamp.toDate()
+          : new Date(contactedEntry.timestamp);
+        const hours = (contactedAt - createdAt) / (1000 * 60 * 60);
+        if (hours >= 0) {
+          assigneeStats[assignee].responseTimes.push(hours);
+        }
+      }
+    }
+  });
+
+  // 平均を計算して配列に変換
+  const sortedAssignees = Object.values(assigneeStats)
+    .map(stat => {
+      const avgResponse = stat.responseTimes.length > 0
+        ? stat.responseTimes.reduce((a, b) => a + b, 0) / stat.responseTimes.length
+        : null;
+      const hiringRate = stat.total > 0 ? (stat.hired / stat.total) * 100 : 0;
+      const acceptanceRate = stat.hired > 0 ? (stat.joined / stat.hired) * 100 : 0;
+
+      return {
+        ...stat,
+        avgResponse,
+        hiringRate,
+        acceptanceRate
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  if (sortedAssignees.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">データがありません</td></tr>';
+    return;
+  }
+
+  // パフォーマンスクラスを判定
+  const getResponseClass = (hours) => {
+    if (hours === null) return '';
+    if (hours <= 12) return 'performance-good';
+    if (hours <= 24) return 'performance-warning';
+    return 'performance-danger';
+  };
+
+  const getRateClass = (rate) => {
+    if (rate >= 40) return 'performance-good';
+    if (rate >= 25) return 'performance-warning';
+    return 'performance-danger';
+  };
+
+  tbody.innerHTML = sortedAssignees.map(stat => {
+    const responseDisplay = stat.avgResponse !== null
+      ? `${stat.avgResponse.toFixed(1)}時間`
+      : '-';
+
+    return `
+      <tr>
+        <td>${escapeHtml(stat.name)}</td>
+        <td>${formatNumber(stat.total)}</td>
+        <td class="${getResponseClass(stat.avgResponse)}">${responseDisplay}</td>
+        <td class="${getRateClass(stat.hiringRate)}">${stat.hiringRate.toFixed(1)}%</td>
+        <td class="${getRateClass(stat.acceptanceRate)}">${stat.acceptanceRate.toFixed(1)}%</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * 企業別採用状況テーブルを描画
+ */
+function renderCompanyRecruitmentTable(applications) {
+  const tbody = document.querySelector('#company-recruitment-table tbody');
+  if (!tbody) return;
+
+  // 企業ごとに集計
+  const companyStats = {};
+
+  applications.forEach(app => {
+    const companyKey = app.companyDomain || 'unknown';
+    const companyName = app.companyName || app.companyDomain || '不明';
+
+    if (!companyStats[companyKey]) {
+      companyStats[companyKey] = {
+        domain: companyKey,
+        name: companyName,
+        total: 0,
+        interviewing: 0,
+        hired: 0,
+        joined: 0
+      };
+    }
+
+    companyStats[companyKey].total++;
+    const status = app.status || 'new';
+    if (['interviewing', 'interviewed'].includes(status)) {
+      companyStats[companyKey].interviewing++;
+    }
+    if (['hired', 'joined'].includes(status)) {
+      companyStats[companyKey].hired++;
+    }
+    if (status === 'joined') {
+      companyStats[companyKey].joined++;
+    }
+  });
+
+  const sortedCompanies = Object.values(companyStats).sort((a, b) => b.total - a.total);
+
+  if (sortedCompanies.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データがありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sortedCompanies.map(company => {
+    const passRate = company.total > 0
+      ? ((company.hired / company.total) * 100).toFixed(1)
+      : 0;
+    return `
+      <tr data-company-domain="${escapeHtml(company.domain)}" data-company-name="${escapeHtml(company.name)}">
+        <td>${escapeHtml(company.name)}</td>
+        <td>${formatNumber(company.total)}</td>
+        <td>${formatNumber(company.interviewing)}</td>
+        <td>${formatNumber(company.hired)}</td>
+        <td>${formatNumber(company.joined)}</td>
+        <td>${passRate}%</td>
+      </tr>
+    `;
+  }).join('');
+
+  // クリックイベントを追加
+  tbody.querySelectorAll('tr[data-company-domain]').forEach(row => {
+    row.addEventListener('click', () => {
+      const domain = row.dataset.companyDomain;
+      const name = row.dataset.companyName;
+      showCompanyRecruitmentDetail(domain, name);
+    });
+  });
+}
+
+/**
+ * 採用管理詳細ビューのイベント初期化
+ */
+function initRecruitmentDetailEvents() {
+  const backBtn = document.getElementById('btn-back-to-recruitment-overview');
+  if (backBtn && !backBtn.hasAttribute('data-listener-attached')) {
+    backBtn.addEventListener('click', backToRecruitmentOverview);
+    backBtn.setAttribute('data-listener-attached', 'true');
+  }
+}
+
+/**
+ * 企業別採用詳細を表示
+ */
+function showCompanyRecruitmentDetail(companyDomain, companyName) {
+  const overviewSection = document.getElementById('recruitment-overview-section');
+  const detailSection = document.getElementById('recruitment-detail-section');
+  const titleEl = document.getElementById('recruitment-detail-company-name');
+
+  if (!overviewSection || !detailSection) return;
+
+  // 表示を切り替え
+  overviewSection.style.display = 'none';
+  detailSection.style.display = 'block';
+  if (titleEl) titleEl.textContent = companyName;
+
+  // 企業でフィルタリングしたデータを取得
+  const companyApps = recruitmentApplicationsCache.filter(
+    app => app.companyDomain === companyDomain
+  );
+
+  // 企業別の各セクションをレンダリング
+  renderCompanyFunnel(companyApps);
+  renderCompanyLeadTimeStats(companyApps);
+  renderCompanyDistribution(companyApps);
+  renderCompanyAssigneePerformance(companyApps);
+}
+
+/**
+ * 採用管理一覧に戻る
+ */
+function backToRecruitmentOverview() {
+  const overviewSection = document.getElementById('recruitment-overview-section');
+  const detailSection = document.getElementById('recruitment-detail-section');
+
+  if (overviewSection) overviewSection.style.display = 'block';
+  if (detailSection) detailSection.style.display = 'none';
+}
+
+/**
+ * 企業別ファネルを描画
+ */
+function renderCompanyFunnel(applications) {
+  const container = document.getElementById('company-funnel-chart');
+  const statsContainer = document.getElementById('company-funnel-stats');
+  if (!container) return;
+
+  // ステータス別カウント
+  const statusCounts = {
+    total: applications.length,
+    new: 0,
+    contacted: 0,
+    interviewing: 0,
+    interviewed: 0,
+    hired: 0,
+    joined: 0
+  };
+
+  applications.forEach(app => {
+    const status = app.status || 'new';
+    if (['new', 'contacted', 'interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.new++;
+    }
+    if (['contacted', 'interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.contacted++;
+    }
+    if (['interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.interviewing++;
+    }
+    if (['interviewed', 'hired', 'joined'].includes(status)) {
+      statusCounts.interviewed++;
+    }
+    if (['hired', 'joined'].includes(status)) {
+      statusCounts.hired++;
+    }
+    if (status === 'joined') {
+      statusCounts.joined++;
+    }
+  });
+
+  const stages = [
+    { label: '応募', count: statusCounts.new, color: '#3b82f6' },
+    { label: '連絡済', count: statusCounts.contacted, color: '#8b5cf6' },
+    { label: '面接', count: statusCounts.interviewing + statusCounts.interviewed, color: '#f59e0b' },
+    { label: '内定', count: statusCounts.hired, color: '#10b981' },
+    { label: '入社', count: statusCounts.joined, color: '#059669' }
+  ];
+
+  const maxCount = Math.max(...stages.map(s => s.count), 1);
+
+  container.innerHTML = `
+    <div class="funnel-stages">
+      ${stages.map((stage, index) => {
+        const width = Math.max((stage.count / maxCount) * 100, 10);
+        const rate = index === 0 ? 100 : (stages[0].count > 0 ? (stage.count / stages[0].count * 100).toFixed(1) : 0);
+        return `
+          <div class="funnel-stage">
+            <div class="funnel-label">${stage.label}</div>
+            <div class="funnel-bar-wrapper">
+              <div class="funnel-bar" style="width: ${width}%; background: ${stage.color};">
+                <span class="funnel-count">${formatNumber(stage.count)}</span>
+              </div>
+            </div>
+            <div class="funnel-rate">${rate}%</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  if (statsContainer) {
+    const conversionRate = statusCounts.new > 0
+      ? ((statusCounts.hired / statusCounts.new) * 100).toFixed(1)
+      : 0;
+    const joinRate = statusCounts.hired > 0
+      ? ((statusCounts.joined / statusCounts.hired) * 100).toFixed(1)
+      : 0;
+
+    statsContainer.innerHTML = `
+      <div class="funnel-stat-card">
+        <div class="funnel-stat-value">${conversionRate}%</div>
+        <div class="funnel-stat-label">応募→内定率</div>
+      </div>
+      <div class="funnel-stat-card">
+        <div class="funnel-stat-value">${joinRate}%</div>
+        <div class="funnel-stat-label">内定→入社率</div>
+      </div>
+    `;
+  }
+}
+
+/**
+ * 企業別リードタイム統計を描画
+ */
+function renderCompanyLeadTimeStats(applications) {
+  const appsWithHistory = applications.filter(app => app.statusHistory && app.statusHistory.length > 0);
+
+  const leadTimes = {
+    firstResponse: [],
+    interviewSetup: [],
+    decision: [],
+    total: []
+  };
+
+  appsWithHistory.forEach(app => {
+    const history = app.statusHistory;
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+
+    const contactedEntry = history.find(h => h.status === 'contacted');
+    if (contactedEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate ? contactedEntry.timestamp.toDate() : new Date(contactedEntry.timestamp);
+      leadTimes.firstResponse.push((contactedAt - createdAt) / (1000 * 60 * 60));
+    }
+
+    const interviewingEntry = history.find(h => h.status === 'interviewing');
+    if (contactedEntry && interviewingEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate ? contactedEntry.timestamp.toDate() : new Date(contactedEntry.timestamp);
+      const interviewingAt = interviewingEntry.timestamp?.toDate ? interviewingEntry.timestamp.toDate() : new Date(interviewingEntry.timestamp);
+      leadTimes.interviewSetup.push((interviewingAt - contactedAt) / (1000 * 60 * 60 * 24));
+    }
+
+    const interviewedEntry = history.find(h => h.status === 'interviewed');
+    const decisionEntry = history.find(h => h.status === 'hired' || h.status === 'ng' || h.status === 'rejected');
+    if (interviewedEntry && decisionEntry) {
+      const interviewedAt = interviewedEntry.timestamp?.toDate ? interviewedEntry.timestamp.toDate() : new Date(interviewedEntry.timestamp);
+      const decisionAt = decisionEntry.timestamp?.toDate ? decisionEntry.timestamp.toDate() : new Date(decisionEntry.timestamp);
+      leadTimes.decision.push((decisionAt - interviewedAt) / (1000 * 60 * 60 * 24));
+    }
+
+    const joinedEntry = history.find(h => h.status === 'joined');
+    if (joinedEntry) {
+      const joinedAt = joinedEntry.timestamp?.toDate ? joinedEntry.timestamp.toDate() : new Date(joinedEntry.timestamp);
+      leadTimes.total.push((joinedAt - createdAt) / (1000 * 60 * 60 * 24));
+    }
+  });
+
+  const calcAvg = (arr) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+
+  const avgFirstResponse = calcAvg(leadTimes.firstResponse);
+  const avgInterviewSetup = calcAvg(leadTimes.interviewSetup);
+  const avgDecision = calcAvg(leadTimes.decision);
+  const avgTotal = calcAvg(leadTimes.total);
+
+  const updateEl = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
+  updateEl('company-lead-time-first-response', avgFirstResponse !== null ? `${avgFirstResponse.toFixed(1)}時間` : '-');
+  updateEl('company-lead-time-interview-setup', avgInterviewSetup !== null ? `${avgInterviewSetup.toFixed(1)}日` : '-');
+  updateEl('company-lead-time-decision', avgDecision !== null ? `${avgDecision.toFixed(1)}日` : '-');
+  updateEl('company-lead-time-total', avgTotal !== null ? `${avgTotal.toFixed(1)}日` : '-');
+}
+
+/**
+ * 企業別レスポンス分布を描画
+ */
+function renderCompanyDistribution(applications) {
+  const container = document.getElementById('company-distribution-chart');
+  if (!container) return;
+
+  const responseTimes = [];
+  applications.forEach(app => {
+    if (!app.statusHistory || app.statusHistory.length === 0) return;
+
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+    const contactedEntry = app.statusHistory.find(h => h.status === 'contacted');
+
+    if (contactedEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate
+        ? contactedEntry.timestamp.toDate()
+        : new Date(contactedEntry.timestamp);
+      const hours = (contactedAt - createdAt) / (1000 * 60 * 60);
+      if (hours >= 0) {
+        responseTimes.push(hours);
+      }
+    }
+  });
+
+  const buckets = [
+    { label: '0-6h', min: 0, max: 6, count: 0, class: '' },
+    { label: '6-12h', min: 6, max: 12, count: 0, class: '' },
+    { label: '12-24h', min: 12, max: 24, count: 0, class: 'warning' },
+    { label: '24-48h', min: 24, max: 48, count: 0, class: 'warning' },
+    { label: '48h+', min: 48, max: Infinity, count: 0, class: 'danger' }
+  ];
+
+  responseTimes.forEach(time => {
+    for (const bucket of buckets) {
+      if (time >= bucket.min && time < bucket.max) {
+        bucket.count++;
+        break;
+      }
+    }
+  });
+
+  const total = responseTimes.length;
+  const maxCount = Math.max(...buckets.map(b => b.count), 1);
+
+  if (total === 0) {
+    container.innerHTML = '<div class="no-data">レスポンスデータがまだありません</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="distribution-bars">
+      ${buckets.map(bucket => {
+        const percentage = total > 0 ? ((bucket.count / total) * 100).toFixed(0) : 0;
+        const height = maxCount > 0 ? Math.max((bucket.count / maxCount) * 150, 4) : 4;
+        return `
+          <div class="distribution-bar-group">
+            <div class="distribution-bar ${bucket.class}" style="height: ${height}px;">
+              <span class="distribution-bar-value">${percentage}%</span>
+            </div>
+            <div class="distribution-bar-label">${bucket.label}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div class="distribution-legend">
+      <div class="distribution-legend-item">
+        <span class="distribution-legend-color good"></span>
+        <span>理想（12h以内）</span>
+      </div>
+      <div class="distribution-legend-item">
+        <span class="distribution-legend-color warning"></span>
+        <span>注意（12-48h）</span>
+      </div>
+      <div class="distribution-legend-item">
+        <span class="distribution-legend-color danger"></span>
+        <span>要改善（48h+）</span>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * 企業別担当者パフォーマンスを描画
+ */
+function renderCompanyAssigneePerformance(applications) {
+  const tbody = document.querySelector('#company-assignee-table tbody');
+  if (!tbody) return;
+
+  const assigneeStats = {};
+
+  applications.forEach(app => {
+    const assignee = app.assignee || app.handler || app.担当者 || '未割当';
+
+    if (!assigneeStats[assignee]) {
+      assigneeStats[assignee] = {
+        name: assignee,
+        total: 0,
+        contacted: 0,
+        hired: 0,
+        joined: 0,
+        responseTimes: []
+      };
+    }
+
+    assigneeStats[assignee].total++;
+    const status = app.status || 'new';
+
+    if (['contacted', 'interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      assigneeStats[assignee].contacted++;
+    }
+    if (['hired', 'joined'].includes(status)) {
+      assigneeStats[assignee].hired++;
+    }
+    if (status === 'joined') {
+      assigneeStats[assignee].joined++;
+    }
+
+    if (app.statusHistory && app.statusHistory.length > 0) {
+      const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+      const contactedEntry = app.statusHistory.find(h => h.status === 'contacted');
+      if (contactedEntry) {
+        const contactedAt = contactedEntry.timestamp?.toDate
+          ? contactedEntry.timestamp.toDate()
+          : new Date(contactedEntry.timestamp);
+        const hours = (contactedAt - createdAt) / (1000 * 60 * 60);
+        if (hours >= 0) {
+          assigneeStats[assignee].responseTimes.push(hours);
+        }
+      }
+    }
+  });
+
+  const sortedAssignees = Object.values(assigneeStats)
+    .map(stat => {
+      const avgResponse = stat.responseTimes.length > 0
+        ? stat.responseTimes.reduce((a, b) => a + b, 0) / stat.responseTimes.length
+        : null;
+      const hiringRate = stat.total > 0 ? (stat.hired / stat.total) * 100 : 0;
+      const acceptanceRate = stat.hired > 0 ? (stat.joined / stat.hired) * 100 : 0;
+
+      return { ...stat, avgResponse, hiringRate, acceptanceRate };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  if (sortedAssignees.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">データがありません</td></tr>';
+    return;
+  }
+
+  const getResponseClass = (hours) => {
+    if (hours === null) return '';
+    if (hours <= 12) return 'performance-good';
+    if (hours <= 24) return 'performance-warning';
+    return 'performance-danger';
+  };
+
+  const getRateClass = (rate) => {
+    if (rate >= 40) return 'performance-good';
+    if (rate >= 25) return 'performance-warning';
+    return 'performance-danger';
+  };
+
+  tbody.innerHTML = sortedAssignees.map(stat => {
+    const responseDisplay = stat.avgResponse !== null
+      ? `${stat.avgResponse.toFixed(1)}時間`
+      : '-';
+
+    return `
+      <tr>
+        <td>${escapeHtml(stat.name)}</td>
+        <td>${formatNumber(stat.total)}</td>
+        <td class="${getResponseClass(stat.avgResponse)}">${responseDisplay}</td>
+        <td class="${getRateClass(stat.hiringRate)}">${stat.hiringRate.toFixed(1)}%</td>
+        <td class="${getRateClass(stat.acceptanceRate)}">${stat.acceptanceRate.toFixed(1)}%</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 export default {
