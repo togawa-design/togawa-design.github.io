@@ -26,12 +26,6 @@ export const gaConfig = {
   apiKey: import.meta.env.VITE_GA_API_KEY || 'AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo'
 };
 
-// GAS API（スプレッドシート連携）
-export const gasConfig = {
-  apiUrl: import.meta.env.VITE_GAS_API_URL || 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec',
-  spreadsheetId: import.meta.env.VITE_SPREADSHEET_ID || '1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0'
-};
-
 // API エンドポイント
 export const apiEndpoints = {
   analytics: `${cloudFunctionsBaseUrl}/getAnalyticsData`,
@@ -60,7 +54,6 @@ export const envConfig = {
   firebase: firebaseConfig,
   cloudFunctionsBaseUrl,
   ga: gaConfig,
-  gas: gasConfig,
   api: apiEndpoints
 };
 
