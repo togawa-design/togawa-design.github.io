@@ -5,7 +5,7 @@
 
 import { SECTION_TYPES, CUSTOM_VARIANTS, generateSectionId, canAddSection, canDeleteSection } from '../lp/sectionTypes.js';
 import { migrateToV2Format, createEmptyV2Content } from './lp-migration.js';
-import { escapeHtml } from '@shared/utils.js';
+import { escapeHtml, showToast } from '@shared/utils.js';
 import { createImageUploader, uploadLPImage } from './image-uploader.js';
 import {
   renderTemplateSelector,
@@ -142,7 +142,7 @@ export async function applyTemplate(template) {
   // テンプレートからセクションを生成
   const newSections = generateSectionsFromTemplate(template.id);
   if (newSections.length === 0) {
-    alert('テンプレートの読み込みに失敗しました');
+    showToast('テンプレートの読み込みに失敗しました', 'error');
     return;
   }
 
@@ -156,7 +156,7 @@ export async function applyTemplate(template) {
   triggerPreviewUpdate();
 
   // 成功メッセージ
-  alert(`テンプレート「${template.name}」を適用しました。\n\n各セクションの内容は編集ボタンから変更できます。`);
+  showToast(`テンプレート「${template.name}」を適用しました`, 'success');
 }
 
 /**
@@ -793,7 +793,7 @@ export function addSection(type) {
   if (!typeConfig) return;
 
   if (!canAddSection(type, currentSections)) {
-    alert(`${typeConfig.name}はこれ以上追加できません`);
+    showToast(`${typeConfig.name}はこれ以上追加できません`, 'warning');
     return;
   }
 
@@ -846,7 +846,7 @@ export function duplicateSection(sectionId) {
   if (!original) return;
 
   if (!canAddSection(original.type, currentSections)) {
-    alert(`${SECTION_TYPES[original.type]?.name || original.type}はこれ以上追加できません`);
+    showToast(`${SECTION_TYPES[original.type]?.name || original.type}はこれ以上追加できません`, 'warning');
     return;
   }
 
@@ -868,7 +868,7 @@ export function duplicateSection(sectionId) {
  */
 export async function deleteSection(sectionId) {
   if (!canDeleteSection(sectionId, currentSections)) {
-    alert('このセクションは削除できません');
+    showToast('このセクションは削除できません', 'warning');
     return;
   }
 

@@ -3,8 +3,10 @@
  * スプレッドシートからFirestoreへのデータ移行をブラウザ側で実行
  */
 
-import { config, spreadsheetConfig } from './config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
+
+// GAS API URL（マイグレーション専用）
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec';
 
 // 進捗状態
 let migrationProgress = {
@@ -51,7 +53,7 @@ function updateProgress(updates) {
  * GAS APIから会社一覧を取得
  */
 async function fetchCompaniesFromGAS() {
-  const url = `${spreadsheetConfig.gasApiUrl}?action=getCompanies`;
+  const url = `${GAS_API_URL}?action=getCompanies`;
   const response = await fetch(url);
   const result = await response.json();
 
@@ -66,7 +68,7 @@ async function fetchCompaniesFromGAS() {
  * GAS APIから求人を取得
  */
 async function fetchJobsFromGAS(companyDomain) {
-  const url = `${spreadsheetConfig.gasApiUrl}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
+  const url = `${GAS_API_URL}?action=getJobs&domain=${encodeURIComponent(companyDomain)}`;
   const response = await fetch(url);
   const result = await response.json();
 
@@ -81,7 +83,7 @@ async function fetchJobsFromGAS(companyDomain) {
  * GAS APIから採用ページ設定を取得
  */
 async function fetchRecruitSettingsFromGAS(companyDomain) {
-  const url = `${spreadsheetConfig.gasApiUrl}?action=getRecruitSettings&companyDomain=${encodeURIComponent(companyDomain)}`;
+  const url = `${GAS_API_URL}?action=getRecruitSettings&companyDomain=${encodeURIComponent(companyDomain)}`;
   const response = await fetch(url);
   const result = await response.json();
 
@@ -96,7 +98,7 @@ async function fetchRecruitSettingsFromGAS(companyDomain) {
  * GAS APIからLP設定を取得
  */
 async function fetchLPSettingsFromGAS(companyDomain, jobId) {
-  const url = `${spreadsheetConfig.gasApiUrl}?action=getLPSettings&companyDomain=${encodeURIComponent(companyDomain)}&jobId=${encodeURIComponent(jobId)}`;
+  const url = `${GAS_API_URL}?action=getLPSettings&companyDomain=${encodeURIComponent(companyDomain)}&jobId=${encodeURIComponent(jobId)}`;
   const response = await fetch(url);
   const result = await response.json();
 

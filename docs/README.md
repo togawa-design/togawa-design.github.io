@@ -52,7 +52,10 @@ docs/
 
 | ファイル | 説明 | 優先度 |
 |----------|------|--------|
-| [TODO-analytics-insights.md](todo/TODO-analytics-insights.md) | アナリティクス機能改善 | - |
+| [analytics-features-plan.md](todo/analytics-features-plan.md) | **分析機能一覧**（全体マップ） | - |
+| [recruitment-process-analytics-plan.md](todo/recruitment-process-analytics-plan.md) | └ 採用プロセス分析（リードタイム・歩留まり） | - |
+| [TODO-analytics-insights.md](todo/TODO-analytics-insights.md) | └ CVR改善提案 | - |
+| [internal-scheduling-plan.md](todo/internal-scheduling-plan.md) | 内部日程調整機能（応募者セルフ予約） | - |
 | [ai-job-generation-plan.md](todo/ai-job-generation-plan.md) | AI求人生成機能計画 | - |
 | [sendgrid-email-plan.md](todo/sendgrid-email-plan.md) | SendGrid メール連携計画 | - |
 | [twilio-sms-plan.md](todo/twilio-sms-plan.md) | Twilio SMS連携計画 | - |

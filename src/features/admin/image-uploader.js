@@ -5,6 +5,7 @@
  */
 
 import { isDevelopment } from '@shared/env-config';
+import { showToast } from '@shared/utils.js';
 
 // Cloudinary設定（unsigned upload preset使用）
 const CLOUDINARY_CONFIG = {
@@ -458,7 +459,7 @@ export function createImageUploader(options = {}) {
       onUpload(url);
     } catch (error) {
       console.error('[ImageUploader] Upload failed:', error);
-      alert('画像のアップロードに失敗しました: ' + error.message);
+      showToast('画像のアップロードに失敗しました: ' + error.message, 'error');
     } finally {
       loading.style.display = 'none';
     }
