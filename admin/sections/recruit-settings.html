@@ -33,6 +33,16 @@
               <h4 id="recruit-selected-company-name">選択中の会社</h4>
             </div>
 
+            <!-- 進捗インジケーター -->
+            <div class="form-progress" id="recruit-form-progress">
+              <div class="form-progress-bar">
+                <div class="form-progress-fill" id="recruit-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="form-progress-text">
+                <strong id="recruit-progress-count">0</strong>/12 セクション完了
+              </div>
+            </div>
+
             <!-- 2カラムレイアウト：フォーム + プレビュー -->
             <div class="recruit-editor-layout">
               <!-- 左カラム：フォーム -->
@@ -471,19 +481,38 @@
               </div>
             </div>
 
-                <!-- 保存ボタン -->
-                <div class="form-actions">
-                  <button id="btn-save-recruit-settings" class="btn-primary">採用ページ設定を保存</button>
-                  <button id="btn-reset-recruit-settings" class="btn-secondary">リセット</button>
+                <!-- 保存ボタン（スティッキー） -->
+                <div class="sticky-save-bar">
+                  <div class="form-actions">
+                    <button id="btn-save-recruit-settings" class="btn-primary">採用ページ設定を保存</button>
+                    <button id="btn-reset-recruit-settings" class="btn-secondary">リセット</button>
+                    <div class="autosave-indicator" id="recruit-autosave-indicator">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                      <span>自動保存: オフ</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <!-- /左カラム：フォーム -->
 
               <!-- 右カラム：リアルタイムプレビュー -->
-              <div class="recruit-editor-preview">
+              <div class="recruit-editor-preview" id="recruit-preview-panel" data-device="mobile">
                 <div class="preview-panel-header">
                   <h4>リアルタイムプレビュー</h4>
-                  <span class="preview-device-label">モバイル表示</span>
+                  <div class="preview-device-toggle">
+                    <button type="button" data-device="mobile" class="active">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+                      スマホ
+                    </button>
+                    <button type="button" data-device="tablet">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 0h-14C3.12 0 2 1.12 2 2.5v19C2 22.88 3.12 24 4.5 24h14c1.38 0 2.5-1.12 2.5-2.5v-19C21 1.12 19.88 0 18.5 0zm-7 23c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm7.5-4H4V3h15v16z"/></svg>
+                      タブレット
+                    </button>
+                    <button type="button" data-device="desktop">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 12H3V4h18v10z"/></svg>
+                      PC
+                    </button>
+                  </div>
                 </div>
                 <div class="preview-panel-device">
                   <div class="preview-phone-frame">

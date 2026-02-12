@@ -1,0 +1,1 @@
+import"./modulepreload-polyfill-YP0FEG5d.js";import{j as o}from"./index-BRygBkNo.js";import"./utils-BNVq905i.js";import"./modal-BOD5e818.js";import"./env-config-Cl-TLAgM.js";document.addEventListener("DOMContentLoaded",()=>{o()});
