@@ -589,6 +589,12 @@ export function handleLogout() {
   userCompanyDomain = null;
   availableCompanies = [];
 
+  // UI要素のクリーンアップ（会社ビューモードなど）
+  const companyViewSection = document.getElementById('company-view-section');
+  if (companyViewSection) {
+    companyViewSection.style.display = 'none';
+  }
+
   if (firebaseAuth) {
     firebaseAuth.signOut();
   }
