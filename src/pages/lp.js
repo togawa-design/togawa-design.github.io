@@ -11,6 +11,7 @@ import {
 import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
 import '@shared/jobs-loader.js';
 import * as FirestoreService from '@shared/firestore-service.js';
+import { createApplicationNotification } from '@features/notifications/notification-service.js';
 
 // UTMパラメータのキー一覧
 const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
@@ -1205,6 +1206,22 @@ class CompanyLPPage {
 
       if (!applicationId) {
         throw new Error('Failed to save application');
+      }
+
+      // 会社ユーザー向け応募通知を作成
+      try {
+        await createApplicationNotification({
+          companyDomain: this.currentJobData.company_domain,
+          applicationId: applicationId,
+          jobId: this.currentJobData.job_id,
+          jobTitle: this.currentJobData.job_title,
+          applicantName: name,
+          applicantEmail: email
+        });
+        console.log('[Application] Notification created for company:', this.currentJobData.company_domain);
+      } catch (notifError) {
+        // 通知作成に失敗しても応募自体は成功とする
+        console.warn('[Application] Failed to create notification:', notifError);
       }
 
       // GA4にイベント送信

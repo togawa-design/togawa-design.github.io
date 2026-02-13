@@ -1973,8 +1973,16 @@ async function saveReminderSettings() {
  */
 export async function initApplicantsManager() {
   const params = new URLSearchParams(window.location.search);
-  companyDomain = params.get('domain');
-  companyName = params.get('company') ? decodeURIComponent(params.get('company')) : null;
+  const preSelectApplicationId = params.get('applicationId');
+
+  // applicationIdが指定されている場合はドメインフィルターを無視
+  if (preSelectApplicationId) {
+    companyDomain = null; // 全件表示
+    companyName = null;
+  } else {
+    companyDomain = params.get('domain');
+    companyName = params.get('company') ? decodeURIComponent(params.get('company')) : null;
+  }
 
   const companyNameEl = getEl('company-name');
   if (companyNameEl) {
@@ -1985,6 +1993,17 @@ export async function initApplicantsManager() {
   await loadAssignees();
   await loadCompanyUsers(); // 会社ユーザー（担当者）を読み込み
   await loadApplicantsData();
+
+  // URLパラメータで指定された応募者を自動選択
+  if (preSelectApplicationId) {
+    // 「完了以外」フィルターを外して全件表示
+    const excludeCompleteCheckbox = getEl('filter-exclude-complete');
+    if (excludeCompleteCheckbox) {
+      excludeCompleteCheckbox.checked = false;
+      applyFilters();
+    }
+    showApplicantDetail(preSelectApplicationId);
+  }
 
   if (typeof window !== 'undefined') {
     window.ApplicantsManager = {
@@ -2001,8 +2020,9 @@ export async function initApplicantsManager() {
  * @param {string} domain - 会社ドメイン
  * @param {string} name - 会社名
  * @param {string} [prefix=''] - DOM要素IDのプレフィックス（admin.html埋め込み時は 'jm-'）
+ * @param {string|null} [applicationId=null] - 自動選択する応募者ID
  */
-export async function initApplicantsSection(domain, name, prefix = '') {
+export async function initApplicantsSection(domain, name, prefix = '', applicationId = null) {
   companyDomain = domain;
   companyName = name;
   idPrefix = prefix;
@@ -2011,6 +2031,17 @@ export async function initApplicantsSection(domain, name, prefix = '') {
   await loadAssignees();
   await loadCompanyUsers(); // 会社ユーザー（担当者）を読み込み
   await loadApplicantsData();
+
+  // applicationIdが指定されている場合は自動選択
+  if (applicationId) {
+    // 「完了以外」フィルターを外す
+    const excludeCompleteCheckbox = getEl('filter-exclude-complete');
+    if (excludeCompleteCheckbox) {
+      excludeCompleteCheckbox.checked = false;
+      applyFilters();
+    }
+    showApplicantDetail(applicationId);
+  }
 }
 
 /**

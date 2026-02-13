@@ -4,7 +4,7 @@
  */
 
 import { apiEndpoints } from '@shared/env-config.js';
-import { setCurrentSubsection, getCurrentSubsection, getNewAbortController, clearAbortController, getPendingInitialTab, clearPendingInitialTab } from './admin-state.js';
+import { setCurrentSubsection, getCurrentSubsection, getNewAbortController, clearAbortController, getPendingInitialTab, clearPendingInitialTab, getPendingApplicationId, clearPendingApplicationId } from './admin-state.js';
 import {
   setCompanyInfo,
   setApplicantsInitialized,
@@ -1144,7 +1144,10 @@ export function switchSubsection(tab) {
     // 日付ピッカーを初期化
     initJmDateRangePicker();
   } else if (tab === 'applicants') {
-    initApplicantsSection(companyDomain, companyName, 'jm-');
+    // pendingApplicationIdがある場合は渡す
+    const pendingAppId = getPendingApplicationId();
+    clearPendingApplicationId();
+    initApplicantsSection(companyDomain, companyName, 'jm-', pendingAppId);
   } else if (tab === 'recruit') {
     initRecruitSettings(companyDomain);
   }

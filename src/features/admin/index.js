@@ -7,7 +7,9 @@ import {
   initFirebase, checkSession, handleLogin, handleGoogleLogin, handleLogout, getIdToken,
   getUserRole, getUserCompanyDomain, isAdmin, handleCompanyLogin, confirmCompanySelection,
   getAllCompanyUsersWithInfo, addCompanyUser, updateCompanyUser, deleteCompanyUser,
-  resetCompanyUserPassword, generatePassword, generateUsername, hasCompanyUser
+  resetCompanyUserPassword, generatePassword, generateUsername, hasCompanyUser,
+  // 会社ビューモード
+  enterCompanyViewMode, exitCompanyViewMode, isInCompanyViewMode, getCompanyViewInfo, getAllCompanies
 } from './auth.js';
 import { loadDashboardData, filterCompanies, sortCompanies, initAnalyticsTabs, initCompanyDetailSection } from './analytics.js';
 import { initPageAnalyticsTab, loadPageAnalyticsData } from './page-analytics.js';
@@ -38,6 +40,9 @@ import {
   setPendingInitialTab,
   getPendingInitialTab,
   clearPendingInitialTab,
+  setPendingApplicationId,
+  getPendingApplicationId,
+  clearPendingApplicationId,
   isSectionSwitching,
   startSectionSwitch,
   endSectionSwitch
@@ -48,6 +53,15 @@ import { loadSectionHTML } from './section-loader.js';
 
 // データ移行モジュール
 import * as DataMigration from './data-migration.js';
+
+// お知らせ管理
+import { initAnnouncementsSection } from './announcements.js';
+
+// 通知ベルコンポーネント
+import { NotificationBell } from '@components/organisms/NotificationBell.js';
+
+// 通知ベルインスタンス
+let notificationBellInstance = null;
 
 // ログイン画面表示
 function showLogin() {
@@ -66,7 +80,230 @@ function showDashboard() {
 
   // 権限に応じてUIを制御
   applyRoleBasedUI();
+
+  // 通知ベルを初期化
+  initNotificationBell();
+
+  // 会社ビューモード（Admin専用）
+  initCompanyViewMode();
 }
+
+/**
+ * 通知ベルコンポーネントを初期化
+ */
+async function initNotificationBell() {
+  // 既存のインスタンスがあれば破棄
+  if (notificationBellInstance) {
+    notificationBellInstance.destroy();
+    notificationBellInstance = null;
+  }
+
+  const containerId = 'notification-bell-container';
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.warn('[Admin] Notification bell container not found');
+    return;
+  }
+
+  try {
+    // ユーザーの権限に応じて設定を変更
+    const adminUser = isAdmin();
+    const companyDomain = getUserCompanyDomain();
+
+    // 会社ビューモード中かどうかをチェック
+    const inCompanyViewMode = isInCompanyViewMode();
+    const viewInfo = inCompanyViewMode ? getCompanyViewInfo() : null;
+
+    // 会社ビューモード中は会社ユーザーとして表示
+    // Admin（通常モード）: お知らせ(all) + 応募者通知(全会社)
+    // Admin（会社ビューモード）: お知らせ(company_users) + 応募者通知(その会社のみ)
+    // Company: お知らせ(company_users) + 応募者通知(自社のみ)
+    const effectiveTargetAudience = (adminUser && !inCompanyViewMode) ? 'all' : 'company_users';
+    const effectiveCompanyDomain = inCompanyViewMode ? viewInfo?.companyDomain : (adminUser ? null : companyDomain);
+
+    notificationBellInstance = new NotificationBell({
+      containerId,
+      targetAudience: effectiveTargetAudience,
+      companyDomain: effectiveCompanyDomain,
+      showApplications: true  // 管理画面では応募通知を表示
+    });
+
+    await notificationBellInstance.init();
+    console.log('[Admin] Notification bell initialized', { effectiveTargetAudience, effectiveCompanyDomain, inCompanyViewMode });
+  } catch (error) {
+    console.error('[Admin] Failed to initialize notification bell:', error);
+  }
+}
+
+/**
+ * 会社ビューモードを初期化（Admin専用）
+ */
+async function initCompanyViewMode() {
+  // Admin以外は非表示
+  if (!isAdmin()) {
+    return;
+  }
+
+  const section = document.getElementById('company-view-section');
+  const selector = document.getElementById('company-view-selector');
+  const select = document.getElementById('company-view-select');
+  const viewBar = document.getElementById('company-view-bar');
+  const viewName = document.getElementById('company-view-name');
+  const exitBtn = document.getElementById('exit-company-view-btn');
+
+  if (!section || !selector || !select) {
+    return;
+  }
+
+  // 会社一覧を取得してセレクトボックスに追加
+  try {
+    const companies = await getAllCompanies();
+
+    // 既存のオプション以外をクリア
+    select.innerHTML = '<option value="">管理者モード</option>';
+
+    companies.forEach(company => {
+      const option = document.createElement('option');
+      option.value = company.domain;
+      option.textContent = company.name || company.domain;
+      option.dataset.companyName = company.name || company.domain;
+      select.appendChild(option);
+    });
+
+    // セクション全体を表示
+    section.style.display = 'block';
+
+    // 既に会社ビューモード中なら復元
+    if (isInCompanyViewMode()) {
+      const viewInfo = getCompanyViewInfo();
+      if (viewInfo) {
+        select.value = viewInfo.companyDomain;
+        showCompanyViewBar(viewInfo.companyName);
+      }
+    }
+
+    // 選択変更イベント
+    select.addEventListener('change', (e) => {
+      const companyDomain = e.target.value;
+      if (companyDomain) {
+        const companyName = e.target.selectedOptions[0].dataset.companyName || companyDomain;
+        enterCompanyViewMode(companyDomain, companyName);
+        showCompanyViewBar(companyName);
+      } else {
+        exitCompanyViewMode();
+        hideCompanyViewBar();
+      }
+    });
+
+    // 終了ボタン
+    if (exitBtn) {
+      exitBtn.addEventListener('click', () => {
+        exitCompanyViewMode();
+        hideCompanyViewBar();
+        select.value = '';
+      });
+    }
+
+    console.log('[Admin] Company view mode initialized with', companies.length, 'companies');
+  } catch (error) {
+    console.error('[Admin] Failed to initialize company view mode:', error);
+  }
+
+  function showCompanyViewBar(companyName) {
+    if (viewBar && viewName && selector) {
+      viewName.textContent = companyName;
+      viewBar.style.display = 'flex';
+      selector.style.display = 'none';
+    }
+  }
+
+  function hideCompanyViewBar() {
+    if (viewBar && selector) {
+      viewBar.style.display = 'none';
+      selector.style.display = 'flex';
+    }
+  }
+}
+
+// 会社ビューモード変更イベントをリッスン
+document.addEventListener('companyViewModeChanged', (e) => {
+  const { active, companyDomain, companyName } = e.detail;
+  console.log('[Admin] companyViewModeChanged event received:', { active, companyDomain, companyName });
+
+  // ビューバーUI要素
+  const selector = document.getElementById('company-view-selector');
+  const viewBar = document.getElementById('company-view-bar');
+  const viewNameEl = document.getElementById('company-view-name');
+  const select = document.getElementById('company-view-select');
+
+  console.log('[Admin] UI elements:', { selector: !!selector, viewBar: !!viewBar, viewNameEl: !!viewNameEl, select: !!select });
+
+  if (active) {
+    // 会社ビューモードに入った時
+    // 現在のセクションを先に取得（applyRoleBasedUIで上書きされるため）
+    let currentSection = document.querySelector('.sidebar-nav:not([style*="none"]) li.active a[data-section]')?.dataset.section
+      || window.location.hash.slice(1)
+      || 'job-manage-company';
+    console.log('[Admin] Current section before switch:', currentSection);
+
+    // Admin専用セクションを会社ユーザー用にマッピング
+    const sectionMapping = {
+      'company-manage': 'job-manage-company',
+      'job-listings': 'job-manage-company',
+      'company-users': 'settings',
+      'announcements': 'overview'
+    };
+    if (sectionMapping[currentSection]) {
+      console.log('[Admin] Section mapped:', currentSection, '->', sectionMapping[currentSection]);
+      currentSection = sectionMapping[currentSection];
+    }
+
+    // ビューバーを表示
+    if (viewBar && viewNameEl && selector) {
+      viewNameEl.textContent = companyName || companyDomain;
+      viewBar.style.display = 'flex';
+      selector.style.display = 'none';
+      console.log('[Admin] View bar shown for:', companyName || companyDomain);
+    }
+    // ドロップダウンの値を更新
+    if (select) {
+      select.value = companyDomain;
+    }
+    // 会社ユーザー向けナビゲーションに切り替え
+    const navAdmin = document.getElementById('nav-admin');
+    const navCompany = document.getElementById('nav-company');
+    if (navAdmin) navAdmin.style.display = 'none';
+    if (navCompany) navCompany.style.display = 'block';
+
+    // セクションをリロード（会社ビューモードのデータで再読み込み）
+    console.log('[Admin] Switching to section:', currentSection);
+    switchSection(currentSection);
+
+    // 通知ベルを会社ユーザー向けに再初期化
+    initNotificationBell();
+  } else {
+    // 会社ビューモードを終了した時
+    // ビューバーを非表示
+    if (viewBar && selector) {
+      viewBar.style.display = 'none';
+      selector.style.display = 'flex';
+    }
+    // ドロップダウンをリセット
+    if (select) {
+      select.value = '';
+    }
+    // 管理者用ナビゲーションに切り替え
+    const navAdmin = document.getElementById('nav-admin');
+    const navCompany = document.getElementById('nav-company');
+    if (navAdmin) navAdmin.style.display = 'block';
+    if (navCompany) navCompany.style.display = 'none';
+    // 概要セクションに切り替え
+    switchSection('overview');
+
+    // 通知ベルを管理者向けに再初期化
+    initNotificationBell();
+  }
+});
 
 /**
  * 権限に応じてUIを制御
@@ -255,6 +492,7 @@ async function switchSection(sectionName, options = {}) {
     'recruit-settings': '採用ページ設定',
     'applicant-select': '応募者管理',
     'company-users': '会社ユーザー管理',
+    'announcements': 'お知らせ管理',
     settings: '設定'
   };
   const pageTitle = document.getElementById('page-title');
@@ -342,10 +580,11 @@ async function switchSection(sectionName, options = {}) {
   }
 
   // 期間選択と更新ボタンはアナリティクスセクションのみ表示
-  const headerActions = document.querySelector('.header-actions');
-  if (headerActions) {
-    const analyticsSection = ['overview', 'analytics-detail'];
-    headerActions.style.display = analyticsSection.includes(sectionName) ? '' : 'none';
+  // ※ header-actions全体ではなく、日付ピッカーのみ非表示にする（会社ビューバーは常に表示）
+  const analyticsSection = ['overview', 'analytics-detail'];
+  const dateRangePicker = document.querySelector('.date-range-picker');
+  if (dateRangePicker) {
+    dateRangePicker.style.display = analyticsSection.includes(sectionName) ? '' : 'none';
   }
 
   // LP設定セクションではフッター固定用のクラスを追加
@@ -392,6 +631,11 @@ async function switchSection(sectionName, options = {}) {
 
     // 動的読み込み対応: フィード出力ボタンのイベントハンドラー設定
     setupFeedDownloadButtons();
+  }
+
+  // お知らせ管理セクションに切り替えた場合
+  if (sectionName === 'announcements') {
+    initAnnouncementsSection();
   }
 
   // Job-Manage埋め込みセクションに切り替えた場合は初期化
@@ -443,6 +687,33 @@ function navigateToJobManage(domain, name, returnSection = 'job-listings', jobId
     setPendingInitialTab(initialTab);
   }
   pushHistory(returnSection);
+  switchSection('job-manage');
+}
+
+/**
+ * 応募者通知からの遷移を処理
+ * @param {string} applicationId - 応募ID
+ * @param {string} companyDomain - 会社ドメイン
+ */
+async function handleNavigateToApplicant(applicationId, companyDomain) {
+  if (!applicationId) return;
+
+  // 会社情報を取得
+  const companies = await getAllCompanies();
+  const company = companies.find(c => c.companyDomain === companyDomain);
+  const companyName = company?.company || companyDomain || '全会社';
+
+  // 会社を設定
+  setCurrentCompany(companyDomain, companyName);
+
+  // 応募者IDを設定
+  setPendingApplicationId(applicationId);
+
+  // applicantsタブを初期表示に設定
+  setPendingInitialTab('applicants');
+
+  // job-manageセクションに遷移
+  pushHistory('applicant-select');
   switchSection('job-manage');
 }
 
@@ -536,6 +807,12 @@ function setupCompanySelectModal() {
 // イベントバインド
 function bindEvents() {
   console.log('bindEvents called');
+
+  // 応募者通知からの遷移イベント
+  document.addEventListener('navigateToApplicant', (event) => {
+    const { applicationId, companyDomain } = event.detail;
+    handleNavigateToApplicant(applicationId, companyDomain);
+  });
 
   // ブラウザの戻る/進むボタン対応
   window.addEventListener('popstate', (event) => {
@@ -1942,6 +2219,15 @@ export function initAdminDashboard() {
       // Firebase認証が完了したらデータを読み込む
       document.addEventListener('authReady', async () => {
         loadDashboardData();
+
+        // sessionStorageからの応募者通知遷移をチェック
+        const pendingAppId = sessionStorage.getItem('pendingApplicationId');
+        const pendingDomain = sessionStorage.getItem('pendingCompanyDomain');
+        if (pendingAppId) {
+          sessionStorage.removeItem('pendingApplicationId');
+          sessionStorage.removeItem('pendingCompanyDomain');
+          handleNavigateToApplicant(pendingAppId, pendingDomain);
+        }
       }, { once: true });
       // フォールバック: 認証に時間がかかる場合は3秒後に読み込み
       setTimeout(async () => {

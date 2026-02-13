@@ -5,6 +5,7 @@
 import { escapeHtml, showToast } from '@shared/utils.js';
 import { getPatternLabel, heroImagePresets } from './config.js';
 import * as FirestoreService from '@shared/firestore-service.js';
+// auth.jsからのimportは不要（会社ビューモードはサイドバーで管理）
 
 // キャッシュ
 let companiesCache = [];
@@ -35,7 +36,7 @@ export async function loadCompanyManageData() {
     companiesCache = result.companies || [];
 
     if (tbody) {
-      if (companies.length === 0) {
+      if (companiesCache.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">会社データがありません</td></tr>';
         return;
       }
@@ -246,24 +247,29 @@ export function renderCompanyTable() {
     </tr>
   `).join('');
 
-  // イベント委譲でボタンクリックを処理
-  tbody.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
+  // イベント委譲でボタンクリックを処理（要素ごとに重複防止）
+  if (!tbody.dataset.eventBound) {
+    tbody.dataset.eventBound = 'true';
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
 
-    const action = btn.dataset.action;
-    const domain = btn.dataset.domain;
+      const action = btn.dataset.action;
+      const domain = btn.dataset.domain;
 
-    if (action === 'edit') {
-      editCompany(domain);
-    } else if (action === 'jobs') {
-      // 埋め込みJob-Manage画面に遷移
-      openJobsArea(domain);
-    } else if (action === 'recruit') {
-      // 採用ページ設定に遷移して会社選択済み
-      navigateToRecruitSettings(domain);
-    }
-  });
+      console.log('[CompanyManager] Action clicked:', action, domain);
+
+      if (action === 'edit') {
+        editCompany(domain);
+      } else if (action === 'jobs') {
+        // 埋め込みJob-Manage画面に遷移
+        openJobsArea(domain);
+      } else if (action === 'recruit') {
+        // 採用ページ設定に遷移して会社選択済み
+        navigateToRecruitSettings(domain);
+      }
+    });
+  }
 }
 
 // 採用ページ設定に遷移して会社選択

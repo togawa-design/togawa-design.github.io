@@ -52,17 +52,18 @@ export function initFirebase() {
 
 /**
  * Firestoreからユーザー権限を読み込み
+ * admin_users と company_users の両方をチェック
  */
 async function loadUserRole(uid, email) {
   if (!firebaseDb) return;
 
   try {
-    // admin_usersコレクションからユーザー情報を取得
+    // 1. admin_usersコレクションからユーザー情報を取得
     const userDoc = await firebaseDb.collection('admin_users').doc(uid).get();
 
     if (userDoc.exists) {
       const userData = userDoc.data();
-      userRole = userData.role || USER_ROLES.COMPANY;
+      userRole = userData.role || USER_ROLES.ADMIN;
       userCompanyDomain = userData.companyDomain || null;
 
       // セッションに保存
@@ -71,32 +72,72 @@ async function loadUserRole(uid, email) {
         sessionStorage.setItem(config.userCompanyKey, userCompanyDomain);
       }
 
-      console.log('[Admin] User role loaded:', userRole, userCompanyDomain);
-    } else {
-      // ユーザーが登録されていない場合は、emailで検索
-      const emailQuery = await firebaseDb.collection('admin_users')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      if (!emailQuery.empty) {
-        const userData = emailQuery.docs[0].data();
-        userRole = userData.role || USER_ROLES.COMPANY;
-        userCompanyDomain = userData.companyDomain || null;
-
-        sessionStorage.setItem(config.userRoleKey, userRole);
-        if (userCompanyDomain) {
-          sessionStorage.setItem(config.userCompanyKey, userCompanyDomain);
-        }
-
-        console.log('[Admin] User role loaded by email:', userRole, userCompanyDomain);
-      } else {
-        // 未登録ユーザーの場合
-        userRole = null;
-        userCompanyDomain = null;
-        console.log('[Admin] User not registered in admin_users');
-      }
+      console.log('[Admin] User role loaded from admin_users:', userRole, userCompanyDomain);
+      return;
     }
+
+    // 2. admin_usersにない場合、emailで検索
+    const adminEmailQuery = await firebaseDb.collection('admin_users')
+      .where('email', '==', email)
+      .limit(1)
+      .get();
+
+    if (!adminEmailQuery.empty) {
+      const userData = adminEmailQuery.docs[0].data();
+      userRole = userData.role || USER_ROLES.ADMIN;
+      userCompanyDomain = userData.companyDomain || null;
+
+      sessionStorage.setItem(config.userRoleKey, userRole);
+      if (userCompanyDomain) {
+        sessionStorage.setItem(config.userCompanyKey, userCompanyDomain);
+      }
+
+      console.log('[Admin] User role loaded from admin_users by email:', userRole, userCompanyDomain);
+      return;
+    }
+
+    // 3. company_usersコレクションをチェック（複数会社対応）
+    const companyUserQuery = await firebaseDb.collection('company_users')
+      .where('email', '==', email)
+      .where('isActive', '==', true)
+      .get();
+
+    if (!companyUserQuery.empty) {
+      // 会社ユーザーとして登録されている
+      const companies = companyUserQuery.docs.map(doc => ({
+        docId: doc.id,
+        companyDomain: doc.data().companyDomain,
+        companyName: doc.data().companyName || doc.data().companyDomain,
+        userName: doc.data().name || doc.data().username || email
+      }));
+
+      // 複数会社の場合はavailableCompaniesに保存
+      availableCompanies = companies;
+      sessionStorage.setItem('available_companies', JSON.stringify(companies));
+
+      // 最初の会社をデフォルトとして設定
+      const firstCompany = companies[0];
+      userRole = USER_ROLES.COMPANY;
+      userCompanyDomain = firstCompany.companyDomain;
+
+      sessionStorage.setItem(config.userRoleKey, userRole);
+      sessionStorage.setItem(config.userCompanyKey, userCompanyDomain);
+
+      console.log('[Admin] User role loaded from company_users:', userRole, userCompanyDomain, `(${companies.length} companies)`);
+
+      // 複数会社の場合は選択が必要なことを示すフラグを設定
+      if (companies.length > 1) {
+        sessionStorage.setItem('requires_company_selection', 'true');
+      }
+      return;
+    }
+
+    // 4. どちらにも登録されていない
+    userRole = null;
+    userCompanyDomain = null;
+    availableCompanies = [];
+    console.log('[Admin] User not registered in admin_users or company_users');
+
   } catch (error) {
     console.error('[Admin] Failed to load user role:', error);
   }
@@ -374,12 +415,32 @@ export async function handleGoogleLogin() {
     sessionStorage.setItem(config.sessionKey, 'authenticated');
     sessionStorage.setItem('auth_method', 'google');
 
+    // 複数会社に所属している場合
+    const requiresSelection = sessionStorage.getItem('requires_company_selection') === 'true';
+    if (requiresSelection && availableCompanies.length > 1) {
+      // 会社選択用の情報をpending_authに保存
+      sessionStorage.setItem('pending_auth', JSON.stringify({
+        email: result.user.email,
+        uid: result.user.uid,
+        companies: availableCompanies,
+        authMethod: 'google'
+      }));
+
+      return {
+        success: true,
+        requiresCompanySelection: true,
+        companies: availableCompanies,
+        authMethod: 'google'
+      };
+    }
+
     return {
       success: true,
       user: currentUser,
       idToken,
       role: userRole,
-      companyDomain: userCompanyDomain
+      companyDomain: userCompanyDomain,
+      availableCompanies
     };
   } catch (error) {
     console.error('Google login error:', error);
@@ -413,8 +474,9 @@ export async function confirmCompanySelection(companyDomain) {
     sessionStorage.setItem('company_user_id', selectedCompany.userName);
     sessionStorage.setItem('available_companies', JSON.stringify(pending.companies));
 
-    // pending_auth を削除
+    // pending_auth と requires_company_selection を削除
     sessionStorage.removeItem('pending_auth');
+    sessionStorage.removeItem('requires_company_selection');
 
     userRole = USER_ROLES.COMPANY;
     userCompanyDomain = companyDomain;
@@ -537,8 +599,17 @@ export function getCurrentUser() {
   return currentUser;
 }
 
-// IDトークンを取得
-export function getIdToken() {
+// IDトークンを取得（有効なトークンを返す）
+export async function getIdToken() {
+  // currentUserがある場合は最新のトークンを取得
+  if (currentUser) {
+    try {
+      idToken = await currentUser.getIdToken(true);
+      return idToken;
+    } catch (error) {
+      console.error('[Auth] Failed to refresh ID token:', error);
+    }
+  }
   return idToken;
 }
 
@@ -556,6 +627,14 @@ export function getUserCompanyDomain() {
 export function isAdmin() {
   const role = getUserRole();
   return role === USER_ROLES.ADMIN;
+}
+
+// 現在のユーザーのメールアドレスを取得
+export function getCurrentUserEmail() {
+  if (currentUser && currentUser.email) {
+    return currentUser.email;
+  }
+  return sessionStorage.getItem('company_user_id') || null;
 }
 
 // 特定の会社へのアクセス権限があるか
@@ -1148,6 +1227,117 @@ export async function addAdminUserByEmail(email) {
   }
 }
 
+// ============================================
+// Admin用：会社ビューモード機能
+// ============================================
+
+/**
+ * Admin用: 会社ビューモードに入る
+ * 任意の会社を選択して、その会社の視点でダッシュボードを表示
+ * @param {string} companyDomain - 会社ドメイン
+ * @param {string} companyName - 会社名（表示用）
+ */
+export function enterCompanyViewMode(companyDomain, companyName = '') {
+  if (!isAdmin()) {
+    console.warn('[Auth] Only admins can enter company view mode');
+    return false;
+  }
+
+  sessionStorage.setItem('company_view_mode', 'true');
+  sessionStorage.setItem('company_view_domain', companyDomain);
+  sessionStorage.setItem('company_view_name', companyName || companyDomain);
+
+  // 一時的にcompanyDomainをセット（元のadmin権限は保持）
+  userCompanyDomain = companyDomain;
+  sessionStorage.setItem(config.userCompanyKey, companyDomain);
+
+  console.log('[Auth] Entered company view mode:', companyDomain);
+
+  // イベント発火
+  const event = new CustomEvent('companyViewModeChanged', {
+    detail: { active: true, companyDomain, companyName: companyName || companyDomain }
+  });
+  document.dispatchEvent(event);
+
+  return true;
+}
+
+/**
+ * Admin用: 会社ビューモードを終了
+ */
+export function exitCompanyViewMode() {
+  if (!isInCompanyViewMode()) {
+    return false;
+  }
+
+  sessionStorage.removeItem('company_view_mode');
+  sessionStorage.removeItem('company_view_domain');
+  sessionStorage.removeItem('company_view_name');
+  sessionStorage.removeItem(config.userCompanyKey);
+
+  userCompanyDomain = null;
+
+  console.log('[Auth] Exited company view mode');
+
+  // イベント発火
+  const event = new CustomEvent('companyViewModeChanged', {
+    detail: { active: false }
+  });
+  document.dispatchEvent(event);
+
+  return true;
+}
+
+/**
+ * 会社ビューモード中かどうか
+ */
+export function isInCompanyViewMode() {
+  return sessionStorage.getItem('company_view_mode') === 'true';
+}
+
+/**
+ * 会社ビューモード中の会社情報を取得
+ */
+export function getCompanyViewInfo() {
+  if (!isInCompanyViewMode()) {
+    return null;
+  }
+  return {
+    companyDomain: sessionStorage.getItem('company_view_domain'),
+    companyName: sessionStorage.getItem('company_view_name')
+  };
+}
+
+/**
+ * 全ての会社一覧を取得（Admin用）
+ */
+export async function getAllCompanies() {
+  if (!isAdmin()) {
+    return [];
+  }
+
+  if (!firebaseDb) {
+    return [];
+  }
+
+  try {
+    const snapshot = await firebaseDb.collection('companies').get();
+    const companies = [];
+    snapshot.forEach(doc => {
+      companies.push({
+        id: doc.id,
+        domain: doc.data().domain || doc.id,
+        name: doc.data().name || doc.data().companyName || doc.id,
+        ...doc.data()
+      });
+    });
+    return companies;
+  } catch (error) {
+    console.error('[Auth] Failed to get all companies:', error);
+    return [];
+  }
+}
+
 export default {
   initFirebase,
   checkSession,
@@ -1184,5 +1374,11 @@ export default {
   addAdminUserByEmail,
   addCompanyStaff,
   deleteCompanyStaff,
+  // 会社ビューモード
+  enterCompanyViewMode,
+  exitCompanyViewMode,
+  isInCompanyViewMode,
+  getCompanyViewInfo,
+  getAllCompanies,
   USER_ROLES
 };

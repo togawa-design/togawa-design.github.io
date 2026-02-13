@@ -24,6 +24,9 @@ export let pendingJobId = null;
 // 初期表示タブ（job-manage遷移時に使用）
 export let pendingInitialTab = null;
 
+// 表示待ちの応募者ID（通知クリック時に使用）
+export let pendingApplicationId = null;
+
 // セクション切り替え中フラグ（連打防止）
 let isSwitchingSection = false;
 
@@ -147,6 +150,27 @@ export function clearPendingInitialTab() {
 }
 
 /**
+ * 表示待ちの応募者IDを設定
+ */
+export function setPendingApplicationId(applicationId) {
+  pendingApplicationId = applicationId;
+}
+
+/**
+ * 表示待ちの応募者IDを取得
+ */
+export function getPendingApplicationId() {
+  return pendingApplicationId;
+}
+
+/**
+ * 表示待ちの応募者IDをクリア
+ */
+export function clearPendingApplicationId() {
+  pendingApplicationId = null;
+}
+
+/**
  * セクション切り替え中かどうか
  */
 export function isSectionSwitching() {
@@ -192,6 +216,7 @@ export default {
   editingCompanyDomain,
   pendingJobId,
   pendingInitialTab,
+  pendingApplicationId,
   setCurrentCompany,
   clearCurrentCompany,
   pushHistory,
@@ -208,6 +233,9 @@ export default {
   setPendingInitialTab,
   getPendingInitialTab,
   clearPendingInitialTab,
+  setPendingApplicationId,
+  getPendingApplicationId,
+  clearPendingApplicationId,
   isSectionSwitching,
   startSectionSwitch,
   endSectionSwitch,
