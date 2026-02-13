@@ -6794,36 +6794,36 @@
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
 }
 
-.recruitment-company-card .card-header {
+/* カードヘッダー */
+.recruitment-card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   padding: 16px;
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
 }
 
-.recruitment-company-card .card-header:hover {
+.recruitment-card-header:hover {
   background: #f8fafc;
 }
 
-.recruitment-company-card .company-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: #f1f5f9;
-}
-
-.recruitment-company-card .company-info {
+.recruitment-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
-.recruitment-company-card .company-info h4 {
-  margin: 0 0 2px;
+.recruitment-card-title .company-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.recruitment-card-title h4 {
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: #1e293b;
@@ -6832,73 +6832,102 @@
   text-overflow: ellipsis;
 }
 
-.recruitment-company-card .company-info span {
-  font-size: 12px;
+.recruitment-card-toggle {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
   color: #94a3b8;
-}
-
-.recruitment-company-card .card-stats {
-  display: flex;
-  gap: 8px;
+  transition: transform 0.2s, color 0.2s;
   flex-shrink: 0;
 }
 
-.recruitment-company-card .stat-mini {
-  text-align: center;
-  padding: 6px 10px;
-  background: #f8fafc;
-  border-radius: 8px;
-  min-width: 48px;
+.recruitment-card-toggle:hover {
+  color: #6366f1;
 }
 
-.recruitment-company-card .stat-mini .value {
+.recruitment-card-toggle[aria-expanded="true"] .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.toggle-icon {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+/* カード統計 */
+.recruitment-card-stats {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 16px;
+  flex-wrap: wrap;
+}
+
+.recruitment-stat {
+  text-align: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  min-width: 56px;
+}
+
+.recruitment-stat-value {
   display: block;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #1e293b;
   line-height: 1.2;
 }
 
-.recruitment-company-card .stat-mini .label {
+.recruitment-stat-label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   color: #64748b;
   margin-top: 2px;
 }
 
-.recruitment-company-card .card-chevron {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 18px;
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
+.recruitment-stat.highlight {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
 }
 
-.recruitment-company-card.expanded .card-chevron {
-  transform: rotate(180deg);
-  color: #6366f1;
+.recruitment-stat.highlight.high {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
 }
 
-.recruitment-company-card .card-body {
-  display: none;
-  padding: 0 16px 16px;
+.recruitment-stat.highlight.high .recruitment-stat-value {
+  color: #16a34a;
+}
+
+.recruitment-stat.highlight.medium {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+}
+
+.recruitment-stat.highlight.medium .recruitment-stat-value {
+  color: #ca8a04;
+}
+
+.recruitment-stat.highlight.low {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.recruitment-stat.highlight.low .recruitment-stat-value {
+  color: #dc2626;
+}
+
+/* カード詳細（アコーディオン） */
+.recruitment-card-detail {
   border-top: 1px solid #f1f5f9;
   background: #fafbfc;
+  padding: 16px;
 }
 
-.recruitment-company-card.expanded .card-body {
-  display: block;
+.recruitment-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.recruitment-company-card .mini-funnel {
-  padding-top: 16px;
-}
-
-.recruitment-company-card .mini-funnel h5 {
+.recruitment-detail-section h5 {
   font-size: 12px;
   font-weight: 600;
   color: #64748b;
@@ -6907,61 +6936,110 @@
   letter-spacing: 0.5px;
 }
 
-.recruitment-company-card .funnel-stage {
+/* ミニファネル */
+.mini-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mini-funnel-stage {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
 }
 
-.recruitment-company-card .funnel-stage:last-child {
-  margin-bottom: 0;
-}
-
-.recruitment-company-card .funnel-label {
-  width: 60px;
-  font-size: 12px;
-  color: #64748b;
-  flex-shrink: 0;
-}
-
-.recruitment-company-card .funnel-bar {
-  flex: 1;
-  height: 20px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.recruitment-company-card .funnel-fill {
-  height: 100%;
-  border-radius: 4px;
+.mini-funnel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-height: 32px;
   transition: width 0.3s ease;
-  min-width: 2px;
 }
 
-.recruitment-company-card .funnel-fill.stage-new { background: #3b82f6; }
-.recruitment-company-card .funnel-fill.stage-contacted { background: #8b5cf6; }
-.recruitment-company-card .funnel-fill.stage-interview { background: #f59e0b; }
-.recruitment-company-card .funnel-fill.stage-hired { background: #10b981; }
-.recruitment-company-card .funnel-fill.stage-joined { background: #059669; }
-
-.recruitment-company-card .funnel-count {
-  width: 40px;
-  font-size: 13px;
-  font-weight: 600;
+.mini-funnel-name {
+  font-size: 12px;
+  font-weight: 500;
   color: #1e293b;
-  text-align: right;
-  flex-shrink: 0;
 }
 
-.recruitment-company-card .funnel-rate {
-  width: 48px;
+.mini-funnel-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.mini-funnel-rate {
   font-size: 11px;
   color: #64748b;
+  min-width: 36px;
   text-align: right;
-  flex-shrink: 0;
+}
+
+/* リードタイム（ミニ） */
+.lead-time-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.lead-time-mini-item {
+  text-align: center;
+  padding: 10px 6px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.lead-time-mini-item .mini-icon {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.lead-time-mini-item .mini-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.lead-time-mini-item .mini-label {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* 担当者別（ミニ） */
+.mini-assignee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mini-assignee-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.mini-assignee-item .assignee-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.mini-assignee-item .assignee-stat {
+  font-size: 12px;
+  color: #64748b;
 }
 
 /* カード形式 - レスポンシブ */
@@ -6970,20 +7048,21 @@
     grid-template-columns: 1fr;
   }
 
-  .recruitment-company-card .card-header {
-    padding: 12px;
-    flex-wrap: wrap;
+  .recruitment-card-stats {
+    padding: 0 12px 12px;
   }
 
-  .recruitment-company-card .card-stats {
-    width: 100%;
-    margin-top: 8px;
-    justify-content: flex-start;
+  .recruitment-stat {
+    padding: 6px 8px;
+    min-width: 48px;
   }
 
-  .recruitment-company-card .funnel-label {
-    width: 50px;
-    font-size: 11px;
+  .recruitment-stat-value {
+    font-size: 16px;
+  }
+
+  .lead-time-mini-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
