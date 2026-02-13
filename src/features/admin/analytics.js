@@ -95,24 +95,24 @@ function applyAnalyticsUIRestrictions() {
     recruitmentManagementTabContent.classList.remove('active');
   }
 
-  // 詳細分析セクションの「企業別」タブを非表示
-  const companiesTab = document.getElementById('tab-companies');
-  if (companiesTab) {
-    companiesTab.style.display = 'none';
+  // 詳細分析セクションの「企業分析」タブを非表示
+  const companyAnalyticsTab = document.getElementById('tab-company-analytics');
+  if (companyAnalyticsTab) {
+    companyAnalyticsTab.style.display = 'none';
   }
 
-  // 「企業別」タブコンテンツを非表示
-  const companiesTabContent = document.getElementById('companies-tab');
-  if (companiesTabContent) {
-    companiesTabContent.classList.remove('active');
+  // 「企業分析」タブコンテンツを非表示
+  const companyAnalyticsTabContent = document.getElementById('company-analytics-tab');
+  if (companyAnalyticsTabContent) {
+    companyAnalyticsTabContent.classList.remove('active');
   }
 
-  // デフォルトタブを「応募・CVR」に変更
-  const conversionTab = document.getElementById('tab-conversion');
-  const conversionTabContent = document.getElementById('conversion-tab');
-  if (conversionTab && conversionTabContent) {
-    conversionTab.classList.add('active');
-    conversionTabContent.classList.add('active');
+  // デフォルトタブを「ページ・流入」に変更
+  const pageTrafficTab = document.getElementById('tab-page-traffic');
+  const pageTrafficTabContent = document.getElementById('page-traffic-tab');
+  if (pageTrafficTab && pageTrafficTabContent) {
+    pageTrafficTab.classList.add('active');
+    pageTrafficTabContent.classList.add('active');
   }
 
   // 「企業別エンゲージメント」セクションを非表示
@@ -230,36 +230,121 @@ function renderAdminDemographics(gender, age) {
   });
 }
 
+// スケルトンローダーHTML生成
+function createSkeletonLoader(type = 'default') {
+  switch (type) {
+    case 'stat':
+      return `
+        <div class="skeleton-card">
+          <div class="skeleton skeleton-stat-value"></div>
+          <div class="skeleton skeleton-stat-label"></div>
+        </div>
+      `;
+    case 'chart':
+      return `
+        <div class="skeleton skeleton-chart"></div>
+      `;
+    case 'table-row':
+      return `
+        <tr>
+          <td colspan="6"><div class="skeleton skeleton-table-row"></div></td>
+        </tr>
+        <tr>
+          <td colspan="6"><div class="skeleton skeleton-table-row"></div></td>
+        </tr>
+        <tr>
+          <td colspan="6"><div class="skeleton skeleton-table-row"></div></td>
+        </tr>
+      `;
+    case 'card':
+      return `
+        <div class="skeleton-card" style="height: 120px;">
+          <div class="skeleton skeleton-text" style="width: 60%;"></div>
+          <div class="skeleton skeleton-text-sm"></div>
+          <div class="skeleton skeleton-text-sm" style="width: 40%;"></div>
+        </div>
+      `.repeat(3);
+    default:
+      return '<div class="loading-placeholder">データを読み込み中...</div>';
+  }
+}
+
+// 空状態HTML生成
+function createEmptyState(options = {}) {
+  const {
+    icon = '📊',
+    title = 'データがありません',
+    description = '表示できるデータがまだありません',
+    actionText = null,
+    actionId = null
+  } = options;
+
+  let actionHtml = '';
+  if (actionText && actionId) {
+    actionHtml = `<button class="empty-state-action" id="${actionId}">${actionText}</button>`;
+  }
+
+  return `
+    <div class="empty-state">
+      <div class="empty-state-icon">${icon}</div>
+      <h4 class="empty-state-title">${title}</h4>
+      <p class="empty-state-description">${description}</p>
+      ${actionHtml}
+    </div>
+  `;
+}
+
+// エラー状態HTML生成
+function createErrorState(options = {}) {
+  const {
+    title = 'データの読み込みに失敗しました',
+    description = '再度お試しください',
+    retryId = null
+  } = options;
+
+  let retryHtml = '';
+  if (retryId) {
+    retryHtml = `<button class="error-state-retry" id="${retryId}">再試行</button>`;
+  }
+
+  return `
+    <div class="error-state">
+      <div class="error-state-icon">⚠️</div>
+      <h4 class="error-state-title">${title}</h4>
+      <p class="error-state-description">${description}</p>
+      ${retryHtml}
+    </div>
+  `;
+}
+
 // 各セクションにローディング表示
 function showSectionLoading(show) {
-  const loadingHtml = '<div class="section-loading"><div class="loading-spinner"></div><span>データを読み込み中...</span></div>';
-
-  const statCards = document.querySelectorAll('.stat-value');
+  const statCards = document.querySelectorAll('#section-analytics-detail .stat-value');
   statCards.forEach(card => {
     if (show) {
       card.dataset.originalText = card.textContent;
-      card.innerHTML = '<span class="loading-dots">...</span>';
+      card.innerHTML = '<span class="skeleton" style="display: inline-block; width: 60px; height: 24px; vertical-align: middle;"></span>';
     }
   });
 
   const chartEl = document.getElementById('daily-chart');
   if (chartEl && show) {
-    chartEl.innerHTML = loadingHtml;
+    chartEl.innerHTML = createSkeletonLoader('chart');
   }
 
   const tableBody = document.querySelector('.data-table tbody');
   if (tableBody && show) {
-    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;">${loadingHtml}</td></tr>`;
+    tableBody.innerHTML = createSkeletonLoader('table-row');
   }
 
   const companyCards = document.getElementById('company-cards');
   if (companyCards && show) {
-    companyCards.innerHTML = loadingHtml;
+    companyCards.innerHTML = createSkeletonLoader('card');
   }
 
   const logTable = document.querySelector('#applications-section .data-table tbody');
   if (logTable && show) {
-    logTable.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;">${loadingHtml}</td></tr>`;
+    logTable.innerHTML = createSkeletonLoader('table-row');
   }
 }
 
@@ -275,7 +360,11 @@ function renderDailyChartFromAPI(dailyData) {
   if (!chartEl) return;
 
   if (!dailyData || dailyData.length === 0) {
-    chartEl.innerHTML = '<p>データがありません</p>';
+    chartEl.innerHTML = createEmptyState({
+      icon: '📈',
+      title: 'グラフデータがありません',
+      description: '選択期間のデータがまだ記録されていません'
+    });
     return;
   }
 
@@ -345,7 +434,11 @@ function renderApplicationsDataFromAPI(applications) {
   };
 
   if (!applications || applications.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">応募データがありません</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5">${createEmptyState({
+      icon: '📋',
+      title: '応募データがありません',
+      description: '選択期間内の応募イベントはまだありません'
+    })}</td></tr>`;
     return;
   }
 
@@ -436,6 +529,15 @@ export function renderOverviewTable() {
 export function renderCompanyCards() {
   const container = document.getElementById('company-cards');
   if (!container) return;
+
+  if (!companyData || companyData.length === 0) {
+    container.innerHTML = createEmptyState({
+      icon: '🏢',
+      title: '企業データがありません',
+      description: '表示できる企業データがまだありません'
+    });
+    return;
+  }
 
   container.innerHTML = companyData.map(company => {
     const cvr = ((company.clicks / company.views) * 100).toFixed(1);
@@ -590,19 +692,21 @@ async function loadTabData(tabId) {
       // 採用管理タブ：アラートとファネルデータを読み込む
       await loadRecruitmentManagementData();
       break;
-    case 'traffic-behavior-tab':
-      // 流入・行動タブ：エンゲージメントと流入元データを両方読み込む
+    case 'company-analytics-tab':
+      // 企業分析タブ：企業カードとエンゲージメントデータを読み込む
+      await loadEngagementData(days, apiEndpoint);
+      break;
+    case 'page-traffic-tab':
+      // ページ・流入タブ：エンゲージメント、流入元、時系列データを読み込む
       await Promise.all([
         loadEngagementData(days, apiEndpoint),
-        loadTrafficData(days, apiEndpoint)
+        loadTrafficData(days, apiEndpoint),
+        loadTrendData(days, apiEndpoint)
       ]);
       break;
     case 'conversion-tab':
-      // 応募・CVRタブ：ファネルデータを読み込む
+      // コンバージョンタブ：ファネルデータを読み込む
       await loadFunnelData(days, apiEndpoint);
-      break;
-    case 'trends-tab':
-      await loadTrendData(days, apiEndpoint);
       break;
   }
 }
@@ -651,7 +755,11 @@ function renderEngagementData(data) {
       </tr>
     `).join('');
   } else if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="4">${createEmptyState({
+      icon: '📊',
+      title: 'エンゲージメントデータがありません',
+      description: '企業別のエンゲージメントデータがまだありません'
+    })}</td></tr>`;
   }
 }
 
@@ -776,7 +884,11 @@ function renderTrafficData(data) {
       </tr>
     `).join('');
   } else if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">データがありません</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="4">${createEmptyState({
+      icon: '🔗',
+      title: '流入元データがありません',
+      description: '参照元・メディアのデータがまだありません'
+    })}</td></tr>`;
   }
 }
 
@@ -1378,7 +1490,11 @@ function loadMockCompanyDetailData(domain, name) {
 function renderDetailDailyChart(data) {
   const chartEl = document.getElementById('detail-daily-chart');
   if (!chartEl || !data.length) {
-    if (chartEl) chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    if (chartEl) chartEl.innerHTML = createEmptyState({
+      icon: '📈',
+      title: '日別データがありません',
+      description: '選択期間のデータがまだ記録されていません'
+    });
     return;
   }
 
@@ -1440,7 +1556,11 @@ function renderDetailJobChart(data) {
   if (!chartEl) return;
 
   if (!data.length) {
-    chartEl.innerHTML = '<div class="loading-placeholder">データがありません</div>';
+    chartEl.innerHTML = createEmptyState({
+      icon: '💼',
+      title: '求人データがありません',
+      description: '表示できる求人別データがまだありません'
+    });
     return;
   }
 
@@ -2151,11 +2271,11 @@ function renderAssigneePerformance(applications) {
 }
 
 /**
- * 企業別採用状況テーブルを描画
+ * 企業別採用状況をカード形式で描画
  */
 function renderCompanyRecruitmentTable(applications) {
-  const tbody = document.querySelector('#company-recruitment-table tbody');
-  if (!tbody) return;
+  const container = document.getElementById('recruitment-company-cards');
+  if (!container) return;
 
   // 企業ごとに集計
   const companyStats = {};
@@ -2171,11 +2291,13 @@ function renderCompanyRecruitmentTable(applications) {
         total: 0,
         interviewing: 0,
         hired: 0,
-        joined: 0
+        joined: 0,
+        applications: []
       };
     }
 
     companyStats[companyKey].total++;
+    companyStats[companyKey].applications.push(app);
     const status = app.status || 'new';
     if (['interviewing', 'interviewed'].includes(status)) {
       companyStats[companyKey].interviewing++;
@@ -2191,72 +2313,307 @@ function renderCompanyRecruitmentTable(applications) {
   const sortedCompanies = Object.values(companyStats).sort((a, b) => b.total - a.total);
 
   if (sortedCompanies.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="loading-cell">データがありません</td></tr>';
+    container.innerHTML = createEmptyState({
+      icon: '🏢',
+      title: '企業別採用データがありません',
+      description: '応募データがまだありません'
+    });
     return;
   }
 
-  tbody.innerHTML = sortedCompanies.map(company => {
+  container.innerHTML = sortedCompanies.map(company => {
     const passRate = company.total > 0
       ? ((company.hired / company.total) * 100).toFixed(1)
       : 0;
+    const passRateClass = passRate >= 30 ? 'high' : (passRate >= 15 ? 'medium' : 'low');
+
     return `
-      <tr data-company-domain="${escapeHtml(company.domain)}" data-company-name="${escapeHtml(company.name)}">
-        <td>${escapeHtml(company.name)}</td>
-        <td>${formatNumber(company.total)}</td>
-        <td>${formatNumber(company.interviewing)}</td>
-        <td>${formatNumber(company.hired)}</td>
-        <td>${formatNumber(company.joined)}</td>
-        <td>${passRate}%</td>
-      </tr>
+      <div class="recruitment-company-card" data-company-domain="${escapeHtml(company.domain)}" data-company-name="${escapeHtml(company.name)}">
+        <div class="recruitment-card-header">
+          <div class="recruitment-card-title">
+            <span class="company-icon">🏢</span>
+            <h4>${escapeHtml(company.name)}</h4>
+          </div>
+          <button class="recruitment-card-toggle" aria-expanded="false">
+            <span class="toggle-icon">▼</span>
+          </button>
+        </div>
+        <div class="recruitment-card-stats">
+          <div class="recruitment-stat">
+            <span class="recruitment-stat-value">${formatNumber(company.total)}</span>
+            <span class="recruitment-stat-label">応募</span>
+          </div>
+          <div class="recruitment-stat">
+            <span class="recruitment-stat-value">${formatNumber(company.interviewing)}</span>
+            <span class="recruitment-stat-label">面接</span>
+          </div>
+          <div class="recruitment-stat">
+            <span class="recruitment-stat-value">${formatNumber(company.hired)}</span>
+            <span class="recruitment-stat-label">内定</span>
+          </div>
+          <div class="recruitment-stat">
+            <span class="recruitment-stat-value">${formatNumber(company.joined)}</span>
+            <span class="recruitment-stat-label">入社</span>
+          </div>
+          <div class="recruitment-stat highlight ${passRateClass}">
+            <span class="recruitment-stat-value">${passRate}%</span>
+            <span class="recruitment-stat-label">通過率</span>
+          </div>
+        </div>
+        <div class="recruitment-card-detail" style="display: none;">
+          <div class="recruitment-detail-loading">
+            <div class="loading-placeholder">詳細データを読み込み中...</div>
+          </div>
+        </div>
+      </div>
     `;
   }).join('');
 
-  // クリックイベントを追加
-  tbody.querySelectorAll('tr[data-company-domain]').forEach(row => {
-    row.addEventListener('click', () => {
-      const domain = row.dataset.companyDomain;
-      const name = row.dataset.companyName;
-      showCompanyRecruitmentDetail(domain, name);
+  // アコーディオン展開イベントを追加
+  container.querySelectorAll('.recruitment-company-card').forEach(card => {
+    const toggleBtn = card.querySelector('.recruitment-card-toggle');
+    const header = card.querySelector('.recruitment-card-header');
+    const detail = card.querySelector('.recruitment-card-detail');
+
+    const toggleCard = () => {
+      const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+
+      // 他のカードを閉じる
+      container.querySelectorAll('.recruitment-company-card').forEach(otherCard => {
+        if (otherCard !== card) {
+          const otherToggle = otherCard.querySelector('.recruitment-card-toggle');
+          const otherDetail = otherCard.querySelector('.recruitment-card-detail');
+          otherToggle.setAttribute('aria-expanded', 'false');
+          otherDetail.style.display = 'none';
+          otherCard.classList.remove('expanded');
+        }
+      });
+
+      if (!isExpanded) {
+        // 展開
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        detail.style.display = 'block';
+        card.classList.add('expanded');
+
+        // 詳細データを読み込み
+        const domain = card.dataset.companyDomain;
+        const name = card.dataset.companyName;
+        loadCompanyRecruitmentDetailInline(domain, name, detail, applications);
+      } else {
+        // 閉じる
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        detail.style.display = 'none';
+        card.classList.remove('expanded');
+      }
+    };
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleCard();
     });
+
+    header.addEventListener('click', toggleCard);
   });
 }
 
 /**
- * 採用管理詳細ビューのイベント初期化
+ * 企業別採用詳細をカード内に読み込み（インライン表示）
  */
-function initRecruitmentDetailEvents() {
-  const backBtn = document.getElementById('btn-back-to-recruitment-overview');
-  if (backBtn && !backBtn.hasAttribute('data-listener-attached')) {
-    backBtn.addEventListener('click', backToRecruitmentOverview);
-    backBtn.setAttribute('data-listener-attached', 'true');
-  }
+function loadCompanyRecruitmentDetailInline(companyDomain, companyName, detailContainer, allApplications) {
+  // この企業の応募データをフィルタ
+  const companyApps = allApplications.filter(app =>
+    (app.companyDomain || 'unknown') === companyDomain
+  );
+
+  // ファネルデータを計算
+  const funnelData = calculateCompanyFunnel(companyApps);
+
+  // リードタイムを計算
+  const leadTimeData = calculateCompanyLeadTime(companyApps);
+
+  // 担当者別パフォーマンスを計算
+  const assigneeData = calculateAssigneePerformance(companyApps);
+
+  detailContainer.innerHTML = `
+    <div class="recruitment-detail-content">
+      <!-- 採用ファネル -->
+      <div class="recruitment-detail-section">
+        <h5>採用ファネル</h5>
+        <div class="mini-funnel">
+          ${renderMiniFunnel(funnelData)}
+        </div>
+      </div>
+
+      <!-- リードタイム -->
+      <div class="recruitment-detail-section">
+        <h5>リードタイム</h5>
+        <div class="lead-time-mini-grid">
+          <div class="lead-time-mini-item">
+            <span class="mini-icon">⏱️</span>
+            <span class="mini-value">${leadTimeData.firstResponse}</span>
+            <span class="mini-label">初回レスポンス</span>
+          </div>
+          <div class="lead-time-mini-item">
+            <span class="mini-icon">📅</span>
+            <span class="mini-value">${leadTimeData.interviewSetup}</span>
+            <span class="mini-label">面談設定</span>
+          </div>
+          <div class="lead-time-mini-item">
+            <span class="mini-icon">📋</span>
+            <span class="mini-value">${leadTimeData.decision}</span>
+            <span class="mini-label">選考判断</span>
+          </div>
+          <div class="lead-time-mini-item">
+            <span class="mini-icon">🎯</span>
+            <span class="mini-value">${leadTimeData.total}</span>
+            <span class="mini-label">全体</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 担当者別 -->
+      ${assigneeData.length > 0 ? `
+      <div class="recruitment-detail-section">
+        <h5>担当者別パフォーマンス</h5>
+        <div class="mini-assignee-list">
+          ${assigneeData.map(a => `
+            <div class="mini-assignee-item">
+              <span class="assignee-name">${escapeHtml(a.name)}</span>
+              <span class="assignee-stat">${a.count}件</span>
+              <span class="assignee-stat">${a.responseTime}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  `;
 }
 
 /**
- * 企業別採用詳細を表示
+ * ミニファネルをレンダリング
+ */
+function renderMiniFunnel(data) {
+  const stages = [
+    { name: '応募', count: data.total, color: '#e0e7ff' },
+    { name: '面接', count: data.interviewing, color: '#c7d2fe' },
+    { name: '内定', count: data.hired, color: '#a5b4fc' },
+    { name: '入社', count: data.joined, color: '#6366f1' }
+  ];
+
+  const maxCount = Math.max(...stages.map(s => s.count), 1);
+
+  return stages.map((stage, i) => {
+    const width = Math.max((stage.count / maxCount) * 100, 10);
+    const rate = i > 0 && stages[i-1].count > 0
+      ? ((stage.count / stages[i-1].count) * 100).toFixed(0)
+      : 100;
+    return `
+      <div class="mini-funnel-stage">
+        <div class="mini-funnel-bar" style="width: ${width}%; background: ${stage.color};">
+          <span class="mini-funnel-name">${stage.name}</span>
+          <span class="mini-funnel-count">${stage.count}</span>
+        </div>
+        ${i > 0 ? `<span class="mini-funnel-rate">${rate}%</span>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * 企業別ファネルデータを計算
+ */
+function calculateCompanyFunnel(applications) {
+  let total = applications.length;
+  let interviewing = 0;
+  let hired = 0;
+  let joined = 0;
+
+  applications.forEach(app => {
+    const status = app.status || 'new';
+    if (['interviewing', 'interviewed', 'hired', 'joined'].includes(status)) {
+      interviewing++;
+    }
+    if (['hired', 'joined'].includes(status)) {
+      hired++;
+    }
+    if (status === 'joined') {
+      joined++;
+    }
+  });
+
+  return { total, interviewing, hired, joined };
+}
+
+/**
+ * 企業別リードタイムを計算
+ */
+function calculateCompanyLeadTime(applications) {
+  // 簡易計算（実データがある場合はより詳細に）
+  let firstResponseTimes = [];
+  let interviewSetupTimes = [];
+  let decisionTimes = [];
+  let totalTimes = [];
+
+  applications.forEach(app => {
+    if (app.statusHistory && Array.isArray(app.statusHistory)) {
+      // ステータス履歴から計算（実装は省略、ダミーデータを返す）
+    }
+  });
+
+  // ダミーデータ（実際はステータス履歴から計算）
+  return {
+    firstResponse: firstResponseTimes.length > 0 ? `${Math.round(average(firstResponseTimes))}時間` : '-',
+    interviewSetup: interviewSetupTimes.length > 0 ? `${Math.round(average(interviewSetupTimes))}日` : '-',
+    decision: decisionTimes.length > 0 ? `${Math.round(average(decisionTimes))}日` : '-',
+    total: totalTimes.length > 0 ? `${Math.round(average(totalTimes))}日` : '-'
+  };
+}
+
+/**
+ * 担当者別パフォーマンスを計算
+ */
+function calculateAssigneePerformance(applications) {
+  const assigneeStats = {};
+
+  applications.forEach(app => {
+    const assignee = app.assignee || '未割当';
+    if (!assigneeStats[assignee]) {
+      assigneeStats[assignee] = { name: assignee, count: 0 };
+    }
+    assigneeStats[assignee].count++;
+  });
+
+  return Object.values(assigneeStats)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(a => ({
+      ...a,
+      responseTime: '-' // 実際はステータス履歴から計算
+    }));
+}
+
+/**
+ * 配列の平均を計算
+ */
+function average(arr) {
+  if (arr.length === 0) return 0;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+/**
+ * 採用管理詳細ビューのイベント初期化（カード形式では不要だが互換性のため残す）
+ */
+function initRecruitmentDetailEvents() {
+  // カード形式ではインライン展開するため、この関数は空
+}
+
+/**
+ * 企業別採用詳細を表示（互換性のため残す、カード形式では使用しない）
  */
 function showCompanyRecruitmentDetail(companyDomain, companyName) {
-  const overviewSection = document.getElementById('recruitment-overview-section');
-  const detailSection = document.getElementById('recruitment-detail-section');
-  const titleEl = document.getElementById('recruitment-detail-company-name');
-
-  if (!overviewSection || !detailSection) return;
-
-  // 表示を切り替え
-  overviewSection.style.display = 'none';
-  detailSection.style.display = 'block';
-  if (titleEl) titleEl.textContent = companyName;
-
-  // 企業でフィルタリングしたデータを取得
-  const companyApps = recruitmentApplicationsCache.filter(
-    app => app.companyDomain === companyDomain
-  );
-
-  // 企業別の各セクションをレンダリング
-  renderCompanyFunnel(companyApps);
-  renderCompanyLeadTimeStats(companyApps);
-  renderCompanyDistribution(companyApps);
-  renderCompanyAssigneePerformance(companyApps);
+  // カード形式ではインライン展開するため、この関数は使用しない
+  console.log('[Analytics] showCompanyRecruitmentDetail called but using inline expansion');
 }
 
 /**
