@@ -161,6 +161,24 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
+    // ===== announcements コレクション - お知らせ =====
+    match /announcements/{docId} {
+      // 公開お知らせは誰でも読める（LPなどで表示）
+      allow read: if true;
+      // 作成・編集・削除は管理者のみ
+      allow write: if isAdmin();
+    }
+
+    // ===== notifications コレクション - 応募者通知 =====
+    match /notifications/{docId} {
+      // 認証ユーザーは読み取り可能
+      allow read: if isAuthenticated();
+      // 作成は誰でも可能（応募時に自動作成）
+      allow create: if true;
+      // 更新・削除は認証ユーザーのみ（既読処理など）
+      allow update, delete: if isAuthenticated();
+    }
+
     // 注意: 上記にマッチしないドキュメントへのアクセスは拒否されます
   }
 }
