@@ -1814,9 +1814,21 @@ async function loadRecruitmentManagementData() {
   try {
     // Firestoreから応募者データを取得
     const db = firebase.firestore();
-    const snapshot = await db.collection('applications')
-      .orderBy('createdAt', 'desc')
-      .get();
+
+    // 会社ユーザーの場合は自社の応募データのみ取得
+    const userIsAdmin = isAdmin();
+    const userCompanyDomain = getUserCompanyDomain();
+
+    let query = db.collection('applications').orderBy('createdAt', 'desc');
+
+    // 会社ユーザーの場合はcompanyDomainでフィルタリング
+    if (!userIsAdmin && userCompanyDomain) {
+      query = db.collection('applications')
+        .where('companyDomain', '==', userCompanyDomain)
+        .orderBy('createdAt', 'desc');
+    }
+
+    const snapshot = await query.get();
 
     const applications = [];
     snapshot.forEach(doc => {
