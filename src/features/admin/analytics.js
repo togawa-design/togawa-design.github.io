@@ -2549,24 +2549,91 @@ function calculateCompanyFunnel(applications) {
  * 企業別リードタイムを計算
  */
 function calculateCompanyLeadTime(applications) {
-  // 簡易計算（実データがある場合はより詳細に）
-  let firstResponseTimes = [];
-  let interviewSetupTimes = [];
-  let decisionTimes = [];
-  let totalTimes = [];
+  const leadTimes = {
+    firstResponse: [],
+    interviewSetup: [],
+    decision: [],
+    total: []
+  };
 
   applications.forEach(app => {
-    if (app.statusHistory && Array.isArray(app.statusHistory)) {
-      // ステータス履歴から計算（実装は省略、ダミーデータを返す）
+    if (!app.statusHistory || !Array.isArray(app.statusHistory) || app.statusHistory.length === 0) {
+      return;
+    }
+
+    const history = app.statusHistory;
+    const createdAt = app.createdAt?.toDate ? app.createdAt.toDate() : new Date(app.createdAt);
+
+    // 初回レスポンス（応募→連絡済み）
+    const contactedEntry = history.find(h => h.status === 'contacted');
+    if (contactedEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate
+        ? contactedEntry.timestamp.toDate()
+        : new Date(contactedEntry.timestamp);
+      const hours = (contactedAt - createdAt) / (1000 * 60 * 60);
+      if (hours >= 0) {
+        leadTimes.firstResponse.push(hours);
+      }
+    }
+
+    // 面談設定（連絡済み→面接）
+    const interviewingEntry = history.find(h => h.status === 'interviewing');
+    if (contactedEntry && interviewingEntry) {
+      const contactedAt = contactedEntry.timestamp?.toDate
+        ? contactedEntry.timestamp.toDate()
+        : new Date(contactedEntry.timestamp);
+      const interviewingAt = interviewingEntry.timestamp?.toDate
+        ? interviewingEntry.timestamp.toDate()
+        : new Date(interviewingEntry.timestamp);
+      const days = (interviewingAt - contactedAt) / (1000 * 60 * 60 * 24);
+      if (days >= 0) {
+        leadTimes.interviewSetup.push(days);
+      }
+    }
+
+    // 選考判断（面接→内定/不採用）
+    const hiredEntry = history.find(h => h.status === 'hired');
+    const rejectedEntry = history.find(h => h.status === 'rejected');
+    const decisionEntry = hiredEntry || rejectedEntry;
+    if (interviewingEntry && decisionEntry) {
+      const interviewingAt = interviewingEntry.timestamp?.toDate
+        ? interviewingEntry.timestamp.toDate()
+        : new Date(interviewingEntry.timestamp);
+      const decisionAt = decisionEntry.timestamp?.toDate
+        ? decisionEntry.timestamp.toDate()
+        : new Date(decisionEntry.timestamp);
+      const days = (decisionAt - interviewingAt) / (1000 * 60 * 60 * 24);
+      if (days >= 0) {
+        leadTimes.decision.push(days);
+      }
+    }
+
+    // 全体（応募→内定）
+    if (hiredEntry) {
+      const hiredAt = hiredEntry.timestamp?.toDate
+        ? hiredEntry.timestamp.toDate()
+        : new Date(hiredEntry.timestamp);
+      const days = (hiredAt - createdAt) / (1000 * 60 * 60 * 24);
+      if (days >= 0) {
+        leadTimes.total.push(days);
+      }
     }
   });
 
-  // ダミーデータ（実際はステータス履歴から計算）
+  // 平均を計算して返す
   return {
-    firstResponse: firstResponseTimes.length > 0 ? `${Math.round(average(firstResponseTimes))}時間` : '-',
-    interviewSetup: interviewSetupTimes.length > 0 ? `${Math.round(average(interviewSetupTimes))}日` : '-',
-    decision: decisionTimes.length > 0 ? `${Math.round(average(decisionTimes))}日` : '-',
-    total: totalTimes.length > 0 ? `${Math.round(average(totalTimes))}日` : '-'
+    firstResponse: leadTimes.firstResponse.length > 0
+      ? `${Math.round(average(leadTimes.firstResponse))}時間`
+      : '-',
+    interviewSetup: leadTimes.interviewSetup.length > 0
+      ? `${Math.round(average(leadTimes.interviewSetup))}日`
+      : '-',
+    decision: leadTimes.decision.length > 0
+      ? `${Math.round(average(leadTimes.decision))}日`
+      : '-',
+    total: leadTimes.total.length > 0
+      ? `${Math.round(average(leadTimes.total))}日`
+      : '-'
   };
 }
 
