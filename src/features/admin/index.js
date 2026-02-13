@@ -1778,17 +1778,14 @@ async function saveCompanyUser() {
 
     } else {
       // 新規作成
-      if (!password) {
-        showToast('パスワードを入力してください', 'error');
-        return;
-      }
-
-      if (password.length < 8) {
+      // パスワードは新規ユーザーのみ必須（既存のFirebase Authユーザーは不要）
+      // Cloud Functionが判断するため、ここではパスワード長のみチェック
+      if (password && password.length < 8) {
         showToast('パスワードは8文字以上で入力してください', 'error');
         return;
       }
 
-      const result = await addCompanyUser(email, password, companyDomain, name, role, username);
+      const result = await addCompanyUser(email, password || '', companyDomain, name, role, username);
       if (!result.success) {
         throw new Error(result.error);
       }

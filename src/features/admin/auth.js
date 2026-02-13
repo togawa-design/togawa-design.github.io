@@ -708,13 +708,14 @@ export async function addCompanyUser(email, password, companyDomain, name = '', 
   }
 
   try {
-    // 同じメールアドレスが存在するかチェック
+    // 同じメール + 同じ会社の組み合わせのみチェック（別会社への追加はOK）
     const existing = await firebaseDb.collection('company_users')
       .where('email', '==', email)
+      .where('companyDomain', '==', companyDomain)
       .get();
 
     if (!existing.empty) {
-      return { success: false, error: 'このメールアドレスは既に使用されています' };
+      return { success: false, error: 'このメールアドレスは既にこの会社に登録されています' };
     }
 
     // Cloud Function を呼び出してユーザーを作成
