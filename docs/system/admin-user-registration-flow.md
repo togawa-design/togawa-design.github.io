@@ -190,9 +190,9 @@ flowchart TD
     A[ログイン画面] --> B[Googleログイン]
     B --> C{Firebase Auth}
     C --> D[UID取得]
-    D --> E{admin_users/{uid}<br/>存在確認}
+    D --> E{admin_users 存在確認}
     E -->|Yes| F[管理者としてログイン]
-    E -->|No| G{company_users<br/>検索}
+    E -->|No| G{company_users 検索}
     G -->|Yes| H[会社ユーザーとしてログイン]
     G -->|No| I[アクセス拒否]
 ```
@@ -205,7 +205,7 @@ flowchart TD
     B --> C{Firebase Auth}
     C -->|認証成功| D[UID取得]
     C -->|認証失敗| E[エラー表示]
-    D --> F{company_users<br/>検索}
+    D --> F{company_users 検索}
     F -->|1件| G[会社ユーザーとしてログイン]
     F -->|複数件| H[会社選択画面]
     H --> I[選択した会社でログイン]
