@@ -11,24 +11,26 @@
   <link rel="stylesheet" href="/dev/css/style.css">
   <link rel="stylesheet" href="/dev/css/admin.css">
   <link rel="stylesheet" href="/dev/css/applicants.css">
+  <link rel="stylesheet" href="/dev/css/notifications.css">
   <!-- flatpickr -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/dev/js/admin-B7ABJ22l.js"></script>
+  <script type="module" crossorigin src="/dev/js/admin-Bdrpvwir.js"></script>
   <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-CXaJNGTC.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-qS85o8Wr.js">
   <link rel="modulepreload" crossorigin href="/dev/js/env-config-DknF4WGE.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/firestore-service-B91FO87B.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/firestore-service-BDwyai-n.js">
   <link rel="modulepreload" crossorigin href="/dev/js/utils-BNVq905i.js">
   <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-CMmi_cQM.js">
   <link rel="modulepreload" crossorigin href="/dev/js/modal-BOD5e818.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-DCIKBMfO.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/api-CFJD9K9_.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/core-D9Duf6oe.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/job-edit-utils-DcWUcJyi.js">
-  <link rel="modulepreload" crossorigin href="/dev/js/index-B9fNBF6a.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-YfuDNT04.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/api-DPTCcopo.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/core-BHBow98-.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/job-edit-utils-DQCnIx6C.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/index-gIdJAfa_.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/notification-service-CiVwDUsi.js">
 </head>
 <body class="admin-body">
   <!-- ログイン画面 -->
@@ -106,6 +108,20 @@
         <p>管理画面</p>
         <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="メニューを閉じる">&times;</button>
       </div>
+      <!-- 会社ビューモード（Admin専用） -->
+      <div id="company-view-section" class="company-view-section" style="display: none;">
+        <div id="company-view-selector" class="company-view-selector">
+          <label class="company-view-label">会社として表示:</label>
+          <select id="company-view-select" class="company-view-select">
+            <option value="">管理者モード</option>
+          </select>
+        </div>
+        <div id="company-view-bar" class="company-view-bar" style="display: none;">
+          <span class="company-view-indicator">👁️</span>
+          <span id="company-view-name" class="company-view-name"></span>
+          <button id="exit-company-view-btn" class="btn-exit-company-view">終了</button>
+        </div>
+      </div>
       <!-- 管理者用ナビゲーション -->
       <nav class="sidebar-nav" id="nav-admin">
         <div class="nav-section">
@@ -134,6 +150,12 @@
           <h3 class="nav-section-title">ユーザー管理</h3>
           <ul>
             <li><a href="#" data-section="company-users"><span class="nav-icon">👥</span>会社ユーザー</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <h3 class="nav-section-title">お知らせ配信</h3>
+          <ul>
+            <li><a href="#" data-section="announcements"><span class="nav-icon">📢</span>お知らせ管理</a></li>
           </ul>
         </div>
         <div class="nav-section">
@@ -188,6 +210,8 @@
         </button>
         <h1 id="page-title">概要</h1>
         <div class="header-actions">
+          <!-- 通知ベルアイコン -->
+          <div id="notification-bell-container"></div>
           <div class="date-range-picker">
             <label>期間:</label>
             <div class="date-range-inputs">
@@ -444,7 +468,7 @@
           </div>
           <div class="form-group">
             <label for="cu-username">表示用ユーザーID</label>
-            <input type="text" id="cu-username" placeholder="例: toyota_user" pattern="[a-z0-9_\\-]*" title="半角英数字、アンダースコア、ハイフンのみ">
+            <input type="text" id="cu-username" placeholder="例: toyota_user" pattern="[a-z0-9_-]*" title="半角英数字、アンダースコア、ハイフンのみ">
             <span class="form-description">空欄の場合はメールアドレスから自動生成されます</span>
           </div>
           <div class="form-group">
