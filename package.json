@@ -6,7 +6,16 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "VITE_BASE=/kikanko/ npm run build && gh-pages -d dist"
+    "deploy": "VITE_BASE=/kikanko/ npm run build && gh-pages -d dist",
+    "migrate:cloudinary:check:dev": "node scripts/migrate-cloudinary-urls.js --dry-run",
+    "migrate:cloudinary:check:prod": "node scripts/migrate-cloudinary-urls.js --prod --dry-run",
+    "migrate:cloudinary:move:dev": "node scripts/migrate-cloudinary-move.js --dry-run",
+    "migrate:cloudinary:move:dev:run": "node scripts/migrate-cloudinary-move.js",
+    "migrate:cloudinary:move:prod": "node scripts/migrate-cloudinary-move.js --prod --dry-run",
+    "migrate:cloudinary:move:prod:run": "node scripts/migrate-cloudinary-move.js --prod"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
   },
   "devDependencies": {
     "gh-pages": "^6.1.1",

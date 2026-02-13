@@ -9,6 +9,9 @@ const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 const cors = require('cors');
 const admin = require('firebase-admin');
 
+// メールサービス
+const emailService = require('./email');
+
 // Firebase Admin初期化（環境変数でプロジェクトを切り替え）
 // FIREBASE_PROJECT_ID: 本番=generated-area-484613-e3-90bd4, 開発=lset-dev
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'generated-area-484613-e3-90bd4';
@@ -44,6 +47,9 @@ const corsHandler = cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 });
+
+// メールサービスのHTTPエンドポイントを登録
+emailService.register(functions, corsHandler);
 
 // GA4プロパティID（数字のみ）
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '520379160'; // G-E1XC94EG05 の数字部分
@@ -3177,6 +3183,10 @@ async function verifyAdminToken(req) {
 /**
  * 会社ユーザーを作成（管理者のみ）
  * Firebase Auth でアカウントを作成し、Firestore にメタ情報を保存
+ *
+ * 複数会社対応:
+ * - 同じメール + 同じ会社 → エラー
+ * - 同じメール + 別の会社 → Firebase Auth はスキップ、company_users に追加
  */
 functions.http('createCompanyUser', (req, res) => {
   corsHandler(req, res, async () => {
@@ -3193,47 +3203,96 @@ functions.http('createCompanyUser', (req, res) => {
       const { email, password, companyDomain, name, role, username } = req.body;
 
       // 必須パラメータチェック
-      if (!email || !password || !companyDomain) {
+      if (!email || !companyDomain) {
         return res.status(400).json({
           success: false,
-          error: 'email, password, companyDomain は必須です'
-        });
-      }
-
-      // パスワード長チェック
-      if (password.length < 8) {
-        return res.status(400).json({
-          success: false,
-          error: 'パスワードは8文字以上で入力してください'
+          error: 'email と companyDomain は必須です'
         });
       }
 
       const db = admin.firestore();
 
-      // 同じメールアドレスが既に存在するかチェック
+      // 同じメール + 同じ会社の組み合わせが既に存在するかチェック
+      const sameCompanyQuery = await db.collection('company_users')
+        .where('email', '==', email)
+        .where('companyDomain', '==', companyDomain)
+        .limit(1)
+        .get();
+
+      if (!sameCompanyQuery.empty) {
+        return res.status(400).json({
+          success: false,
+          error: 'このユーザーは既にこの会社に登録されています'
+        });
+      }
+
+      // 同じメールアドレスが他の会社で既に存在するかチェック（company_users）
       const existingQuery = await db.collection('company_users')
         .where('email', '==', email)
         .limit(1)
         .get();
 
+      let uid;
+      let isExistingUser = false;
+
       if (!existingQuery.empty) {
-        return res.status(400).json({
-          success: false,
-          error: 'このメールアドレスは既に使用されています'
-        });
+        // company_users に既存ユーザーがいる場合
+        const existingData = existingQuery.docs[0].data();
+        uid = existingData.uid;
+        isExistingUser = true;
+        console.log(`[createCompanyUser] Adding existing user ${email} to company ${companyDomain}`);
+      } else {
+        // company_users にはないが、Firebase Auth に存在するかチェック
+        let existingAuthUser = null;
+        try {
+          existingAuthUser = await admin.auth().getUserByEmail(email);
+        } catch (authError) {
+          // auth/user-not-found は無視（新規ユーザー）
+          if (authError.code !== 'auth/user-not-found') {
+            throw authError;
+          }
+        }
+
+        if (existingAuthUser) {
+          // Firebase Auth には存在するが company_users にはないケース
+          uid = existingAuthUser.uid;
+          isExistingUser = true;
+          console.log(`[createCompanyUser] Found existing Firebase Auth user ${email} (uid: ${uid}), adding to company ${companyDomain}`);
+        } else {
+          // 完全な新規ユーザー: パスワード必須チェック
+          if (!password) {
+            return res.status(400).json({
+              success: false,
+              error: '新規ユーザーにはパスワードが必須です'
+            });
+          }
+
+          // パスワード長チェック
+          if (password.length < 8) {
+            return res.status(400).json({
+              success: false,
+              error: 'パスワードは8文字以上で入力してください'
+            });
+          }
+
+          // Firebase Auth でユーザー作成
+          const userRecord = await admin.auth().createUser({
+            email: email,
+            password: password,
+            displayName: name || username || email.split('@')[0]
+          });
+
+          uid = userRecord.uid;
+          console.log(`[createCompanyUser] Created new Firebase Auth user: ${uid}`);
+        }
       }
 
-      // Firebase Auth でユーザー作成
-      const userRecord = await admin.auth().createUser({
-        email: email,
-        password: password,
-        displayName: name || username || email.split('@')[0]
-      });
-
-      const uid = userRecord.uid;
+      // ドキュメントID: 複数会社対応のため uid_companyDomain 形式
+      // 最初の登録は uid のみ、追加の会社は uid_companyDomain
+      const docId = isExistingUser ? `${uid}_${companyDomain}` : uid;
 
       // Firestore にユーザー情報を保存（パスワードは保存しない）
-      await db.collection('company_users').doc(uid).set({
+      await db.collection('company_users').doc(docId).set({
         uid: uid,
         email: email,
         username: username || email.split('@')[0],
@@ -3247,8 +3306,12 @@ functions.http('createCompanyUser', (req, res) => {
       res.json({
         success: true,
         uid: uid,
+        docId: docId,
         email: email,
-        message: 'ユーザーを作成しました'
+        isExistingUser: isExistingUser,
+        message: isExistingUser
+          ? `既存ユーザーを ${companyDomain} に追加しました`
+          : 'ユーザーを作成しました'
       });
 
     } catch (error) {
@@ -3257,7 +3320,7 @@ functions.http('createCompanyUser', (req, res) => {
       // Firebase Auth エラーを日本語化
       let errorMessage = error.message;
       if (error.code === 'auth/email-already-exists') {
-        errorMessage = 'このメールアドレスは既に使用されています';
+        errorMessage = 'このメールアドレスは既にFirebase Authに登録されています。管理者にお問い合わせください。';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'メールアドレスの形式が正しくありません';
       } else if (error.code === 'auth/weak-password') {
