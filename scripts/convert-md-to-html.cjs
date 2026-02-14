@@ -198,10 +198,12 @@ function convertMdToHtml(mdContent, title, relativePath) {
     .mermaid:hover::after { opacity: 1; }
     .mermaid-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
     .mermaid-modal.active { display: flex; }
-    .mermaid-modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 95vw; max-height: 95vh; overflow: auto; position: relative; }
-    .mermaid-modal-close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #666; z-index: 10; }
+    .mermaid-modal-content { background: white; padding: 40px 50px 60px; border-radius: 12px; max-width: 95vw; max-height: 95vh; overflow: auto; position: relative; min-width: 60vw; min-height: 50vh; display: flex; justify-content: center; align-items: center; }
+    .mermaid-modal-diagram { transform: scale(1.5); transform-origin: center center; }
+    .mermaid-modal-diagram svg { max-width: none !important; }
+    .mermaid-modal-close { position: absolute; top: 15px; right: 20px; font-size: 32px; cursor: pointer; color: #666; z-index: 10; line-height: 1; }
     .mermaid-modal-close:hover { color: #333; }
-    .mermaid-modal-hint { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: #999; font-size: 0.85em; }
+    .mermaid-modal-hint { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); color: #666; font-size: 0.9em; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
@@ -223,8 +225,6 @@ function convertMdToHtml(mdContent, title, relativePath) {
           const svg = el.querySelector('svg');
           if (svg) {
             const clone = svg.cloneNode(true);
-            clone.style.maxWidth = '100%';
-            clone.style.height = 'auto';
             modalContent.innerHTML = '';
             modalContent.appendChild(clone);
             modal.classList.add('active');
