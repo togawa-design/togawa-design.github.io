@@ -199,8 +199,8 @@ function convertMdToHtml(mdContent, title, relativePath) {
     .mermaid-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
     .mermaid-modal.active { display: flex; }
     .mermaid-modal-content { background: white; border-radius: 8px; width: 98vw; height: 96vh; overflow: auto; position: relative; display: flex; flex-direction: column; }
-    .mermaid-modal-scroll { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
-    .mermaid-modal-diagram { transform-origin: top center; transition: transform 0.15s ease; display: inline-block; }
+    .mermaid-modal-scroll { flex: 1; overflow: auto; padding: 20px; }
+    .mermaid-modal-diagram { transform-origin: top left; transition: transform 0.15s ease; display: inline-block; }
     .mermaid-modal-diagram svg { max-width: none !important; display: block; }
     .mermaid-modal-close { position: fixed; top: 40px; right: 40px; font-size: 32px; cursor: pointer; color: #666; z-index: 10001; line-height: 1; background: rgba(255,255,255,0.98); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(0,0,0,0.25); }
     .mermaid-modal-close:hover { color: #333; }
