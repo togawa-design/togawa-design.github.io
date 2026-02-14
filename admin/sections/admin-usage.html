@@ -1,0 +1,283 @@
+<section id="section-admin-usage" class="admin-section">
+  <div class="section-header">
+    <h3>管理画面利用状況</h3>
+    <select id="usage-period-select" class="filter-select">
+      <option value="7">過去7日間</option>
+      <option value="30" selected>過去30日間</option>
+      <option value="90">過去90日間</option>
+    </select>
+  </div>
+
+  <div class="usage-tabs">
+    <button class="usage-tab active" data-tab="summary">サマリー</button>
+    <button class="usage-tab" data-tab="companies">会社別</button>
+    <button class="usage-tab" data-tab="users">ユーザー別</button>
+    <button class="usage-tab" data-tab="sections">機能別</button>
+  </div>
+
+  <div id="usage-content" class="usage-content">
+    <div class="loading-cell">データを読み込み中...</div>
+  </div>
+
+  <!-- 会社詳細モーダル -->
+  <div id="company-usage-modal" class="modal-overlay">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h4 id="company-usage-modal-title">会社利用状況</h4>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 動的に挿入 -->
+      </div>
+    </div>
+  </div>
+
+  <style>
+  /* タブスタイル */
+  .usage-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+  }
+
+  .usage-tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s;
+  }
+
+  .usage-tab:hover {
+    background: var(--bg-secondary);
+  }
+
+  .usage-tab.active {
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+    font-weight: 600;
+  }
+
+  .usage-content {
+    min-height: 300px;
+  }
+
+  /* 統計カード（stats-gridを使用） */
+  .usage-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .usage-stat-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .usage-stat-card.warning {
+    background: #fff3e0;
+    border-color: #ffcc80;
+  }
+
+  .usage-stat-card.danger {
+    background: #ffebee;
+    border-color: #ef9a9a;
+  }
+
+  .usage-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .usage-stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+  }
+
+  .usage-stat-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* セクション */
+  .usage-section {
+    margin-top: 2rem;
+  }
+
+  .usage-section h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+  }
+
+  /* バーチャート */
+  .usage-bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .usage-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .usage-bar-label {
+    min-width: 120px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .usage-bar-bg {
+    flex: 1;
+    height: 24px;
+    background: var(--bg-tertiary, #f5f5f5);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .usage-bar-fill {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .usage-bar-count {
+    min-width: 60px;
+    text-align: right;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  /* 会社詳細モーダル */
+  #company-usage-modal {
+    display: none;
+  }
+
+  #company-usage-modal.active {
+    display: flex;
+  }
+
+  .usage-detail-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+  }
+
+  .usage-detail-item {
+    text-align: center;
+  }
+
+  .usage-detail-item .label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .usage-detail-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .activity-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .activity-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.875rem;
+  }
+
+  .activity-time {
+    min-width: 80px;
+    color: var(--text-muted);
+  }
+
+  .activity-user {
+    min-width: 100px;
+    font-weight: 500;
+  }
+
+  .activity-action {
+    min-width: 60px;
+    color: var(--text-secondary);
+  }
+
+  .activity-section {
+    color: var(--text-secondary);
+  }
+
+  /* 機能別タブ */
+  .usage-section-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .usage-section-item {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .usage-section-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .usage-section-name {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .usage-section-count {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .no-data,
+  .error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+  }
+
+  .error-message {
+    color: var(--error-color);
+  }
+
+  /* admin-tableのcompactバリエーション */
+  .admin-table.compact {
+    font-size: 0.875rem;
+  }
+
+  .admin-table.compact th,
+  .admin-table.compact td {
+    padding: 0.5rem 0.75rem;
+  }
+  </style>
+</section>
