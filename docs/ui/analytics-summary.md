@@ -2,28 +2,34 @@
 
 本ドキュメントはリクエコで収集・分析しているデータの詳細をまとめたものです。
 
-*最終更新: 2026-02-12*
+*最終更新: 2026-02-14*
 
 ---
 
 ## データ収集の概要
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    データ収集ソース                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │   GA4       │    │  独自計測    │    │  Firestore  │        │
-│  │  (外部)     │    │(page-analytics)│  │  (内部DB)   │        │
-│  └─────────────┘    └─────────────┘    └─────────────┘        │
-│        │                  │                  │                 │
-│        ▼                  ▼                  ▼                 │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │              管理画面ダッシュボード                        │  │
-│  └─────────────────────────────────────────────────────────┘  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Sources["データ収集ソース"]
+        GA4["GA4<br/>(外部)"]
+        PageAnalytics["独自計測<br/>(page-analytics)"]
+        Firestore["Firestore<br/>(内部DB)"]
+    end
+
+    subgraph Dashboard["管理画面ダッシュボード"]
+        Overview["概要"]
+        Analytics["アナリティクス詳細"]
+        Applicants["応募者管理"]
+    end
+
+    GA4 --> Dashboard
+    PageAnalytics --> Dashboard
+    Firestore --> Dashboard
+
+    style GA4 fill:#4285f4,color:#fff
+    style PageAnalytics fill:#34a853,color:#fff
+    style Firestore fill:#ffca28,color:#333
+    style Dashboard fill:#f5f5f5
 ```
 
 ---
@@ -157,22 +163,29 @@ LP（lp.html）と採用ページ（company-recruit.html）で独自にデータ
 
 ### 3.2 ステータス種別
 
-```
-new (新規応募)
-    │
-    ▼
-contacted (連絡済み)
-    │
-    ▼
-interviewing (面接調整中)
-    │
-    ▼
-offered (内定)
-    │
-    ▼
-hired (入社)
+```mermaid
+flowchart TB
+    new["new<br/>(新規応募)"]
+    contacted["contacted<br/>(連絡済み)"]
+    interviewing["interviewing<br/>(面接調整中)"]
+    offered["offered<br/>(内定)"]
+    hired["hired<br/>(入社)"]
+    rejected["rejected<br/>(不採用)"]
+    withdrawn["withdrawn<br/>(辞退)"]
 
-※ rejected (不採用) / withdrawn (辞退) に分岐可能
+    new --> contacted
+    contacted --> interviewing
+    interviewing --> offered
+    offered --> hired
+
+    contacted -.-> rejected
+    interviewing -.-> rejected
+    offered -.-> withdrawn
+
+    style new fill:#e3f2fd
+    style hired fill:#c8e6c9
+    style rejected fill:#ffcdd2
+    style withdrawn fill:#fff3e0
 ```
 
 ### 3.3 statusHistory の構造
@@ -215,9 +228,23 @@ hired (入社)
 - **指標**: 各ステータスの人数と通過率
 - **計算**: 累積カウント方式（contacted以上→連絡済に含む）
 
-```
-応募 (100) → 連絡済 (80) → 面接 (50) → 内定 (20) → 入社 (15)
-              80%          62.5%       40%         75%
+```mermaid
+flowchart LR
+    A["応募<br/>100"] --> B["連絡済<br/>80"]
+    B --> C["面接<br/>50"]
+    C --> D["内定<br/>20"]
+    D --> E["入社<br/>15"]
+
+    B -.- B1["80%"]
+    C -.- C1["62.5%"]
+    D -.- D1["40%"]
+    E -.- E1["75%"]
+
+    style A fill:#e3f2fd
+    style B fill:#bbdefb
+    style C fill:#90caf9
+    style D fill:#64b5f6
+    style E fill:#42a5f5,color:#fff
 ```
 
 #### リードタイム統計
