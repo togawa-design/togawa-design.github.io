@@ -198,12 +198,16 @@ function convertMdToHtml(mdContent, title, relativePath) {
     .mermaid:hover::after { opacity: 1; }
     .mermaid-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
     .mermaid-modal.active { display: flex; }
-    .mermaid-modal-content { background: white; padding: 40px 50px 60px; border-radius: 12px; max-width: 95vw; max-height: 95vh; overflow: auto; position: relative; min-width: 60vw; min-height: 50vh; display: flex; justify-content: center; align-items: center; }
-    .mermaid-modal-diagram { transform: scale(1.5); transform-origin: center center; }
+    .mermaid-modal-content { background: white; padding: 60px 50px 70px; border-radius: 12px; max-width: 95vw; max-height: 95vh; overflow: auto; position: relative; min-width: 60vw; min-height: 50vh; display: flex; justify-content: center; align-items: center; }
+    .mermaid-modal-diagram { transform-origin: center center; transition: transform 0.2s ease; }
     .mermaid-modal-diagram svg { max-width: none !important; }
     .mermaid-modal-close { position: absolute; top: 15px; right: 20px; font-size: 32px; cursor: pointer; color: #666; z-index: 10; line-height: 1; }
     .mermaid-modal-close:hover { color: #333; }
-    .mermaid-modal-hint { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); color: #666; font-size: 0.9em; }
+    .mermaid-modal-controls { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; background: #f5f5f5; padding: 6px 12px; border-radius: 20px; }
+    .mermaid-modal-btn { width: 32px; height: 32px; border: none; background: #fff; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .mermaid-modal-btn:hover { background: #e0e0e0; }
+    .mermaid-modal-zoom { font-size: 14px; min-width: 50px; text-align: center; color: #333; font-weight: 500; }
+    .mermaid-modal-hint { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); color: #666; font-size: 0.85em; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
@@ -213,11 +217,37 @@ function convertMdToHtml(mdContent, title, relativePath) {
       // モーダル要素を作成
       const modal = document.createElement('div');
       modal.className = 'mermaid-modal';
-      modal.innerHTML = '<div class="mermaid-modal-content"><span class="mermaid-modal-close">&times;</span><div class="mermaid-modal-diagram"></div><div class="mermaid-modal-hint">クリックまたはEscキーで閉じる</div></div>';
+      modal.innerHTML = '<div class="mermaid-modal-content"><span class="mermaid-modal-close">&times;</span><div class="mermaid-modal-controls"><button class="mermaid-modal-btn" id="zoom-out">−</button><span class="mermaid-modal-zoom" id="zoom-level">100%</span><button class="mermaid-modal-btn" id="zoom-in">+</button><button class="mermaid-modal-btn" id="zoom-reset">↺</button></div><div class="mermaid-modal-diagram"></div><div class="mermaid-modal-hint">スクロールでも拡大縮小可能 | Escで閉じる</div></div>';
       document.body.appendChild(modal);
 
       const modalContent = modal.querySelector('.mermaid-modal-diagram');
       const closeBtn = modal.querySelector('.mermaid-modal-close');
+      const zoomInBtn = modal.querySelector('#zoom-in');
+      const zoomOutBtn = modal.querySelector('#zoom-out');
+      const zoomResetBtn = modal.querySelector('#zoom-reset');
+      const zoomLevelDisplay = modal.querySelector('#zoom-level');
+
+      let currentZoom = 1;
+      const minZoom = 0.5;
+      const maxZoom = 3;
+      const zoomStep = 0.25;
+
+      function updateZoom(newZoom) {
+        currentZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+        modalContent.style.transform = 'scale(' + currentZoom + ')';
+        zoomLevelDisplay.textContent = Math.round(currentZoom * 100) + '%';
+      }
+
+      zoomInBtn.addEventListener('click', function(e) { e.stopPropagation(); updateZoom(currentZoom + zoomStep); });
+      zoomOutBtn.addEventListener('click', function(e) { e.stopPropagation(); updateZoom(currentZoom - zoomStep); });
+      zoomResetBtn.addEventListener('click', function(e) { e.stopPropagation(); updateZoom(1); });
+
+      // マウスホイールでズーム
+      modal.querySelector('.mermaid-modal-content').addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+        updateZoom(currentZoom + delta);
+      });
 
       // Mermaidクリックで拡大
       document.querySelectorAll('.mermaid').forEach(function(el) {
@@ -227,6 +257,8 @@ function convertMdToHtml(mdContent, title, relativePath) {
             const clone = svg.cloneNode(true);
             modalContent.innerHTML = '';
             modalContent.appendChild(clone);
+            currentZoom = 1;
+            updateZoom(1);
             modal.classList.add('active');
           }
         });
