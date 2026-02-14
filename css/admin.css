@@ -10891,6 +10891,74 @@ body.lp-settings-active #section-lp-settings {
   color: #94a3b8;
 }
 
+/* 求人カードメモ行 */
+.job-card-memo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 32px;
+}
+
+.job-card-memo:hover {
+  background: #e2e8f0;
+}
+
+.job-card-memo.editing {
+  background: #fff;
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+.memo-edit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.job-card-memo:hover .memo-edit-icon {
+  color: #6366f1;
+}
+
+.memo-text {
+  flex: 1;
+  font-size: 13px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.memo-text.memo-placeholder {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.memo-edit-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  padding: 0;
+  line-height: 1.4;
+}
+
+.memo-edit-input::placeholder {
+  color: #94a3b8;
+  font-style: italic;
+}
+
 .job-card-actions {
   display: flex;
   gap: 8px;
