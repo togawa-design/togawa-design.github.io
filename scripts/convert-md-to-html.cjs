@@ -196,18 +196,19 @@ function convertMdToHtml(mdContent, title, relativePath) {
     .mermaid:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .mermaid::after { content: '🔍 クリックで拡大'; position: absolute; bottom: 5px; right: 10px; font-size: 0.75em; color: #999; opacity: 0; transition: opacity 0.2s; }
     .mermaid:hover::after { opacity: 1; }
-    .mermaid-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
+    .mermaid-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
     .mermaid-modal.active { display: flex; }
-    .mermaid-modal-content { background: white; padding: 60px 50px 70px; border-radius: 12px; max-width: 95vw; max-height: 95vh; overflow: auto; position: relative; min-width: 60vw; min-height: 50vh; display: flex; justify-content: center; align-items: center; }
-    .mermaid-modal-diagram { transform-origin: center center; transition: transform 0.2s ease; }
-    .mermaid-modal-diagram svg { max-width: none !important; }
-    .mermaid-modal-close { position: absolute; top: 15px; right: 20px; font-size: 32px; cursor: pointer; color: #666; z-index: 10; line-height: 1; }
+    .mermaid-modal-content { background: white; border-radius: 8px; width: 98vw; height: 96vh; overflow: auto; position: relative; display: flex; flex-direction: column; }
+    .mermaid-modal-scroll { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
+    .mermaid-modal-diagram { transform-origin: top center; transition: transform 0.15s ease; display: inline-block; }
+    .mermaid-modal-diagram svg { max-width: none !important; display: block; }
+    .mermaid-modal-close { position: absolute; top: 12px; right: 16px; font-size: 28px; cursor: pointer; color: #666; z-index: 10; line-height: 1; }
     .mermaid-modal-close:hover { color: #333; }
-    .mermaid-modal-controls { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; background: #f5f5f5; padding: 6px 12px; border-radius: 20px; }
-    .mermaid-modal-btn { width: 32px; height: 32px; border: none; background: #fff; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .mermaid-modal-btn:hover { background: #e0e0e0; }
-    .mermaid-modal-zoom { font-size: 14px; min-width: 50px; text-align: center; color: #333; font-weight: 500; }
-    .mermaid-modal-hint { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); color: #666; font-size: 0.85em; }
+    .mermaid-modal-controls { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.95); padding: 8px 16px; border-radius: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
+    .mermaid-modal-btn { width: 36px; height: 36px; border: none; background: #f0f0f0; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .mermaid-modal-btn:hover { background: #ddd; }
+    .mermaid-modal-zoom { font-size: 14px; min-width: 60px; text-align: center; color: #333; font-weight: 600; }
+    .mermaid-modal-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); color: #888; font-size: 0.8em; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 12px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
@@ -217,10 +218,11 @@ function convertMdToHtml(mdContent, title, relativePath) {
       // モーダル要素を作成
       const modal = document.createElement('div');
       modal.className = 'mermaid-modal';
-      modal.innerHTML = '<div class="mermaid-modal-content"><span class="mermaid-modal-close">&times;</span><div class="mermaid-modal-controls"><button class="mermaid-modal-btn" id="zoom-out">−</button><span class="mermaid-modal-zoom" id="zoom-level">100%</span><button class="mermaid-modal-btn" id="zoom-in">+</button><button class="mermaid-modal-btn" id="zoom-reset">↺</button></div><div class="mermaid-modal-diagram"></div><div class="mermaid-modal-hint">スクロールでも拡大縮小可能 | Escで閉じる</div></div>';
+      modal.innerHTML = '<div class="mermaid-modal-content"><span class="mermaid-modal-close">&times;</span><div class="mermaid-modal-controls"><button class="mermaid-modal-btn" id="zoom-out">−</button><span class="mermaid-modal-zoom" id="zoom-level">100%</span><button class="mermaid-modal-btn" id="zoom-in">+</button><button class="mermaid-modal-btn" id="zoom-reset">↺</button></div><div class="mermaid-modal-scroll"><div class="mermaid-modal-diagram"></div></div><div class="mermaid-modal-hint">ドラッグでスクロール | Ctrl+ホイールで拡大縮小 | Escで閉じる</div></div>';
       document.body.appendChild(modal);
 
-      const modalContent = modal.querySelector('.mermaid-modal-diagram');
+      const modalScroll = modal.querySelector('.mermaid-modal-scroll');
+      const modalDiagram = modal.querySelector('.mermaid-modal-diagram');
       const closeBtn = modal.querySelector('.mermaid-modal-close');
       const zoomInBtn = modal.querySelector('#zoom-in');
       const zoomOutBtn = modal.querySelector('#zoom-out');
@@ -228,13 +230,13 @@ function convertMdToHtml(mdContent, title, relativePath) {
       const zoomLevelDisplay = modal.querySelector('#zoom-level');
 
       let currentZoom = 1;
-      const minZoom = 0.5;
-      const maxZoom = 3;
+      const minZoom = 0.25;
+      const maxZoom = 5;
       const zoomStep = 0.25;
 
       function updateZoom(newZoom) {
         currentZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
-        modalContent.style.transform = 'scale(' + currentZoom + ')';
+        modalDiagram.style.transform = 'scale(' + currentZoom + ')';
         zoomLevelDisplay.textContent = Math.round(currentZoom * 100) + '%';
       }
 
@@ -242,11 +244,13 @@ function convertMdToHtml(mdContent, title, relativePath) {
       zoomOutBtn.addEventListener('click', function(e) { e.stopPropagation(); updateZoom(currentZoom - zoomStep); });
       zoomResetBtn.addEventListener('click', function(e) { e.stopPropagation(); updateZoom(1); });
 
-      // マウスホイールでズーム
-      modal.querySelector('.mermaid-modal-content').addEventListener('wheel', function(e) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
-        updateZoom(currentZoom + delta);
+      // Ctrl+ホイールでズーム、通常ホイールはスクロール
+      modalScroll.addEventListener('wheel', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+          updateZoom(currentZoom + delta);
+        }
       });
 
       // Mermaidクリックで拡大
@@ -255,19 +259,21 @@ function convertMdToHtml(mdContent, title, relativePath) {
           const svg = el.querySelector('svg');
           if (svg) {
             const clone = svg.cloneNode(true);
-            modalContent.innerHTML = '';
-            modalContent.appendChild(clone);
+            modalDiagram.innerHTML = '';
+            modalDiagram.appendChild(clone);
             currentZoom = 1;
             updateZoom(1);
             modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
           }
         });
       });
 
       // モーダルを閉じる
-      closeBtn.addEventListener('click', function() { modal.classList.remove('active'); });
-      modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
-      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') modal.classList.remove('active'); });
+      function closeModal() { modal.classList.remove('active'); document.body.style.overflow = ''; }
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
     });
   </script>
 </head>
