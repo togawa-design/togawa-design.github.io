@@ -6,18 +6,22 @@
 
 ---
 
+*最終更新: 2026-02-14*
+
+---
+
 ## 認証方式
 
 ### 1. Firebase Authentication（推奨・新規ユーザー）
 
-```
-┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
-│   クライアント   │────▶│  Firebase Auth   │────▶│   ID Token   │
-└─────────────┘     └──────────────────┘     └─────────────┘
-                                                    │
-                    ┌──────────────────┐            │
-                    │  Cloud Functions │◀───────────┘
-                    └──────────────────┘
+```mermaid
+flowchart LR
+    Client["クライアント"] --> FA["Firebase Auth"]
+    FA --> Token["ID Token"]
+    Token --> CF["Cloud Functions"]
+
+    style FA fill:#ffca28,color:#333
+    style Token fill:#c8e6c9
 ```
 
 **対応プロバイダ:**
@@ -32,14 +36,15 @@
 
 ### 2. レガシー認証（既存ユーザー・移行中）
 
-```
-┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
-│   クライアント   │────▶│  legacyLogin API │────▶│  Firestore   │
-└─────────────┘     └──────────────────┘     └─────────────┘
-       │                                            │
-       │            ┌──────────────────┐            │
-       └───────────▶│  sessionStorage  │◀───────────┘
-                    └──────────────────┘
+```mermaid
+flowchart TB
+    Client["クライアント"] --> API["legacyLogin API"]
+    API --> FS["Firestore"]
+    FS --> Session["sessionStorage"]
+    Client --> Session
+
+    style API fill:#f0ad4e,color:#333
+    style FS fill:#ffca28,color:#333
 ```
 
 **フロー:**

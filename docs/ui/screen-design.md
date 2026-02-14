@@ -4,6 +4,8 @@
 
 期間工・期間従業員専門の求人情報サイト。求職者向けのフロントエンド画面と、企業向けの管理画面で構成。
 
+*最終更新: 2026-02-14*
+
 ---
 
 ## 画面一覧
@@ -15,19 +17,18 @@
 | P-001 | トップページ | index.html | / | 求人検索・一覧表示 |
 | P-002 | 求人一覧 | jobs.html | /jobs.html | 全求人の一覧・絞り込み |
 | P-003 | 求人詳細 | job-detail.html | /job-detail.html?company={id}&job={id} | 求人の詳細情報・応募フォーム |
-| P-004 | 企業ページ | company.html | /company.html?id={domain} | 企業情報・求人一覧 |
-| P-005 | 地域検索 | location.html | /location.html?pref={pref} | 地域別求人検索 |
-| P-006 | LP（ランディングページ） | lp.html | /lp.html?id={domain} | 企業専用LP |
-| P-007 | マイページ | mypage.html | /mypage.html | ユーザー情報・応募履歴 |
+| P-004 | 会社一覧 | company.html | /company.html | 掲載会社の一覧 |
+| P-005 | 会社採用ページ | company-recruit.html | /company-recruit.html?id={domain} | 会社の採用情報ページ |
+| P-006 | 地域検索 | location.html | /location.html?prefecture={pref} | 地域別求人検索 |
+| P-007 | LP（ランディングページ） | lp.html | /lp.html?j={domain_jobId} | 求人専用LP |
+| P-008 | マイページ | mypage.html | /mypage.html | お気に入り・応募履歴 |
 
 ### 2. 管理画面（企業・運営者向け）
 
 | 画面ID | 画面名 | ファイル | URL | 概要 |
 |--------|--------|----------|-----|------|
-| A-001 | 管理ダッシュボード | admin.html | /admin.html | 企業選択・各種設定 |
-| A-002 | 求人管理 | job-manage.html | /job-manage.html?company={domain} | 求人CRUD・アクセス解析 |
-| A-003 | 応募者管理 | applicants.html | /applicants.html | 応募者一覧・ステータス管理 |
-| A-004 | 企業情報編集 | company-edit.html | /company-edit.html?id={domain} | 企業情報・LP設定 |
+| A-001 | 管理ダッシュボード | admin.html | /admin.html | 統合管理画面（SPA） |
+| A-002 | 応募者管理 | applicants.html | /applicants.html | 応募者一覧・ステータス管理（スタンドアロン） |
 
 ---
 
@@ -38,33 +39,36 @@
 **目的**: サイトの入口。求人検索と主要求人の表示
 
 **レイアウト構成**:
-```
-┌─────────────────────────────────────┐
-│ ヘッダー（ロゴ・ナビ・LINE相談）     │
-├─────────────────────────────────────┤
-│ ヒーローセクション                   │
-│ ・キャッチコピー                     │
-│ ・統計情報（求人数・掲載企業数等）   │
-├─────────────────────────────────────┤
-│ 検索セクション                       │
-│ ・地域から探す                       │
-│ ・メーカーから探す                   │
-│ ・入社日から探す                     │
-├─────────────────────────────────────┤
-│ 求人一覧セクション                   │
-│ ・求人カード（グリッド表示）         │
-│ ・もっと見るボタン                   │
-├─────────────────────────────────────┤
-│ コンテンツセクション                 │
-│ ・漫画で分かる期間工                 │
-│ ・期間工ガイド等                     │
-├─────────────────────────────────────┤
-│ 特徴セクション                       │
-├─────────────────────────────────────┤
-│ CTAセクション                        │
-├─────────────────────────────────────┤
-│ フッター                             │
-└─────────────────────────────────────┘
+
+```mermaid
+flowchart TB
+    subgraph Layout["トップページ レイアウト"]
+        direction TB
+        Header["ヘッダー<br/>ロゴ・ナビ・LINE相談"]
+        Hero["ヒーローセクション<br/>キャッチコピー・統計情報<br/>（求人数・掲載企業数等）"]
+        Search["検索セクション"]
+        Jobs["求人一覧セクション<br/>求人カード（グリッド表示）<br/>もっと見るボタン"]
+        Content["コンテンツセクション<br/>漫画で分かる期間工・ガイド等"]
+        Features["特徴セクション"]
+        CTA["CTAセクション"]
+        Footer["フッター"]
+
+        Header --> Hero --> Search --> Jobs --> Content --> Features --> CTA --> Footer
+    end
+
+    subgraph SearchDetail["検索セクション詳細"]
+        direction LR
+        S1["地域から探す"]
+        S2["メーカーから探す"]
+        S3["入社日から探す"]
+    end
+
+    Search -.-> SearchDetail
+
+    style Header fill:#4a90d9,color:#fff
+    style Hero fill:#5cb85c,color:#fff
+    style CTA fill:#d9534f,color:#fff
+    style Footer fill:#333,color:#fff
 ```
 
 **主要コンポーネント**:
@@ -73,7 +77,7 @@
 - 統計カード: 数値・ラベル
 
 **データソース**:
-- Googleスプレッドシート（会社一覧・求人一覧）
+- Firebase Firestore（companies, jobs コレクション）
 
 ---
 
@@ -82,43 +86,57 @@
 **目的**: 求人の詳細情報表示と応募受付
 
 **レイアウト構成**:
-```
-┌─────────────────────────────────────┐
-│ ヘッダー                             │
-├─────────────────────────────────────┤
-│ パンくずリスト                       │
-├─────────────────────────────────────┤
-│ ヒーローセクション                   │
-│ ・会社名タグ                         │
-│ ・求人タイトル                       │
-│ ・勤務地                             │
-│ ・月収例・特典総額                   │
-│ ・応募ボタン                         │
-│ ・求人画像                           │
-├─────────────────────────────────────┤
-│ ポイントセクション                   │
-│ ・特典総額・月収例・雇用形態         │
-│ ・検索タグ一覧                       │
-├─────────────────────────────────────┤
-│ 募集要項セクション                   │
-│ ・仕事内容                           │
-│ ・給与                               │
-│ ・応募資格                           │
-│ ・勤務時間                           │
-│ ・休日・休暇                         │
-│ ・待遇・福利厚生                     │
-│ ・勤務地                             │
-├─────────────────────────────────────┤
-│ 応募セクション                       │
-│ ・応募ボタン                         │
-│ ・企業情報リンク                     │
-├─────────────────────────────────────┤
-│ 関連求人セクション                   │
-├─────────────────────────────────────┤
-│ CTAセクション                        │
-├─────────────────────────────────────┤
-│ フッター                             │
-└─────────────────────────────────────┘
+
+```mermaid
+flowchart TB
+    subgraph Layout["求人詳細 レイアウト"]
+        direction TB
+        Header["ヘッダー"]
+        Bread["パンくずリスト"]
+        HeroSection["ヒーローセクション"]
+        Points["ポイントセクション"]
+        Details["募集要項セクション"]
+        Apply["応募セクション"]
+        Related["関連求人セクション"]
+        CTA["CTAセクション"]
+        Footer["フッター"]
+
+        Header --> Bread --> HeroSection --> Points --> Details --> Apply --> Related --> CTA --> Footer
+    end
+
+    subgraph HeroContent["ヒーローセクション詳細"]
+        H1["会社名タグ"]
+        H2["求人タイトル"]
+        H3["勤務地"]
+        H4["月収例・特典総額"]
+        H5["応募ボタン"]
+        H6["求人画像"]
+    end
+
+    subgraph PointsContent["ポイントセクション詳細"]
+        P1["特典総額"]
+        P2["月収例"]
+        P3["雇用形態"]
+        P4["検索タグ一覧"]
+    end
+
+    subgraph DetailsContent["募集要項セクション詳細"]
+        D1["仕事内容"]
+        D2["給与"]
+        D3["応募資格"]
+        D4["勤務時間"]
+        D5["休日・休暇"]
+        D6["待遇・福利厚生"]
+        D7["勤務地"]
+    end
+
+    HeroSection -.-> HeroContent
+    Points -.-> PointsContent
+    Details -.-> DetailsContent
+
+    style Header fill:#4a90d9,color:#fff
+    style Apply fill:#d9534f,color:#fff
+    style Footer fill:#333,color:#fff
 ```
 
 **モーダル**:
@@ -131,108 +149,133 @@
 
 **データソース**:
 - URLパラメータ: company, job
-- Googleスプレッドシート（求人データ）
+- Firebase Firestore（求人データ）
 - Firebase Firestore（応募データ保存）
+
+---
+
+### P-005: 会社採用ページ (company-recruit.html)
+
+**目的**: 会社の採用情報を一覧表示
+
+**レイアウト構成**:
+
+```mermaid
+flowchart TB
+    subgraph Layout["会社採用ページ レイアウト"]
+        direction TB
+        Header["ヘッダー<br/>（会社ロゴ・ナビ）"]
+        Hero["ヒーローセクション<br/>会社名・キャッチコピー・背景画像"]
+        About["会社紹介セクション"]
+        Jobs["求人一覧セクション<br/>会社の全求人カード"]
+        Benefits["福利厚生セクション"]
+        Gallery["ギャラリーセクション"]
+        Access["アクセスセクション"]
+        CTA["CTAセクション"]
+        Footer["フッター<br/>（会社情報）"]
+
+        Header --> Hero --> About --> Jobs --> Benefits --> Gallery --> Access --> CTA --> Footer
+    end
+
+    style Header fill:#4a90d9,color:#fff
+    style Hero fill:#5cb85c,color:#fff
+    style CTA fill:#d9534f,color:#fff
+```
+
+**データソース**:
+- URLパラメータ: id（会社ドメイン）
+- Firebase Firestore（companies/{domain}/recruitSettings）
+
+---
+
+### P-007: LP (lp.html)
+
+**目的**: 求人専用のランディングページ（広告用）
+
+**レイアウト構成**:
+
+```mermaid
+flowchart TB
+    subgraph Layout["LP レイアウト"]
+        direction TB
+        Hero["ヒーローセクション<br/>メインビジュアル・キャッチコピー・CTA"]
+        Point["ポイントセクション<br/>6つの訴求ポイント"]
+        Detail["詳細セクション<br/>求人詳細情報"]
+        Gallery["ギャラリーセクション<br/>職場写真"]
+        Testimonial["社員の声セクション"]
+        FAQ["FAQセクション"]
+        CTA["CTAセクション<br/>応募ボタン"]
+        FloatCTA["フローティングCTA<br/>（スクロール時表示）"]
+
+        Hero --> Point --> Detail --> Gallery --> Testimonial --> FAQ --> CTA
+    end
+
+    style Hero fill:#5cb85c,color:#fff
+    style CTA fill:#d9534f,color:#fff
+    style FloatCTA fill:#d9534f,color:#fff
+```
+
+**セクション表示設定**:
+- 各セクションの表示/非表示切り替え可能
+- セクション順序のカスタマイズ可能
+- デザインパターン選択（shinrai/athome/cute/modan/kenchiku）
+
+**データソース**:
+- URLパラメータ: j（{domain}_{jobId}）
+- Firebase Firestore（companies/{domain}/lpSettings/{jobId}）
 
 ---
 
 ### A-001: 管理ダッシュボード (admin.html)
 
-**目的**: 企業選択と各種管理機能へのアクセス
+**目的**: 統合管理画面（SPA構成）
 
-**アクセス制御**: Firebase Authentication（ログイン必須）
-
-**レイアウト構成**:
-```
-┌─────────────────────────────────────┐
-│ ヘッダー（ロゴ・ログアウト）         │
-├─────────────────────────────────────┤
-│ 企業選択セクション                   │
-│ ・ドロップダウン or カード選択       │
-├─────────────────────────────────────┤
-│ 選択中の企業情報                     │
-│ ・企業名・ドメイン                   │
-│ ・クイックアクション                 │
-│   - 求人管理                         │
-│   - 応募者管理                       │
-│   - 企業情報編集                     │
-│   - LP編集                           │
-├─────────────────────────────────────┤
-│ 統計サマリー                         │
-│ ・求人数・応募数・今月の応募         │
-└─────────────────────────────────────┘
-```
-
----
-
-### A-002: 求人管理 (job-manage.html)
-
-**目的**: 求人のCRUD操作・アクセス解析・レポート生成
-
-**アクセス制御**: Firebase Authentication + 企業権限
+**アクセス制御**: Firebase Authentication（Google OAuth / Email認証）
 
 **レイアウト構成**:
+
+```mermaid
+flowchart LR
+    subgraph Layout["管理画面 レイアウト"]
+        subgraph Sidebar["サイドバー"]
+            direction TB
+            Nav1["概要"]
+            Nav2["会社管理<br/>（Admin専用）"]
+            Nav3["求人一覧<br/>（Admin専用）"]
+            Nav4["求人管理"]
+            Nav5["LP設定"]
+            Nav6["採用ページ設定"]
+            Nav7["アナリティクス"]
+            Nav8["会社ユーザー管理"]
+            Nav9["設定<br/>（Admin専用）"]
+        end
+
+        subgraph Main["メインコンテンツ"]
+            direction TB
+            Content["選択中のセクション"]
+        end
+    end
+
+    Sidebar --> Main
+
+    style Nav1 fill:#4a90d9,color:#fff
+    style Nav4 fill:#5cb85c,color:#fff
+    style Nav7 fill:#f0ad4e,color:#333
 ```
-┌──────────┬──────────────────────────┐
-│ サイドバー │ メインコンテンツ         │
-│          │                          │
-│ ・管理画面 │ [求人一覧セクション]     │
-│ ・求人一覧 │ ・フィルター・検索       │
-│ ・解析    │ ・求人テーブル           │
-│ ・応募者  │ ・CSV/インポート         │
-│ ・レポート │                          │
-│          │ [アクセス解析セクション]   │
-│          │ ・期間選択               │
-│          │ ・PV/ユーザー数グラフ    │
-│          │ ・求人別アクセス         │
-│          │ ・流入元分析             │
-│          │ ・改善アドバイス         │
-│          │                          │
-│          │ [応募者管理セクション]     │
-│          │ ・応募者テーブル         │
-│          │ ・ステータス管理         │
-│          │ ・詳細モーダル           │
-│          │                          │
-│          │ [レポートセクション]       │
-│          │ ・期間選択               │
-│          │ ・応募サマリー           │
-│          │ ・求人別パフォーマンス   │
-│          │ ・流入元分析             │
-│          │ ・担当者別対応状況       │
-│          │ ・CSV/Excelダウンロード  │
-└──────────┴──────────────────────────┘
-```
 
-**モーダル**:
-- 求人編集モーダル
-- CSVインポートモーダル
-- 応募者詳細モーダル
+**セクション詳細**:
 
-**データソース**:
-- Googleスプレッドシート（求人データ）
-- Firebase Firestore（応募データ）
-- Google Analytics 4（アクセスデータ）
-
----
-
-### A-004: 企業情報編集 (company-edit.html)
-
-**目的**: 企業情報とLP設定の編集
-
-**セクション構成**:
-1. 基本情報
-   - 会社名・住所・勤務地
-   - 画像URL
-   - 表示設定
-2. LP設定
-   - ヒーロータイトル・サブタイトル
-   - メインビジュアル
-   - セクション表示設定
-   - カスタムCSS
-3. 応募フォーム設定
-   - カスタム質問項目の追加・編集
-4. デザインパターン選択
-   - standard / colorful / minimal
+| セクション | Admin | 会社ユーザー | 機能 |
+|-----------|:-----:|:-----------:|------|
+| 概要 | ○ | ○ | PV/UV/応募数サマリー、グラフ |
+| 会社管理 | ○ | × | 会社CRUD、求人管理への遷移 |
+| 求人一覧 | ○ | × | 全社横断の求人一覧、フィルタ |
+| 求人管理 | ○ | ○ | 求人CRUD、分析、応募者管理 |
+| LP設定 | ○ | ○ | セクション編集、プレビュー |
+| 採用ページ設定 | ○ | ○ | セクション編集、プレビュー |
+| アナリティクス | ○ | △ | 詳細分析（会社ユーザーは自社のみ） |
+| 会社ユーザー管理 | ○ | ○ | ユーザー追加/編集/削除 |
+| 設定 | ○ | × | システム設定、管理者管理 |
 
 ---
 
@@ -250,12 +293,23 @@
 - コピーライト
 
 ### 求人カード
-- 企業名
-- 求人タイトル
-- 勤務地
-- 月収例 / 特典総額
-- 特徴タグ
-- 応募ボタン
+
+```mermaid
+flowchart LR
+    subgraph Card["求人カード"]
+        direction TB
+        Image["求人画像"]
+        Company["企業名"]
+        Title["求人タイトル"]
+        Location["勤務地"]
+        Salary["月収例 / 特典総額"]
+        Tags["特徴タグ"]
+        Button["応募ボタン"]
+    end
+
+    style Image fill:#f5f5f5
+    style Button fill:#d9534f,color:#fff
+```
 
 ### モーダル
 - オーバーレイ背景
@@ -291,36 +345,45 @@
 ### 認証方式
 - Firebase Authentication
 - メール/パスワード認証
-- Googleアカウント認証
+- Googleアカウント認証（Admin用）
 
 ### 権限レベル
 | レベル | 説明 | アクセス可能画面 |
 |--------|------|------------------|
 | 一般ユーザー | 求職者 | 公開画面・マイページ |
-| 企業管理者 | 担当企業の管理 | 管理画面（担当企業のみ） |
-| システム管理者 | 全企業の管理 | 全画面 |
+| 会社ユーザー (company_user) | 一般スタッフ | 管理画面（自社データのみ・制限あり） |
+| 会社管理者 (company_admin) | 担当企業の管理 | 管理画面（自社データのみ） |
+| システム管理者 (admin) | 全企業の管理 | 全画面 |
 
 ---
 
 ## 外部連携
 
-### Google Spreadsheet
-- 会社一覧マスタ
-- 各企業の求人データ
-- GAS経由でのデータ更新
-
 ### Firebase
-- Authentication: ユーザー認証
-- Firestore: 応募データ・ユーザーデータ
+- **Authentication**: ユーザー認証（Google OAuth / Email）
+- **Firestore**: 全データ保存（会社・求人・応募・ユーザー等）
+- **Storage**: 画像保存（Cloudinaryへ移行済み）
 
-### Google Analytics 4
-- アクセス解析データ取得
-- GA4 Data API経由
+### Cloud Functions
+- **アナリティクス**: GA4 Data API連携
+- **メール**: SendGrid連携
+- **カレンダー**: Google Calendar API連携
+- **給与相場**: e-Stat API連携
 
-### LINE
-- LINE公式アカウントへの誘導
-- 相談受付
+### 外部サービス
+| サービス | 用途 |
+|---------|------|
+| Google Analytics 4 | アクセス解析 |
+| Cloudinary | 画像CDN |
+| SendGrid | メール送信 |
+| LINE | 公式アカウント誘導 |
 
 ---
 
-*最終更新: 2026-01-26*
+## 関連ドキュメント
+
+- [画面遷移図](./screen-flow.md)
+- [機能一覧](./feature-list.md)
+- [分析・解析内容まとめ](./analytics-summary.md)
+- [Firestore DB構成図](../system/firestore-schema.md)
+- [詳細設計書](../system/detailed-design.md)

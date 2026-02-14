@@ -111,67 +111,21 @@ flowchart LR
 
 ## Firestoreコレクション構成
 
-```mermaid
-erDiagram
-    companies ||--o{ jobs : "has"
-    companies ||--o{ company_users : "has"
-    companies ||--o{ lp_settings : "has"
-    companies ||--o{ recruit_page_settings : "has"
-    jobs ||--o{ applicants : "receives"
-    admin_users ||--|| firebase_auth : "uses"
+データベース構成の詳細は **[Firestore DB構成図](./firestore-schema.md)** を参照してください。
 
-    companies {
-        string domain PK
-        string name
-        string logo
-        object benefits
-        timestamp createdAt
-    }
-
-    jobs {
-        string id PK
-        string companyDomain FK
-        string title
-        string status
-        object salary
-        array areas
-        timestamp createdAt
-    }
-
-    applicants {
-        string id PK
-        string jobId FK
-        string name
-        string email
-        string status
-        timestamp appliedAt
-    }
-
-    company_users {
-        string username PK
-        string companyDomain FK
-        string password
-        boolean isActive
-    }
-
-    admin_users {
-        string uid PK
-        string email
-        string role
-    }
-
-    lp_settings {
-        string companyDomain PK
-        array sections
-        object theme
-    }
-
-    recruit_page_settings {
-        string companyDomain PK
-        object header
-        array sections
-    }
-```
+主要コレクション:
+- `companies` - 会社情報（サブコレクション: jobs, lpSettings, recruitSettings）
+- `admin_users` - 管理者ユーザー
+- `company_users` - 会社ユーザー
+- `applications` - 応募データ
+- `users` - 一般ユーザー（求職者）
+- `messages` - メッセージ
+- `notifications` - 通知
+- `interviews` - 面談スケジュール
+- `favorites` - お気に入り求人
+- `announcements` - お知らせ
+- `settings` - 設定（担当者リスト等）
+- `page_analytics_events` - アナリティクスイベント
 
 ## 概要
 
@@ -207,18 +161,27 @@ src/pages/
 src/features/
 ├── admin/                          [admin.html 用モジュール群]
 │   ├── index.js                    メインロジック・初期化
-│   ├── auth.js                     認証・権限管理
-│   ├── config.js                   設定値
+│   ├── auth.js                     認証・権限管理（Firebase Auth対応）
+│   ├── config.js                   設定値・環境変数
 │   ├── admin-state.js              状態管理
+│   ├── section-loader.js           セクション動的読み込み
 │   ├── company-manager.js          会社管理（admin専用）
-│   ├── job-listings.js             求人一覧（会社選択→求人編集へ遷移）
+│   ├── company-edit-embedded.js    会社編集（埋め込み型）
+│   ├── job-listings.js             求人一覧（全社横断・フィルタ・メモ機能）
 │   ├── job-manage-embedded.js      求人編集（埋め込み型）
 │   ├── recruit-settings.js         採用ページ設定
 │   ├── lp-settings.js              LP設定
-│   ├── analytics.js                アナリティクス
+│   ├── lp-section-manager.js       LPセクション管理（ドラッグ&ドロップ）
+│   ├── lp-templates.js             LPテンプレート
+│   ├── analytics.js                アナリティクス（GA4 + 独自）
+│   ├── page-analytics.js           ページアナリティクス
+│   ├── announcements.js            お知らせ管理
 │   ├── job-feed-generator.js       Indeed/Google求人フィード生成
-│   ├── image-uploader.js           画像アップロード
-│   └── company-edit-embedded.js    会社編集（埋め込み型）
+│   ├── image-uploader.js           画像アップロード・圧縮
+│   ├── data-migration.js           データ移行ツール
+│   ├── lp-migration.js             LP移行ツール
+│   ├── date-picker.js              日付選択UI
+│   └── csv-utils.js                CSV出力ユーティリティ
 │
 ├── job-manage/                     [job-manage.html 用モジュール群]
 │   ├── index.js                    メインロジック・初期化
@@ -232,8 +195,51 @@ src/features/
 │   ├── recruit-settings.js         採用ページ設定
 │   └── settings.js                 アカウント設定
 │
-└── applicants/                     [応募者管理（共通）]
-    └── index.js                    応募者一覧・詳細
+├── applicants/                     [応募者管理]
+│   └── index.js                    応募者一覧・詳細
+│
+├── notifications/                  [通知機能]
+│   └── index.js                    通知管理
+│
+├── calendar/                       [カレンダー連携]
+│   └── index.js                    Google Calendar連携
+│
+├── lp/                             [LP機能]
+│   ├── index.js                    LPページエントリーポイント
+│   ├── LPRenderer.js               LP表示レンダラー
+│   ├── LPEditor.js                 LPエディター
+│   └── sectionTypes.js             セクションタイプ定義
+│
+├── recruit-settings/               [採用ページ設定]
+│   ├── index.js                    採用ページ設定
+│   └── section-types.js            セクションタイプ定義
+│
+├── user-auth/                      [ユーザー認証]
+│   ├── index.js                    認証エントリーポイント
+│   ├── auth-service.js             認証サービス
+│   ├── auth-modal.js               認証モーダルUI
+│   └── auth-state.js               認証状態管理
+│
+├── mypage/                         [マイページ]
+│   └── index.js                    お気に入り・応募履歴
+│
+├── company/                        [会社ページ]
+│   └── index.js                    会社一覧表示
+│
+├── company-edit/                   [会社編集]
+│   └── index.js                    会社情報編集
+│
+├── home/                           [トップページ]
+│   └── index.js                    トップページ表示
+│
+├── jobs/                           [求人一覧]
+│   └── index.js                    求人検索・一覧
+│
+├── job-detail/                     [求人詳細]
+│   └── index.js                    求人詳細表示
+│
+└── location/                       [勤務地別求人]
+    └── index.js                    都道府県別求人
 ```
 
 ---
@@ -403,12 +409,15 @@ admin_users
 
 company_users
 ├── username: string      ログインID（ユニーク）
-├── password: string      パスワード（平文※要改善）
+├── password: string      パスワード（bcryptハッシュ）
 ├── companyDomain: string 所属会社ドメイン
-├── name: string          表示名
+├── email: string         メールアドレス（Firebase Auth連携用）
+├── firebaseUid: string   Firebase UID
+├── displayName: string   表示名
+├── role: string          ロール（company_admin/company_user）
 ├── isActive: boolean     アクティブ状態
 ├── createdAt: timestamp
-├── lastLogin: timestamp
+├── lastLoginAt: timestamp
 └── passwordChangedAt: timestamp
 ```
 
@@ -444,10 +453,11 @@ recruit_page_settings  採用ページ設定
 
 ## セキュリティ考慮事項
 
-| 項目 | 現状 | 推奨 |
+| 項目 | 現状 | 備考 |
 |-----|------|-----|
-| パスワード保存 | 平文 | bcrypt/scrypt でハッシュ化 |
-| 管理者認証 | ハードコード | Firebase Auth に統一 |
-| セッション管理 | sessionStorage | HttpOnly Cookie |
-| API権限検証 | フロントエンドのみ | Cloud Functions でも検証 |
-| Firestore Rules | 未設定 | コレクション単位で制限 |
+| パスワード保存 | bcryptハッシュ化 | Cloud Functions で処理 |
+| 管理者認証 | Firebase Auth + Google OAuth | admin_users コレクションで検証 |
+| 会社ユーザー認証 | Firebase Auth | company_users コレクションで検証 |
+| セッション管理 | sessionStorage + Firebase Auth | トークン自動更新 |
+| API権限検証 | Cloud Functions でトークン検証 | Firebase ID Token使用 |
+| Firestore Rules | コレクション単位で制限 | 自社データのみアクセス可能 |

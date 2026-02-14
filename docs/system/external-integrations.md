@@ -4,6 +4,8 @@
 
 本システムが連携している外部サービスの仕様を記載する。
 
+*最終更新: 2026-02-14*
+
 ---
 
 ## 連携サービス一覧
@@ -191,20 +193,15 @@ https://res.cloudinary.com/rikueco/image/upload/c_fill,w_200,h_200/v123/folder/i
 
 ### 認証フロー（OAuth 2.0）
 
-```
-┌─────────┐     ┌──────────────────┐     ┌─────────────┐
-│ ユーザー │────▶│ initiateCalendarAuth │────▶│ Google OAuth │
-└─────────┘     └──────────────────┘     └─────────────┘
-                                                │
-                ┌──────────────────┐            │
-                │calendarOAuthCallback│◀───────────┘
-                └──────────────────┘
-                        │
-                        ▼
-                ┌──────────────────┐
-                │ Firestore保存     │
-                │ (calendar_tokens) │
-                └──────────────────┘
+```mermaid
+flowchart TD
+    User["ユーザー"] --> InitAuth["initiateCalendarAuth"]
+    InitAuth --> Google["Google OAuth"]
+    Google --> Callback["calendarOAuthCallback"]
+    Callback --> FS["Firestore保存<br/>(calendar_tokens)"]
+
+    style Google fill:#4285f4,color:#fff
+    style FS fill:#ffca28,color:#333
 ```
 
 ### 環境変数
