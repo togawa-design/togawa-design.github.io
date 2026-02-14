@@ -142,15 +142,15 @@ function convertMdToHtml(mdContent, title, relativePath) {
 
   // Mermaidプレースホルダーを<div class="mermaid">に置換
   mermaidBlocks.forEach((code, index) => {
-    bodyHtml = bodyHtml.replace(
-      `MERMAID_PLACEHOLDER_${index}`,
-      `<div class="mermaid">\n${code}\n</div>`
-    );
-    // pタグで囲まれている場合も対応
-    bodyHtml = bodyHtml.replace(
-      `<p>MERMAID_PLACEHOLDER_${index}</p>`,
-      `<div class="mermaid">\n${code}\n</div>`
-    );
+    const placeholder = `MERMAID_PLACEHOLDER_${index}`;
+    const mermaidDiv = `<div class="mermaid">\n${code}\n</div>`;
+
+    // pタグで囲まれている場合を先に処理（より具体的なパターン優先）
+    bodyHtml = bodyHtml.replace(`<p>${placeholder}</p>`, mermaidDiv);
+    // pタグの中にある場合（部分一致）
+    bodyHtml = bodyHtml.replace(new RegExp(`<p>\\s*${placeholder}\\s*</p>`, 'g'), mermaidDiv);
+    // 単独のプレースホルダー
+    bodyHtml = bodyHtml.replace(placeholder, mermaidDiv);
   });
 
   // 相対パスからindex.htmlへのパスを計算
