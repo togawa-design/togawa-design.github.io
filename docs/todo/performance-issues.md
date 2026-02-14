@@ -12,4 +12,11 @@
 
 ## 対応済み
 
-（なし）
+### 1. アナリティクスAPI（funnel）のGA4リクエスト最適化
+- **対応日**: 2026-02-14
+- **対象ファイル**: `functions/index.js`
+- **変更内容**:
+  - 4回のGA4 APIリクエスト → 1回にまとめる
+  - `getEventCount`関数 → `getMultipleEventCounts`関数に置き換え
+  - `inListFilter`を使用して複数イベントを1リクエストで取得
+- **効果**: APIレスポンス時間の短縮（約4倍の高速化が期待）
