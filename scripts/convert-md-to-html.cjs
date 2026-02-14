@@ -192,12 +192,50 @@ function convertMdToHtml(mdContent, title, relativePath) {
     li { margin: 0.3em 0; }
     blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
     .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
-    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; cursor: pointer; transition: box-shadow 0.2s; position: relative; }
+    .mermaid:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .mermaid::after { content: '🔍 クリックで拡大'; position: absolute; bottom: 5px; right: 10px; font-size: 0.75em; color: #999; opacity: 0; transition: opacity 0.2s; }
+    .mermaid:hover::after { opacity: 1; }
+    .mermaid-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
+    .mermaid-modal.active { display: flex; }
+    .mermaid-modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 95vw; max-height: 95vh; overflow: auto; position: relative; }
+    .mermaid-modal-close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #666; z-index: 10; }
+    .mermaid-modal-close:hover { color: #333; }
+    .mermaid-modal-hint { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: #999; font-size: 0.85em; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+
+      // モーダル要素を作成
+      const modal = document.createElement('div');
+      modal.className = 'mermaid-modal';
+      modal.innerHTML = '<div class="mermaid-modal-content"><span class="mermaid-modal-close">&times;</span><div class="mermaid-modal-diagram"></div><div class="mermaid-modal-hint">クリックまたはEscキーで閉じる</div></div>';
+      document.body.appendChild(modal);
+
+      const modalContent = modal.querySelector('.mermaid-modal-diagram');
+      const closeBtn = modal.querySelector('.mermaid-modal-close');
+
+      // Mermaidクリックで拡大
+      document.querySelectorAll('.mermaid').forEach(function(el) {
+        el.addEventListener('click', function() {
+          const svg = el.querySelector('svg');
+          if (svg) {
+            const clone = svg.cloneNode(true);
+            clone.style.maxWidth = '100%';
+            clone.style.height = 'auto';
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+            modal.classList.add('active');
+          }
+        });
+      });
+
+      // モーダルを閉じる
+      closeBtn.addEventListener('click', function() { modal.classList.remove('active'); });
+      modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') modal.classList.remove('active'); });
     });
   </script>
 </head>
