@@ -304,9 +304,9 @@ const folder = `${ENV_PREFIX}/companies/${companyDomain}`;
 
 ## 関連ファイル
 
-- [.env.development](../.env.development) - 開発環境設定
-- [.env.production](../.env.production) - 本番環境設定
-- [src/shared/env-config.js](../src/shared/env-config.js) - 環境設定モジュール
-- [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) - CI/CD設定
-- [functions/add-admin.cjs](../functions/add-admin.cjs) - 管理者追加スクリプト
-- [functions/deploy-dev.sh](../functions/deploy-dev.sh) - 開発環境デプロイスクリプト
+- `.env.development` - 開発環境設定（gitignore対象）
+- `.env.production` - 本番環境設定（gitignore対象）
+- [src/shared/env-config.js](https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/shared/env-config.js) - 環境設定モジュール
+- [.github/workflows/deploy.yml](https://github.com/togawa-design/togawa-design.github.io/blob/develop/.github/workflows/deploy.yml) - CI/CD設定
+- [functions/add-admin.cjs](https://github.com/togawa-design/togawa-design.github.io/blob/develop/functions/add-admin.cjs) - 管理者追加スクリプト
+- [functions/deploy-dev.sh](https://github.com/togawa-design/togawa-design.github.io/blob/develop/functions/deploy-dev.sh) - 開発環境デプロイスクリプト

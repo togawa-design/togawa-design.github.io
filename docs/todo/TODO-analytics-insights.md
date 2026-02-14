@@ -184,7 +184,7 @@ SENDGRID_API_KEY=SG.xxxxx  # Phase 3で必要
 
 ## 関連ファイル
 
-- [src/features/admin/page-analytics.js](../src/features/admin/page-analytics.js) - アナリティクス表示モジュール
-- [src/shared/page-analytics.js](../src/shared/page-analytics.js) - フロントエンドトラッキング
-- [functions/index.js](../functions/index.js) - Cloud Functions
-- [admin.html](../admin.html) - 管理画面HTML
+- [src/features/admin/page-analytics.js](https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/features/admin/page-analytics.js) - アナリティクス表示モジュール
+- [src/shared/page-analytics.js](https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/shared/page-analytics.js) - フロントエンドトラッキング
+- [functions/index.js](https://github.com/togawa-design/togawa-design.github.io/blob/develop/functions/index.js) - Cloud Functions
+- [admin.html](https://github.com/togawa-design/togawa-design.github.io/blob/develop/admin.html) - 管理画面HTML

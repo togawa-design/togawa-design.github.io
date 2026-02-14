@@ -235,6 +235,6 @@ https://your-domain.web.app/company-recruit.html?domain=companyC&utm_source=inst
 
 | ファイル | 説明 |
 |----------|------|
-| [utm-tracking.js](../../src/shared/utm-tracking.js) | UTMトラッキング処理 |
-| [lp.js](../../src/pages/lp.js) | LP応募処理 |
+| [utm-tracking.js](https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/shared/utm-tracking.js) | UTMトラッキング処理 |
+| [lp.js](https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/pages/lp.js) | LP応募処理 |
 | [analytics-features-plan.md](../todo/analytics-features-plan.md) | 分析機能計画 |
