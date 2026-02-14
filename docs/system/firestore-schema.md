@@ -336,45 +336,68 @@ firestore/
 
 ## ER図
 
-```
-┌─────────────────┐       ┌─────────────────┐
-│   companies     │       │   admin_users   │
-│─────────────────│       │─────────────────│
-│ companyDomain   │       │ uid             │
-│ company         │       │ email           │
-│ showCompany     │       │ role            │
-└────────┬────────┘       └─────────────────┘
-         │
-         │ 1:N
-         ▼
-┌─────────────────┐       ┌─────────────────┐
-│     jobs        │       │  company_users  │
-│─────────────────│       │─────────────────│
-│ jobId           │       │ username        │
-│ companyDomain   │◄──────│ companyDomain   │
-│ title           │       │ password        │
-│ visible         │       └─────────────────┘
-└────────┬────────┘
-         │
-         │ 1:1
-         ▼
-┌─────────────────┐       ┌─────────────────┐
-│   lpSettings    │       │ recruitSettings │
-│─────────────────│       │─────────────────│
-│ jobId           │       │ companyDomain   │
-│ sections        │       │ sections        │
-│ designPattern   │       │ designPattern   │
-└─────────────────┘       └─────────────────┘
+```mermaid
+erDiagram
+    companies ||--o{ jobs : "1:N サブコレクション"
+    companies ||--o{ lpSettings : "1:N サブコレクション"
+    companies ||--|| recruitSettings : "1:1 サブコレクション"
+    companies ||--o{ assignees : "1:N サブコレクション"
+    companies ||--o{ company_users : "1:N 参照"
+    jobs ||--|| lpSettings : "1:1 jobIdで紐付け"
+    jobs ||--o{ applications : "1:N 参照"
 
-┌─────────────────┐       ┌─────────────────┐
-│  applications   │       │     users       │
-│─────────────────│       │─────────────────│
-│ applicationId   │       │ uid             │
-│ companyDomain   │       │ email           │
-│ jobId           │       │ favorites[]     │
-│ applicant{}     │       │ profile{}       │
-│ status          │       └─────────────────┘
-└─────────────────┘
+    companies {
+        string companyDomain PK
+        string company
+        boolean showCompany
+    }
+
+    jobs {
+        string jobId PK
+        string companyDomain FK
+        string title
+        boolean visible
+    }
+
+    lpSettings {
+        string jobId PK
+        array sections
+        string designPattern
+    }
+
+    recruitSettings {
+        string main PK
+        array sections
+        string designPattern
+    }
+
+    company_users {
+        string username PK
+        string companyDomain FK
+        string password
+        string role
+    }
+
+    admin_users {
+        string uid PK
+        string email
+        string role
+    }
+
+    applications {
+        string applicationId PK
+        string companyDomain FK
+        string jobId FK
+        object applicant
+        string status
+    }
+
+    users {
+        string uid PK
+        string email
+        array favorites
+        object profile
+    }
 ```
 
 ---
@@ -393,6 +416,6 @@ firestore/
 ---
 
 ## 関連ドキュメント
-- [環境構築手順](./setup.md)
-- [画面遷移図](./screen-flow.md)
+- [環境構築手順](../development/setup.md)
+- [画面遷移図](../ui/screen-flow.md)
 - [詳細設計書](./detailed-design.md)
