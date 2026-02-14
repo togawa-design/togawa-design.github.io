@@ -342,10 +342,10 @@ function renderJobCard(job) {
   }[status];
 
   const imageUrl = job.jobLogo || job.imageUrl || '';
-  const hasMemo = job.memo && job.memo.trim();
+  const memoText = job.memo?.trim() || '';
 
   return `
-    <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-company-domain="${escapeHtml(job.companyDomain || '')}" ${hasMemo ? `data-memo="${escapeHtml(job.memo)}"` : ''}>
+    <div class="job-listing-card" data-job-id="${escapeHtml(job.id || '')}" data-company-domain="${escapeHtml(job.companyDomain || '')}" data-memo="${escapeHtml(memoText)}">
       <div class="job-card-image">
         ${imageUrl
           ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(job.title || '')}" onerror="this.style.display='none';this.parentElement.classList.add('no-image')">`
@@ -365,9 +365,14 @@ function renderJobCard(job) {
           <span class="stat-item" title="応募数">📝 ${job.applicationCount || 0}</span>
           <span class="stat-item" title="閲覧数">👁 ${job.viewCount || 0}</span>
         </div>
+        <div class="job-card-memo" data-job-id="${escapeHtml(job.id || '')}" data-company-domain="${escapeHtml(job.companyDomain || '')}">
+          <span class="memo-edit-icon" title="メモを編集">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </span>
+          <span class="memo-text ${memoText ? '' : 'memo-placeholder'}">${memoText ? escapeHtml(memoText) : 'メモを追加...'}</span>
+        </div>
       </div>
       <div class="job-card-actions">
-        ${hasMemo ? `<button class="btn-job-action btn-memo-icon" data-tooltip="メモを表示"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H4.99c-1.11 0-1.98.89-1.98 2L3 19c0 1.1.88 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19v10z"/></svg></button>` : ''}
         <button class="btn-job-action btn-edit-job" data-tooltip="編集">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
         </button>
@@ -440,16 +445,11 @@ function setupJobCardEvents() {
     });
   });
 
-  // メモアイコン
-  document.querySelectorAll('.btn-memo-icon').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  // メモ行クリック（インライン編集）
+  document.querySelectorAll('.job-card-memo').forEach(memoEl => {
+    memoEl.addEventListener('click', (e) => {
       e.stopPropagation();
-      const card = btn.closest('.job-listing-card');
-      const memo = card?.dataset.memo;
-      const jobTitle = card?.querySelector('.job-card-title')?.textContent?.replace(/\s+/g, ' ').trim() || '求人';
-      if (memo) {
-        showMemoPopup(memo, jobTitle, btn);
-      }
+      startMemoEdit(memoEl);
     });
   });
 
@@ -516,73 +516,122 @@ function navigateToCompanyManage(companyDomain) {
 }
 
 /**
- * メモポップアップを表示
+ * メモのインライン編集を開始
  */
-function showMemoPopup(memo, jobTitle, targetBtn) {
-  // 既存のポップアップを削除
-  const existingPopup = document.querySelector('.memo-popup');
-  if (existingPopup) {
-    existingPopup.remove();
+function startMemoEdit(memoEl) {
+  // 既に編集中の場合は何もしない
+  if (memoEl.classList.contains('editing')) {
+    return;
   }
 
-  // ポップアップを作成
-  const popup = document.createElement('div');
-  popup.className = 'memo-popup';
-  popup.innerHTML = `
-    <div class="memo-popup-header">
-      <span class="memo-popup-title">📝 メモ</span>
-      <button class="memo-popup-close" aria-label="閉じる">&times;</button>
-    </div>
-    <div class="memo-popup-content">${escapeHtml(memo)}</div>
-  `;
+  const jobId = memoEl.dataset.jobId;
+  const companyDomain = memoEl.dataset.companyDomain;
+  const currentMemo = memoEl.closest('.job-listing-card')?.dataset.memo || '';
 
-  // ボディに追加
-  document.body.appendChild(popup);
+  // 編集モードに切り替え
+  memoEl.classList.add('editing');
 
-  // 位置を計算（ボタンの下に表示）
-  const btnRect = targetBtn.getBoundingClientRect();
-  const popupRect = popup.getBoundingClientRect();
+  // テキスト部分を入力欄に置き換え
+  const memoTextEl = memoEl.querySelector('.memo-text');
+  const originalText = currentMemo;
 
-  let top = btnRect.bottom + 8;
-  let left = btnRect.left - popupRect.width / 2 + btnRect.width / 2;
+  // 入力欄を作成
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'memo-edit-input';
+  input.value = originalText;
+  input.placeholder = 'メモを入力...';
 
-  // 画面端に収まるように調整
-  if (left < 10) left = 10;
-  if (left + popupRect.width > window.innerWidth - 10) {
-    left = window.innerWidth - popupRect.width - 10;
-  }
-  if (top + popupRect.height > window.innerHeight - 10) {
-    top = btnRect.top - popupRect.height - 8;
-  }
+  // テキスト要素を非表示にして入力欄を追加
+  memoTextEl.style.display = 'none';
+  memoEl.appendChild(input);
 
-  popup.style.top = `${top}px`;
-  popup.style.left = `${left}px`;
+  // フォーカス
+  input.focus();
+  input.select();
 
-  // 閉じるボタン
-  popup.querySelector('.memo-popup-close').addEventListener('click', () => {
-    popup.remove();
+  // 保存処理
+  const saveMemo = async () => {
+    const newMemo = input.value.trim();
+
+    // 変更がなければ何もしない
+    if (newMemo === originalText) {
+      cancelEdit();
+      return;
+    }
+
+    // 保存中表示
+    input.disabled = true;
+    input.style.opacity = '0.6';
+
+    try {
+      await updateJobMemo(companyDomain, jobId, newMemo);
+
+      // カードのdata-memoを更新
+      const card = memoEl.closest('.job-listing-card');
+      if (card) {
+        card.dataset.memo = newMemo;
+      }
+
+      // allJobsの該当求人も更新
+      const job = allJobs.find(j => j.companyDomain === companyDomain && String(j.id) === String(jobId));
+      if (job) {
+        job.memo = newMemo;
+      }
+
+      // テキスト要素を更新
+      if (newMemo) {
+        memoTextEl.textContent = newMemo;
+        memoTextEl.classList.remove('memo-placeholder');
+      } else {
+        memoTextEl.textContent = 'メモを追加...';
+        memoTextEl.classList.add('memo-placeholder');
+      }
+
+      showToast('メモを保存しました', 'success');
+    } catch (error) {
+      console.error('メモ保存エラー:', error);
+      showToast('メモの保存に失敗しました', 'error');
+    }
+
+    cancelEdit();
+  };
+
+  // 編集キャンセル
+  const cancelEdit = () => {
+    memoEl.classList.remove('editing');
+    memoTextEl.style.display = '';
+    input.remove();
+  };
+
+  // イベントリスナー
+  input.addEventListener('blur', () => {
+    // 少し遅延させて、ボタンクリック等を優先
+    setTimeout(saveMemo, 100);
   });
 
-  // 外側クリックで閉じる
-  const closeOnOutsideClick = (e) => {
-    if (!popup.contains(e.target) && e.target !== targetBtn) {
-      popup.remove();
-      document.removeEventListener('click', closeOnOutsideClick);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      input.blur();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEdit();
     }
-  };
-  // 少し遅延させてイベント登録（即座に閉じるのを防ぐ）
-  setTimeout(() => {
-    document.addEventListener('click', closeOnOutsideClick);
-  }, 0);
+  });
 
-  // ESCキーで閉じる
-  const closeOnEsc = (e) => {
-    if (e.key === 'Escape') {
-      popup.remove();
-      document.removeEventListener('keydown', closeOnEsc);
-    }
-  };
-  document.addEventListener('keydown', closeOnEsc);
+  // クリックの伝播を止める
+  input.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
+
+/**
+ * 求人のメモをFirestoreに保存
+ */
+async function updateJobMemo(companyDomain, jobId, memo) {
+  FirestoreService.initFirestore();
+  await FirestoreService.updateJobField(companyDomain, jobId, 'memo', memo);
 }
 
 /**

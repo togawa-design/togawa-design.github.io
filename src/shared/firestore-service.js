@@ -400,6 +400,31 @@ export async function deleteJob(companyDomain, jobId) {
   }
 }
 
+/**
+ * 求人の特定フィールドを更新
+ */
+export async function updateJobField(companyDomain, jobId, fieldName, value) {
+  const firestore = await getFirestoreAsync();
+  if (!firestore) throw new Error('Firestore not initialized');
+
+  try {
+    const updateData = {
+      [fieldName]: value,
+      updatedAt: new Date().toISOString()
+    };
+
+    await firestore
+      .collection('companies').doc(companyDomain)
+      .collection('jobs').doc(String(jobId))
+      .update(updateData);
+
+    return { success: true, message: `${fieldName}を更新しました` };
+  } catch (error) {
+    console.error('[FirestoreService] updateJobField error:', error);
+    throw error;
+  }
+}
+
 // ========================================
 // LP設定 (LP Settings)
 // ========================================
