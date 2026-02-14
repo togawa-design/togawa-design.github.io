@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>環境設定ガイド - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>環境設定ガイド</h1><h2>環境構成図</h2><pre><code class="language-">┌─────────────────────────────────────────────────────────────────────────────┐
+│                              L-SET プロジェクト                               │
+├─────────────────────────────────┬───────────────────────────────────────────┤
+│           本番環境 (prod)        │            開発環境 (dev)                  │
+├─────────────────────────────────┼───────────────────────────────────────────┤
+│                                 │                                           │
+│  ┌─────────────────────────┐   │   ┌─────────────────────────┐            │
+│  │      Firebase           │   │   │      Firebase           │            │
+│  │  generated-area-...     │   │   │      lset-dev           │            │
+│  └─────────────────────────┘   │   └─────────────────────────┘            │
+│              │                  │              │                           │
+│              ▼                  │              ▼                           │
+│  ┌─────────────────────────┐   │   ┌─────────────────────────┐            │
+│  │   Cloud Functions       │   │   │   Cloud Functions       │            │
+│  │   asia-northeast1       │   │   │   asia-northeast1       │            │
+│  └─────────────────────────┘   │   └─────────────────────────┘            │
+│                                 │                                           │
+│  ┌─────────────────────────┐   │   ┌─────────────────────────┐            │
+│  │     Cloudinary          │   │   │     Cloudinary          │            │
+│  │     prod/ フォルダ       │   │   │     dev/ フォルダ        │            │
+│  └─────────────────────────┘   │   └─────────────────────────┘            │
+│                                 │                                           │
+│  ┌─────────────────────────┐   │   ┌─────────────────────────┐            │
+│  │     GitHub Pages        │   │   │     GitHub Pages        │            │
+│  │     / (ルート)           │   │   │     /dev/               │            │
+│  └─────────────────────────┘   │   └─────────────────────────┘            │
+│                                 │                                           │
+└─────────────────────────────────┴───────────────────────────────────────────┘
+</code></pre><p>---</p><h2>サービス別 ID 一覧</h2><h3>Firebase</h3><table><tr><td>項目</td><td>本番環境</td><td>開発環境</td></tr>
+</table>
+<table><tr><td><strong>Project ID</strong></td><td><code>generated-area-484613-e3-90bd4</code></td><td><code>lset-dev</code></td></tr>
+<tr><td><strong>API Key</strong></td><td><code>AIzaSyB3eXZoFkXOwnHxPvaHiWO7csmZK4KGqAQ</code></td><td><code>AIzaSyBVFGaoXtmkpJMju6XdNFxN969WcJCggKc</code></td></tr>
+<tr><td><strong>Auth Domain</strong></td><td><code>generated-area-484613-e3-90bd4.firebaseapp.com</code></td><td><code>lset-dev.firebaseapp.com</code></td></tr>
+<tr><td><strong>Console URL</strong></td><td><a href="https://console.firebase.google.com/project/generated-area-484613-e3-90bd4">Firebase Console (本番)</a></td><td><a href="https://console.firebase.google.com/project/lset-dev">Firebase Console (開発)</a></td></tr>
+</table>
+<h3>Cloud Functions</h3><table><tr><td>項目</td><td>本番環境</td><td>開発環境</td></tr>
+</table>
+<table><tr><td><strong>Region</strong></td><td><code>asia-northeast1</code></td><td><code>asia-northeast1</code></td></tr>
+<tr><td><strong>Base URL</strong></td><td><code>https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net</code></td><td><code>https://asia-northeast1-lset-dev.cloudfunctions.net</code></td></tr>
+</table>
+<h3>Cloudinary（共通アカウント）</h3><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td><strong>Cloud Name</strong></td><td><code>dnvtqyhuw</code></td></tr>
+<tr><td><strong>Upload Preset</strong></td><td><code>rikueko_unsigned</code></td></tr>
+<tr><td><strong>本番フォルダ</strong></td><td><code>prod/</code></td></tr>
+<tr><td><strong>開発フォルダ</strong></td><td><code>dev/</code></td></tr>
+<tr><td><strong>Console URL</strong></td><td><a href="https://console.cloudinary.com/">Cloudinary Console</a></td></tr>
+</table>
+#### フォルダ構造
+<pre><code class="language-">dnvtqyhuw/
+├── prod/                    # 本番環境
+│   ├── companies/{domain}/  # 企業ロゴ・画像
+│   ├── jobs/{domain}/       # 求人画像
+│   ├── recruit/{domain}/    # 採用ページ画像
+│   └── lp/{domain}/         # LP画像
+│
+└── dev/                     # 開発環境
+    ├── companies/{domain}/
+    ├── jobs/{domain}/
+    ├── recruit/{domain}/
+    └── lp/{domain}/
+</code></pre><h3>GitHub Pages</h3><table><tr><td>項目</td><td>本番環境</td><td>開発環境</td></tr>
+</table>
+<table><tr><td><strong>Base Path</strong></td><td><code>/</code></td><td><code>/dev/</code></td></tr>
+<tr><td><strong>URL</strong></td><td><code>https://togawa-design.github.io/</code></td><td><code>https://togawa-design.github.io/dev/</code></td></tr>
+<tr><td><strong>ビルドコマンド</strong></td><td><code>npm run build</code></td><td><code>npm run build:dev</code></td></tr>
+<tr><td><strong>対応ブランチ</strong></td><td><code>main</code></td><td><code>develop</code></td></tr>
+</table>
+<h3>Google Analytics（共通）</h3><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td><strong>Property ID</strong></td><td><code>G-E1XC94EG05</code></td></tr>
+<tr><td><strong>API Key</strong></td><td><code>AIzaSyAIC2WGg5dnvMh6TO4sivpbk4HtpYw4tbo</code></td></tr>
+</table>
+<h3>GAS (Google Apps Script)（共通）</h3><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td><strong>API URL</strong></td><td><code>https://script.google.com/macros/s/AKfycbxj6CqSfY7jq04uDXURhewD_BAKx3csLKBpl1hdRBdNg-R-E6IuoaZGje22Gr9WYWY2/exec</code></td></tr>
+<tr><td><strong>Spreadsheet ID</strong></td><td><code>1NVIDV3OiXbNrVI7EFdRrU2Ggn8dx7Q0rSnvJ6uaWvX0</code></td></tr>
+</table>
+---</p><h2>環境変数ファイル</h2><table><tr><td>ファイル</td><td>用途</td><td>読み込みタイミング</td></tr>
+</table>
+<table><tr><td><code>.env.production</code></td><td>本番環境設定</td><td><code>npm run build</code></td></tr>
+<tr><td><code>.env.development</code></td><td>開発環境設定</td><td><code>npm run dev</code> / <code>npm run build:dev</code></td></tr>
+<tr><td><code>.env.local</code></td><td>ローカル上書き用（Git追跡外）</td><td>常に読み込み</td></tr>
+</table>
+<h3>環境変数一覧</h3><table><tr><td>変数名</td><td>説明</td><td>本番</td><td>開発</td></tr>
+</table>
+<table><tr><td><code>VITE_ENV</code></td><td>環境識別</td><td><code>production</code></td><td><code>development</code></td></tr>
+<tr><td><code>VITE_BASE</code></td><td>ベースパス</td><td><code>/</code></td><td><code>/dev/</code></td></tr>
+<tr><td><code>VITE_FIREBASE_API_KEY</code></td><td>Firebase APIキー</td><td>本番用</td><td>開発用</td></tr>
+<tr><td><code>VITE_FIREBASE_AUTH_DOMAIN</code></td><td>認証ドメイン</td><td>本番用</td><td>開発用</td></tr>
+<tr><td><code>VITE_FIREBASE_PROJECT_ID</code></td><td>プロジェクトID</td><td>本番用</td><td>開発用</td></tr>
+<tr><td><code>VITE_CLOUD_FUNCTIONS_BASE_URL</code></td><td>CF URL</td><td>本番用</td><td>開発用</td></tr>
+<tr><td><code>VITE_GA_PROPERTY_ID</code></td><td>GA4プロパティID</td><td>共通</td><td>共通</td></tr>
+<tr><td><code>VITE_GAS_API_URL</code></td><td>GAS API URL</td><td>共通</td><td>共通</td></tr>
+</table>
+---</p><h2>アーキテクチャ図</h2><pre><code class="language-">┌──────────────────────────────────────────────────────────────────┐
+│                         クライアント                              │
+│                    (GitHub Pages / Browser)                      │
+└──────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                      フロントエンド (Vite)                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│  │   求人検索   │  │   管理画面   │  │  採用ページ  │              │
+│  └─────────────┘  └─────────────┘  └─────────────┘              │
+└──────────────────────────────────────────────────────────────────┘
+          │                    │                    │
+          ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  Firebase Auth  │  │    Firestore    │  │   Cloudinary    │
+│   (認証)        │  │   (データ)      │  │   (画像)        │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │ Cloud Functions │
+                    │  (バックエンド)  │
+                    └─────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+          ┌─────────────────┐  ┌─────────────────┐
+          │   SendGrid      │  │   GAS (GSheet)  │
+          │   (メール)       │  │   (スプシ連携)   │
+          └─────────────────┘  └─────────────────┘
+</code></pre><p>---</p><h2>Firestore コレクション構造</h2><pre><code class="language-">firestore/
+├── admin_users/           # 管理者 (docId = Firebase Auth UID)
+│   └── {uid}/
+│       ├── email
+│       ├── role: "admin"
+│       └── companyDomain: null
+│
+├── company_users/         # 企業ユーザー (docId = Firebase Auth UID)
+│   └── {uid}/
+│       ├── email
+│       ├── role: "company"
+│       └── companyDomain
+│
+├── companies/             # 企業情報
+│   └── {companyDomain}/
+│       ├── name
+│       ├── logoUrl
+│       │
+│       ├── jobs/          # サブコレクション: 求人
+│       │   └── {jobId}/
+│       │
+│       ├── assignees/     # サブコレクション: 担当者
+│       │   └── {assigneeId}/
+│       │
+│       └── lpSettings/    # サブコレクション: LP設定
+│           └── {settingsId}/
+│
+├── applications/          # 応募データ
+├── pageviews/            # ページビュー
+├── page_analytics_events/ # アナリティクスイベント
+└── page_analytics_daily/  # 日次集計
+    └── {dateStr}/
+        └── stats/
+</code></pre><p>---</p><h2>コマンド一覧</h2><h3>開発</h3><pre><code class="language-bash"><h1>開発サーバー起動（開発環境）</h1>
+npm run dev</p><h1>ビルド（本番環境）</h1>
+npm run build</p><h1>ビルド（開発環境）</h1>
+npm run build:dev</p><h1>プレビュー</h1>
+npm run preview
+</code></pre><h3>Cloud Functions デプロイ</h3><pre><code class="language-bash"><h1>本番環境</h1>
+cd functions
+firebase deploy --only functions --project generated-area-484613-e3-90bd4</p><h1>開発環境</h1>
+cd functions
+./deploy-dev.sh
+</code></pre><h3>管理者追加</h3><pre><code class="language-bash">cd functions</p><h1>本番環境</h1>
+node add-admin.cjs user@example.com --prod</p><h1>開発環境</h1>
+node add-admin.cjs user@example.com --dev
+</code></pre><h3>データ移行</h3><pre><code class="language-bash"><h1>admin_users を UID ベースに移行</h1>
+cd functions
+node ../scripts/migrate-admin-users-to-uid.cjs --prod  # 本番
+node ../scripts/migrate-admin-users-to-uid.cjs --dev   # 開発</p><h1>Cloudinary 画像を prod/ に移動</h1>
+CLOUDINARY_API_KEY=xxx CLOUDINARY_API_SECRET=yyy \
+  node scripts/migrate-cloudinary-to-prod.cjs
+</code></pre><p>---</p><h2>環境判定ロジック</h2><pre><code class="language-javascript">// src/shared/env-config.js
+export const isDevelopment = import.meta.env.VITE_ENV === 'development';
+export const isProduction = import.meta.env.VITE_ENV === 'production';
+</code></pre><h3>使用例</h3><pre><code class="language-javascript">import { isDevelopment } from '@shared/env-config';</p><p>// Cloudinary フォルダプレフィックス
+const ENV_PREFIX = isDevelopment ? 'dev' : 'prod';
+const folder = <code>${ENV_PREFIX}/companies/${companyDomain}</code>;
+</code></pre><p>---</p><h2>注意事項</h2><h3>Firebase Project ID の違い</h3>
+<ul><li><strong>本番</strong>: <code>generated-area-484613-e3-90bd4</code>（GCP自動生成名）</li>
+<li><strong>開発</strong>: <code>lset-dev</code>（明示的に作成）</li>
+</ul>
+<h3>Cloud Functions URL の違い</h3>
+<ul><li><strong>本番</strong>: <code>-e3</code> で終わる（プロジェクト名の一部が省略される）</li>
+<li><strong>開発</strong>: 完全なプロジェクト名が使用される</li>
+</ul>
+<h3>Cloudinary は共通</h3>
+<ul><li>同じアカウントを使用し、フォルダで環境を分離</li>
+<li><code>prod/</code> と <code>dev/</code> プレフィックスで区別</li>
+</ul>
+<h3>GAS / Spreadsheet は共通</h3>
+<ul><li>現時点では本番・開発で同じスプレッドシートを使用</li>
+<li>必要に応じて分離を検討</li>
+</ul>
+---</p><h2>関連ファイル</h2><ul><li><code>.env.development</code> - 開発環境設定（gitignore対象）</li>
+<li><code>.env.production</code> - 本番環境設定（gitignore対象）</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/shared/env-config.js">src/shared/env-config.js</a> - 環境設定モジュール</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/.github/workflows/deploy.yml">.github/workflows/deploy.yml</a> - CI/CD設定</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/functions/add-admin.cjs">functions/add-admin.cjs</a> - 管理者追加スクリプト</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/functions/deploy-dev.sh">functions/deploy-dev.sh</a> - 開発環境デプロイスクリプト</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

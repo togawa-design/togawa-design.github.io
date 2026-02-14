@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アナリティクス改善提案機能 - 実装計画 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>アナリティクス改善提案機能 - 実装計画</h1><h2>概要</h2><p>LP・採用ページのアナリティクスデータから、自動で改善提案を生成する機能。</p><p>---</p><h2>実装フェーズ</h2><h3>Phase 1: ルールベース分析（優先度: 高）</h3><p>閾値に基づいた自動判定で改善提案を表示。</p><p>#### 判定ルール</p><table><tr><td>指標</td><td>閾値</td><td>改善提案</td></tr>
+</table>
+<table><tr><td>CVR</td><td>< 1%</td><td>CTAボタンの配置・文言の見直しを推奨</td></tr>
+<tr><td>CVR</td><td>< 0.5%</td><td>ファーストビューにCTAを追加することを強く推奨</td></tr>
+<tr><td>平均滞在時間</td><td>< 30秒</td><td>コンテンツの魅力度向上が必要</td></tr>
+<tr><td>平均滞在時間</td><td>< 10秒</td><td>ページ読み込み速度・ファーストビューの問題を確認</td></tr>
+<tr><td>スクロール深度25%未達成率</td><td>> 70%</td><td>ファーストビューの改善が必要</td></tr>
+<tr><td>モバイルCVR / デスクトップCVR</td><td>< 0.5</td><td>モバイル表示の最適化が必要</td></tr>
+<tr><td>特定流入元のCVR</td><td>全体平均の2倍以上</td><td>その流入元からの集客を強化</td></tr>
+</table>
+#### 実装箇所</p><ul><li><code>src/features/admin/page-analytics.js</code> に <code>generateInsights(data)</code> 関数を追加</li>
+<li><code>admin.html</code> に改善提案表示エリアを追加</li>
+</ul>
+#### UI案</p><pre><code class="language-html"><!-- 改善提案セクション -->
+<div class="insights-section">
+  <h4>改善提案</h4>
+  <div class="insight-card warning">
+    <span class="insight-icon">⚠️</span>
+    <div class="insight-content">
+      <p class="insight-title">CVRが低下しています</p>
+      <p class="insight-desc">現在のCVRは0.8%です。CTAボタンの配置や文言を見直すことで改善が期待できます。</p>
+    </div>
+  </div>
+</div>
+</code></pre><p>---</p><h3>Phase 2: Claude API連携（優先度: 中）</h3><p>より高度な分析と自然言語での改善提案。</p><p>#### アーキテクチャ</p><pre><code class="language-">[フロントエンド] → [Cloud Function: analyzePageInsights] → [Claude API (Haiku)]
+                                    ↓
+                            [改善提案を返却]
+</code></pre><p>#### Cloud Function実装</p><pre><code class="language-javascript">// functions/index.js に追加
+functions.http('analyzePageInsights', async (req, res) => {
+  const { analyticsData, companyDomain } = req.body;</p><p>  const prompt = <code>
+以下のWebページアナリティクスデータを分析し、具体的な改善提案を3つ以内で提示してください。</p><p>データ:
+<ul><li>ページビュー: ${analyticsData.totalPageViews}</li>
+<li>ユニークユーザー: ${analyticsData.totalUniqueVisitors}</li>
+<li>CTAクリック数: ${analyticsData.totalCtaClicks}</li>
+<li>CVR: ${analyticsData.cvr}%</li>
+<li>平均滞在時間: ${analyticsData.avgTimeOnPage}秒</li>
+<li>流入元: ${JSON.stringify(analyticsData.byReferrer)}</li>
+<li>デバイス: ${JSON.stringify(analyticsData.byDevice)}</li>
+</ul>
+改善提案は以下の形式で返してください:
+<li>[優先度: 高/中/低] タイトル</li>
+   説明文（具体的なアクション含む）
+</code>;</p><p>  const response = await anthropic.messages.create({
+    model: 'claude-3-5-haiku-20241022',
+    max_tokens: 500,
+    messages: [{ role: 'user', content: prompt }]
+  });</p><p>  res.json({ success: true, insights: response.content[0].text });
+});
+</code></pre><p>#### コスト見積もり</p><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td>使用モデル</td><td>Claude 3.5 Haiku</td></tr>
+<tr><td>入力トークン/回</td><td>約1,000</td></tr>
+<tr><td>出力トークン/回</td><td>約300</td></tr>
+<tr><td>1回あたりコスト</td><td>約$0.0006（0.1円未満）</td></tr>
+<tr><td>月間コスト（10社×30回）</td><td>約$0.18（約27円）</td></tr>
+</table>
+---</p><h3>Phase 3: 週次レポート自動送信（優先度: 低）</h3><p>Cloud Schedulerで定期実行し、メールで改善提案を送信。</p><p>#### アーキテクチャ</p><pre><code class="language-">[Cloud Scheduler] → [Cloud Function: sendWeeklyReport] → [SendGrid]
+        ↓                       ↓
+   毎週月曜9:00           各会社のメールアドレスへ送信
+</code></pre><p>#### 実装内容</p><p><li><code>functions/index.js</code> に <code>sendWeeklyReport</code> 関数を追加</li>
+<li>Cloud Schedulerでcron設定: <code>0 9 * * 1</code>（毎週月曜9:00）</li>
+<li>SendGrid連携でメール送信</li></p><p>---</p><h2>必要な追加データ収集</h2><p>現在の実装で不足しているデータ:</p><table><tr><td>データ</td><td>用途</td><td>実装方法</td></tr>
+</table>
+<table><tr><td>スクロール深度到達率</td><td>ファーストビュー改善判定</td><td><code>page_analytics_daily</code> に深度別到達数を集計</td></tr>
+<tr><td>デバイス別CVR</td><td>モバイル最適化判定</td><td><code>byDevice</code> にクリック数も追加</td></tr>
+<tr><td>前週比較データ</td><td>トレンド分析</td><td>7日前のデータと比較</td></tr>
+</table>
+---</p><h2>ファイル変更一覧</h2><h3>Phase 1</h3><table><tr><td>ファイル</td><td>変更内容</td></tr>
+</table>
+<table><tr><td><code>src/features/admin/page-analytics.js</code></td><td><code>generateInsights()</code> 関数追加</td></tr>
+<tr><td><code>admin.html</code></td><td>改善提案表示セクション追加</td></tr>
+<tr><td><code>public/css/admin.css</code></td><td><code>.insights-section</code> スタイル追加</td></tr>
+</table>
+<h3>Phase 2</h3><table><tr><td>ファイル</td><td>変更内容</td></tr>
+</table>
+<table><tr><td><code>functions/index.js</code></td><td><code>analyzePageInsights</code> Cloud Function追加</td></tr>
+<tr><td><code>functions/package.json</code></td><td><code>@anthropic-ai/sdk</code> 依存追加</td></tr>
+<tr><td><code>src/features/admin/page-analytics.js</code></td><td>API呼び出し処理追加</td></tr>
+</table>
+<h3>Phase 3</h3><table><tr><td>ファイル</td><td>変更内容</td></tr>
+</table>
+<table><tr><td><code>functions/index.js</code></td><td><code>sendWeeklyReport</code> Cloud Function追加</td></tr>
+<tr><td>Cloud Console</td><td>Cloud Scheduler設定</td></tr>
+</table>
+---</p><h2>環境変数（Phase 2以降で必要）</h2><pre><code class="language-bash"><h1>Cloud Functions環境変数</h1>
+ANTHROPIC_API_KEY=sk-ant-xxxxx
+SENDGRID_API_KEY=SG.xxxxx  # Phase 3で必要
+</code></pre><p>---</p><h2>優先度・スケジュール案</h2><p><li><strong>Phase 1（ルールベース）</strong>: すぐに実装可能、工数: 2-3時間</li>
+<li><strong>Phase 2（Claude API）</strong>: APIキー取得後に実装、工数: 3-4時間</li>
+<li><strong>Phase 3（週次レポート）</strong>: 必要に応じて実装、工数: 4-5時間</li></p><p>---</p><h2>関連ファイル</h2><ul><li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/features/admin/page-analytics.js">src/features/admin/page-analytics.js</a> - アナリティクス表示モジュール</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/src/shared/page-analytics.js">src/shared/page-analytics.js</a> - フロントエンドトラッキング</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/functions/index.js">functions/index.js</a> - Cloud Functions</li>
+<li><a href="https://github.com/togawa-design/togawa-design.github.io/blob/develop/admin.html">admin.html</a> - 管理画面HTML</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

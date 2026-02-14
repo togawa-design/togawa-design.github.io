@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ユーザー登録・認証フロー - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>ユーザー登録・認証フロー</h1><h2>概要</h2><p>このドキュメントでは、管理者ユーザーと会社ユーザーの登録・ログインフローについて説明します。</p><p>---</p><h2>ユーザータイプ</h2><table><tr><td>タイプ</td><td>コレクション</td><td>認証方法</td><td>権限</td></tr>
+</table>
+<table><tr><td>管理者ユーザー</td><td><code>admin_users</code></td><td>Google認証</td><td>全会社のデータ閲覧・編集</td></tr>
+<tr><td>会社ユーザー</td><td><code>company_users</code></td><td>メール+パスワード</td><td>自社のデータのみ</td></tr>
+<tr><td>管理者+会社ユーザー</td><td>両方</td><td>Google認証（共通）</td><td>両方の権限</td></tr>
+</table>
+---</p><h2>登録フロー</h2><h3>ケース1: 管理者ユーザーのみ</h3><p>管理者が別の管理者を招待するケース。</p><div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Admin as 既存管理者
+    participant Console as 管理画面
+    participant Auth as Firebase Auth
+    participant FS as Firestore<br/>(admin_users)
+    participant NewUser as 新規管理者
+
+    Note over Admin,FS: Phase 1: 管理者による事前登録
+    Admin->>Console: 管理者ユーザー追加<br/>(メールアドレス入力)
+    Console->>Auth: getUserByEmail(email)
+
+    alt ユーザーが存在しない
+        Auth-->>Console: エラー (user-not-found)
+        Console->>Auth: createUser(email)
+        Auth-->>Console: userRecord (UID生成)
+    else ユーザーが存在する
+        Auth-->>Console: userRecord (既存UID)
+    end
+
+    Console->>FS: doc('admin_users/{uid}').set({<br/>  email, role: 'admin'<br/>})
+    FS-->>Console: 成功
+    Console-->>Admin: 登録完了
+
+    Note over NewUser,FS: Phase 2: 新規管理者のログイン
+    NewUser->>Console: ログインページアクセス
+    NewUser->>Auth: Googleログイン
+    Auth-->>Console: credential (UID)
+
+    Console->>FS: doc('admin_users/{uid}').get()
+    FS-->>Console: ドキュメント発見
+    Console-->>NewUser: ログイン成功（管理者として）
+</div><p><strong>ポイント:</strong>
+<ul><li>パスワード不要（Google認証のため）</li>
+<li>ドキュメントIDはFirebase Auth UIDを使用</li>
+<li>招待後、新規管理者はGoogleアカウントでログイン</li>
+</ul>
+---</p><h3>ケース2: 会社ユーザーのみ（新規）</h3><p>管理者が会社ユーザーを新規作成するケース。</p><div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Admin as 管理者
+    participant Console as 管理画面
+    participant CF as Cloud Function<br/>(createCompanyUser)
+    participant Auth as Firebase Auth
+    participant FS as Firestore<br/>(company_users)
+    participant CompanyUser as 会社ユーザー
+
+    Note over Admin,FS: Phase 1: 管理者による登録
+    Admin->>Console: 会社ユーザー追加<br/>(email, password, 会社)
+    Console->>CF: createCompanyUser(email, password, companyDomain)
+
+    CF->>Auth: createUser(email, password)
+    Auth-->>CF: userRecord (UID生成)
+
+    CF->>FS: doc('company_users/{uid}').set({<br/>  email, companyDomain, role<br/>})
+    FS-->>CF: 成功
+    CF-->>Console: 成功 (uid)
+    Console-->>Admin: 登録完了<br/>（発行情報表示）
+
+    Note over CompanyUser,FS: Phase 2: 会社ユーザーのログイン
+    CompanyUser->>Console: ログインページアクセス
+    CompanyUser->>Auth: メール+パスワードでログイン
+    Auth-->>Console: credential (UID)
+
+    Console->>FS: where('email', '==', email).get()
+    FS-->>Console: ドキュメント発見
+    Console-->>CompanyUser: ログイン成功（会社ユーザーとして）
+</div><p><strong>ポイント:</strong>
+<ul><li>パスワード必須（8文字以上）</li>
+<li>Cloud Functionがユーザー作成を担当</li>
+<li>会社ユーザーはメール+パスワードでログイン</li>
+</ul>
+---</p><h3>ケース3: 管理者ユーザー → 会社ユーザーに追加</h3><p>既存の管理者を特定の会社にも所属させるケース。</p><div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Admin as 管理者
+    participant Console as 管理画面
+    participant CF as Cloud Function<br/>(createCompanyUser)
+    participant Auth as Firebase Auth
+    participant FS as Firestore
+
+    Note over Admin,FS: 前提: admin_usersに既に存在
+    Admin->>Console: 会社ユーザー追加<br/>(email, パスワード空, 会社)
+    Console->>CF: createCompanyUser(email, '', companyDomain)
+
+    CF->>Auth: getUserByEmail(email)
+    Auth-->>CF: userRecord (既存UID) ✓
+
+    Note right of CF: Firebase Authに<br/>既に存在するので<br/>パスワード不要
+
+    CF->>FS: doc('company_users/{uid}').set({<br/>  email, companyDomain, role<br/>})
+    FS-->>CF: 成功
+    CF-->>Console: 成功
+    Console-->>Admin: 登録完了
+
+    Note over FS: 結果: 同じUIDで<br/>admin_users ✓<br/>company_users ✓
+</div><p><strong>ポイント:</strong>
+<ul><li>パスワード不要（Firebase Authに既存ユーザーがあるため）</li>
+<li>既存のUIDを再利用</li>
+<li>ログイン時はGoogle認証で両方の権限を取得</li>
+</ul>
+---</p><h3>ケース4: 会社ユーザー → 別会社にも追加</h3><p>既存の会社ユーザーを別の会社にも所属させるケース（複数会社対応）。</p><div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Admin as 管理者
+    participant Console as 管理画面
+    participant CF as Cloud Function<br/>(createCompanyUser)
+    participant Auth as Firebase Auth
+    participant FS as Firestore<br/>(company_users)
+
+    Note over Admin,FS: 前提: company_users/uid_companyA に存在
+    Admin->>Console: 会社ユーザー追加<br/>(email, パスワード空, companyB)
+    Console->>CF: createCompanyUser(email, '', companyB)
+
+    CF->>FS: where('email', '==', email).get()
+    FS-->>CF: 既存ドキュメント発見 (uid)
+
+    Note right of CF: 既存ユーザーなので<br/>パスワード不要
+
+    CF->>FS: doc('company_users/{uid}_companyB').set({<br/>  email, companyDomain: companyB<br/>})
+    FS-->>CF: 成功
+    CF-->>Console: 成功
+    Console-->>Admin: 登録完了
+
+    Note over FS: 結果:<br/>company_users/uid_companyA ✓<br/>company_users/uid_companyB ✓
+</div><p><strong>ポイント:</strong>
+<ul><li>パスワード不要（既存ユーザー）</li>
+<li>ドキュメントIDは <code>{uid}_{companyDomain}</code> 形式</li>
+<li>ログイン時に会社選択画面が表示される</li>
+</ul>
+---</p><h2>ログインフロー</h2><h3>管理者ユーザー</h3><div class="mermaid">
+flowchart TD
+    A[ログイン画面] --> B[Googleログイン]
+    B --> C{Firebase Auth}
+    C --> D[UID取得]
+    D --> E{admin_users 存在確認}
+    E -->|Yes| F[管理者としてログイン]
+    E -->|No| G{company_users 検索}
+    G -->|Yes| H[会社ユーザーとしてログイン]
+    G -->|No| I[アクセス拒否]
+</div><h3>会社ユーザー</h3><div class="mermaid">
+flowchart TD
+    A[ログイン画面] --> B[メール+パスワード入力]
+    B --> C{Firebase Auth}
+    C -->|認証成功| D[UID取得]
+    C -->|認証失敗| E[エラー表示]
+    D --> F{company_users 検索}
+    F -->|1件| G[会社ユーザーとしてログイン]
+    F -->|複数件| H[会社選択画面]
+    H --> I[選択した会社でログイン]
+    F -->|0件| J[アクセス拒否]
+</div><p>---</p><h2>データ構造</h2><h3>admin_users コレクション</h3><pre><code class="language-javascript">// ドキュメントID: Firebase Auth UID
+{
+  email: "admin@example.com",
+  role: "admin",           // 常に "admin"
+  createdAt: Timestamp,
+  createdBy: "uid"         // 作成した管理者のUID
+}
+</code></pre><h3>company_users コレクション</h3><pre><code class="language-javascript">// ドキュメントID: {uid} または {uid}_{companyDomain}
+{
+  uid: "abc123xyz",
+  email: "user@example.com",
+  companyDomain: "company-a",
+  companyName: "株式会社A",
+  name: "山田太郎",
+  username: "yamada",
+  role: "manager",         // "manager" | "staff"
+  isActive: true,
+  createdAt: Timestamp
+}
+</code></pre><p>---</p><h2>Firestore Security Rules</h2><pre><code class="language-javascript">// 管理者かどうかの判定
+function isAdmin() {
+  return isAuthenticated() &&
+    exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+}</p><p>// 会社ユーザーかどうかの判定
+function isCompanyUser() {
+  return isAuthenticated() &&
+    exists(/databases/$(database)/documents/company_users/$(request.auth.uid));
+}</p><p>// 特定の会社に所属しているかの判定
+function isCompanyMember(companyDomain) {
+  return isAuthenticated() && (
+    isAdmin() ||
+    exists(/databases/$(database)/documents/company_users/$(request.auth.uid)) ||
+    exists(/databases/$(database)/documents/company_users/$(request.auth.uid + '_' + companyDomain))
+  );
+}
+</code></pre><p>---</p><h2>まとめ</h2><table><tr><td>ケース</td><td>admin_users</td><td>company_users</td><td>Firebase Auth</td><td>パスワード</td></tr>
+</table>
+<table><tr><td>管理者のみ</td><td>✓</td><td>-</td><td>Google認証</td><td>不要</td></tr>
+<tr><td>会社ユーザーのみ（新規）</td><td>-</td><td>✓</td><td>Email+PW</td><td><strong>必須</strong></td></tr>
+<tr><td>管理者→会社ユーザー追加</td><td>✓</td><td>✓</td><td>既存流用</td><td>不要</td></tr>
+<tr><td>会社ユーザー→別会社追加</td><td>-</td><td>✓✓</td><td>既存流用</td><td>不要</td></tr>
+</table>
+<h3>重要なポイント</h3><p><li><strong>既存ユーザーの招待はパスワード不要</strong>: Firebase Authに既に存在するユーザーを別の会社に追加する場合、パスワードは不要</li>
+<li><strong>UIDの共有</strong>: 同じメールアドレスのユーザーは同じUIDを共有し、複数のコレクションに存在可能</li>
+<li><strong>複数会社対応</strong>: 会社ユーザーは複数の会社に所属可能（ドキュメントIDで区別）</li>
+<li><strong>認証方法の違い</strong>: 管理者はGoogle認証、会社ユーザーはメール+パスワード</li></p><p>---</p><h2>関連ファイル</h2><table><tr><td>ファイル</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>src/features/admin/auth.js</code></td><td>認証ロジック、<code>addCompanyUser()</code></td></tr>
+<tr><td><code>src/features/admin/index.js</code></td><td>管理画面UI、<code>saveCompanyUser()</code></td></tr>
+<tr><td><code>functions/index.js</code></td><td>Cloud Function <code>createCompanyUser</code></td></tr>
+<tr><td><code>firestore.rules</code></td><td>セキュリティルール</td></tr>
+</table>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

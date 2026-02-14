@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能一覧 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>機能一覧</h1><p>本ドキュメントはリクエコの機能をユーザータイプ別にまとめたものです。</p><p>*最終更新: 2026-02-14*</p><p>---</p><h2>ユーザータイプ</h2><table><tr><td>タイプ</td><td>説明</td><td>認証方法</td></tr>
+</table>
+<table><tr><td>求職者</td><td>求人を探し応募する一般ユーザー</td><td>認証不要</td></tr>
+<tr><td>Admin</td><td>システム全体を管理する管理者</td><td>Google OAuth</td></tr>
+<tr><td>会社ユーザー</td><td>自社の求人・採用を管理する企業担当者</td><td>メール/パスワード</td></tr>
+</table>
+---</p><h2>1. 求職者向け機能</h2><h3>求人検索・閲覧</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>求人一覧</td><td>全求人の検索・フィルター・一覧表示</td><td>jobs.html</td></tr>
+<tr><td>求人詳細</td><td>個別求人の詳細情報閲覧</td><td>job-detail.html</td></tr>
+<tr><td>勤務地検索</td><td>都道府県別の求人検索</td><td>location.html</td></tr>
+<tr><td>会社一覧</td><td>掲載企業の一覧表示</td><td>company.html</td></tr>
+</table>
+<h3>会社・求人ページ</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>会社採用ページ</td><td>企業ごとのカスタム採用ページ閲覧</td><td>company-recruit.html</td></tr>
+<tr><td>求人LP</td><td>求人ごとのランディングページ閲覧</td><td>lp.html</td></tr>
+<tr><td>デザインパターン</td><td>5種類のLPデザイン（standard/modern/classic/minimal/colorful）</td><td>lp.html</td></tr>
+</table>
+<h3>応募・コンタクト</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>Web応募</td><td>応募フォームからの応募</td><td>lp.html (モーダル)</td></tr>
+<tr><td>電話応募</td><td>ワンクリック電話発信（モバイル）</td><td>lp.html</td></tr>
+<tr><td>LINE応募</td><td>LINEでの問い合わせ</td><td>lp.html</td></tr>
+<tr><td>応募完了通知</td><td>応募後の確認画面表示</td><td>lp.html</td></tr>
+</table>
+<h3>マイページ</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>お気に入り</td><td>気になる求人の保存（localStorage）</td><td>mypage.html</td></tr>
+<tr><td>応募履歴</td><td>過去の応募履歴確認</td><td>mypage.html</td></tr>
+<tr><td>閲覧履歴</td><td>閲覧した求人の履歴</td><td>mypage.html</td></tr>
+</table>
+<h3>通知</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>お知らせ閲覧</td><td>運営からのお知らせをベルアイコンで確認</td><td>ヘッダー（全ページ）</td></tr>
+<tr><td>未読バッジ</td><td>未読お知らせ数をバッジ表示</td><td>ヘッダー（全ページ）</td></tr>
+</table>
+<h3>その他</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>ガイドページ</td><td>仕事探し・面接・働き方ガイド</td><td>guide-*.html</td></tr>
+<tr><td>会社概要</td><td>サービス運営会社情報</td><td>about.html</td></tr>
+<tr><td>利用規約</td><td>サービス利用規約</td><td>terms.html</td></tr>
+<tr><td>プライバシーポリシー</td><td>個人情報取り扱い</td><td>privacy.html</td></tr>
+</table>
+---</p><h2>2. Admin向け機能</h2><h3>ダッシュボード</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>概要表示</td><td>PV/UV/応募数サマリー</td><td>overview</td></tr>
+<tr><td>日別推移</td><td>アクセス数・応募数の推移グラフ</td><td>overview</td></tr>
+<tr><td>人口統計</td><td>性別・年齢層の分布（GA4連携）</td><td>overview</td></tr>
+</table>
+<h3>会社管理</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>会社一覧</td><td>登録企業の一覧・検索</td><td>company-manage</td></tr>
+<tr><td>会社追加</td><td>新規企業の登録</td><td>company-manage</td></tr>
+<tr><td>会社編集</td><td>企業情報の編集</td><td>company-detail</td></tr>
+<tr><td>会社削除</td><td>企業の削除</td><td>company-manage</td></tr>
+<tr><td>会社詳細</td><td>企業の統計・詳細情報</td><td>company-detail</td></tr>
+</table>
+<h3>求人管理</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>全社求人一覧</td><td>全企業の求人横断検索</td><td>job-listings</td></tr>
+<tr><td>求人追加</td><td>新規求人の作成</td><td>job-manage</td></tr>
+<tr><td>求人編集</td><td>求人情報の編集</td><td>job-manage</td></tr>
+<tr><td>求人削除</td><td>求人の削除</td><td>job-manage</td></tr>
+<tr><td>求人複製</td><td>既存求人のコピー作成</td><td>job-manage</td></tr>
+<tr><td>求人プレビュー</td><td>LP/採用ページのプレビュー</td><td>job-manage</td></tr>
+</table>
+<h3>LP設定</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>デザイン選択</td><td>5種類のデザインパターン選択</td><td>lp-settings</td></tr>
+<tr><td>訴求ポイント設定</td><td>6つのベネフィットセクション編集</td><td>lp-settings</td></tr>
+<tr><td>画像設定</td><td>ヒーロー画像・アイコン設定</td><td>lp-settings</td></tr>
+<tr><td>広告ピクセル</td><td>TikTok/Google/Meta/LINE/Clarity設定</td><td>lp-settings</td></tr>
+<tr><td>プレビュー</td><td>リアルタイムプレビュー</td><td>lp-settings</td></tr>
+</table>
+<h3>採用ページ設定</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>基本情報</td><td>会社紹介・理念設定</td><td>recruit-settings</td></tr>
+<tr><td>カスタムセクション</td><td>ドラッグ&ドロップでセクション編集</td><td>recruit-settings</td></tr>
+<tr><td>SNS連携</td><td>Twitter/Facebook/Instagram/YouTube/LINE設定</td><td>recruit-settings</td></tr>
+<tr><td>プレビュー</td><td>リアルタイムプレビュー</td><td>recruit-settings</td></tr>
+</table>
+<h3>アナリティクス</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>採用管理</td><td>ファネル・リードタイム・アラート</td><td>analytics-detail</td></tr>
+<tr><td>企業別分析</td><td>企業ランキング・比較</td><td>analytics-detail</td></tr>
+<tr><td>LP/採用ページ分析</td><td>PV/UV/CTA/流入元/デバイス</td><td>analytics-detail</td></tr>
+<tr><td>コンバージョン分析</td><td>CVR・応募ファネル</td><td>analytics-detail</td></tr>
+<tr><td>トラフィック分析</td><td>流入元詳細</td><td>analytics-detail</td></tr>
+<tr><td>トレンド分析</td><td>日別/週別/月別推移</td><td>analytics-detail</td></tr>
+<tr><td>企業ドリルダウン</td><td>企業別詳細分析</td><td>analytics-detail</td></tr>
+</table>
+<h3>応募者管理</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>応募者一覧</td><td>全応募者の一覧・フィルター</td><td>job-manage (応募者タブ)</td></tr>
+<tr><td>ステータス管理</td><td>新規→連絡済→面接→内定→入社</td><td>applicants</td></tr>
+<tr><td>担当者割り当て</td><td>応募者への担当者設定</td><td>applicants</td></tr>
+<tr><td>メモ・コメント</td><td>応募者への社内メモ</td><td>applicants</td></tr>
+<tr><td>面談スケジュール</td><td>Googleカレンダー連携</td><td>applicants</td></tr>
+</table>
+<h3>ユーザー管理</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>会社ユーザー一覧</td><td>企業担当者の一覧</td><td>company-users</td></tr>
+<tr><td>ユーザー追加（個別）</td><td>1名ずつ追加</td><td>company-users</td></tr>
+<tr><td>ユーザー追加（一括）</td><td>CSV/複数同時追加</td><td>company-users</td></tr>
+<tr><td>ロール設定</td><td>管理者/スタッフの権限設定</td><td>company-users</td></tr>
+<tr><td>パスワードリセット</td><td>パスワード再発行</td><td>company-users</td></tr>
+<tr><td>ユーザー削除</td><td>アカウント削除</td><td>company-users</td></tr>
+</table>
+<h3>システム設定</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>管理者管理</td><td>Adminアカウントの管理</td><td>settings</td></tr>
+<tr><td>フィードダウンロード</td><td>求人フィードのエクスポート</td><td>settings</td></tr>
+<tr><td>システム設定</td><td>各種システム設定</td><td>settings</td></tr>
+</table>
+<h3>お知らせ管理（Admin専用）</h3><table><tr><td>機能</td><td>説明</td><td>セクション</td></tr>
+</table>
+<table><tr><td>お知らせ一覧</td><td>全お知らせの一覧・フィルター</td><td>announcements</td></tr>
+<tr><td>お知らせ作成</td><td>新規お知らせの作成</td><td>announcements</td></tr>
+<tr><td>お知らせ編集</td><td>お知らせ内容の編集</td><td>announcements</td></tr>
+<tr><td>お知らせ削除</td><td>お知らせの削除</td><td>announcements</td></tr>
+<tr><td>対象者設定</td><td>求職者向け/会社ユーザー向け/全員</td><td>announcements</td></tr>
+<tr><td>公開期間設定</td><td>開始日・終了日による自動公開/非公開</td><td>announcements</td></tr>
+</table>
+<h3>通知</h3><table><tr><td>機能</td><td>説明</td><td>画面</td></tr>
+</table>
+<table><tr><td>お知らせ閲覧</td><td>運営からのお知らせをベルアイコンで確認</td><td>ヘッダー</td></tr>
+<tr><td>応募者通知</td><td>全会社の新規応募をリアルタイム通知</td><td>ヘッダー</td></tr>
+<tr><td>未読バッジ</td><td>未読数をバッジ表示</td><td>ヘッダー</td></tr>
+<tr><td>セグメント表示</td><td>お知らせ/応募者をタブで切り替え</td><td>通知ドロップダウン</td></tr>
+</table>
+---</p><h2>3. 会社ユーザー向け機能</h2><h3>閲覧可能</h3><table><tr><td>機能</td><td>Admin機能との違い</td></tr>
+</table>
+<table><tr><td>概要ダッシュボード</td><td>自社データのみ表示</td></tr>
+<tr><td>求人管理</td><td>自社求人のみ</td></tr>
+<tr><td>LP設定</td><td>自社LPのみ</td></tr>
+<tr><td>採用ページ設定</td><td>自社のみ</td></tr>
+<tr><td>応募者管理</td><td>自社応募者のみ</td></tr>
+<tr><td>会社ユーザー管理</td><td>自社ユーザーのみ</td></tr>
+</table>
+<h3>アナリティクス（制限あり）</h3><table><tr><td>タブ</td><td>アクセス</td></tr>
+</table>
+<table><tr><td>採用管理</td><td>× 非表示</td></tr>
+<tr><td>企業別</td><td>× 非表示</td></tr>
+<tr><td>LP/採用ページ</td><td>○ 自社データのみ</td></tr>
+<tr><td>コンバージョン</td><td>○ 自社データのみ</td></tr>
+<tr><td>トラフィック</td><td>○ 自社データのみ</td></tr>
+<tr><td>トレンド</td><td>○ 自社データのみ</td></tr>
+</table>
+<h3>利用不可</h3><table><tr><td>機能</td><td>理由</td></tr>
+</table>
+<table><tr><td>会社管理</td><td>Admin専用</td></tr>
+<tr><td>全社求人一覧</td><td>Admin専用</td></tr>
+<tr><td>設定</td><td>Admin専用</td></tr>
+<tr><td>企業別分析</td><td>Admin専用</td></tr>
+<tr><td>採用管理分析</td><td>Admin専用</td></tr>
+</table>
+<h3>通知</h3><table><tr><td>機能</td><td>説明</td></tr>
+</table>
+<table><tr><td>お知らせ閲覧</td><td>運営からのお知らせをベルアイコンで確認</td></tr>
+<tr><td>応募者通知</td><td>自社への新規応募をリアルタイム通知</td></tr>
+<tr><td>未読バッジ</td><td>未読数をバッジ表示</td></tr>
+<tr><td>セグメント表示</td><td>お知らせ/応募者をタブで切り替え</td></tr>
+<tr><td>既読処理</td><td>通知を既読にマーク</td></tr>
+</table>
+<h3>追加機能</h3><table><tr><td>機能</td><td>説明</td></tr>
+</table>
+<table><tr><td>パスワード変更</td><td>自身のパスワード変更</td></tr>
+<tr><td>プロフィール編集</td><td>表示名等の変更</td></tr>
+</table>
+---</p><h2>機能比較表</h2><table><tr><td>機能カテゴリ</td><td>求職者</td><td>Admin</td><td>会社ユーザー</td></tr>
+</table>
+<table><tr><td>求人検索・閲覧</td><td>○</td><td>○</td><td>○</td></tr>
+<tr><td>応募</td><td>○</td><td>-</td><td>-</td></tr>
+<tr><td>マイページ</td><td>○</td><td>-</td><td>-</td></tr>
+<tr><td>会社管理</td><td>-</td><td>○</td><td>×</td></tr>
+<tr><td>全社求人一覧</td><td>-</td><td>○</td><td>×</td></tr>
+<tr><td>自社求人管理</td><td>-</td><td>○</td><td>○</td></tr>
+<tr><td>LP設定</td><td>-</td><td>○</td><td>○</td></tr>
+<tr><td>採用ページ設定</td><td>-</td><td>○</td><td>○</td></tr>
+<tr><td>採用管理分析</td><td>-</td><td>○</td><td>×</td></tr>
+<tr><td>企業別分析</td><td>-</td><td>○</td><td>×</td></tr>
+<tr><td>自社アナリティクス</td><td>-</td><td>○</td><td>○</td></tr>
+<tr><td>応募者管理</td><td>-</td><td>○</td><td>○</td></tr>
+<tr><td>会社ユーザー管理</td><td>-</td><td>○</td><td>○（自社）</td></tr>
+<tr><td>システム設定</td><td>-</td><td>○</td><td>×</td></tr>
+<tr><td>お知らせ管理</td><td>-</td><td>○</td><td>×</td></tr>
+<tr><td>お知らせ閲覧</td><td>○</td><td>○</td><td>○</td></tr>
+<tr><td>応募者通知</td><td>-</td><td>○（全社）</td><td>○（自社）</td></tr>
+</table>
+---</p><h2>外部連携機能</h2><h3>広告プラットフォーム連携</h3><table><tr><td>プラットフォーム</td><td>機能</td><td>設定場所</td></tr>
+</table>
+<table><tr><td>TikTok Pixel</td><td>ViewContent/コンバージョン追跡</td><td>LP設定</td></tr>
+<tr><td>Google Ads</td><td>コンバージョンタグ</td><td>LP設定</td></tr>
+<tr><td>Meta Pixel</td><td>PageView/ViewContent/Lead/Contact</td><td>LP設定</td></tr>
+<tr><td>LINE Tag</td><td>ページビュー/コンバージョン</td><td>LP設定</td></tr>
+<tr><td>Microsoft Clarity</td><td>セッション録画/ヒートマップ</td><td>LP設定</td></tr>
+</table>
+<h3>API連携</h3><table><tr><td>サービス</td><td>用途</td></tr>
+</table>
+<table><tr><td>Google Analytics 4</td><td>アクセス解析データ取得</td></tr>
+<tr><td>Firebase Authentication</td><td>ユーザー認証</td></tr>
+<tr><td>Firestore</td><td>データストレージ</td></tr>
+<tr><td>Cloud Functions</td><td>バックエンドAPI</td></tr>
+<tr><td>Google Calendar API</td><td>面談スケジュール連携</td></tr>
+<tr><td>SendGrid</td><td>メール送信</td></tr>
+</table>
+<h3>通知関連コレクション（Firestore）</h3><table><tr><td>コレクション</td><td>用途</td><td>アクセス権</td></tr>
+</table>
+<table><tr><td><code>announcements</code></td><td>運営からのお知らせ</td><td>読み取り:全員 / 書き込み:Admin</td></tr>
+<tr><td><code>notifications</code></td><td>応募者通知</td><td>読み取り:認証ユーザー / 書き込み:全員（作成のみ）</td></tr>
+</table>
+---</p><h2>関連ドキュメント</h2>
+<ul><li><a href="./screen-flow.html">画面遷移図</a></li>
+<li><a href="./analytics-summary.html">分析・解析内容まとめ</a></li>
+<li><a href="./company-user-guide.html">会社ユーザーガイド</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

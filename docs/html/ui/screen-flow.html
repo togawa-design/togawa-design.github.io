@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>画面遷移図 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>画面遷移図</h1><h2>概要</h2>
+本ドキュメントはリクエコの画面遷移を記述します。</p><p>*最終更新: 2026-02-12*</p><p>---</p><h2>画面一覧</h2><h3>公開ページ（求職者向け）</h3><table><tr><td>ファイル名</td><td>画面名</td><td>概要</td></tr>
+</table>
+<table><tr><td>index.html</td><td>トップページ</td><td>サイトのメインページ、注目求人・会社一覧表示</td></tr>
+<tr><td>jobs.html</td><td>求人一覧</td><td>全求人の検索・一覧表示</td></tr>
+<tr><td>job-detail.html</td><td>求人詳細</td><td>個別求人の詳細情報</td></tr>
+<tr><td>location.html</td><td>勤務地別求人</td><td>都道府県別の求人一覧</td></tr>
+<tr><td>company.html</td><td>会社一覧</td><td>掲載会社の一覧</td></tr>
+<tr><td>company-recruit.html</td><td>会社採用ページ</td><td>各会社の採用情報ページ</td></tr>
+<tr><td>lp.html</td><td>求人LP</td><td>個別求人のランディングページ</td></tr>
+<tr><td>mypage.html</td><td>マイページ</td><td>ユーザーのお気に入り・応募履歴</td></tr>
+</table>
+<h3>ガイドページ</h3><table><tr><td>ファイル名</td><td>画面名</td></tr>
+</table>
+<table><tr><td>guide-job-search.html</td><td>仕事探しガイド</td></tr>
+<tr><td>guide-interview.html</td><td>面接ガイド</td></tr>
+<tr><td>guide-work.html</td><td>働き方ガイド</td></tr>
+<tr><td>guide-site.html</td><td>サイト利用ガイド</td></tr>
+<tr><td>about.html</td><td>会社概要</td></tr>
+</table>
+<h3>法的ページ</h3><table><tr><td>ファイル名</td><td>画面名</td></tr>
+</table>
+<table><tr><td>legal.html</td><td>特定商取引法に基づく表記</td></tr>
+<tr><td>privacy.html</td><td>プライバシーポリシー</td></tr>
+<tr><td>terms.html</td><td>利用規約</td></tr>
+</table>
+<h3>管理画面（認証必要）</h3><table><tr><td>ファイル名</td><td>画面名</td><td>概要</td></tr>
+</table>
+<table><tr><td>admin.html</td><td>管理画面（統合SPA）</td><td>会社管理・求人管理・アナリティクスの統合管理画面</td></tr>
+<tr><td>applicants.html</td><td>応募者管理（スタンドアロン）</td><td>応募者一覧・管理</td></tr>
+</table>
+---</p><h2>画面遷移図</h2><h3>公開ページの遷移</h3><div class="mermaid">
+flowchart TD
+    TOP["トップページ<br/>(index.html)"]
+
+    TOP --> JOBS["求人一覧<br/>(jobs.html)"]
+    TOP --> COMPANY["会社一覧<br/>(company.html)"]
+    TOP --> LOCATION["勤務地別求人<br/>(location.html)"]
+
+    JOBS --> JOBDETAIL["求人詳細<br/>(job-detail.html)"]
+    COMPANY --> RECRUIT["会社採用ページ<br/>(company-recruit.html)"]
+    LOCATION --> RECRUIT
+
+    JOBDETAIL --> LP["求人LP<br/>(lp.html)"]
+    RECRUIT --> LP
+
+    LP --> FORM["応募フォーム<br/>(モーダル表示)"]
+
+    style TOP fill:#4a90d9,color:#fff
+    style LP fill:#5cb85c,color:#fff
+    style FORM fill:#d9534f,color:#fff
+</div><p>---</p><h2>管理画面構成</h2><h3>ユーザーロール別アクセス権</h3><table><tr><td>セクション</td><td>Admin</td><td>会社ユーザー</td><td>備考</td></tr>
+</table>
+<table><tr><td>概要</td><td>○</td><td>○</td><td>会社ユーザーは自社データのみ</td></tr>
+<tr><td>会社管理</td><td>○</td><td>×</td><td></td></tr>
+<tr><td>求人一覧（全社）</td><td>○</td><td>×</td><td></td></tr>
+<tr><td>求人管理</td><td>○</td><td>○</td><td>会社ユーザーは自社のみ</td></tr>
+<tr><td>LP設定</td><td>○</td><td>○</td><td>会社ユーザーは自社のみ</td></tr>
+<tr><td>採用ページ設定</td><td>○</td><td>○</td><td>会社ユーザーは自社のみ</td></tr>
+<tr><td>アナリティクス詳細</td><td>○</td><td>△</td><td>会社ユーザーは制限あり</td></tr>
+<tr><td>会社ユーザー管理</td><td>○</td><td>○</td><td>会社ユーザーは自社のみ</td></tr>
+<tr><td>設定</td><td>○</td><td>×</td><td></td></tr>
+</table>
+<h3>管理画面セクション詳細</h3><pre><code class="language-">admin.html (SPA - シングルページアプリケーション)
+    │
+    ├── overview.html ─────────────── 概要・ダッシュボード
+    │       ├── PV/UVサマリー
+    │       ├── 応募数サマリー
+    │       ├── 日別推移グラフ
+    │       └── 人口統計（性別・年齢）
+    │
+    ├── company-manage.html ───────── 会社一覧管理【Admin専用】
+    │       ├── 会社検索・フィルター
+    │       ├── 会社追加・編集・削除
+    │       └─► company-detail.html ── 会社詳細
+    │               └─► company-users.html ── 会社ユーザー管理
+    │
+    ├── job-listings.html ─────────── 求人一覧（全社）【Admin専用】
+    │       ├── 全社横断検索
+    │       └── 会社別フィルター
+    │
+    ├── job-manage.html ───────────── 求人管理
+    │       ├── [求人] タブ ─── 求人一覧・追加・編集・削除
+    │       ├── [分析] タブ ─── 求人別PV・応募数
+    │       ├── [レポート] タブ ─ 週次・月次レポート
+    │       ├── [応募者] タブ ─── 応募者一覧・ステータス管理
+    │       └── [採用ページ] タブ ─ 会社採用ページへのリンク
+    │
+    ├── lp-settings.html ──────────── LP設定
+    │       ├── デザインパターン選択
+    │       ├── 6つの訴求ポイント設定
+    │       ├── 広告ピクセル設定（TikTok/Google/Meta/LINE/Clarity）
+    │       └── プレビュー
+    │
+    ├── recruit-settings.html ─────── 採用ページ設定
+    │       ├── 基本情報設定
+    │       ├── カスタムセクション（ドラッグ&ドロップ）
+    │       ├── SNS連携設定
+    │       └── プレビュー
+    │
+    ├── analytics-detail.html ─────── アナリティクス詳細
+    │       ├── [採用管理] タブ ────【Admin専用】
+    │       │       ├── 対応アラート（48時間以上未対応）
+    │       │       ├── 採用ファネル（応募→連絡済→面接→内定→入社）
+    │       │       ├── リードタイム統計
+    │       │       ├── リードタイム分布グラフ
+    │       │       ├── 担当者別パフォーマンス
+    │       │       └── 企業別ドリルダウン
+    │       ├── [企業別] タブ ─────【Admin専用】
+    │       │       └── 企業ランキング（PV/応募数）
+    │       ├── [LP/採用ページ] タブ
+    │       │       ├── ページ別PV/UV/CTA
+    │       │       ├── 流入元分析（10種類）
+    │       │       ├── デバイス別割合
+    │       │       └── LP vs 採用ページ比較
+    │       ├── [コンバージョン] タブ
+    │       │       ├── CVR分析
+    │       │       └── 応募ファネル
+    │       ├── [トラフィック] タブ
+    │       │       └── 流入元詳細分析
+    │       └── [トレンド] タブ
+    │               └── 日別/週別/月別推移
+    │
+    ├── company-users.html ────────── 会社ユーザー管理
+    │       ├── ユーザー一覧
+    │       ├── ユーザー追加（個別/一括）
+    │       ├── ロール設定（管理者/スタッフ）
+    │       └── パスワードリセット
+    │
+    └── settings.html ─────────────── 設定【Admin専用】
+            ├── 管理者アカウント管理
+            ├── フィードダウンロード
+            └── システム設定
+</code></pre><p>---</p><h2>認証フロー</h2><h3>Admin認証（Firebase Authentication + Google OAuth）</h3><div class="mermaid">
+flowchart TD
+    A["admin.html にアクセス"] --> B{"認証状態"}
+    B -->|未認証| C["認証モーダル表示"]
+
+    C --> D["Googleでログイン"]
+    C --> E["会社ユーザーログイン"]
+
+    D --> F["Google OAuth 認証画面"]
+    F --> G{"admin_users<br/>コレクション確認"}
+    G -->|登録済み| H["✅ Admin画面表示"]
+    G -->|未登録| I["❌ エラー表示"]
+
+    E --> J["メールアドレス/<br/>パスワード入力"]
+    J --> K["Firebase Auth 照合"]
+    K --> L{"company_users<br/>コレクション確認"}
+    L -->|登録済み| M["✅ 会社ユーザー画面<br/>(自社のみ)"]
+    L -->|未登録| N["❌ エラー表示"]
+
+    style H fill:#5cb85c,color:#fff
+    style M fill:#5cb85c,color:#fff
+    style I fill:#d9534f,color:#fff
+    style N fill:#d9534f,color:#fff
+</div><h3>会社ユーザーの画面制限</h3><pre><code class="language-">会社ユーザーログイン後:
+    │
+    ├── サイドバー: 会社管理・求人一覧・設定 が非表示
+    ├── 概要: 自社データのみ表示
+    ├── 求人管理: 自社求人のみ
+    ├── LP設定: 自社LPのみ
+    ├── 採用ページ設定: 自社のみ
+    └── アナリティクス:
+            ├── 採用管理タブ → 非表示
+            ├── 企業別タブ → 非表示
+            └── その他タブ → 自社データのみ
+</code></pre><p>---</p><h2>URLパラメータ</h2><h3>求人関連</h3><table><tr><td>ページ</td><td>パラメータ</td><td>例</td></tr>
+</table>
+<table><tr><td>job-detail.html</td><td>company, job</td><td><code>?company=example&job=job001</code></td></tr>
+<tr><td>lp.html</td><td>j</td><td><code>?j=example_job001</code></td></tr>
+<tr><td>company-recruit.html</td><td>id</td><td><code>?id=example</code></td></tr>
+<tr><td>location.html</td><td>prefecture</td><td><code>?prefecture=東京都</code></td></tr>
+</table>
+<h3>管理画面</h3><table><tr><td>ページ</td><td>パラメータ</td><td>例</td></tr>
+</table>
+<table><tr><td>admin.html</td><td>section</td><td><code>?section=job-manage</code></td></tr>
+<tr><td>admin.html</td><td>section, company</td><td><code>?section=job-manage&company=example</code></td></tr>
+<tr><td>admin.html</td><td>section, job</td><td><code>?section=lp-settings&job=example_job001</code></td></tr>
+</table>
+<h3>UTMパラメータ（トラッキング用）</h3><table><tr><td>パラメータ</td><td>用途</td><td>例</td></tr>
+</table>
+<table><tr><td>utm_source</td><td>流入元</td><td><code>google</code>, <code>indeed</code>, <code>line</code></td></tr>
+<tr><td>utm_medium</td><td>メディア種別</td><td><code>cpc</code>, <code>organic</code>, <code>referral</code></td></tr>
+<tr><td>utm_campaign</td><td>キャンペーン名</td><td><code>spring_campaign</code></td></tr>
+<tr><td>utm_content</td><td>コンテンツ識別</td><td><code>banner_a</code></td></tr>
+<tr><td>utm_term</td><td>キーワード</td><td><code>東京 求人</code></td></tr>
+</table>
+---</p><h2>データフロー概要</h2><div class="mermaid">
+flowchart TD
+    subgraph USER["👤 求職者の行動"]
+        A1["ページ閲覧"]
+        A2["スクロール"]
+        A3["CTAクリック"]
+        A4["応募完了"]
+    end
+
+    subgraph COLLECT["📊 データ収集"]
+        B["page-analytics.js"]
+        C["Cloud Functions"]
+        D["Firestore"]
+    end
+
+    subgraph ADMIN["📈 管理画面でデータ確認"]
+        E["概要ダッシュボード<br/>(GA4 API + Firestore)"]
+        F["アナリティクス詳細<br/>(GA4 API + Firestore + 独自計算)"]
+        G["採用管理<br/>(applications コレクション)"]
+    end
+
+    A1 & A2 & A3 & A4 --> B
+    B --> C --> D
+    D --> E & F & G
+
+    style USER fill:#e3f2fd
+    style COLLECT fill:#fff3e0
+    style ADMIN fill:#e8f5e9
+</div><p>---</p><h2>関連ドキュメント</h2>
+<ul><li><a href="./feature-list.html">機能一覧</a></li>
+<li><a href="./analytics-summary.html">分析・解析内容まとめ</a></li>
+<li><a href="../development/setup.html">環境構築手順</a></li>
+<li><a href="../system/detailed-design.html">詳細設計書</a></li>
+<li><a href="../system/firestore-schema.html">Firestore DB構成図</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

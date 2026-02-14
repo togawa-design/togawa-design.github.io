@@ -1,14 +1,53 @@
-# Firestore DB構成図
-
-## 概要
-リクエコで使用するCloud Firestoreのデータベース構成を記述します。
-
----
-
-## コレクション構成図
-
-```
-firestore/
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firestore DB構成図 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>Firestore DB構成図</h1><h2>概要</h2>
+リクエコで使用するCloud Firestoreのデータベース構成を記述します。</p><p>---</p><h2>コレクション構成図</h2><pre><code class="language-">firestore/
 │
 ├── companies/                    # 会社情報
 │   └── {companyDomain}/          # ドキュメントID = 会社ドメイン
@@ -51,16 +90,7 @@ firestore/
 │
 └── page_analytics_events/        # アナリティクスイベント
     └── {docId}/
-```
-
----
-
-## コレクション詳細
-
-### companies（会社情報）
-
-```typescript
-// /companies/{companyDomain}
+</code></pre><p>---</p><h2>コレクション詳細</h2><h3>companies（会社情報）</h3><pre><code class="language-typescript">// /companies/{companyDomain}
 {
   company: string,           // 会社名
   companyAddress: string,    // 住所
@@ -73,61 +103,39 @@ firestore/
   createdAt: Timestamp,
   updatedAt: Timestamp
 }
-```
-
-### companies/{companyDomain}/jobs（求人情報）
-
-```typescript
-// /companies/{companyDomain}/jobs/{jobId}
+</code></pre><h3>companies/{companyDomain}/jobs（求人情報）</h3><pre><code class="language-typescript">// /companies/{companyDomain}/jobs/{jobId}
 {
   id: string,                 // 求人ID
   title: string,              // 募集タイトル
   location: string,           // 勤務地
   companyAddress: string,     // 会社住所
-  access: string,             // アクセス情報
-
-  // 給与情報
+  access: string,             // アクセス情報</p><p>  // 給与情報
   salaryType: string,         // 給与形態（時給/日給/月給）
   monthlySalary: string,      // 月給
   monthlySalaryExample: string, // 月収例
   dailySalaryExample: string,   // 日収例
   yearlySalaryExample: string,  // 年収例
-  totalBonus: string,         // 特典総額
-
-  // 求人詳細
+  totalBonus: string,         // 特典総額</p><p>  // 求人詳細
   jobType: string,            // 職種
   jobDescription: string,     // 仕事内容
   requirements: string,       // 応募資格
   benefits: string,           // 福利厚生
   workingHours: string,       // 勤務時間
   holidays: string,           // 休日
-  employmentType: string,     // 雇用形態
-
-  // 表示設定
+  employmentType: string,     // 雇用形態</p><p>  // 表示設定
   features: string,           // 特徴タグ（カンマ区切り）
   displayedFeatures: string,  // 表示用特徴タグ
   visible: boolean,           // 公開フラグ
   order: number,              // 表示順
-  memo: string,               // 管理用メモ
-
-  // 掲載期間
+  memo: string,               // 管理用メモ</p><p>  // 掲載期間
   publishStartDate: Timestamp,
-  publishEndDate: Timestamp,
-
-  // メディア
+  publishEndDate: Timestamp,</p><p>  // メディア
   jobLogo: string,            // 求人ロゴURL
   showVideoButton: boolean,   // 動画ボタン表示
-  videoUrl: string,           // 動画URL
-
-  createdAt: Timestamp,
+  videoUrl: string,           // 動画URL</p><p>  createdAt: Timestamp,
   updatedAt: Timestamp
 }
-```
-
-### companies/{companyDomain}/lpSettings（LP設定）
-
-```typescript
-// /companies/{companyDomain}/lpSettings/{jobId}
+</code></pre><h3>companies/{companyDomain}/lpSettings（LP設定）</h3><pre><code class="language-typescript">// /companies/{companyDomain}/lpSettings/{jobId}
 {
   sections: [                 // セクション配列
     {
@@ -145,12 +153,7 @@ firestore/
   themeColor: string,         // テーマカラー
   updatedAt: Timestamp
 }
-```
-
-### companies/{companyDomain}/recruitSettings（採用ページ設定）
-
-```typescript
-// /companies/{companyDomain}/recruitSettings/main
+</code></pre><h3>companies/{companyDomain}/recruitSettings（採用ページ設定）</h3><pre><code class="language-typescript">// /companies/{companyDomain}/recruitSettings/main
 {
   sections: [                 // セクション配列
     {
@@ -175,12 +178,7 @@ firestore/
   designPattern: string,
   updatedAt: Timestamp
 }
-```
-
-### admin_users（管理者ユーザー）
-
-```typescript
-// /admin_users/{uid}
+</code></pre><h3>admin_users（管理者ユーザー）</h3><pre><code class="language-typescript">// /admin_users/{uid}
 {
   uid: string,
   email: string,
@@ -190,12 +188,7 @@ firestore/
   createdAt: Timestamp,
   lastLoginAt: Timestamp
 }
-```
-
-### company_users（会社ユーザー）
-
-```typescript
-// /company_users/{username}
+</code></pre><h3>company_users（会社ユーザー）</h3><pre><code class="language-typescript">// /company_users/{username}
 {
   username: string,
   password: string,           // ハッシュ化推奨
@@ -207,12 +200,7 @@ firestore/
   createdAt: Timestamp,
   lastLoginAt: Timestamp
 }
-```
-
-### applications（応募データ）
-
-```typescript
-// /applications/{applicationId}
+</code></pre><h3>applications（応募データ）</h3><pre><code class="language-typescript">// /applications/{applicationId}
 {
   // 応募者情報
   applicant: {
@@ -223,41 +211,24 @@ firestore/
     currentJob: string,
     experience: string,
     message: string
-  },
-
-  // 求人情報
+  },</p><p>  // 求人情報
   companyDomain: string,
   companyName: string,        // 会社名（表示用）
   jobId: string,
-  jobTitle: string,
-
-  // ステータス
-  status: string,             // 'new' | 'reviewing' | 'interview' | 'hired' | 'rejected'
-
-  // 面談情報
+  jobTitle: string,</p><p>  // ステータス
+  status: string,             // 'new' <table><tr><td>'reviewing'</td><td>'interview'</td><td>'hired'</td></tr></table> 'rejected'</p><p>  // 面談情報
   interviewId: string,        // 面談スケジュールへの参照
   interviewDate: Timestamp,
-  interviewNotes: string,
-
-  // 担当者
-  assignee: string,           // 担当者名
-
-  createdAt: Timestamp,
+  interviewNotes: string,</p><p>  // 担当者
+  assignee: string,           // 担当者名</p><p>  createdAt: Timestamp,
   updatedAt: Timestamp
 }
-```
-
-### users（一般ユーザー）
-
-```typescript
-// /users/{uid}
+</code></pre><h3>users（一般ユーザー）</h3><pre><code class="language-typescript">// /users/{uid}
 {
   uid: string,
   email: string,
   displayName: string,
-  photoURL: string,
-
-  // プロフィール
+  photoURL: string,</p><p>  // プロフィール
   profile: {
     name: string,
     phone: string,
@@ -265,27 +236,15 @@ firestore/
     currentJob: string,
     desiredJob: string,
     experience: string
-  },
-
-  createdAt: Timestamp,
+  },</p><p>  createdAt: Timestamp,
   updatedAt: Timestamp
 }
-```
-
-### settings（設定）
-
-```typescript
-// /settings/{companyDomain}
+</code></pre><h3>settings（設定）</h3><pre><code class="language-typescript">// /settings/{companyDomain}
 {
   assignees: string[],        // 担当者リスト
   updatedAt: Timestamp
 }
-```
-
-### messages（メッセージ）
-
-```typescript
-// /messages/{messageId}
+</code></pre><h3>messages（メッセージ）</h3><pre><code class="language-typescript">// /messages/{messageId}
 {
   applicationId: string,      // 紐付け応募ID
   companyDomain: string,
@@ -294,14 +253,9 @@ firestore/
   read: boolean,              // 既読フラグ
   createdAt: Timestamp
 }
-```
-
-### notifications（通知）
-
-```typescript
-// /notifications/{notificationId}
+</code></pre><h3>notifications（通知）</h3><pre><code class="language-typescript">// /notifications/{notificationId}
 {
-  type: string,               // 'application' | 'message' | 'system'
+  type: string,               // 'application' <table><tr><td>'message'</td></tr></table> 'system'
   companyDomain: string,
   applicationId: string,
   jobId: string,
@@ -311,16 +265,11 @@ firestore/
   isRead: boolean,
   createdAt: Timestamp
 }
-```
-
-### announcements（お知らせ）
-
-```typescript
-// /announcements/{announcementId}
+</code></pre><h3>announcements（お知らせ）</h3><pre><code class="language-typescript">// /announcements/{announcementId}
 {
   title: string,
   content: string,
-  targetAudience: string,     // 'job_seekers' | 'company_users' | 'all'
+  targetAudience: string,     // 'job_seekers' <table><tr><td>'company_users'</td></tr></table> 'all'
   publishStartDate: Timestamp,
   publishEndDate: Timestamp,
   status: string,             // 'draft' | 'published'
@@ -329,30 +278,20 @@ firestore/
   createdAt: Timestamp,
   updatedAt: Timestamp
 }
-```
-
-### interviews（面談スケジュール）
-
-```typescript
-// /interviews/{interviewId}
+</code></pre><h3>interviews（面談スケジュール）</h3><pre><code class="language-typescript">// /interviews/{interviewId}
 {
   applicationId: string,      // 紐付け応募ID
   companyDomain: string,
   scheduledAt: Timestamp,     // 面談日時
   staffName: string,          // 担当スタッフ
-  meetingType: string,        // 'in_person' | 'online' | 'phone'
+  meetingType: string,        // 'in_person' <table><tr><td>'online'</td></tr></table> 'phone'
   location: string,           // 面談場所（対面の場合）
   meetingUrl: string,         // 会議URL（オンラインの場合）
   notes: string,              // メモ
   createdAt: Timestamp,
   updatedAt: Timestamp
 }
-```
-
-### favorites（お気に入り）
-
-```typescript
-// /favorites/{favoriteId}
+</code></pre><h3>favorites（お気に入り）</h3><pre><code class="language-typescript">// /favorites/{favoriteId}
 {
   userId: string,             // ユーザーID
   jobId: string,              // 求人ID
@@ -363,31 +302,17 @@ firestore/
   monthlySalary: string,
   createdAt: Timestamp
 }
-```
-
-### page_analytics_events（アナリティクスイベント）
-
-```typescript
-// /page_analytics_events/{docId}
+</code></pre><h3>page_analytics_events（アナリティクスイベント）</h3><pre><code class="language-typescript">// /page_analytics_events/{docId}
 {
-  pageType: string,           // 'lp' | 'recruit' | 'job'
+  pageType: string,           // 'lp' <table><tr><td>'recruit'</td></tr></table> 'job'
   companyDomain: string,
   jobId: string,
-  eventType: string,          // 'pageview' | 'apply_click' | 'scroll'
+  eventType: string,          // 'pageview' <table><tr><td>'apply_click'</td></tr></table> 'scroll'
   userAgent: string,
   referrer: string,
   createdAt: Timestamp
 }
-```
-
----
-
-## インデックス設定
-
-### jobs コレクション
-
-```json
-{
+</code></pre><p>---</p><h2>インデックス設定</h2><h3>jobs コレクション</h3><pre><code class="language-json">{
   "collectionGroup": "jobs",
   "queryScope": "COLLECTION",
   "fields": [
@@ -395,10 +320,7 @@ firestore/
     { "fieldPath": "order", "order": "ASCENDING" }
   ]
 }
-```
-
-```json
-{
+</code></pre><pre><code class="language-json">{
   "collectionGroup": "jobs",
   "queryScope": "COLLECTION_GROUP",
   "fields": [
@@ -406,12 +328,7 @@ firestore/
     { "fieldPath": "publishEndDate", "order": "DESCENDING" }
   ]
 }
-```
-
-### applications コレクション
-
-```json
-{
+</code></pre><h3>applications コレクション</h3><pre><code class="language-json">{
   "collectionGroup": "applications",
   "queryScope": "COLLECTION",
   "fields": [
@@ -419,12 +336,7 @@ firestore/
     { "fieldPath": "createdAt", "order": "DESCENDING" }
   ]
 }
-```
-
-### messages コレクション
-
-```json
-{
+</code></pre><h3>messages コレクション</h3><pre><code class="language-json">{
   "collectionGroup": "messages",
   "queryScope": "COLLECTION",
   "fields": [
@@ -432,12 +344,7 @@ firestore/
     { "fieldPath": "createdAt", "order": "ASCENDING" }
   ]
 }
-```
-
-### notifications コレクション
-
-```json
-{
+</code></pre><h3>notifications コレクション</h3><pre><code class="language-json">{
   "collectionGroup": "notifications",
   "queryScope": "COLLECTION",
   "fields": [
@@ -446,12 +353,7 @@ firestore/
     { "fieldPath": "createdAt", "order": "DESCENDING" }
   ]
 }
-```
-
-### favorites コレクション
-
-```json
-{
+</code></pre><h3>favorites コレクション</h3><pre><code class="language-json">{
   "collectionGroup": "favorites",
   "queryScope": "COLLECTION",
   "fields": [
@@ -459,12 +361,7 @@ firestore/
     { "fieldPath": "createdAt", "order": "DESCENDING" }
   ]
 }
-```
-
-### company_users コレクション
-
-```json
-{
+</code></pre><h3>company_users コレクション</h3><pre><code class="language-json">{
   "collectionGroup": "company_users",
   "queryScope": "COLLECTION",
   "fields": [
@@ -472,35 +369,25 @@ firestore/
     { "fieldPath": "isActive", "order": "ASCENDING" }
   ]
 }
-```
-
----
-
-## セキュリティルール概要
-
-| コレクション | 読み取り | 書き込み |
-|-------------|---------|---------|
-| companies | 全員 | 認証ユーザー |
-| jobs | 全員（visible=true） | 認証ユーザー |
-| lpSettings | 全員 | 認証ユーザー |
-| recruitSettings | 全員 | 認証ユーザー |
-| admin_users | 認証ユーザー | 管理者 |
-| company_users | 全員 | 管理者 |
-| applications | 自社のみ | 認証ユーザー |
-| users | 本人のみ | 本人のみ |
-| settings | 自社のみ | 認証ユーザー |
-| messages | 当事者のみ | 当事者のみ |
-| notifications | 自社のみ | システム |
-| announcements | 全員 | 管理者 |
-| interviews | 自社のみ | 認証ユーザー |
-| favorites | 本人のみ | 本人のみ |
-| page_analytics_events | 認証ユーザー | 全員 |
-
----
-
-## ER図
-
-```mermaid
+</code></pre><p>---</p><h2>セキュリティルール概要</h2><table><tr><td>コレクション</td><td>読み取り</td><td>書き込み</td></tr>
+</table>
+<table><tr><td>companies</td><td>全員</td><td>認証ユーザー</td></tr>
+<tr><td>jobs</td><td>全員（visible=true）</td><td>認証ユーザー</td></tr>
+<tr><td>lpSettings</td><td>全員</td><td>認証ユーザー</td></tr>
+<tr><td>recruitSettings</td><td>全員</td><td>認証ユーザー</td></tr>
+<tr><td>admin_users</td><td>認証ユーザー</td><td>管理者</td></tr>
+<tr><td>company_users</td><td>全員</td><td>管理者</td></tr>
+<tr><td>applications</td><td>自社のみ</td><td>認証ユーザー</td></tr>
+<tr><td>users</td><td>本人のみ</td><td>本人のみ</td></tr>
+<tr><td>settings</td><td>自社のみ</td><td>認証ユーザー</td></tr>
+<tr><td>messages</td><td>当事者のみ</td><td>当事者のみ</td></tr>
+<tr><td>notifications</td><td>自社のみ</td><td>システム</td></tr>
+<tr><td>announcements</td><td>全員</td><td>管理者</td></tr>
+<tr><td>interviews</td><td>自社のみ</td><td>認証ユーザー</td></tr>
+<tr><td>favorites</td><td>本人のみ</td><td>本人のみ</td></tr>
+<tr><td>page_analytics_events</td><td>認証ユーザー</td><td>全員</td></tr>
+</table>
+---</p><h2>ER図</h2><div class="mermaid">
 erDiagram
     companies ||--o{ jobs : "1:N サブコレクション"
     companies ||--o{ lpSettings : "1:N サブコレクション"
@@ -609,24 +496,20 @@ erDiagram
         string status
         string targetAudience
     }
-```
-
----
-
-## データ移行メモ
-
-### GAS → Firestore 移行
-
-| GAS（スプレッドシート） | Firestore |
-|----------------------|-----------|
-| 会社一覧シート | /companies |
-| 各社管理シート | /companies/{domain}/jobs |
-| LP設定シート | /companies/{domain}/lpSettings |
-| 採用ページ設定シート | /companies/{domain}/recruitSettings |
-
----
-
-## 関連ドキュメント
-- [環境構築手順](../development/setup.md)
-- [画面遷移図](../ui/screen-flow.md)
-- [詳細設計書](./detailed-design.md)
+</div><p>---</p><h2>データ移行メモ</h2><h3>GAS → Firestore 移行</h3><table><tr><td>GAS（スプレッドシート）</td><td>Firestore</td></tr>
+</table>
+<table><tr><td>会社一覧シート</td><td>/companies</td></tr>
+<tr><td>各社管理シート</td><td>/companies/{domain}/jobs</td></tr>
+<tr><td>LP設定シート</td><td>/companies/{domain}/lpSettings</td></tr>
+<tr><td>採用ページ設定シート</td><td>/companies/{domain}/recruitSettings</td></tr>
+</table>
+---</p><h2>関連ドキュメント</h2>
+<ul><li><a href="../development/setup.html">環境構築手順</a></li>
+<li><a href="../ui/screen-flow.html">画面遷移図</a></li>
+<li><a href="./detailed-design.html">詳細設計書</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

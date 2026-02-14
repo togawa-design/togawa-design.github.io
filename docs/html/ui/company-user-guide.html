@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会社ユーザー向け管理画面 使い方ガイド - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>会社ユーザー向け管理画面 使い方ガイド</h1><p>このガイドでは、L-SET求人管理システムの会社ユーザー向け機能について説明します。</p><p>---</p><h2>目次</h2><p><li><a href="#1-ログイン方法">ログイン方法</a></li>
+<li><a href="#2-求人管理">求人管理</a></li>
+   - <a href="#21-求人一覧の見方">求人一覧の見方</a>
+   - <a href="#22-新規求人の登録">新規求人の登録</a>
+   - <a href="#23-求人の編集">求人の編集</a>
+   - <a href="#24-求人の並び順変更">求人の並び順変更</a>
+<li><a href="#3-応募者管理">応募者管理</a></li>
+<li><a href="#4-採用ページ設定">採用ページ設定</a></li>
+<li><a href="#5-lpランディングページ設定">LP（ランディングページ）設定</a></li>
+<li><a href="#6-アクセス解析">アクセス解析</a></li>
+<li><a href="#7-レポート機能">レポート機能</a></li>
+<li><a href="#8-ユーザー管理">ユーザー管理</a></li>
+<li><a href="#9-便利な機能">便利な機能</a></li></p><p>---</p><h2>1. ログイン方法</h2><p><li><code>https://[サイトURL]/admin.html</code> にアクセス</li>
+<li>「会社ユーザーとしてログイン」タブを選択</li>
+<li>管理者から発行された<strong>ログインID</strong>と<strong>パスワード</strong>を入力</li>
+<li>「ログイン」ボタンをクリック</li></p><p>> <strong>注意</strong>: パスワードを忘れた場合は、管理者に連絡してください。</p><p>---</p><h2>2. 求人管理</h2><h3>2.1 求人一覧の見方</h3><p>ログイン後、最初に表示されるのが<strong>求人一覧</strong>画面です。</p><table><tr><td>列</td><td>説明</td></tr>
+</table>
+<table><tr><td>画像</td><td>求人のサムネイル画像</td></tr>
+<tr><td>件名/タグ</td><td>求人タイトルと特徴タグ</td></tr>
+<tr><td>職種</td><td>事務・製造・IT など</td></tr>
+<tr><td>雇用形態</td><td>正社員・契約社員・派遣など</td></tr>
+<tr><td>エリア</td><td>勤務地エリア</td></tr>
+<tr><td>掲載期限</td><td>掲載終了日</td></tr>
+<tr><td>応募</td><td>応募数</td></tr>
+<tr><td>PV</td><td>ページビュー数</td></tr>
+<tr><td>ステータス</td><td>公開中 / 非公開 / 掲載終了</td></tr>
+<tr><td>操作</td><td>編集・複製・削除ボタン</td></tr>
+</table>
+#### フィルタ機能
+<ul><li><strong>タイトル検索</strong>: キーワードで求人を検索</li>
+<li><strong>ステータス</strong>: 公開中 / 非公開 / 掲載終了 で絞り込み</li>
+<li><strong>エリア</strong>: 勤務地エリアで絞り込み</li>
+</ul>
+---</p><h3>2.2 新規求人の登録</h3><p><li>画面右上の「<strong>+ 新規求人作成</strong>」ボタンをクリック</li>
+<li>各セクションに必要情報を入力</li></p><p>#### 入力項目</p><p><strong>基本情報</strong>
+<table><tr><td>項目</td><td>説明</td><td>必須</td></tr>
+</table>
+<table><tr><td>募集タイトル</td><td>求職者に表示されるタイトル（例: 製造スタッフ募集！月収32万円以上）</td><td>○</td></tr>
+<tr><td>雇用形態</td><td>正社員・契約社員・派遣社員など</td><td>-</td></tr>
+<tr><td>勤務地</td><td>実際に働く場所（例: 愛知県豊田市）</td><td>○</td></tr>
+<tr><td>アクセス</td><td>最寄り駅からのアクセス方法</td><td>-</td></tr>
+<tr><td>職種</td><td>事務・営業・製造・ITなど</td><td>-</td></tr>
+</table>
+<strong>給与・条件</strong>
+<table><tr><td>項目</td><td>説明</td></tr>
+</table>
+<table><tr><td>給与形態</td><td>時給・日給・月給・その他</td></tr>
+<tr><td>金額</td><td>給与額（数値のみ）</td></tr>
+<tr><td>賞与合計</td><td>年間賞与の合計額</td></tr>
+<tr><td>勤務時間</td><td>シフト制の場合は複数追加可能</td></tr>
+<tr><td>休日</td><td>土日祝、シフト制など</td></tr>
+</table>
+<strong>特徴</strong>
+チェックボックスから該当する特徴を選択:
+<ul><li>未経験歓迎 / 経験者優遇 / 学歴不問</li>
+<li>高収入 / 寮完備 / 社宅あり</li>
+<li>交通費支給 / 車通勤OK / 駅チカ</li>
+<li>土日祝休み / シフト制 / 残業少なめ</li>
+<li>社会保険完備 / 昇給あり / 賞与あり など</li>
+</ul>
+<strong>表示する特徴（最大3つ）</strong>
+<ul><li>選択した特徴の中から、求人一覧やLPで目立つ形で表示したいものを3つまで選択</li>
+</ul>
+<strong>詳細情報</strong>
+<table><tr><td>項目</td><td>説明</td></tr>
+</table>
+<table><tr><td>仕事内容</td><td>詳細な業務内容を記載</td></tr>
+<tr><td>応募資格</td><td>必要なスキルや資格</td></tr>
+<tr><td>福利厚生</td><td>社会保険、各種手当など</td></tr>
+</table>
+<strong>掲載設定</strong>
+<table><tr><td>項目</td><td>説明</td></tr>
+</table>
+<table><tr><td>掲載開始日</td><td>公開を開始する日付</td></tr>
+<tr><td>掲載終了日</td><td>自動で非公開になる日付</td></tr>
+<tr><td>表示順</td><td>数字が小さいほど上に表示</td></tr>
+<tr><td>公開する</td><td>チェックを外すと非公開</td></tr>
+</table>
+<strong>管理メモ</strong>
+<ul><li>社内用のメモ欄（求職者には表示されません）</li>
+<li>担当者との連絡事項や採用進捗の記録に活用</li>
+</ul>
+<li>「<strong>保存</strong>」ボタンをクリック</li></p><p>---</p><h3>2.3 求人の編集</h3><p><li>求人一覧で編集したい求人の「<strong>編集</strong>」ボタン（ペンアイコン）をクリック</li>
+<li>内容を修正</li>
+<li>「<strong>保存</strong>」ボタンをクリック</li></p><p>#### 反映される場所</p><p>登録・編集した求人情報は以下の場所に反映されます：</p><table><tr><td>反映先</td><td>URL例</td><td>説明</td></tr>
+</table>
+<table><tr><td>求人一覧ページ</td><td><code>/jobs.html</code></td><td>サイト全体の求人一覧</td></tr>
+<tr><td>会社別求人ページ</td><td><code>/jobs.html?company=会社ドメイン</code></td><td>御社の求人のみ表示</td></tr>
+<tr><td>求人詳細ページ</td><td><code>/job.html?id=求人ID</code></td><td>各求人の詳細ページ</td></tr>
+<tr><td>求人LP</td><td><code>/lp.html?j=求人ID</code></td><td>求人専用ランディングページ</td></tr>
+<tr><td>採用ページ</td><td><code>/recruit.html?c=会社ドメイン</code></td><td>御社の採用ページ</td></tr>
+</table>
+---</p><h3>2.4 求人の並び順変更</h3><p><li>「<strong>並び順変更</strong>」ボタンをクリック</li>
+<li>ドラッグ&ドロップで求人の順番を入れ替え</li>
+<li>「<strong>順序を保存</strong>」をクリック</li></p><p>> 並び順は求人一覧やLPでの表示順に影響します。</p><p>---</p><h2>3. 応募者管理</h2><p>サイドメニューの「<strong>応募者管理</strong>」をクリックすると、応募者の一覧と対応状況を管理できます。</p><h3>画面構成</h3><p><strong>左側: 応募者一覧</strong>
+<ul><li>統計カード（総応募・新規・対応中・完了）</li>
+<li>フィルター（ステータス・求人・年齢・期間・検索）</li>
+<li>応募者リスト</li>
+</ul>
+<strong>右側: 詳細パネル</strong>
+<ul><li>応募者の基本情報</li>
+<li>ステータス変更</li>
+<li>担当者割り当て</li>
+<li>メモ・対応履歴</li>
+<li>メッセージ送信</li>
+</ul>
+<h3>ステータスの種類</h3><table><tr><td>ステータス</td><td>説明</td></tr>
+</table>
+<table><tr><td>新規</td><td>新しい応募（未対応）</td></tr>
+<tr><td>連絡済み</td><td>初回連絡完了</td></tr>
+<tr><td>面接調整中</td><td>面接日程を調整中</td></tr>
+<tr><td>面接済み</td><td>面接完了</td></tr>
+<tr><td>採用</td><td>採用決定</td></tr>
+<tr><td>入社</td><td>入社完了</td></tr>
+<tr><td>保留</td><td>一時保留</td></tr>
+<tr><td>NG</td><td>条件不一致など</td></tr>
+<tr><td>不採用</td><td>不採用通知済み</td></tr>
+<tr><td>辞退</td><td>応募者からの辞退</td></tr>
+</table>
+<h3>対応履歴の記録</h3><p><li>応募者を選択</li>
+<li>「対応履歴」セクションで対応内容を入力</li>
+<li>「追加」をクリック</li></p><h3>メッセージ送信</h3><p>応募者のマイページに表示されるメッセージを送信できます。
+テンプレートも用意されています：
+<ul><li>初回連絡</li>
+<li>面接日程調整</li>
+<li>面接リマインダー</li>
+<li>書類提出依頼</li>
+<li>選考結果待ち</li>
+<li>内定通知</li>
+<li>不採用通知</li>
+</ul>
+---</p><h2>4. 採用ページ設定</h2><p>会社専用の採用ページをカスタマイズできます。</p><h3>アクセス方法</h3>
+サイドメニューの「<strong>採用ページ</strong>」をクリック</p><h3>設定項目</h3><p><strong>1. テンプレート選択</strong>
+<ul><li>デフォルト / イエロー / インパクト / 信頼 / ボールド / エレガント / ポップ / コーポレート / マガジン / アットホーム / 地域密着</li>
+</ul>
+<strong>2. カラー設定</strong>
+<ul><li>メインカラー</li>
+<li>アクセントカラー</li>
+<li>背景カラー</li>
+<li>テキストカラー</li>
+</ul>
+<strong>3. ロゴ・ヘッダー設定</strong>
+<ul><li>ロゴ画像のアップロード</li>
+</ul>
+<h3>プレビュー・公開</h3>
+<ul><li>「プレビュー」ボタンで変更内容を確認</li>
+<li>「編集モードで開く」でライブ編集</li>
+<li>公開/非公開の切り替えが可能</li>
+</ul>
+<h3>採用ページURL</h3>
+<pre><code class="language-">https://[サイトURL]/recruit.html?c=[会社ドメイン]
+</code></pre><p>---</p><h2>5. LP（ランディングページ）設定</h2><p>各求人専用のランディングページを作成・カスタマイズできます。</p><h3>アクセス方法</h3>
+サイドメニューの「<strong>LP</strong>」をクリック</p><h3>設定手順</h3><p><strong>ステップ1: 求人を選択</strong>
+LPを設定したい求人を一覧から選択</p><p><strong>ステップ2: LP編集</strong></p><table><tr><td>セクション</td><td>設定項目</td></tr>
+</table>
+<table><tr><td>テンプレート</td><td>レイアウトスタイル・カスタムカラー</td></tr>
+<tr><td>ファーストビュー</td><td>タイトル・サブタイトル・TOP画像</td></tr>
+<tr><td>求人動画</td><td>YouTube動画の埋め込み</td></tr>
+</table>
+<h3>画像設定</h3>
+<ul><li>プリセット画像から選択</li>
+<li>画像URLを直接入力</li>
+<li>画像をアップロード</li>
+</ul>
+<h3>LP URL</h3>
+<pre><code class="language-">https://[サイトURL]/lp.html?j=[求人ID]
+</code></pre><p>---</p><h2>6. アクセス解析</h2><p>サイドメニューの「<strong>アクセス解析</strong>」で、求人ページへのアクセス状況を確認できます。</p><h3>期間選択</h3>
+<ul><li>7日間 / 30日間 / 90日間</li>
+<li>カスタム期間も設定可能</li>
+</ul>
+<h3>確認できるデータ</h3><p><strong>概要タブ</strong>
+<ul><li>総PV数</li>
+<li>ユニークユーザー数</li>
+<li>平均閲覧求人数</li>
+<li>平均滞在時間</li>
+<li>求人別アクセス数</li>
+<li>流入元別アクセス</li>
+<li>デバイス別アクセス</li>
+</ul>
+<strong>応募・CVRタブ</strong>
+<ul><li>コンバージョンファネル</li>
+<li>アクション種別内訳</li>
+<li>求人別CVR（コンバージョン率）</li>
+<li>応募イベント一覧</li>
+</ul>
+<strong>流入・行動タブ</strong>
+<ul><li>平均滞在時間</li>
+<li>エンゲージメント率</li>
+<li>直帰率</li>
+<li>チャネル別セッション</li>
+<li>参照元/メディア</li>
+</ul>
+<strong>時系列タブ</strong>
+<ul><li>ピーク曜日・時間帯</li>
+<li>曜日別アクセス</li>
+<li>時間帯別アクセス</li>
+<li>日別アクセス推移</li>
+</ul>
+---</p><h2>7. レポート機能</h2><p>応募状況のレポートを生成・ダウンロードできます。</p><h3>アクセス方法</h3>
+サイドメニューの「<strong>レポート</strong>」をクリック</p><h3>レポート生成</h3><p><li>期間を選択</li>
+   - 今週 / 先週 / 今月 / 先月 / カスタム
+<li>「レポート生成」ボタンをクリック</li></p><h3>レポート内容</h3>
+<ul><li>総応募数・前期比</li>
+<li>採用数・対応中数</li>
+<li>ステータス別内訳</li>
+<li>求人別パフォーマンス TOP5</li>
+<li>流入元分析</li>
+<li>担当者別対応状況</li>
+</ul>
+<h3>ダウンロード</h3>
+<ul><li>CSV形式</li>
+<li>Excel形式</li>
+</ul>
+---</p><h2>8. ユーザー管理</h2><h3>自社スタッフの追加</h3><p>管理者が設定画面から自社スタッフを追加できます。</p><p><strong>設定 > 自社スタッフ管理</strong></p><p><li>「新しいスタッフを追加」セクションで以下を入力:</li>
+   - メールアドレス
+   - 表示名
+   - ログインID
+   - 初期パスワード
+<li>「スタッフを追加」ボタンをクリック</li></p><h3>パスワード変更</h3><p><strong>設定 > パスワード変更</strong></p><p><li>現在のパスワードを入力</li>
+<li>新しいパスワードを入力（8文字以上）</li>
+<li>新しいパスワードを再入力（確認）</li>
+<li>「パスワードを変更」ボタンをクリック</li></p><p>---</p><h2>9. 便利な機能</h2><h3>求人フィード出力</h3><p>求人一覧画面から各種求人媒体向けのフィードをダウンロードできます。</p><table><tr><td>フィード</td><td>用途</td></tr>
+</table>
+<table><tr><td>Indeed XML</td><td>Indeedへの求人掲載</td></tr>
+<tr><td>Google JSON-LD</td><td>Googleしごと検索への表示</td></tr>
+<tr><td>求人ボックス XML</td><td>求人ボックス・スタンバイへの掲載</td></tr>
+<tr><td>CSV</td><td>Excelなどで編集可能な形式</td></tr>
+</table>
+<h3>求人の複製</h3><p>既存の求人をコピーして新しい求人を作成できます。</p><p><li>求人一覧で複製したい求人の「<strong>複製</strong>」ボタンをクリック</li>
+<li>コピーされた求人が編集画面で開く</li>
+<li>必要な部分を修正して保存</li></p><h3>管理メモ機能</h3><p>各求人に社内用のメモを残せます。
+<ul><li>担当者との連絡事項</li>
+<li>採用進捗のメモ</li>
+<li>注意事項など</li>
+</ul>
+<strong>求職者には表示されない</strong>ため、安心してご利用ください。</p><h3>CSVエクスポート</h3><p>応募者管理画面で「CSVエクスポート」ボタンをクリックすると、応募者データをダウンロードできます。</p><h3>複数会社の管理</h3><p>複数の会社アカウントに所属している場合、画面上部の会社切り替えボタンから管理対象の会社を切り替えられます。</p><p>---</p><h2>よくある質問</h2><p><strong>Q: 求人を非公開にするには？</strong>
+A: 求人編集画面で「公開する」のチェックを外して保存するか、掲載終了日を過去の日付に設定してください。</p><p><strong>Q: 応募者のデータは他社から見られますか？</strong>
+A: いいえ、御社の応募者データは御社アカウントからのみ閲覧可能です。</p><p><strong>Q: ログインIDを忘れた場合は？</strong>
+A: システム管理者にお問い合わせください。</p><p><strong>Q: 画像がアップロードできない場合は？</strong>
+A: ファイルサイズ（最大5MB）や対応形式（PNG/JPG/WebP）をご確認ください。</p><p>---</p><h2>お問い合わせ</h2><p>操作方法についてご不明な点がございましたら、システム管理者までお問い合わせください。
+</p>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

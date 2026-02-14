@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ドキュメント - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html">← 目次に戻る</a>
+  </nav>
+  <h1>ドキュメント</h1><h2>フォルダ構成</h2><pre><code class="language-">docs/
+├── development/     # 開発手順
+├── system/          # システム関連情報
+├── ui/              # UI関連
+├── todo/            # 今後やること
+└── misc/            # その他
+</code></pre><p>---</p><h2>development/ - 開発手順</h2><table><tr><td>ファイル</td><td>説明</td></tr>
+</table>
+<table><tr><td><a href="development/environment-setup.html">environment-setup.md</a></td><td>環境設定ガイド（ID一覧、環境変数、コマンド）</td></tr>
+<tr><td><a href="development/setup.html">setup.md</a></td><td>初期セットアップ手順</td></tr>
+<tr><td><a href="development/custom-domain-setup.html">custom-domain-setup.md</a></td><td>カスタムドメイン設定</td></tr>
+</table>
+---</p><h2>system/ - システム関連情報</h2><table><tr><td>ファイル</td><td>説明</td></tr>
+</table>
+<table><tr><td><a href="system/admin-system-architecture.html">admin-system-architecture.md</a></td><td>管理システムアーキテクチャ</td></tr>
+<tr><td><a href="system/admin-user-registration-flow.html">admin-user-registration-flow.md</a></td><td>管理者登録フロー（シーケンス図付き）</td></tr>
+<tr><td><a href="system/firestore-schema.html">firestore-schema.md</a></td><td>Firestore スキーマ定義</td></tr>
+<tr><td><a href="system/detailed-design.html">detailed-design.md</a></td><td>詳細設計</td></tr>
+</table>
+---</p><h2>ui/ - UI関連</h2><table><tr><td>ファイル</td><td>説明</td></tr>
+</table>
+<table><tr><td><a href="ui/screen-design.html">screen-design.md</a></td><td>画面設計</td></tr>
+<tr><td><a href="ui/screen-design.pdf">screen-design.pdf</a></td><td>画面設計（PDF）</td></tr>
+<tr><td><a href="ui/screen-flow.html">screen-flow.md</a></td><td>画面遷移フロー</td></tr>
+<tr><td><a href="ui/display-fields.html">display-fields.md</a></td><td>表示フィールド定義</td></tr>
+<tr><td><a href="ui/display-fields.pdf">display-fields.pdf</a></td><td>表示フィールド定義（PDF）</td></tr>
+<tr><td><a href="ui/company-user-guide.html">company-user-guide.md</a></td><td>企業ユーザーガイド</td></tr>
+<tr><td><a href="ui/company-user-guide.pdf">company-user-guide.pdf</a></td><td>企業ユーザーガイド（PDF）</td></tr>
+</table>
+---</p><h2>todo/ - 今後やること</h2><table><tr><td>ファイル</td><td>説明</td><td>優先度</td></tr>
+</table>
+<table><tr><td><a href="todo/analytics-features-plan.html">analytics-features-plan.md</a></td><td><strong>分析機能一覧</strong>（全体マップ）</td><td>-</td></tr>
+<tr><td><a href="todo/recruitment-process-analytics-plan.html">recruitment-process-analytics-plan.md</a></td><td>└ 採用プロセス分析（リードタイム・歩留まり）</td><td>-</td></tr>
+<tr><td><a href="todo/TODO-analytics-insights.html">TODO-analytics-insights.md</a></td><td>└ CVR改善提案</td><td>-</td></tr>
+<tr><td><a href="todo/internal-scheduling-plan.html">internal-scheduling-plan.md</a></td><td>内部日程調整機能（応募者セルフ予約）</td><td>-</td></tr>
+<tr><td><a href="todo/ai-job-generation-plan.html">ai-job-generation-plan.md</a></td><td>AI求人生成機能計画</td><td>-</td></tr>
+<tr><td><a href="todo/sendgrid-email-plan.html">sendgrid-email-plan.md</a></td><td>SendGrid メール連携計画</td><td>-</td></tr>
+<tr><td><a href="todo/twilio-sms-plan.html">twilio-sms-plan.md</a></td><td>Twilio SMS連携計画</td><td>-</td></tr>
+<tr><td><a href="todo/performance-issues.html">performance-issues.md</a></td><td>パフォーマンス課題</td><td>-</td></tr>
+</table>
+---</p><h2>misc/ - その他</h2><table><tr><td>ファイル</td><td>説明</td></tr>
+</table>
+<table><tr><td><a href="misc/L-SET%20求人管理システム%20サービス概要.pdf">L-SET 求人管理システム サービス概要.pdf</a></td><td>サービス概要資料</td></tr>
+<tr><td><a href="misc/service-overview.html">service-overview.html</a></td><td>サービス概要（HTML）</td></tr>
+</table>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

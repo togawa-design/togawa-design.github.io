@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分析・解析内容まとめ - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>分析・解析内容まとめ</h1><p>本ドキュメントはリクエコで収集・分析しているデータの詳細をまとめたものです。</p><p>*最終更新: 2026-02-12*</p><p>---</p><h2>データ収集の概要</h2><pre><code class="language-">┌─────────────────────────────────────────────────────────────────┐
+│                    データ収集ソース                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
+│  │   GA4       │    │  独自計測    │    │  Firestore  │        │
+│  │  (外部)     │    │(page-analytics)│  │  (内部DB)   │        │
+│  └─────────────┘    └─────────────┘    └─────────────┘        │
+│        │                  │                  │                 │
+│        ▼                  ▼                  ▼                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │              管理画面ダッシュボード                        │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>1. GA4（Google Analytics 4）で収集しているデータ</h2><h3>基本指標</h3><table><tr><td>指標</td><td>説明</td><td>用途</td></tr>
+</table>
+<table><tr><td>ページビュー (PV)</td><td>ページが表示された回数</td><td>アクセス量把握</td></tr>
+<tr><td>ユニークユーザー (UV)</td><td>訪問者数（重複排除）</td><td>実際の訪問者数把握</td></tr>
+<tr><td>セッション数</td><td>訪問セッションの数</td><td>訪問回数把握</td></tr>
+<tr><td>平均滞在時間</td><td>ページでの滞在時間</td><td>コンテンツ品質評価</td></tr>
+<tr><td>直帰率</td><td>1ページのみで離脱した割合</td><td>ページ品質評価</td></tr>
+</table>
+<h3>人口統計</h3><table><tr><td>指標</td><td>説明</td><td>用途</td></tr>
+</table>
+<table><tr><td>性別</td><td>男性/女性の割合</td><td>ターゲット分析</td></tr>
+<tr><td>年齢層</td><td>18-24/25-34/35-44/45-54/55-64/65+</td><td>ターゲット分析</td></tr>
+<tr><td>地域</td><td>都道府県別アクセス</td><td>エリアマーケティング</td></tr>
+</table>
+<h3>流入元</h3><table><tr><td>流入元</td><td>説明</td></tr>
+</table>
+<table><tr><td>Organic Search</td><td>Google/Yahoo等の自然検索</td></tr>
+<tr><td>Direct</td><td>URL直接入力・ブックマーク</td></tr>
+<tr><td>Referral</td><td>他サイトからのリンク</td></tr>
+<tr><td>Social</td><td>SNSからの流入</td></tr>
+<tr><td>Paid Search</td><td>検索広告からの流入</td></tr>
+</table>
+<h3>表示画面</h3>
+<ul><li>概要ダッシュボード</li>
+<li>アナリティクス詳細 > トラフィックタブ</li>
+<li>アナリティクス詳細 > トレンドタブ</li>
+</ul>
+---</p><h2>2. 独自ページ計測（page-analytics.js）</h2><p>LP（lp.html）と採用ページ（company-recruit.html）で独自にデータを収集しています。</p><h3>収集イベント</h3><p>#### 2.1 ページビュー (page_view)</p><table><tr><td>フィールド</td><td>説明</td><td>例</td></tr>
+</table>
+<table><tr><td>pageType</td><td>ページ種別</td><td><code>lp</code> / <code>recruit</code></td></tr>
+<tr><td>companyDomain</td><td>会社識別子</td><td><code>example-corp</code></td></tr>
+<tr><td>jobId</td><td>求人ID（LPのみ）</td><td><code>job001</code></td></tr>
+<tr><td>visitorId</td><td>訪問者識別子</td><td><code>abc123...</code></td></tr>
+<tr><td>sessionId</td><td>セッション識別子</td><td><code>xyz789...</code></td></tr>
+<tr><td>device</td><td>デバイス種別</td><td><code>mobile</code> / <code>tablet</code> / <code>desktop</code></td></tr>
+<tr><td>screenWidth</td><td>画面幅</td><td><code>375</code></td></tr>
+<tr><td>screenHeight</td><td>画面高さ</td><td><code>812</code></td></tr>
+<tr><td>userAgent</td><td>ブラウザ情報</td><td><code>Mozilla/5.0...</code></td></tr>
+<tr><td>referrer</td><td>リファラURL</td><td><code>https://google.com/...</code></td></tr>
+<tr><td>referrerType</td><td>流入元分類</td><td><code>google</code> / <code>indeed</code> / <code>line</code> 等</td></tr>
+<tr><td>utm_source</td><td>UTMソース</td><td><code>google</code></td></tr>
+<tr><td>utm_medium</td><td>UTMメディア</td><td><code>cpc</code></td></tr>
+<tr><td>utm_campaign</td><td>UTMキャンペーン</td><td><code>spring_2026</code></td></tr>
+<tr><td>utm_content</td><td>UTMコンテンツ</td><td><code>banner_a</code></td></tr>
+<tr><td>utm_term</td><td>UTMキーワード</td><td><code>東京 求人</code></td></tr>
+</table>
+#### 2.2 CTAクリック (cta_click)</p><table><tr><td>フィールド</td><td>説明</td><td>例</td></tr>
+</table>
+<table><tr><td>buttonType</td><td>ボタン種別</td><td><code>apply</code> / <code>phone</code> / <code>line</code> / <code>form</code></td></tr>
+<tr><td>buttonLocation</td><td>ボタン位置</td><td><code>hero</code> / <code>footer</code> / <code>sticky</code></td></tr>
+<tr><td>その他</td><td>ページビューと同じフィールド</td><td>-</td></tr>
+</table>
+#### 2.3 スクロール深度 (scroll_depth)</p><table><tr><td>フィールド</td><td>説明</td><td>例</td></tr>
+</table>
+<table><tr><td>depth</td><td>スクロール到達率</td><td><code>25</code> / <code>50</code> / <code>75</code> / <code>100</code></td></tr>
+<tr><td>その他</td><td>ページビューと同じフィールド</td><td>-</td></tr>
+</table>
+#### 2.4 滞在時間 (time_on_page)</p><table><tr><td>フィールド</td><td>説明</td><td>例</td></tr>
+</table>
+<table><tr><td>durationSeconds</td><td>滞在秒数</td><td><code>45</code></td></tr>
+<tr><td>その他</td><td>ページビューと同じフィールド</td><td>-</td></tr>
+</table>
+#### 2.5 応募完了 (application_complete)</p><table><tr><td>フィールド</td><td>説明</td><td>例</td></tr>
+</table>
+<table><tr><td>applicationType</td><td>応募種別</td><td><code>web</code> / <code>phone</code> / <code>line</code></td></tr>
+<tr><td>その他</td><td>ページビューと同じフィールド</td><td>-</td></tr>
+</table>
+<h3>流入元分類（referrerType）</h3><table><tr><td>分類</td><td>判定条件</td></tr>
+</table>
+<table><tr><td><code>direct</code></td><td>リファラなし</td></tr>
+<tr><td><code>google</code></td><td>google.com/google.co.jp</td></tr>
+<tr><td><code>yahoo</code></td><td>yahoo.co.jp/search.yahoo</td></tr>
+<tr><td><code>indeed</code></td><td>indeed.com/jp.indeed.com</td></tr>
+<tr><td><code>jobbox</code></td><td>jobbox.me</td></tr>
+<tr><td><code>twitter</code></td><td>twitter.com/t.co/x.com</td></tr>
+<tr><td><code>facebook</code></td><td>facebook.com/fb.com</td></tr>
+<tr><td><code>line</code></td><td>line.me/liff.line.me</td></tr>
+<tr><td><code>internal</code></td><td>自サイト内遷移</td></tr>
+<tr><td><code>other</code></td><td>その他</td></tr>
+</table>
+<h3>表示画面</h3>
+<ul><li>アナリティクス詳細 > LP/採用ページタブ</li>
+</ul>
+---</p><h2>3. Firestoreで管理しているデータ</h2><h3>3.1 応募データ（applications コレクション）</h3><table><tr><td>フィールド</td><td>説明</td><td>分析用途</td></tr>
+</table>
+<table><tr><td>status</td><td>ステータス</td><td>採用ファネル分析</td></tr>
+<tr><td>statusHistory</td><td>ステータス変更履歴</td><td>リードタイム計算</td></tr>
+<tr><td>companyDomain</td><td>会社</td><td>企業別集計</td></tr>
+<tr><td>jobId</td><td>求人</td><td>求人別集計</td></tr>
+<tr><td>assignedTo</td><td>担当者</td><td>担当者別パフォーマンス</td></tr>
+<tr><td>createdAt</td><td>応募日時</td><td>期間集計</td></tr>
+<tr><td>updatedAt</td><td>更新日時</td><td>対応速度計算</td></tr>
+</table>
+<h3>3.2 ステータス種別</h3><pre><code class="language-">new (新規応募)
+    │
+    ▼
+contacted (連絡済み)
+    │
+    ▼
+interviewing (面接調整中)
+    │
+    ▼
+offered (内定)
+    │
+    ▼
+hired (入社)</p><p>※ rejected (不採用) / withdrawn (辞退) に分岐可能
+</code></pre><h3>3.3 statusHistory の構造</h3><pre><code class="language-json">{
+  "statusHistory": [
+    {
+      "status": "new",
+      "timestamp": "2026-02-10T10:00:00Z",
+      "previousStatus": null
+    },
+    {
+      "status": "contacted",
+      "timestamp": "2026-02-10T14:30:00Z",
+      "previousStatus": "new"
+    },
+    {
+      "status": "interviewing",
+      "timestamp": "2026-02-12T09:00:00Z",
+      "previousStatus": "contacted"
+    }
+  ]
+}
+</code></pre><p>---</p><h2>4. 分析機能の詳細</h2><h3>4.1 採用管理タブ【Admin専用】</h3><p>#### 対応アラート
+<ul><li><strong>目的</strong>: 未対応応募者の早期検出</li>
+<li><strong>条件</strong>: <code>status = new</code> かつ <code>createdAt</code> から48時間以上経過</li>
+<li><strong>表示</strong>: 応募者名、会社名、経過時間</li>
+</ul>
+#### 採用ファネル
+<ul><li><strong>目的</strong>: 選考プロセスの可視化</li>
+<li><strong>指標</strong>: 各ステータスの人数と通過率</li>
+<li><strong>計算</strong>: 累積カウント方式（contacted以上→連絡済に含む）</li>
+</ul>
+<pre><code class="language-">応募 (100) → 連絡済 (80) → 面接 (50) → 内定 (20) → 入社 (15)
+              80%          62.5%       40%         75%
+</code></pre><p>#### リードタイム統計</p><table><tr><td>指標</td><td>説明</td><td>計算方法</td></tr>
+</table>
+<table><tr><td>初回レスポンス</td><td>応募から連絡までの時間</td><td>new → contacted の時間差</td></tr>
+<tr><td>面談設定</td><td>連絡から面談調整までの時間</td><td>contacted → interviewing</td></tr>
+<tr><td>選考判断</td><td>面談から内定までの時間</td><td>interviewing → offered</td></tr>
+<tr><td>採用全体</td><td>応募から入社までの時間</td><td>new → hired</td></tr>
+</table>
+#### リードタイム分布グラフ</p><table><tr><td>バケット</td><td>範囲</td></tr>
+</table>
+<table><tr><td>0-6h</td><td>6時間以内</td></tr>
+<tr><td>6-12h</td><td>6〜12時間</td></tr>
+<tr><td>12-24h</td><td>12〜24時間</td></tr>
+<tr><td>24-48h</td><td>24〜48時間</td></tr>
+<tr><td>48h+</td><td>48時間以上</td></tr>
+</table>
+#### 担当者別パフォーマンス</p><table><tr><td>指標</td><td>説明</td></tr>
+</table>
+<table><tr><td>担当数</td><td>割り当てられた応募者数</td></tr>
+<tr><td>平均レスポンス</td><td>初回連絡までの平均時間</td></tr>
+<tr><td>採用率</td><td>担当応募者のうち入社した割合</td></tr>
+<tr><td>承諾率</td><td>内定者のうち入社した割合</td></tr>
+</table>
+#### 企業別ドリルダウン
+<ul><li>企業をクリックで詳細表示</li>
+<li>企業別ファネル、リードタイム、担当者パフォーマンス</li>
+</ul>
+<h3>4.2 企業別タブ【Admin専用】</h3><table><tr><td>指標</td><td>説明</td></tr>
+</table>
+<table><tr><td>PVランキング</td><td>ページビュー数順の企業ランク</td></tr>
+<tr><td>応募数ランキング</td><td>応募数順の企業ランク</td></tr>
+<tr><td>CVR</td><td>企業別コンバージョン率</td></tr>
+</table>
+<h3>4.3 LP/採用ページタブ</h3><p>#### ページ種別比較</p><table><tr><td>指標</td><td>LP</td><td>採用ページ</td></tr>
+</table>
+<table><tr><td>PV</td><td>○</td><td>○</td></tr>
+<tr><td>UV</td><td>○</td><td>○</td></tr>
+<tr><td>CTAクリック数</td><td>○</td><td>○</td></tr>
+<tr><td>平均滞在時間</td><td>○</td><td>○</td></tr>
+<tr><td>CVR</td><td>○</td><td>○</td></tr>
+</table>
+#### 流入元分析</p><p>10種類の流入元別に以下を集計:
+<ul><li>PV数</li>
+<li>UV数</li>
+<li>CTAクリック数</li>
+<li>CVR</li>
+</ul>
+#### デバイス分析</p><table><tr><td>デバイス</td><td>集計項目</td></tr>
+</table>
+<table><tr><td>モバイル</td><td>PV/UV/割合</td></tr>
+<tr><td>タブレット</td><td>PV/UV/割合</td></tr>
+<tr><td>デスクトップ</td><td>PV/UV/割合</td></tr>
+</table>
+<h3>4.4 コンバージョンタブ</h3><table><tr><td>指標</td><td>説明</td></tr>
+</table>
+<table><tr><td>全体CVR</td><td>応募数 / PV</td></tr>
+<tr><td>LP CVR</td><td>LP経由の応募率</td></tr>
+<tr><td>採用ページCVR</td><td>採用ページ経由の応募率</td></tr>
+<tr><td>ファネル</td><td>PV → CTA → 応募 の推移</td></tr>
+</table>
+<h3>4.5 トラフィックタブ</h3><table><tr><td>指標</td><td>説明</td></tr>
+</table>
+<table><tr><td>流入元詳細</td><td>各流入元のPV/UV/セッション</td></tr>
+<tr><td>ランディングページ</td><td>最初に訪問したページの分布</td></tr>
+<tr><td>参照元URL</td><td>リファラURLの詳細</td></tr>
+</table>
+<h3>4.6 トレンドタブ</h3><table><tr><td>期間</td><td>表示内容</td></tr>
+</table>
+<table><tr><td>日別</td><td>過去30日の日次推移</td></tr>
+<tr><td>週別</td><td>過去12週の週次推移</td></tr>
+<tr><td>月別</td><td>過去12ヶ月の月次推移</td></tr>
+</table>
+表示指標:
+<ul><li>PV推移</li>
+<li>UV推移</li>
+<li>応募数推移</li>
+<li>CVR推移</li>
+</ul>
+---</p><h2>5. 広告ピクセルによるトラッキング</h2><p>LPで設定可能な広告ピクセルによる追跡:</p><h3>TikTok Pixel</h3>
+<table><tr><td>イベント</td><td>タイミング</td></tr>
+</table>
+<table><tr><td>ViewContent</td><td>ページ表示時</td></tr>
+<tr><td>コンバージョン</td><td>応募完了時</td></tr>
+</table>
+<h3>Google Ads</h3>
+<table><tr><td>イベント</td><td>タイミング</td></tr>
+</table>
+<table><tr><td>config</td><td>ページ表示時</td></tr>
+<tr><td>conversion</td><td>応募完了時（コンバージョンラベル指定）</td></tr>
+</table>
+<h3>Meta Pixel（Facebook/Instagram）</h3>
+<table><tr><td>イベント</td><td>タイミング</td></tr>
+</table>
+<table><tr><td>PageView</td><td>ページ表示時</td></tr>
+<tr><td>ViewContent</td><td>コンテンツ閲覧時</td></tr>
+<tr><td>Lead</td><td>問い合わせ時</td></tr>
+<tr><td>Contact</td><td>連絡時</td></tr>
+<tr><td>Purchase</td><td>応募完了時</td></tr>
+</table>
+<h3>LINE Tag</h3>
+<table><tr><td>イベント</td><td>タイミング</td></tr>
+</table>
+<table><tr><td>ページビュー</td><td>ページ表示時</td></tr>
+<tr><td>コンバージョン</td><td>応募完了時</td></tr>
+</table>
+<h3>Microsoft Clarity</h3>
+<table><tr><td>機能</td><td>説明</td></tr>
+</table>
+<table><tr><td>セッション録画</td><td>ユーザー行動の録画</td></tr>
+<tr><td>ヒートマップ</td><td>クリック/スクロール分布</td></tr>
+</table>
+---</p><h2>6. データの保存先</h2><table><tr><td>データ種別</td><td>保存先</td><td>保持期間</td></tr>
+</table>
+<table><tr><td>GA4データ</td><td>Google Analytics</td><td>14ヶ月（標準）</td></tr>
+<tr><td>ページ計測データ</td><td>Firestore (page_analytics)</td><td>無期限</td></tr>
+<tr><td>応募データ</td><td>Firestore (applications)</td><td>無期限</td></tr>
+<tr><td>ステータス履歴</td><td>Firestore (applications.statusHistory)</td><td>無期限</td></tr>
+</table>
+---</p><h2>7. アクセス権限</h2><table><tr><td>データ/分析</td><td>Admin</td><td>会社ユーザー</td></tr>
+</table>
+<table><tr><td>GA4全体データ</td><td>○</td><td>×</td></tr>
+<tr><td>自社GA4データ</td><td>○</td><td>○</td></tr>
+<tr><td>採用管理分析</td><td>○</td><td>×</td></tr>
+<tr><td>企業別分析</td><td>○</td><td>×</td></tr>
+<tr><td>自社ページ分析</td><td>○</td><td>○</td></tr>
+<tr><td>自社応募者データ</td><td>○</td><td>○</td></tr>
+<tr><td>全社応募者データ</td><td>○</td><td>×</td></tr>
+</table>
+---</p><h2>関連ドキュメント</h2>
+<ul><li><a href="./screen-flow.html">画面遷移図</a></li>
+<li><a href="./feature-list.html">機能一覧</a></li>
+<li><a href="../todo/recruitment-process-analytics-plan.html">採用プロセス分析計画</a></li>
+<li><a href="../todo/analytics-features-plan.html">アナリティクス機能計画</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

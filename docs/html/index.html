@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    h1 {
+      color: #1a1a1a;
+      border-bottom: 2px solid #0066cc;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
+    .category { margin-bottom: 30px; }
+    .category h2 {
+      color: #0066cc;
+      font-size: 1.3em;
+      margin-bottom: 10px;
+      padding-left: 10px;
+      border-left: 4px solid #0066cc;
+    }
+    .category ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+    }
+    .category li {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 5px;
+      transition: box-shadow 0.2s;
+    }
+    .category li:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .category a {
+      display: block;
+      padding: 12px 15px;
+      color: #333;
+      text-decoration: none;
+    }
+    .category a:hover { color: #0066cc; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      color: #666;
+      font-size: 0.9em;
+      text-align: center;
+    }
+    .generated-at { color: #999; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <h1>L-SET ドキュメント</h1>
+  
+      <section class="category">
+        <h2>システム設計</h2>
+        <ul>
+          <li><a href="system/api-specification.html">API仕様書</a></li>
+          <li><a href="system/firestore-schema.html">Firestore DB構成図</a></li>
+          <li><a href="system/infrastructure.html">インフラ構成図</a></li>
+          <li><a href="system/admin-user-registration-flow.html">ユーザー登録・認証フロー</a></li>
+          <li><a href="system/external-integrations.html">外部連携仕様書</a></li>
+          <li><a href="system/admin-system-architecture.html">管理画面システム構成</a></li>
+          <li><a href="system/detailed-design.html">詳細設計書</a></li>
+          <li><a href="system/auth-design.html">認証・認可設計書</a></li>
+        </ul>
+      </section>
+      <section class="category">
+        <h2>UI/UX設計</h2>
+        <ul>
+          <li><a href="ui/screen-design.html">リクエコ求人ナビ 画面設計書</a></li>
+          <li><a href="ui/screen-flow.html">画面遷移図</a></li>
+          <li><a href="ui/company-user-guide.html">会社ユーザー向け管理画面 使い方ガイド</a></li>
+          <li><a href="ui/feature-list.html">機能一覧</a></li>
+          <li><a href="ui/display-fields.html">採用ページ・LP 表示項目一覧</a></li>
+          <li><a href="ui/analytics-summary.html">分析・解析内容まとめ</a></li>
+        </ul>
+      </section>
+      <section class="category">
+        <h2>開発ガイド</h2>
+        <ul>
+          <li><a href="development/custom-domain-setup.html">GitHub Pages カスタムドメイン設定手順</a></li>
+          <li><a href="development/deploy-guide.html">デプロイ手順書</a></li>
+          <li><a href="development/setup.html">環境構築手順</a></li>
+          <li><a href="development/environment-setup.html">環境設定ガイド</a></li>
+        </ul>
+      </section>
+      <section class="category">
+        <h2>TODO/計画</h2>
+        <ul>
+          <li><a href="todo/ai-job-generation-plan.html">AI機能 実装プラン</a></li>
+          <li><a href="todo/twilio-sms-plan.html">Twilio SMS連絡機能 実装計画</a></li>
+          <li><a href="todo/TODO-analytics-insights.html">アナリティクス改善提案機能 - 実装計画</a></li>
+          <li><a href="todo/performance-issues.html">パフォーマンス課題</a></li>
+          <li><a href="todo/sendgrid-email-plan.html">メール送受信システム実装計画</a></li>
+          <li><a href="todo/recruitment-process-analytics-plan.html">採用プロセス分析機能 実装プラン</a></li>
+          <li><a href="todo/internal-scheduling-plan.html">内部日程調整機能 実装プラン</a></li>
+          <li><a href="todo/analytics-features-plan.html">分析機能一覧</a></li>
+        </ul>
+      </section>
+      <section class="category">
+        <h2>マーケティング</h2>
+        <ul>
+          <li><a href="marketing/utm-tracking-guide.html">広告トラッキングガイド</a></li>
+        </ul>
+      </section>
+      <section class="category">
+        <h2>その他</h2>
+        <ul>
+          <li><a href="security-issues.html">セキュリティ対策が必要な箇所</a></li>
+          <li><a href="README.html">ドキュメント</a></li>
+          <li><a href="potential-bugs.html">潜在的な不具合・修正推奨箇所</a></li>
+        </ul>
+      </section>
+  <div class="footer">
+    <p>L-SET Documentation</p>
+    <p class="generated-at">Generated: 2026/2/14 20:26:25</p>
+  </div>
+</body>
+</html>

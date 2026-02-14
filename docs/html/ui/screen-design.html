@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リクエコ求人ナビ 画面設計書 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>リクエコ求人ナビ 画面設計書</h1><h2>概要</h2><p>期間工・期間従業員専門の求人情報サイト。求職者向けのフロントエンド画面と、企業向けの管理画面で構成。</p><p>---</p><h2>画面一覧</h2><h3>1. 公開画面（求職者向け）</h3><table><tr><td>画面ID</td><td>画面名</td><td>ファイル</td><td>URL</td><td>概要</td></tr>
+</table>
+<table><tr><td>P-001</td><td>トップページ</td><td>index.html</td><td>/</td><td>求人検索・一覧表示</td></tr>
+<tr><td>P-002</td><td>求人一覧</td><td>jobs.html</td><td>/jobs.html</td><td>全求人の一覧・絞り込み</td></tr>
+<tr><td>P-003</td><td>求人詳細</td><td>job-detail.html</td><td>/job-detail.html?company={id}&job={id}</td><td>求人の詳細情報・応募フォーム</td></tr>
+<tr><td>P-004</td><td>企業ページ</td><td>company.html</td><td>/company.html?id={domain}</td><td>企業情報・求人一覧</td></tr>
+<tr><td>P-005</td><td>地域検索</td><td>location.html</td><td>/location.html?pref={pref}</td><td>地域別求人検索</td></tr>
+<tr><td>P-006</td><td>LP（ランディングページ）</td><td>lp.html</td><td>/lp.html?id={domain}</td><td>企業専用LP</td></tr>
+<tr><td>P-007</td><td>マイページ</td><td>mypage.html</td><td>/mypage.html</td><td>ユーザー情報・応募履歴</td></tr>
+</table>
+<h3>2. 管理画面（企業・運営者向け）</h3><table><tr><td>画面ID</td><td>画面名</td><td>ファイル</td><td>URL</td><td>概要</td></tr>
+</table>
+<table><tr><td>A-001</td><td>管理ダッシュボード</td><td>admin.html</td><td>/admin.html</td><td>企業選択・各種設定</td></tr>
+<tr><td>A-002</td><td>求人管理</td><td>job-manage.html</td><td>/job-manage.html?company={domain}</td><td>求人CRUD・アクセス解析</td></tr>
+<tr><td>A-003</td><td>応募者管理</td><td>applicants.html</td><td>/applicants.html</td><td>応募者一覧・ステータス管理</td></tr>
+<tr><td>A-004</td><td>企業情報編集</td><td>company-edit.html</td><td>/company-edit.html?id={domain}</td><td>企業情報・LP設定</td></tr>
+</table>
+---</p><h2>画面詳細</h2><h3>P-001: トップページ (index.html)</h3><p><strong>目的</strong>: サイトの入口。求人検索と主要求人の表示</p><p><strong>レイアウト構成</strong>:
+<pre><code class="language-">┌─────────────────────────────────────┐
+│ ヘッダー（ロゴ・ナビ・LINE相談）     │
+├─────────────────────────────────────┤
+│ ヒーローセクション                   │
+│ ・キャッチコピー                     │
+│ ・統計情報（求人数・掲載企業数等）   │
+├─────────────────────────────────────┤
+│ 検索セクション                       │
+│ ・地域から探す                       │
+│ ・メーカーから探す                   │
+│ ・入社日から探す                     │
+├─────────────────────────────────────┤
+│ 求人一覧セクション                   │
+│ ・求人カード（グリッド表示）         │
+│ ・もっと見るボタン                   │
+├─────────────────────────────────────┤
+│ コンテンツセクション                 │
+│ ・漫画で分かる期間工                 │
+│ ・期間工ガイド等                     │
+├─────────────────────────────────────┤
+│ 特徴セクション                       │
+├─────────────────────────────────────┤
+│ CTAセクション                        │
+├─────────────────────────────────────┤
+│ フッター                             │
+└─────────────────────────────────────┘
+</code></pre><p><strong>主要コンポーネント</strong>:
+<ul><li>求人カード: 企業名・職種・勤務地・月収例・特典総額・タグ</li>
+<li>検索カード: アイコン・タイトル・説明</li>
+<li>統計カード: 数値・ラベル</li>
+</ul>
+<strong>データソース</strong>:
+<ul><li>Googleスプレッドシート（会社一覧・求人一覧）</li>
+</ul>
+---</p><h3>P-003: 求人詳細 (job-detail.html)</h3><p><strong>目的</strong>: 求人の詳細情報表示と応募受付</p><p><strong>レイアウト構成</strong>:
+<pre><code class="language-">┌─────────────────────────────────────┐
+│ ヘッダー                             │
+├─────────────────────────────────────┤
+│ パンくずリスト                       │
+├─────────────────────────────────────┤
+│ ヒーローセクション                   │
+│ ・会社名タグ                         │
+│ ・求人タイトル                       │
+│ ・勤務地                             │
+│ ・月収例・特典総額                   │
+│ ・応募ボタン                         │
+│ ・求人画像                           │
+├─────────────────────────────────────┤
+│ ポイントセクション                   │
+│ ・特典総額・月収例・雇用形態         │
+│ ・検索タグ一覧                       │
+├─────────────────────────────────────┤
+│ 募集要項セクション                   │
+│ ・仕事内容                           │
+│ ・給与                               │
+│ ・応募資格                           │
+│ ・勤務時間                           │
+│ ・休日・休暇                         │
+│ ・待遇・福利厚生                     │
+│ ・勤務地                             │
+├─────────────────────────────────────┤
+│ 応募セクション                       │
+│ ・応募ボタン                         │
+│ ・企業情報リンク                     │
+├─────────────────────────────────────┤
+│ 関連求人セクション                   │
+├─────────────────────────────────────┤
+│ CTAセクション                        │
+├─────────────────────────────────────┤
+│ フッター                             │
+└─────────────────────────────────────┘
+</code></pre><p><strong>モーダル</strong>:
+<ul><li>応募フォームモーダル</li>
+</ul>  - 基本情報: 氏名・電話番号・メールアドレス
+  - 詳細情報: 年齢・希望勤務開始日・現住所
+  - カスタム質問項目（企業ごとに設定可能）
+  - プライバシーポリシー同意
+  - 完了画面</p><p><strong>データソース</strong>:
+<ul><li>URLパラメータ: company, job</li>
+<li>Googleスプレッドシート（求人データ）</li>
+<li>Firebase Firestore（応募データ保存）</li>
+</ul>
+---</p><h3>A-001: 管理ダッシュボード (admin.html)</h3><p><strong>目的</strong>: 企業選択と各種管理機能へのアクセス</p><p><strong>アクセス制御</strong>: Firebase Authentication（ログイン必須）</p><p><strong>レイアウト構成</strong>:
+<pre><code class="language-">┌─────────────────────────────────────┐
+│ ヘッダー（ロゴ・ログアウト）         │
+├─────────────────────────────────────┤
+│ 企業選択セクション                   │
+│ ・ドロップダウン or カード選択       │
+├─────────────────────────────────────┤
+│ 選択中の企業情報                     │
+│ ・企業名・ドメイン                   │
+│ ・クイックアクション                 │
+│   - 求人管理                         │
+│   - 応募者管理                       │
+│   - 企業情報編集                     │
+│   - LP編集                           │
+├─────────────────────────────────────┤
+│ 統計サマリー                         │
+│ ・求人数・応募数・今月の応募         │
+└─────────────────────────────────────┘
+</code></pre><p>---</p><h3>A-002: 求人管理 (job-manage.html)</h3><p><strong>目的</strong>: 求人のCRUD操作・アクセス解析・レポート生成</p><p><strong>アクセス制御</strong>: Firebase Authentication + 企業権限</p><p><strong>レイアウト構成</strong>:
+<pre><code class="language-">┌──────────┬──────────────────────────┐
+│ サイドバー │ メインコンテンツ         │
+│          │                          │
+│ ・管理画面 │ [求人一覧セクション]     │
+│ ・求人一覧 │ ・フィルター・検索       │
+│ ・解析    │ ・求人テーブル           │
+│ ・応募者  │ ・CSV/インポート         │
+│ ・レポート │                          │
+│          │ [アクセス解析セクション]   │
+│          │ ・期間選択               │
+│          │ ・PV/ユーザー数グラフ    │
+│          │ ・求人別アクセス         │
+│          │ ・流入元分析             │
+│          │ ・改善アドバイス         │
+│          │                          │
+│          │ [応募者管理セクション]     │
+│          │ ・応募者テーブル         │
+│          │ ・ステータス管理         │
+│          │ ・詳細モーダル           │
+│          │                          │
+│          │ [レポートセクション]       │
+│          │ ・期間選択               │
+│          │ ・応募サマリー           │
+│          │ ・求人別パフォーマンス   │
+│          │ ・流入元分析             │
+│          │ ・担当者別対応状況       │
+│          │ ・CSV/Excelダウンロード  │
+└──────────┴──────────────────────────┘
+</code></pre><p><strong>モーダル</strong>:
+<ul><li>求人編集モーダル</li>
+<li>CSVインポートモーダル</li>
+<li>応募者詳細モーダル</li>
+</ul>
+<strong>データソース</strong>:
+<ul><li>Googleスプレッドシート（求人データ）</li>
+<li>Firebase Firestore（応募データ）</li>
+<li>Google Analytics 4（アクセスデータ）</li>
+</ul>
+---</p><h3>A-004: 企業情報編集 (company-edit.html)</h3><p><strong>目的</strong>: 企業情報とLP設定の編集</p><p><strong>セクション構成</strong>:
+<li>基本情報</li>
+   - 会社名・住所・勤務地
+   - 画像URL
+   - 表示設定
+<li>LP設定</li>
+   - ヒーロータイトル・サブタイトル
+   - メインビジュアル
+   - セクション表示設定
+   - カスタムCSS
+<li>応募フォーム設定</li>
+   - カスタム質問項目の追加・編集
+<li>デザインパターン選択</li>
+   - standard / colorful / minimal</p><p>---</p><h2>共通コンポーネント</h2><h3>ヘッダー</h3>
+<ul><li>ロゴ（トップへのリンク）</li>
+<li>ナビゲーション（PC: 横並び / SP: ハンバーガーメニュー）</li>
+<li>LINE相談ボタン</li>
+<li>ログインボタン（未ログイン時）/ マイページリンク（ログイン時）</li>
+</ul>
+<h3>フッター</h3>
+<ul><li>ナビゲーションリンク</li>
+<li>電話番号</li>
+<li>コピーライト</li>
+</ul>
+<h3>求人カード</h3>
+<ul><li>企業名</li>
+<li>求人タイトル</li>
+<li>勤務地</li>
+<li>月収例 / 特典総額</li>
+<li>特徴タグ</li>
+<li>応募ボタン</li>
+</ul>
+<h3>モーダル</h3>
+<ul><li>オーバーレイ背景</li>
+<li>閉じるボタン</li>
+<li>コンテンツエリア</li>
+<li>アクションボタン</li>
+</ul>
+<h3>ローディング</h3>
+<ul><li>スピナー</li>
+<li>スケルトンUI</li>
+</ul>
+---</p><h2>レスポンシブ対応</h2><h3>ブレークポイント</h3>
+<ul><li>PC: 768px以上</li>
+<li>SP: 767px以下</li>
+</ul>
+<h3>主な変更点</h3>
+<table><tr><td>要素</td><td>PC</td><td>SP</td></tr>
+</table>
+<table><tr><td>ナビゲーション</td><td>横並び</td><td>ハンバーガーメニュー</td></tr>
+<tr><td>求人カード</td><td>3-4列グリッド</td><td>1-2列グリッド</td></tr>
+<tr><td>サイドバー</td><td>固定表示</td><td>非表示/トグル</td></tr>
+<tr><td>テーブル</td><td>横スクロール</td><td>カード形式</td></tr>
+<tr><td>フォント</td><td>基準サイズ</td><td>やや小さめ</td></tr>
+</table>
+---</p><h2>認証・権限</h2><h3>認証方式</h3>
+<ul><li>Firebase Authentication</li>
+<li>メール/パスワード認証</li>
+<li>Googleアカウント認証</li>
+</ul>
+<h3>権限レベル</h3>
+<table><tr><td>レベル</td><td>説明</td><td>アクセス可能画面</td></tr>
+</table>
+<table><tr><td>一般ユーザー</td><td>求職者</td><td>公開画面・マイページ</td></tr>
+<tr><td>企業管理者</td><td>担当企業の管理</td><td>管理画面（担当企業のみ）</td></tr>
+<tr><td>システム管理者</td><td>全企業の管理</td><td>全画面</td></tr>
+</table>
+---</p><h2>外部連携</h2><h3>Google Spreadsheet</h3>
+<ul><li>会社一覧マスタ</li>
+<li>各企業の求人データ</li>
+<li>GAS経由でのデータ更新</li>
+</ul>
+<h3>Firebase</h3>
+<ul><li>Authentication: ユーザー認証</li>
+<li>Firestore: 応募データ・ユーザーデータ</li>
+</ul>
+<h3>Google Analytics 4</h3>
+<ul><li>アクセス解析データ取得</li>
+<li>GA4 Data API経由</li>
+</ul>
+<h3>LINE</h3>
+<ul><li>LINE公式アカウントへの誘導</li>
+<li>相談受付</li>
+</ul>
+---</p><p>*最終更新: 2026-01-26*
+</p>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

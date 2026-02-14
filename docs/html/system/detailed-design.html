@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>詳細設計書 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>詳細設計書</h1><h2>概要</h2>
+リクエコ（求人情報サイト）の詳細設計書です。</p><p>---</p><h2>システム構成</h2><h3>アーキテクチャ概要</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────────────────┐
+│                          クライアント                                │
+│                    (ブラウザ / SPA)                                 │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Firebase Services                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐  │
+│  │  Firestore  │  │    Auth     │  │  Functions  │  │  Storage  │  │
+│  │   (DB)      │  │  (認証)     │  │  (API)      │  │  (画像)   │  │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └───────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                       外部サービス                                   │
+│  ┌─────────────────────┐  ┌─────────────────────┐                   │
+│  │     Cloudinary      │  │   Google Calendar   │                   │
+│  │    (画像CDN)        │  │    (面談予約)       │                   │
+│  └─────────────────────┘  └─────────────────────┘                   │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre><h3>技術スタック</h3><table><tr><td>レイヤー</td><td>技術</td></tr>
+</table>
+<table><tr><td>フロントエンド</td><td>Vanilla JavaScript (ES Modules)</td></tr>
+<tr><td>ビルドツール</td><td>Vite</td></tr>
+<tr><td>データベース</td><td>Cloud Firestore</td></tr>
+<tr><td>認証</td><td>Firebase Authentication</td></tr>
+<tr><td>サーバーレス関数</td><td>Cloud Functions</td></tr>
+<tr><td>画像ホスティング</td><td>Cloudinary</td></tr>
+<tr><td>ホスティング</td><td>GitHub Pages / Firebase Hosting</td></tr>
+</table>
+---</p><h2>モジュール構成</h2><h3>コンポーネント層 (<code>src/components/</code>)</h3><p>#### Atoms（最小コンポーネント）
+<pre><code class="language-javascript">// src/components/atoms/index.js
+Badge({ text, type })           // バッジ表示
+Button({ text, href, className }) // ボタン
+LoadingSpinner({ message })     // ローディング
+ErrorMessage({ message })       // エラー表示
+Image({ src, alt, fallback })   // 画像（フォールバック対応）
+TagList({ tags, className })    // タグリスト
+Icons                           // SVGアイコン集
+</code></pre><p>#### Molecules（複合コンポーネント）
+<pre><code class="language-javascript">// src/components/molecules/index.js
+JobCard({ job, showCompanyName, linkToJobsList }) // 求人カード
+CompanyJobCard({ job })         // 会社ページ用求人カード
+LocationCard({ location })      // 勤務地カード
+PointCard({ number, label, value }) // ポイントカード
+DetailRow({ label, value })     // 詳細テーブル行
+FAQItem({ question, answer })   // FAQアイテム
+Modal({ className, title, content }) // モーダル
+Breadcrumb({ items })           // パンくずリスト
+</code></pre><h3>機能モジュール層 (<code>src/features/</code>)</h3><p>#### 管理機能 (<code>admin/</code>)
+<table><tr><td>ファイル</td><td>機能</td></tr>
+</table>
+<table><tr><td>index.js</td><td>管理画面エントリーポイント</td></tr>
+<tr><td>auth.js</td><td>管理者認証処理</td></tr>
+<tr><td>admin-state.js</td><td>管理画面状態管理</td></tr>
+<tr><td>section-loader.js</td><td>セクション動的読み込み</td></tr>
+<tr><td>company-manager.js</td><td>会社CRUD操作</td></tr>
+<tr><td>job-manage-embedded.js</td><td>求人編集（埋め込み版）</td></tr>
+<tr><td>lp-settings.js</td><td>LP設定管理</td></tr>
+<tr><td>recruit-settings.js</td><td>採用ページ設定管理</td></tr>
+<tr><td>image-uploader.js</td><td>画像アップロード・圧縮</td></tr>
+<tr><td>analytics.js</td><td>アナリティクス表示</td></tr>
+</table>
+#### LP機能 (<code>lp/</code>)
+<table><tr><td>ファイル</td><td>機能</td></tr>
+</table>
+<table><tr><td>index.js</td><td>LPページエントリーポイント</td></tr>
+<tr><td>LPRenderer.js</td><td>LP表示レンダラー</td></tr>
+<tr><td>LPEditor.js</td><td>LPエディター</td></tr>
+<tr><td>sectionTypes.js</td><td>セクションタイプ定義</td></tr>
+</table>
+#### 認証機能 (<code>user-auth/</code>)
+<table><tr><td>ファイル</td><td>機能</td></tr>
+</table>
+<table><tr><td>index.js</td><td>認証エントリーポイント</td></tr>
+<tr><td>auth-service.js</td><td>認証サービス</td></tr>
+<tr><td>auth-modal.js</td><td>認証モーダルUI</td></tr>
+<tr><td>auth-state.js</td><td>認証状態管理</td></tr>
+</table>
+<h3>共通モジュール層 (<code>src/shared/</code>)</h3><table><tr><td>ファイル</td><td>機能</td></tr>
+</table>
+<table><tr><td>firestore-service.js</td><td>Firestore CRUD操作</td></tr>
+<tr><td>jobs-loader.js</td><td>求人データローダー</td></tr>
+<tr><td>job-service.js</td><td>求人サービス（応募処理等）</td></tr>
+<tr><td>email-service.js</td><td>メール送信サービス</td></tr>
+<tr><td>modal.js</td><td>共通モーダル機能</td></tr>
+<tr><td>utils.js</td><td>汎用ユーティリティ</td></tr>
+<tr><td>layout.js</td><td>レイアウト共通処理</td></tr>
+<tr><td>auth-gate.js</td><td>認証ゲート</td></tr>
+<tr><td>page-analytics.js</td><td>ページアナリティクス</td></tr>
+</table>
+---</p><h2>データフロー</h2><h3>求人データの読み込み</h3><pre><code class="language-">1. ページ読み込み
+       │
+       ▼
+<li>initFirestoreLoader() 呼び出し</li>
+       │
+       ▼
+<li>Firebase SDK 読み込み待機</li>
+       │
+       ▼
+<li>Firestore 初期化</li>
+       │
+       ▼
+<li>getAllVisibleJobs() 呼び出し</li>
+       │
+       ▼
+<li>collectionGroup('jobs') クエリ実行</li>
+   WHERE visible == true
+   ORDER BY order ASC
+       │
+       ▼
+<li>求人データ取得・整形</li>
+       │
+       ▼
+<li>JobCard コンポーネントでレンダリング</li>
+</code></pre><h3>画像アップロードフロー</h3><pre><code class="language-">1. ファイル選択（input[type=file]）
+       │
+       ▼
+<li>compressImage() で圧縮</li>
+   - WebP変換
+   - サイズ制限（100KB/500KB）
+   - アスペクト比維持
+       │
+       ▼
+<li>uploadToCloudinary() でアップロード</li>
+       │
+       ▼
+<li>Cloudinary URL を Firestore に保存</li>
+</code></pre><h3>応募処理フロー</h3><pre><code class="language-">1. 応募フォーム送信
+       │
+       ▼
+<li>バリデーション</li>
+       │
+       ▼
+<li>applications コレクションに保存</li>
+       │
+       ▼
+<li>Cloud Functions トリガー</li>
+       │
+       ▼
+<li>通知メール送信（企業・応募者）</li>
+       │
+       ▼
+<li>完了画面表示</li>
+</code></pre><p>---</p><h2>画像処理</h2><h3>圧縮設定</h3><table><tr><td>用途</td><td>最大幅</td><td>最大高</td><td>品質</td><td>サイズ上限</td></tr>
+</table>
+<table><tr><td>ロゴ</td><td>800px</td><td>800px</td><td>85%</td><td>100KB</td></tr>
+<tr><td>コンテンツ画像</td><td>1200px</td><td>1200px</td><td>85%</td><td>500KB</td></tr>
+<tr><td>ヒーロー画像</td><td>1920px</td><td>1920px</td><td>85%</td><td>500KB</td></tr>
+</table>
+<h3>デフォルト画像</h3><table><tr><td>種類</td><td>パス</td></tr>
+</table>
+<table><tr><td>会社ロゴ</td><td>/images/default-company-logo.webp</td></tr>
+<tr><td>求人ロゴ</td><td>/images/default-job-logo.webp</td></tr>
+</table>
+---</p><h2>LP セクション構成</h2><h3>利用可能なセクションタイプ</h3><table><tr><td>タイプ</td><td>説明</td></tr>
+</table>
+<table><tr><td>hero</td><td>ヒーローセクション（メインビジュアル）</td></tr>
+<tr><td>point</td><td>ポイントセクション（特徴紹介）</td></tr>
+<tr><td>detail</td><td>詳細セクション（求人詳細情報）</td></tr>
+<tr><td>faq</td><td>FAQセクション</td></tr>
+<tr><td>cta</td><td>CTAセクション（応募促進）</td></tr>
+<tr><td>gallery</td><td>ギャラリーセクション</td></tr>
+<tr><td>video</td><td>動画セクション</td></tr>
+<tr><td>testimonial</td><td>社員の声セクション</td></tr>
+</table>
+<h3>デザインパターン</h3><table><tr><td>パターン名</td><td>特徴</td></tr>
+</table>
+<table><tr><td>shinrai</td><td>信頼感のあるデザイン</td></tr>
+<tr><td>athome</td><td>アットホームなデザイン</td></tr>
+<tr><td>cute</td><td>かわいらしいデザイン</td></tr>
+<tr><td>modan</td><td>モダンなデザイン</td></tr>
+<tr><td>kenchiku</td><td>建築系デザイン</td></tr>
+</table>
+---</p><h2>セキュリティ</h2><h3>認証方式</h3><table><tr><td>対象</td><td>認証方式</td><td>保存先</td></tr>
+</table>
+<table><tr><td>管理者</td><td>Google OAuth</td><td>admin_users</td></tr>
+<tr><td>会社ユーザー</td><td>ID/PW認証</td><td>company_users</td></tr>
+<tr><td>一般ユーザー</td><td>Google OAuth / Email</td><td>users</td></tr>
+</table>
+<h3>Firestore セキュリティルール</h3><pre><code class="language-javascript">// 公開データ
+companies: read=true, write=auth
+jobs: read=true (visible), write=auth
+lpSettings: read=true, write=auth
+recruitSettings: read=true, write=auth</p><p>// 認証必要
+admin_users: read=auth, write=admin
+applications: read/write=true (開発中)
+</code></pre><p>---</p><h2>エラーハンドリング</h2><h3>画像読み込みエラー</h3><pre><code class="language-javascript">// Image コンポーネントの onerror 処理
+if (this.src !== fallback) {
+  this.src = fallback;  // フォールバック画像に切り替え
+} else {
+  this.style.display = 'none';  // フォールバックも失敗時は非表示
+}
+</code></pre><h3>Firestore エラー</h3><pre><code class="language-javascript">try {
+  const result = await firestoreOperation();
+  return { success: true, data: result };
+} catch (error) {
+  console.error('[Service] Error:', error);
+  return { success: false, error: error.message };
+}
+</code></pre><p>---</p><h2>パフォーマンス最適化</h2><h3>画像最適化</h3>
+<ul><li>WebP形式で保存</li>
+<li>用途に応じたサイズ制限</li>
+<li>Cloudinary CDN使用</li>
+</ul>
+<h3>データ取得最適化</h3>
+<ul><li>collectionGroup クエリでの一括取得</li>
+<li>Firestore インデックス活用</li>
+<li>必要なフィールドのみ取得</li>
+</ul>
+<h3>ビルド最適化</h3>
+<ul><li>Vite によるバンドル</li>
+<li>Terser による圧縮</li>
+<li>コード分割</li>
+</ul>
+---</p><h2>関連ドキュメント</h2>
+<ul><li><a href="./setup.html">環境構築手順</a></li>
+<li><a href="./screen-flow.html">画面遷移図</a></li>
+<li><a href="./firestore-schema.html">Firestore DB構成図</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

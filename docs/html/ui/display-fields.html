@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>採用ページ・LP 表示項目一覧 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>採用ページ・LP 表示項目一覧</h1><h2>採用ページ（company-recruit.html）</h2><h3>求人カード表示項目</h3><table><tr><td>フィールド名</td><td>表示ラベル</td><td>備考</td></tr>
+</table>
+<table><tr><td><code>jobLogo</code> / <code>imageUrl</code></td><td>求人画像</td><td>カード背景画像</td></tr>
+<tr><td><code>title</code></td><td>求人タイトル</td><td>-</td></tr>
+<tr><td><code>location</code> / <code>companyAddress</code></td><td>勤務地</td><td>📍アイコン</td></tr>
+<tr><td><code>access</code></td><td>アクセス</td><td>🚌アイコン</td></tr>
+<tr><td><code>monthlySalary</code></td><td>月収例</td><td>💰アイコン</td></tr>
+<tr><td><code>totalBonus</code></td><td>特典総額</td><td>黄色ハイライト表示</td></tr>
+<tr><td><code>features</code> / <code>displayedFeatures</code></td><td>特徴タグ</td><td>最大 <strong>3つ</strong> まで表示</td></tr>
+<tr><td><code>jobType</code></td><td>職種</td><td>フィルタリング用（<code>data-job-type</code>属性）</td></tr>
+<tr><td><code>publishStartDate</code></td><td>-</td><td>1週間以内なら「✨ NEW」タグ表示</td></tr>
+</table>
+---</p><h2>LP（lp.html）</h2><h3>求人カード表示項目</h3><table><tr><td>フィールド名</td><td>表示ラベル</td><td>備考</td></tr>
+</table>
+<table><tr><td><code>title</code></td><td>求人タイトル</td><td>カードヘッダー</td></tr>
+<tr><td><code>employmentType</code></td><td>雇用形態</td><td>バッジ表示（例：正社員）</td></tr>
+<tr><td><code>location</code></td><td>勤務地</td><td>📍アイコン</td></tr>
+<tr><td><code>access</code></td><td>アクセス</td><td>🚌アイコン</td></tr>
+<tr><td><code>monthlySalary</code></td><td>月収例</td><td>💰アイコン</td></tr>
+<tr><td><code>totalBonus</code></td><td>特典総額</td><td>ハイライト表示</td></tr>
+<tr><td><code>features</code> / <code>displayedFeatures</code></td><td>特徴タグ</td><td>最大 <strong>5つ</strong> まで表示</td></tr>
+<tr><td><code>publishStartDate</code></td><td>-</td><td>1週間以内なら「✨ NEW」タグ表示</td></tr>
+</table>
+<h3>募集要項セクション（DetailsSection）</h3><table><tr><td>フィールド名</td><td>表示ラベル</td><td>データソース</td></tr>
+</table>
+<table><tr><td><code>description</code></td><td>会社概要</td><td>会社データ</td></tr>
+<tr><td><code>jobDescription</code></td><td>お仕事内容</td><td>会社データ</td></tr>
+<tr><td><code>workingHours</code></td><td>勤務時間</td><td>会社データ / 求人データ</td></tr>
+<tr><td><code>workLocation</code></td><td>勤務地</td><td>会社データ</td></tr>
+<tr><td><code>benefits</code></td><td>待遇・福利厚生</td><td>求人データ / 会社データ</td></tr>
+<tr><td><code>requirements</code></td><td>応募資格</td><td>求人データ</td></tr>
+<tr><td><code>holidays</code></td><td>休日</td><td>求人データ</td></tr>
+</table>
+---</p><h2>比較表</h2><table><tr><td>項目</td><td>採用ページ</td><td>LP</td></tr>
+</table>
+<table><tr><td><strong>雇用形態</strong> (<code>employmentType</code>)</td><td>❌</td><td>✅ バッジ表示</td></tr>
+<tr><td><strong>職種</strong> (<code>jobType</code>)</td><td>フィルタのみ</td><td>❌</td></tr>
+<tr><td><strong>特徴タグ数</strong></td><td>最大3つ</td><td>最大5つ</td></tr>
+<tr><td><strong>募集要項詳細</strong></td><td>❌</td><td>✅</td></tr>
+<tr><td><strong>NEWタグ</strong></td><td>✅</td><td>✅</td></tr>
+</table>
+---</p><h2>管理画面での入力項目</h2><h3>基本情報</h3>
+<ul><li><code>title</code> - 募集タイトル（必須）</li>
+<li><code>employmentType</code> - 雇用形態</li>
+<li><code>jobType</code> - 職種</li>
+<li><code>location</code> - 勤務地（必須）</li>
+<li><code>access</code> - アクセス</li>
+<li><code>jobLogo</code> - 求人ロゴ画像</li>
+</ul>
+<h3>給与・条件</h3>
+<ul><li><code>salaryType</code> - 給与形態</li>
+<li><code>monthlySalary</code> - 給与額</li>
+<li><code>totalBonus</code> - 賞与合計</li>
+</ul>
+<h3>勤務情報</h3>
+<ul><li><code>workingHours</code> - 勤務時間</li>
+<li><code>holidays</code> - 休日</li>
+</ul>
+<h3>詳細情報</h3>
+<ul><li><code>jobDescription</code> - 仕事内容</li>
+<li><code>requirements</code> - 応募資格</li>
+<li><code>benefits</code> - 待遇・福利厚生</li>
+<li><code>features</code> - 特徴（チェックボックス選択）</li>
+<li><code>displayedFeatures</code> - 表示する特徴（最大5つ）</li>
+</ul>
+<h3>掲載設定</h3>
+<ul><li><code>visible</code> - 公開/非公開</li>
+<li><code>publishStartDate</code> - 掲載開始日</li>
+<li><code>publishEndDate</code> - 掲載終了日</li>
+<li><code>order</code> - 表示順</li>
+<li><code>memo</code> - 社内用メモ</li>
+</ul>
+---</p><h2>補足</h2><h3>特徴タグについて</h3>
+<ul><li><code>features</code>: 求人に設定された全特徴（カンマ区切り）</li>
+<li><code>displayedFeatures</code>: 実際に表示する特徴（カンマ区切り、最大5つ）</li>
+<li>採用ページでは <code>displayedFeatures</code> から最大3つを表示</li>
+<li>LPでは <code>displayedFeatures</code> から最大5つを表示</li>
+</ul>
+<h3>NEWタグの表示条件</h3>
+<ul><li><code>publishStartDate</code> が現在から1週間以内の場合に「✨ NEW」タグを表示</li>
+</ul>
+<h3>デザインパターン（LP）</h3>
+LPでは以下のデザインパターンに対応：
+<ul><li><code>standard</code> - 標準</li>
+<li><code>yellow</code> - 黄色</li>
+<li><code>impact</code> - インパクト</li>
+<li><code>trust</code> - 信頼</li>
+<li><code>athome</code> - アットホーム</li>
+<li><code>regional</code> - 地域密着</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

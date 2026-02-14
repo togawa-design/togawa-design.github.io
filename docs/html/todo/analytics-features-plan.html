@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分析機能一覧 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>分析機能一覧</h1><p>> 求人サイト・管理画面に実装する分析機能の全体マップ</p><p>*最終更新: 2026-02-14*</p><p>---</p><h2>実装ステータス一覧</h2><table><tr><td>機能</td><td>ステータス</td><td>備考</td></tr>
+</table>
+<table><tr><td>採用ファネル分析</td><td>✅ 実装済</td><td>採用管理タブ</td></tr>
+<tr><td>応募者分析（基本）</td><td>✅ 実装済</td><td>ステータス分布、担当者割り当て</td></tr>
+<tr><td>応募者分析（詳細）</td><td>❌ 未実装</td><td>年代/地域/時間帯/曜日分析</td></tr>
+<tr><td>求人パフォーマンス分析</td><td>✅ 実装済</td><td>企業別タブでPV/応募/CVR比較</td></tr>
+<tr><td>リードタイム分析</td><td>✅ 実装済</td><td>平均対応時間、担当者別分析</td></tr>
+<tr><td>競合・市場分析</td><td>❌ 未実装</td><td>外部データ or 自社データ分析</td></tr>
+<tr><td>アラート（対応遅延）</td><td>✅ 実装済</td><td>48時間/7日の遅延アラート</td></tr>
+<tr><td>アラート（その他）</td><td>❌ 未実装</td><td>辞退率/応募数減少/掲載終了</td></tr>
+<tr><td>予測機能</td><td>❌ 未実装</td><td>応募数予測、採用達成予測</td></tr>
+<tr><td>ROI分析</td><td>❌ 未実装</td><td>広告費入力機能が必要</td></tr>
+<tr><td>CVR・改善提案</td><td>❌ 未実装</td><td>閾値ベースの自動提案</td></tr>
+<tr><td>入社後定着率分析</td><td>❌ 未実装</td><td>hireDate/resignDate追加が必要</td></tr>
+<tr><td>チャネル×定着率分析</td><td>❌ 未実装</td><td>UTMと定着率のクロス分析</td></tr>
+<tr><td>市場給与相場（e-Stat）</td><td>❌ 未実装</td><td>Cloud Functions定期実行</td></tr>
+</table>
+---</p><h2>目次</h2><p><li><a href="#全体マップ">全体マップ</a></li>
+<li><a href="#1-採用ファネル分析">採用ファネル分析</a></li>
+<li><a href="#2-応募者分析">応募者分析</a></li>
+<li><a href="#3-求人パフォーマンス分析">求人パフォーマンス分析</a></li>
+<li><a href="#4-リードタイム分析">リードタイム分析</a></li>
+<li><a href="#5-競合市場分析">競合・市場分析</a></li>
+<li><a href="#6-予測アラート">予測・アラート</a></li>
+<li><a href="#7-roi分析">ROI分析</a></li>
+<li><a href="#8-cvr改善提案">CVR・改善提案</a></li>
+<li><a href="#実装優先度">実装優先度</a></li>
+<li><a href="#関連ドキュメント">関連ドキュメント</a></li></p><p>---</p><h2>全体マップ</h2><pre><code class="language-">┌─────────────────────────────────────────────────────────────────┐
+│                        分析機能マップ                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  【採用プロセス】          【求人・応募者】        【経営判断】   │
+│                                                                 │
+│  ┌─────────────┐          ┌─────────────┐      ┌─────────────┐ │
+│  │採用ファネル  │          │応募者分析   │      │ROI分析      │ │
+│  │分析         │          │            │      │            │ │
+│  └─────────────┘          └─────────────┘      └─────────────┘ │
+│         │                        │                    │        │
+│         ▼                        ▼                    ▼        │
+│  ┌─────────────┐          ┌─────────────┐      ┌─────────────┐ │
+│  │リードタイム  │          │求人パフォー │      │競合・市場   │ │
+│  │分析         │          │マンス分析   │      │分析         │ │
+│  └─────────────┘          └─────────────┘      └─────────────┘ │
+│         │                        │                    │        │
+│         └────────────┬───────────┘                    │        │
+│                      ▼                                │        │
+│              ┌─────────────┐                          │        │
+│              │予測・アラート│◀─────────────────────────┘        │
+│              └─────────────┘                                   │
+│                      │                                         │
+│                      ▼                                         │
+│              ┌─────────────┐                                   │
+│              │CVR改善提案  │                                   │
+│              └─────────────┘                                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>1. 採用ファネル分析 ✅ 実装済</h2><p><strong>目的</strong>: 採用プロセスのどこで離脱が多いかを可視化</p><p><strong>実装場所</strong>: 詳細分析 → 採用管理タブ</p><h3>可視化イメージ</h3><pre><code class="language-">求人閲覧 → 応募 → 連絡済 → 面接 → 内定 → 入社
+  100%      5%     4%      3%     1%    0.8%
+</code></pre><h3>分析項目</h3><table><tr><td>項目</td><td>説明</td><td>データソース</td></tr>
+</table>
+<table><tr><td>各ステップの転換率</td><td>どこで離脱が多いか</td><td>applications.status</td></tr>
+<tr><td>ボトルネック特定</td><td>「面接→内定」で落ちすぎていないか</td><td>転換率の比較</td></tr>
+<tr><td>求人別比較</td><td>どの求人が採用まで繋がりやすいか</td><td>jobId でグループ化</td></tr>
+<tr><td>期間比較</td><td>先月と今月でファネル改善したか</td><td>createdAt でフィルター</td></tr>
+</table>
+<h3>詳細設計</h3><p>→ <a href="./recruitment-process-analytics-plan.html">recruitment-process-analytics-plan.md</a> 参照</p><p>---</p><h2>2. 応募者分析 🔶 一部実装</h2><p><strong>目的</strong>: 応募者の傾向を把握し、採用ターゲティングを最適化</p><h3>分析項目</h3><table><tr><td>項目</td><td>説明</td><td>活用方法</td><td>ステータス</td></tr>
+</table>
+<table><tr><td><strong>年代分布</strong></td><td>10代/20代/30代/40代/50代+</td><td>ターゲット層の確認</td><td>❌ 未実装</td></tr>
+<tr><td><strong>地域分布</strong></td><td>都道府県別の応募数</td><td>広告配信エリアの最適化</td><td>❌ 未実装</td></tr>
+<tr><td><strong>流入元分布</strong></td><td>Google/Indeed/SNS/直接</td><td>効果的なチャネル特定</td><td>✅ 実装済</td></tr>
+<tr><td><strong>時間帯別応募数</strong></td><td>何時に応募が多いか</td><td>広告配信時間の最適化</td><td>❌ 未実装</td></tr>
+<tr><td><strong>曜日別応募数</strong></td><td>何曜日に応募が多いか</td><td>求人更新タイミング</td><td>❌ 未実装</td></tr>
+<tr><td><strong>リピート応募率</strong></td><td>再応募の割合</td><td>候補者プール活用</td><td>❌ 未実装</td></tr>
+</table>
+<h3>可視化イメージ</h3><pre><code class="language-">【年代分布】                    【流入元分布】
+20代 ████████████████ 45%       Google   ████████████ 35%
+30代 ██████████       28%       Indeed   ██████████   30%
+40代 ██████           18%       SNS広告  ████████     25%
+50代+████             9%        直接     ████         10%</p><p>【時間帯別応募数】
+     ┌──────────────────────────────────────┐
+  50 │                    ●                  │
+     │                   ● ●                 │
+  40 │              ●   ●   ●               │
+     │            ● ● ●     ● ●             │
+  30 │          ●           ●   ●           │
+     │        ●                   ●         │
+  20 │  ●   ●                       ●       │
+     │●   ●                           ● ●   │
+  10 │                                    ● │
+     └──────────────────────────────────────┘
+      6  8  10 12 14 16 18 20 22 24 (時)</p><p>→ 20時〜22時がピーク → この時間帯に広告強化
+</code></pre><h3>必要データ</h3><pre><code class="language-javascript">// applications コレクション
+{
+  applicantAge: number,           // 年齢（または生年月日から計算）
+  applicantAddress: string,       // 住所（都道府県を抽出）
+  source: string,                 // 流入元URL
+  createdAt: Timestamp            // 応募日時（時間帯・曜日）
+}
+</code></pre><p>---</p><h2>3. 求人パフォーマンス分析 ✅ 実装済</h2><p><strong>目的</strong>: どの求人が効果的かを比較し、求人改善に活かす</p><p><strong>実装場所</strong>: 詳細分析 → 企業別タブ</p><h3>分析項目</h3><table><tr><td>指標</td><td>計算式</td><td>説明</td><td>ステータス</td></tr>
+</table>
+<table><tr><td><strong>閲覧数</strong></td><td>page_analytics の PV</td><td>求人ページの閲覧数</td><td>✅ 実装済</td></tr>
+<tr><td><strong>応募数</strong></td><td>applications.count</td><td>実際の応募数</td><td>✅ 実装済</td></tr>
+<tr><td><strong>CVR（応募率）</strong></td><td>応募数 ÷ 閲覧数 × 100</td><td>閲覧から応募への転換率</td><td>✅ 実装済</td></tr>
+<tr><td><strong>採用率</strong></td><td>採用数 ÷ 応募数 × 100</td><td>応募から採用への転換率</td><td>✅ 実装済</td></tr>
+<tr><td><strong>CPA（応募単価）</strong></td><td>広告費 ÷ 応募数</td><td>1応募あたりのコスト</td><td>❌ 未実装</td></tr>
+<tr><td><strong>採用単価</strong></td><td>広告費 ÷ 採用数</td><td>1採用あたりのコスト</td><td>❌ 未実装</td></tr>
+</table>
+<h3>比較分析</h3><table><tr><td>比較軸</td><td>分析内容</td></tr>
+</table>
+<table><tr><td>給与 vs 応募率</td><td>給与が高いほど応募が多いか</td></tr>
+<tr><td>掲載期間 vs 応募数</td><td>鮮度が落ちると応募が減るか</td></tr>
+<tr><td>タイトル A/Bテスト</td><td>どのタイトルがクリックされるか</td></tr>
+<tr><td>画像有無 vs CVR</td><td>画像があると応募率が上がるか</td></tr>
+</table>
+<h3>可視化イメージ</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────────────┐
+│ 求人パフォーマンス比較                                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ 求人タイトル           閲覧数   応募数   CVR    採用数  採用率  │
+│ ──────────────────────────────────────────────────────────────  │
+│ 製造スタッフ（愛知）    1,250     42    3.4%     12    28.6%   │
+│ 物流スタッフ（大阪）      890     28    3.1%      8    28.6%   │
+│ 組立作業員（静岡）        650     15    2.3%      3    20.0%   │ ← 要改善
+│ 検査スタッフ（愛知）      520     22    4.2%      7    31.8%   │ ← 高CVR
+│                                                                 │
+│ 【インサイト】                                                  │
+│ ・「検査スタッフ」はCVRが高い → 他求人にも検査業務を明記？     │
+│ ・「組立作業員」は採用率が低い → 選考基準の見直し？            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>4. リードタイム分析 ✅ 実装済</h2><p><strong>目的</strong>: 採用プロセスの時間効率を測定し、遅延を特定</p><p><strong>実装場所</strong>: 詳細分析 → 採用管理タブ</p><h3>測定ポイント</h3><table><tr><td>指標</td><td>開始</td><td>終了</td><td>目標</td></tr>
+</table>
+<table><tr><td>初回レスポンス</td><td>応募</td><td>初回連絡</td><td>24時間以内</td></tr>
+<tr><td>面談設定</td><td>初回連絡</td><td>面談日確定</td><td>3日以内</td></tr>
+<tr><td>面談実施</td><td>面談日確定</td><td>面談実施</td><td>7日以内</td></tr>
+<tr><td>選考判断</td><td>面談実施</td><td>結果通知</td><td>3日以内</td></tr>
+<tr><td>総リードタイム</td><td>応募</td><td>入社</td><td>-</td></tr>
+</table>
+<h3>担当者別分析</h3><table><tr><td>担当者</td><td>平均レスポンス</td><td>担当数</td><td>採用率</td></tr>
+</table>
+<table><tr><td>田中</td><td>12時間 ✅</td><td>35人</td><td>38%</td></tr>
+<tr><td>佐藤</td><td>36時間 ⚠️</td><td>28人</td><td>32%</td></tr>
+<tr><td>鈴木</td><td>48時間 🔴</td><td>22人</td><td>28%</td></tr>
+</table>
+<h3>詳細設計</h3><p>→ <a href="./recruitment-process-analytics-plan.html">recruitment-process-analytics-plan.md</a> 参照</p><p>---</p><h2>5. 競合・市場分析 ❌ 未実装</h2><p><strong>目的</strong>: 市場動向を把握し、競争力のある求人を作成</p><p><strong>必要なもの</strong>: 外部データ連携 or 自社データの地域/職種分析</p><h3>分析項目</h3><table><tr><td>項目</td><td>説明</td><td>データソース</td></tr>
+</table>
+<table><tr><td><strong>地域別求人需要</strong></td><td>どのエリアの閲覧が多いか</td><td>page_analytics</td></tr>
+<tr><td><strong>職種別需要</strong></td><td>どの職種が人気か</td><td>検索キーワード、閲覧数</td></tr>
+<tr><td><strong>給与相場</strong></td><td>同職種・同地域の平均給与</td><td>外部データ or 自社データ</td></tr>
+<tr><td><strong>掲載企業数</strong></td><td>競合の求人数</td><td>※外部データ必要</td></tr>
+</table>
+<h3>可視化イメージ</h3><pre><code class="language-">【地域別 閲覧数ヒートマップ】</p><p>  北海道: ██ 低
+  東北:   ███ 低
+  関東:   ████████████ 高
+  中部:   ██████████ 高
+  関西:   ████████ 中
+  中国:   ███ 低
+  九州:   █████ 中</p><p>→ 関東・中部の需要が高い → この地域の求人を強化
+</code></pre><h3>給与相場比較</h3><pre><code class="language-">【製造スタッフ 給与比較】</p><p>  業界平均:  月収 28万円
+  自社求人:  月収 32万円  ← 競争力あり ✅</p><p>【物流スタッフ 給与比較】</p><p>  業界平均:  月収 26万円
+  自社求人:  月収 24万円  ← 要検討 ⚠️
+</code></pre><p>---</p><h2>6. 予測・アラート 🔶 一部実装</h2><p><strong>目的</strong>: 問題を早期発見し、先手を打てるようにする</p><h3>アラート機能</h3><table><tr><td>レベル</td><td>アラート</td><td>トリガー条件</td><td>ステータス</td></tr>
+</table>
+<table><tr><td>🔴 緊急</td><td>対応遅延</td><td>48時間以上「新規」のまま</td><td>✅ 実装済</td></tr>
+<tr><td>🔴 緊急</td><td>長期放置</td><td>7日以上ステータス変更なし</td><td>✅ 実装済</td></tr>
+<tr><td>🟡 警告</td><td>辞退率上昇</td><td>先週比で辞退率20%以上増加</td><td>❌ 未実装</td></tr>
+<tr><td>🟡 警告</td><td>応募数減少</td><td>先週比で応募数30%以上減少</td><td>❌ 未実装</td></tr>
+<tr><td>🟡 警告</td><td>掲載終了間近</td><td>掲載終了まで3日以内</td><td>❌ 未実装</td></tr>
+<tr><td>🔵 情報</td><td>CVR低下傾向</td><td>2週連続でCVRが下降</td><td>❌ 未実装</td></tr>
+</table>
+<h3>予測機能</h3><table><tr><td>機能</td><td>説明</td><td>手法</td><td>ステータス</td></tr>
+</table>
+<table><tr><td><strong>応募数予測</strong></td><td>今月の予想応募数</td><td>過去3ヶ月の移動平均</td><td>❌ 未実装</td></tr>
+<tr><td><strong>採用達成予測</strong></td><td>目標達成できそうか</td><td>現在ペース × 残日数</td><td>❌ 未実装</td></tr>
+<tr><td><strong>異常検知</strong></td><td>急な変化を検出</td><td>標準偏差からの乖離</td><td>❌ 未実装</td></tr>
+</table>
+<h3>可視化イメージ</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────────────┐
+│ ⚠️ アラート                                          3件       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ 🔴 対応遅延: 山田太郎さん（製造スタッフ）                        │
+│    応募から52時間経過                    [対応する] [詳細]       │
+│                                                                 │
+│ 🟡 応募数減少: 物流スタッフ（大阪）                              │
+│    先週比 -45%                          [求人を確認] [詳細]      │
+│                                                                 │
+│ 🟡 掲載終了間近: 検査スタッフ（愛知）                            │
+│    あと2日で掲載終了                    [延長する] [詳細]        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘</p><p>┌─────────────────────────────────────────────────────────────────┐
+│ 📊 今月の予測                                                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  応募数予測: 85〜95件（現在: 42件、残り18日）                    │
+│  ████████████████░░░░░░░░░░  49% 達成                           │
+│                                                                 │
+│  採用目標: 10名 → 予測達成率: 80%                               │
+│  現在ペースで推移すれば目標達成の見込み ✅                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>7. ROI分析 ❌ 未実装</h2><p><strong>目的</strong>: 採用にかかるコストを可視化し、投資対効果を最大化</p><p><strong>必要なもの</strong>: 広告費入力機能（<code>ad_spend</code>コレクション）</p><h3>分析項目</h3><table><tr><td>指標</td><td>計算式</td><td>説明</td></tr>
+</table>
+<table><tr><td><strong>CPA（応募単価）</strong></td><td>広告費 ÷ 応募数</td><td>1応募を獲得するコスト</td></tr>
+<tr><td><strong>CPH（採用単価）</strong></td><td>広告費 ÷ 採用数</td><td>1人採用するコスト</td></tr>
+<tr><td><strong>チャネル別ROI</strong></td><td>採用数 ÷ 広告費</td><td>どのチャネルが効率的か</td></tr>
+<tr><td><strong>求人別ROI</strong></td><td>採用数 ÷ 掲載コスト</td><td>どの求人が費用対効果高いか</td></tr>
+</table>
+<h3>可視化イメージ</h3><pre><code class="language-">【チャネル別 採用コスト】</p><p>チャネル      広告費      応募数    採用数    CPA      CPH
+─────────────────────────────────────────────────────────
+Google広告   ¥150,000      45        8     ¥3,333   ¥18,750
+Indeed       ¥100,000      38        6     ¥2,632   ¥16,667 ← 最も効率的
+SNS広告      ¥80,000       20        3     ¥4,000   ¥26,667
+─────────────────────────────────────────────────────────
+合計         ¥330,000     103       17     ¥3,204   ¥19,412</p><p>【インサイト】
+・Indeed が最もCPH（採用単価）が低い → 予算配分を増やす
+・SNS広告 は採用単価が高い → クリエイティブ見直し or 予算削減
+</code></pre><h3>必要データ</h3><pre><code class="language-javascript">// 新規コレクション: ad_spend
+{
+  companyDomain: string,
+  channel: 'google' <table><tr><td>'indeed'</td><td>'sns'</td></tr></table> 'other',
+  month: '2025-02',
+  amount: 150000,       // 広告費（円）
+  notes: string
+}
+</code></pre><p>---</p><h2>8. CVR・改善提案 ❌ 未実装</h2><p><strong>目的</strong>: LP・採用ページの改善ポイントを自動で提案</p><p><strong>必要なもの</strong>: 閾値ベースの判定ロジック、提案文言の表示</p><h3>分析項目</h3><table><tr><td>指標</td><td>閾値</td><td>改善提案</td></tr>
+</table>
+<table><tr><td>CVR</td><td>< 1%</td><td>CTAボタンの配置・文言の見直し</td></tr>
+<tr><td>CVR</td><td>< 0.5%</td><td>ファーストビューにCTA追加を強く推奨</td></tr>
+<tr><td>平均滞在時間</td><td>< 30秒</td><td>コンテンツの魅力度向上が必要</td></tr>
+<tr><td>平均滞在時間</td><td>< 10秒</td><td>ページ読み込み速度を確認</td></tr>
+<tr><td>モバイルCVR / PC CVR</td><td>< 0.5</td><td>モバイル表示の最適化が必要</td></tr>
+</table>
+<h3>詳細設計</h3><p>→ <a href="./TODO-analytics-insights.html">TODO-analytics-insights.md</a> 参照</p><p>---</p><h2>実装優先度</h2><h3>Phase 1: 基本分析（最優先） ✅ 完了</h3><table><tr><td>機能</td><td>理由</td><td>ステータス</td></tr>
+</table>
+<table><tr><td>採用ファネル分析</td><td>既存データで実装可能、効果大</td><td>✅ 完了</td></tr>
+<tr><td>応募者分析（属性分布）</td><td>既存データで実装可能</td><td>✅ 基本完了</td></tr>
+<tr><td>リードタイム分析</td><td>対応遅延の可視化は即効性あり</td><td>✅ 完了</td></tr>
+<tr><td>アラート（対応遅延）</td><td>問題の早期発見</td><td>✅ 完了</td></tr>
+</table>
+<h3>Phase 2: 詳細分析 🔶 一部実装</h3><table><tr><td>機能</td><td>理由</td><td>ステータス</td></tr>
+</table>
+<table><tr><td>求人パフォーマンス比較</td><td>求人改善に直結</td><td>✅ 完了</td></tr>
+<tr><td>担当者別分析</td><td>マネジメントに有用</td><td>✅ 完了</td></tr>
+<tr><td>時間帯・曜日分析</td><td>広告最適化に有用</td><td>❌ 未実装</td></tr>
+<tr><td>CVR改善提案</td><td>LP改善に直結</td><td>❌ 未実装</td></tr>
+</table>
+<h3>Phase 3: 高度な分析 ❌ 未着手</h3><table><tr><td>機能</td><td>理由</td><td>ステータス</td></tr>
+</table>
+<table><tr><td>ROI分析</td><td>広告費データの入力が必要</td><td>❌ 未実装</td></tr>
+<tr><td>予測機能</td><td>データ蓄積が必要</td><td>❌ 未実装</td></tr>
+<tr><td>競合・市場分析</td><td>外部データが必要</td><td>❌ 未実装</td></tr>
+</table>
+<h3>Phase 4: コンサル向け高度分析 ❌ 未着手</h3><p>求人コンサルティングに活用できる分析機能。</p><table><tr><td>機能</td><td>説明</td><td>必要なデータ</td><td>ステータス</td></tr>
+</table>
+<table><tr><td><strong>入社後定着率</strong></td><td>採用品質の評価</td><td><code>hireDate</code>, <code>resignDate</code></td><td>❌ 未実装</td></tr>
+<tr><td><strong>早期離職分析</strong></td><td>ミスマッチの原因特定</td><td>3ヶ月後フォローアップ</td><td>❌ 未実装</td></tr>
+<tr><td><strong>チャネル×定着率</strong></td><td>質の高い流入元特定</td><td>UTM × 定着率クロス</td><td>❌ 未実装</td></tr>
+<tr><td><strong>給与帯×応募率</strong></td><td>適正給与の提案</td><td>jobs.salary × applications</td><td>❌ 未実装</td></tr>
+<tr><td><strong>タイトル効果分析</strong></td><td>効果的な文言の特定</td><td>タイトル別CTR</td><td>❌ 未実装</td></tr>
+<tr><td><strong>市場給与相場</strong></td><td>競争力の可視化</td><td>e-Stat API連携</td><td>❌ 未実装</td></tr>
+</table>
+#### 定着率データ収集（要追加フィールド）</p><pre><code class="language-javascript">// applications コレクションに追加
+{
+  // 既存フィールド...
+  hireDate: Timestamp,        // 入社日
+  resignDate: Timestamp,      // 退職日（早期離職の場合）
+  resignReason: string,       // 退職理由
+  retentionStatus: 'active' <table><tr><td>'resigned_early'</td><td>'resigned'</td></tr></table> null
+}
+</code></pre><p>#### コンサルレポート出力イメージ</p><pre><code class="language-">┌─────────────────────────────────────────────────────────────┐
+│ 📊 採用コンサルレポート: 株式会社A        2026年2月          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ 【採用効率サマリー】                                        │
+│  ・応募→採用 転換率: 12% (業界平均: 8%)  ✅                 │
+│  ・平均採用リードタイム: 18日                               │
+│  ・採用単価: 8.5万円                                        │
+│                                                             │
+│ 【チャネル別パフォーマンス】                                │
+│  Google広告: 応募45件 / 採用3名 / 定着率67%                 │
+│  Indeed:     応募28件 / 採用5名 / 定着率100% ← 推奨         │
+│  TikTok:     応募22件 / 採用2名 / 定着率50%  ← 要検証       │
+│                                                             │
+│ 【課題と提案】                                              │
+│  1. TikTok経由の早期離職率が高い → ターゲット見直し         │
+│  2. 面接→内定の転換率が低い → 面接官トレーニング推奨       │
+│  3. 給与が相場より5%低い → 競合対策として給与改定検討       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>関連ドキュメント</h2><table><tr><td>ファイル</td><td>内容</td></tr>
+</table>
+<table><tr><td><a href="./recruitment-process-analytics-plan.html">recruitment-process-analytics-plan.md</a></td><td>採用プロセス分析の詳細設計</td></tr>
+<tr><td><a href="./TODO-analytics-insights.html">TODO-analytics-insights.md</a></td><td>CVR改善提案の詳細設計</td></tr>
+<tr><td><a href="../marketing/utm-tracking-guide.html">utm-tracking-guide.md</a></td><td>広告トラッキング設定ガイド</td></tr>
+</table>
+---</p><p>*作成日: 2025-02-12*
+*更新日: 2026-02-14*
+</p>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

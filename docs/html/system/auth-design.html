@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>認証・認可設計書 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>認証・認可設計書</h1><h2>概要</h2><p>本システムは2つの認証方式をサポートし、段階的にFirebase Authへ移行中。</p><p>---</p><h2>認証方式</h2><h3>1. Firebase Authentication（推奨・新規ユーザー）</h3><pre><code class="language-">┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
+│   クライアント   │────▶│  Firebase Auth   │────▶│   ID Token   │
+└─────────────┘     └──────────────────┘     └─────────────┘
+                                                    │
+                    ┌──────────────────┐            │
+                    │  Cloud Functions │◀───────────┘
+                    └──────────────────┘
+</code></pre><p><strong>対応プロバイダ:</strong>
+<ul><li>メール/パスワード認証</li>
+<li>Google認証</li>
+</ul>
+<strong>フロー:</strong>
+<li>クライアントでFirebase Auth SDK使用</li>
+<li>ログイン成功後、ID Tokenを取得</li>
+<li>API呼び出し時にAuthorizationヘッダーに設定</li>
+<li>Cloud FunctionsでID Tokenを検証</li></p><h3>2. レガシー認証（既存ユーザー・移行中）</h3><pre><code class="language-">┌─────────────┐     ┌──────────────────┐     ┌─────────────┐
+│   クライアント   │────▶│  legacyLogin API │────▶│  Firestore   │
+└─────────────┘     └──────────────────┘     └─────────────┘
+       │                                            │
+       │            ┌──────────────────┐            │
+       └───────────▶│  sessionStorage  │◀───────────┘
+                    └──────────────────┘
+</code></pre><p><strong>フロー:</strong>
+<li>ユーザーID/パスワードを入力</li>
+<li>legacyLogin APIでFirestoreのcompany_usersを検索</li>
+<li>パスワード検証（bcryptハッシュ）</li>
+<li>ログイン成功時、平文パスワードは自動でハッシュ化（マイグレーション）</li>
+<li>セッション情報をsessionStorageに保存</li></p><p>---</p><h2>ユーザーロール</h2><h3>ロール一覧</h3><table><tr><td>ロール</td><td>説明</td><td>権限</td></tr>
+</table>
+<table><tr><td><code>super_admin</code></td><td>システム管理者</td><td>全機能アクセス、全会社データ閲覧</td></tr>
+<tr><td><code>admin</code></td><td>会社管理者</td><td>自社の全機能アクセス、ユーザー管理</td></tr>
+<tr><td><code>staff</code></td><td>担当者</td><td>自社データの閲覧・編集</td></tr>
+</table>
+<h3>権限マトリクス</h3><table><tr><td>機能</td><td>super_admin</td><td>admin</td><td>staff</td></tr>
+</table>
+<table><tr><td>会社一覧閲覧</td><td>○</td><td>×</td><td>×</td></tr>
+<tr><td>会社ビューモード</td><td>○</td><td>×</td><td>×</td></tr>
+<tr><td>ユーザー作成・削除</td><td>○</td><td>○</td><td>×</td></tr>
+<tr><td>求人管理</td><td>○</td><td>○</td><td>○</td></tr>
+<tr><td>応募者管理</td><td>○</td><td>○</td><td>○</td></tr>
+<tr><td>アナリティクス閲覧</td><td>○</td><td>○</td><td>○</td></tr>
+<tr><td>会社設定変更</td><td>○</td><td>○</td><td>×</td></tr>
+<tr><td>LPカスタマイズ</td><td>○</td><td>○</td><td>○</td></tr>
+</table>
+---</p><h2>認証状態管理</h2><h3>Firebase Auth ユーザー</h3><pre><code class="language-javascript">// auth-service.js
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    // ログイン済み
+    // Firestoreからユーザー情報を取得
+    ensureUserDocument(user);
+  } else {
+    // 未ログイン
+  }
+});
+</code></pre><h3>レガシーユーザー</h3><pre><code class="language-javascript">// sessionStorageに保存される情報
+{
+  company_user_id: "user_doc_id",
+  company_user_role: "admin",
+  company_user_domain: "example-company",
+  available_companies: [...] // 複数会社所属時
+}
+</code></pre><p>---</p><h2>Firestoreデータ構造</h2><h3>company_users コレクション</h3><pre><code class="language-javascript">{
+  uid: "firebase_uid",           // Firebase Auth UID（Firebase Authユーザーのみ）
+  email: "user@example.com",
+  username: "user123",
+  password: "$2b$10$...",        // bcryptハッシュ（レガシーのみ）
+  companyDomain: "example-company",
+  companyName: "株式会社サンプル",
+  name: "山田太郎",
+  role: "admin",                 // admin | staff
+  isActive: true,
+  createdAt: Timestamp,
+  lastLogin: Timestamp,
+  _legacyAuth: true,             // レガシー認証フラグ（移行後削除）
+  passwordMigratedAt: Timestamp  // パスワードハッシュ化日時
+}
+</code></pre><h3>admins コレクション（super_admin用）</h3><pre><code class="language-javascript">{
+  email: "admin@rikueco.jp",
+  createdAt: Timestamp
+}
+</code></pre><p>---</p><h2>認証フロー詳細</h2><h3>新規ユーザー登録</h3><div class="mermaid">
+sequenceDiagram
+    participant Admin as 管理者
+    participant API as createCompanyUser API
+    participant FA as Firebase Auth
+    participant FS as Firestore
+
+    Admin->>API: POST /createCompanyUser
+    API->>FA: createUser(email, password)
+    FA-->>API: userRecord (uid)
+    API->>FS: company_users.doc(uid).set()
+    API-->>Admin: success
+</div><h3>Firebase Authログイン</h3><div class="mermaid">
+sequenceDiagram
+    participant User as ユーザー
+    participant Client as クライアント
+    participant FA as Firebase Auth
+    participant FS as Firestore
+
+    User->>Client: メール/パスワード入力
+    Client->>FA: signInWithEmailAndPassword()
+    FA-->>Client: User + ID Token
+    Client->>FS: company_usersから情報取得
+    FS-->>Client: ユーザー情報
+    Client->>Client: セッション確立
+</div><h3>レガシーログイン</h3><div class="mermaid">
+sequenceDiagram
+    participant User as ユーザー
+    participant Client as クライアント
+    participant API as legacyLogin API
+    participant FS as Firestore
+
+    User->>Client: ID/パスワード入力
+    Client->>API: POST /legacyLogin
+    API->>FS: company_users検索
+    FS-->>API: ユーザードキュメント
+    API->>API: bcrypt.compare()
+    alt パスワード一致
+        API->>FS: パスワードハッシュ化（平文の場合）
+        API-->>Client: success + user info
+        Client->>Client: sessionStorage保存
+    else パスワード不一致
+        API-->>Client: 401 error
+    end
+</div><p>---</p><h2>セキュリティ対策</h2><h3>実装済み</h3><ul><li>[x] パスワードのbcryptハッシュ化</li>
+<li>[x] レガシーパスワードの自動マイグレーション</li>
+<li>[x] CORS制限</li>
+<li>[x] XSS対策（escapeHtml）</li>
+</ul>
+<h3>今後の対策</h3><ul><li>[ ] sessionStorage → メモリ保持に変更</li>
+<li>[ ] Cloud Functions認証強化（ID Token必須化）</li>
+<li>[ ] Firestoreセキュリティルール強化</li>
+<li>[ ] Rate Limiting導入</li>
+</ul>
+---</p><h2>移行計画</h2><h3>Phase 1（現在）</h3>
+<ul><li>新規ユーザー: Firebase Auth</li>
+<li>既存ユーザー: レガシー認証（自動ハッシュ化）</li>
+</ul>
+<h3>Phase 2</h3>
+<ul><li>レガシーユーザーにFirebase Auth移行を促す</li>
+<li><code>migrateCompanyUsersToFirebaseAuth</code> APIで一括移行</li>
+</ul>
+<h3>Phase 3</h3>
+<ul><li>レガシー認証の廃止</li>
+<li>legacyLogin APIの削除</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

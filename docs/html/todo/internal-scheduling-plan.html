@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>内部日程調整機能 実装プラン - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>内部日程調整機能 実装プラン</h1><p>> 応募者が自分で面接日程を予約できる、Calendly風の内部スケジューリング機能</p><p>---</p><h2>目次</h2><p><li><a href="#概要">概要</a></li>
+<li><a href="#目的メリット">目的・メリット</a></li>
+<li><a href="#機能一覧">機能一覧</a></li>
+<li><a href="#画面設計">画面設計</a></li>
+<li><a href="#データ設計">データ設計</a></li>
+<li><a href="#実装ステップ">実装ステップ</a></li>
+<li><a href="#既存機能との比較">既存機能との比較</a></li>
+<li><a href="#次のアクション">次のアクション</a></li></p><p>---</p><h2>概要</h2><p>現在のGoogleカレンダー連携に加えて、外部サービスに依存しない<strong>内部日程調整機能</strong>を実装する。
+応募者が空き枠を見て自分で予約できるようにすることで、企業側の日程調整の手間を大幅に削減する。</p><h3>想定ユースケース</h3><pre><code class="language-">1. 企業が空き時間を登録（週単位 or 個別）
+<li>応募者が応募完了後、予約ページにアクセス</li>
+<li>空いている日時を選択して予約</li>
+<li>双方にメール通知</li>
+<li>応募者ステータスが自動更新</li>
+</code></pre><p>---</p><h2>目的・メリット</h2><h3>企業側のメリット</h3><table><tr><td>課題</td><td>解決方法</td></tr>
+</table>
+<table><tr><td>日程調整のメールが多い</td><td>応募者が自分で予約するので不要に</td></tr>
+<tr><td>ダブルブッキングのリスク</td><td>システムが自動で空き管理</td></tr>
+<tr><td>ステータス更新忘れ</td><td>予約確定で自動更新</td></tr>
+<tr><td>担当者ごとの空き管理が煩雑</td><td>担当者別に空き時間を設定可能</td></tr>
+</table>
+<h3>応募者側のメリット</h3><table><tr><td>課題</td><td>解決方法</td></tr>
+</table>
+<table><tr><td>企業からの連絡待ちがストレス</td><td>自分のタイミングで予約できる</td></tr>
+<tr><td>候補日を複数出すのが面倒</td><td>空いている枠から選ぶだけ</td></tr>
+<tr><td>予約確定までのやり取りが長い</td><td>ワンクリックで確定</td></tr>
+</table>
+<h3>既存のGoogleカレンダー連携との比較</h3><table><tr><td>項目</td><td>Googleカレンダー連携</td><td>内部日程調整</td></tr>
+</table>
+<table><tr><td>外部依存</td><td>Google APIに依存</td><td>なし</td></tr>
+<tr><td>セットアップ</td><td>OAuth連携が必要</td><td>不要</td></tr>
+<tr><td>応募者操作</td><td>企業からの連絡待ち</td><td><strong>自分で予約可能</strong></td></tr>
+<tr><td>ステータス連動</td><td>手動更新</td><td><strong>自動更新</strong></td></tr>
+<tr><td>コスト</td><td>無料（API制限あり）</td><td>無料</td></tr>
+</table>
+<strong>結論</strong>: 両方を選択肢として提供し、企業が選べるようにする。</p><p>---</p><h2>機能一覧</h2><h3>1. 空き時間管理（企業側）</h3><table><tr><td>機能</td><td>説明</td><td>優先度</td></tr>
+</table>
+<table><tr><td>週間スケジュール設定</td><td>毎週繰り返しの空き時間（月〜金 10:00-18:00 など）</td><td>高</td></tr>
+<tr><td>個別日時追加</td><td>特定の日時を空きとして追加</td><td>中</td></tr>
+<tr><td>除外日設定</td><td>休暇・祝日などを除外</td><td>中</td></tr>
+<tr><td>担当者別設定</td><td>担当者ごとに異なる空き時間</td><td>中</td></tr>
+<tr><td>面談時間設定</td><td>1枠あたりの時間（30分/60分/90分）</td><td>高</td></tr>
+<tr><td>バッファ時間</td><td>面談と面談の間の休憩時間</td><td>低</td></tr>
+</table>
+<h3>2. 予約機能（応募者側）</h3><table><tr><td>機能</td><td>説明</td><td>優先度</td></tr>
+</table>
+<table><tr><td>空き枠表示</td><td>カレンダー形式で空き時間を表示</td><td>高</td></tr>
+<tr><td>日時選択</td><td>クリックで予約確定</td><td>高</td></tr>
+<tr><td>予約確認画面</td><td>予約内容の確認</td><td>高</td></tr>
+<tr><td>予約変更</td><td>予約済み日時の変更</td><td>中</td></tr>
+<tr><td>予約キャンセル</td><td>予約のキャンセル</td><td>中</td></tr>
+</table>
+<h3>3. 通知機能</h3><table><tr><td>機能</td><td>説明</td><td>優先度</td></tr>
+</table>
+<table><tr><td>予約確定メール</td><td>応募者・企業双方に送信</td><td>高</td></tr>
+<tr><td>リマインダー</td><td>面談前日・1時間前に通知</td><td>中</td></tr>
+<tr><td>変更・キャンセル通知</td><td>予約変更時に通知</td><td>中</td></tr>
+<tr><td>LINE通知（オプション）</td><td>LINE経由での通知</td><td>低</td></tr>
+</table>
+<h3>4. ステータス連動</h3><table><tr><td>トリガー</td><td>ステータス変更</td></tr>
+</table>
+<table><tr><td>予約確定</td><td><code>new</code> → <code>interviewing</code>（面接調整中）</td></tr>
+<tr><td>面談日時到来</td><td><code>interviewing</code> → <code>interviewed</code>（面接済み）※手動</td></tr>
+<tr><td>キャンセル</td><td><code>interviewing</code> → <code>contacted</code>（連絡済み）</td></tr>
+</table>
+---</p><h2>画面設計</h2><h3>企業側：空き時間設定画面</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ 面接可能時間の設定                                       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ 【基本設定】                                             │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 面談時間: [60分 ▼]  バッファ: [15分 ▼]              │ │
+│ │ 面談形式: ☑対面  ☑オンライン  ☑電話               │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                         │
+│ 【週間スケジュール】                                     │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 月曜日  ☑ [10:00] 〜 [18:00]  休憩 [12:00-13:00]   │ │
+│ │ 火曜日  ☑ [10:00] 〜 [18:00]  休憩 [12:00-13:00]   │ │
+│ │ 水曜日  ☑ [10:00] 〜 [18:00]  休憩 [12:00-13:00]   │ │
+│ │ 木曜日  ☑ [10:00] 〜 [18:00]  休憩 [12:00-13:00]   │ │
+│ │ 金曜日  ☑ [10:00] 〜 [18:00]  休憩 [12:00-13:00]   │ │
+│ │ 土曜日  ☐                                          │ │
+│ │ 日曜日  ☐                                          │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                         │
+│ 【除外日】                                               │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 2025/02/24 (月) - 祝日                    [削除]    │ │
+│ │ 2025/03/20 (木) - 祝日                    [削除]    │ │
+│ │ [+ 除外日を追加]                                    │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                         │
+│                              [キャンセル] [保存する]     │
+└─────────────────────────────────────────────────────────┘
+</code></pre><h3>応募者側：予約画面</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ 面接日程を予約する                                       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ 【求人】製造スタッフ / 株式会社〇〇                       │
+│                                                         │
+│ ───────────────────────────────────────────────         │
+│                                                         │
+│     ◀ 2025年2月            ▶                           │
+│                                                         │
+│  日   月   火   水   木   金   土                        │
+│                          1                              │
+│  2    3    4    5    6    7    8                        │
+│  9   10   11   12   13   14   15                        │
+│      ●    ●    ●    ●    ●                             │
+│ 16   17   18   19   20   21   22                        │
+│      ●    ●    ●    ●    ●                             │
+│ 23   24   25   26   27   28                             │
+│      -    ●    ●    ●    ●                             │
+│                                                         │
+│ ● = 空きあり  - = 空きなし                              │
+│                                                         │
+│ ───────────────────────────────────────────────         │
+│                                                         │
+│ 【2月12日(水)の空き時間】                                │
+│                                                         │
+│  [10:00]  [11:00]  [14:00]  [15:00]  [16:00]  [17:00]  │
+│                                                         │
+│ ───────────────────────────────────────────────         │
+│                                                         │
+│ 選択中: 2025年2月12日(水) 14:00〜                        │
+│ 面談形式: ◉対面  ○オンライン  ○電話                    │
+│                                                         │
+│                                        [予約を確定する]  │
+└─────────────────────────────────────────────────────────┘
+</code></pre><h3>予約確定後の表示</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ ✅ 予約が完了しました                                    │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ 【面接日時】                                             │
+│ 2025年2月12日(水) 14:00〜15:00                           │
+│                                                         │
+│ 【面談形式】                                             │
+│ 対面                                                    │
+│                                                         │
+│ 【場所】                                                 │
+│ 〒123-4567 東京都千代田区〇〇1-2-3                       │
+│                                                         │
+│ 【持ち物】                                               │
+│ ・履歴書（写真貼付）                                     │
+│ ・筆記用具                                               │
+│                                                         │
+│ ───────────────────────────────────────────────         │
+│                                                         │
+│ 確認メールを送信しました。                               │
+│ ご不明な点があれば、メールでお問い合わせください。        │
+│                                                         │
+│ [予約を変更する]  [予約をキャンセルする]                 │
+└─────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>データ設計</h2><h3>Firestoreコレクション</h3><p>#### 1. <code>scheduling_settings</code>（空き時間設定）</p><pre><code class="language-javascript">// companies/{companyDomain}/scheduling_settings/{settingsId}
+{
+  // 基本設定
+  isEnabled: true,                    // 機能の有効/無効
+  slotDuration: 60,                   // 1枠の時間（分）
+  bufferTime: 15,                     // バッファ時間（分）
+  allowedTypes: ['in_person', 'online', 'phone'],  // 許可する面談形式
+  maxDaysAhead: 30,                   // 何日先まで予約可能か</p><p>  // 週間スケジュール
+  weeklySchedule: {
+    monday: { enabled: true, start: '10:00', end: '18:00', breaks: [{ start: '12:00', end: '13:00' }] },
+    tuesday: { enabled: true, start: '10:00', end: '18:00', breaks: [] },
+    wednesday: { enabled: true, start: '10:00', end: '18:00', breaks: [] },
+    thursday: { enabled: true, start: '10:00', end: '18:00', breaks: [] },
+    friday: { enabled: true, start: '10:00', end: '18:00', breaks: [] },
+    saturday: { enabled: false },
+    sunday: { enabled: false }
+  },</p><p>  // 除外日
+  excludedDates: [
+    { date: '2025-02-24', reason: '祝日' },
+    { date: '2025-03-20', reason: '祝日' }
+  ],</p><p>  // 担当者（オプション）
+  assignedStaff: ['staff_id_1', 'staff_id_2'],</p><p>  // 場所設定
+  locations: {
+    in_person: {
+      address: '〒123-4567 東京都千代田区〇〇1-2-3',
+      notes: '本社ビル3F 受付にお声がけください'
+    },
+    online: {
+      platform: 'Google Meet',
+      notes: '面談URLは予約確定後にメールでお送りします'
+    },
+    phone: {
+      notes: '担当者からお電話いたします'
+    }
+  },</p><p>  // 持ち物・注意事項
+  requirements: '履歴書（写真貼付）、筆記用具',
+  notes: '',</p><p>  updatedAt: Timestamp,
+  createdAt: Timestamp
+}
+</code></pre><p>#### 2. <code>interview_slots</code>（予約枠）</p><pre><code class="language-javascript">// companies/{companyDomain}/interview_slots/{slotId}
+{
+  date: '2025-02-12',                 // 日付
+  startTime: '14:00',                 // 開始時刻
+  endTime: '15:00',                   // 終了時刻
+  status: 'available',                // available <table><tr><td>booked</td></tr></table> blocked</p><p>  // 予約情報（予約済みの場合）
+  booking: {
+    applicationId: 'app_xxx',         // 応募ID
+    applicantName: '山田太郎',
+    applicantEmail: 'yamada@example.com',
+    applicantPhone: '090-xxxx-xxxx',
+    meetingType: 'in_person',         // in_person <table><tr><td>online</td></tr></table> phone
+    bookedAt: Timestamp
+  },</p><p>  // 担当者（オプション）
+  staffId: 'staff_id_1',
+  staffName: '田中',</p><p>  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+</code></pre><p>#### 3. <code>interviews</code>（面談記録）※既存コレクション拡張</p><pre><code class="language-javascript">// interviews/{interviewId}
+{
+  companyDomain: 'company-a',
+  applicationId: 'app_xxx',
+  slotId: 'slot_xxx',                 // 予約枠ID</p><p>  // 面談情報
+  scheduledAt: Timestamp,
+  durationMinutes: 60,
+  meetingType: 'in_person',
+  location: '〒123-4567 東京都千代田区〇〇1-2-3',</p><p>  // ステータス
+  status: 'scheduled',                // scheduled <table><tr><td>completed</td><td>cancelled</td></tr></table> no_show</p><p>  // 担当者
+  staffId: 'staff_id_1',
+  staffName: '田中',</p><p>  // 通知
+  reminders: [
+    { type: '1day', sentAt: Timestamp },
+    { type: '1hour', sentAt: Timestamp }
+  ],</p><p>  // 結果（面談後に記録）
+  result: {
+    notes: '非常に意欲的。経験は浅いが育成枠で採用検討。',
+    nextStep: 'offer',                // offer <table><tr><td>second_interview</td><td>rejection</td></tr></table> pending
+    recordedBy: 'staff_id_1',
+    recordedAt: Timestamp
+  },</p><p>  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+</code></pre><p>---</p><h2>実装ステップ</h2><h3>Phase 1: 基本機能（MVP）</h3><table><tr><td>タスク</td><td>内容</td><td>工数目安</td></tr>
+</table>
+<table><tr><td>1-1</td><td>Firestoreスキーマ作成・セキュリティルール</td><td>-</td></tr>
+<tr><td>1-2</td><td>空き時間設定UI（企業側）</td><td>-</td></tr>
+<tr><td>1-3</td><td>空き時間保存API</td><td>-</td></tr>
+<tr><td>1-4</td><td>予約カレンダーUI（応募者側）</td><td>-</td></tr>
+<tr><td>1-5</td><td>予約確定処理・ステータス更新</td><td>-</td></tr>
+<tr><td>1-6</td><td>確認メール送信</td><td>-</td></tr>
+</table>
+<h3>Phase 2: 通知・リマインダー</h3><table><tr><td>タスク</td><td>内容</td><td>工数目安</td></tr>
+</table>
+<table><tr><td>2-1</td><td>予約確定メール（テンプレート）</td><td>-</td></tr>
+<tr><td>2-2</td><td>リマインダー（Cloud Scheduler）</td><td>-</td></tr>
+<tr><td>2-3</td><td>変更・キャンセル通知</td><td>-</td></tr>
+</table>
+<h3>Phase 3: 拡張機能</h3><table><tr><td>タスク</td><td>内容</td><td>工数目安</td></tr>
+</table>
+<table><tr><td>3-1</td><td>担当者別空き時間</td><td>-</td></tr>
+<tr><td>3-2</td><td>予約変更・キャンセル機能</td><td>-</td></tr>
+<tr><td>3-3</td><td>Googleカレンダー同期（オプション）</td><td>-</td></tr>
+<tr><td>3-4</td><td>LINE通知連携</td><td>-</td></tr>
+</table>
+---</p><h2>既存機能との比較</h2><h3>現在の流れ（Googleカレンダー連携）</h3><pre><code class="language-">1. 応募が入る
+<li>企業が応募者詳細を確認</li>
+<li>「面談設定」ボタンをクリック</li>
+<li>担当者を選択</li>
+<li>担当者のGoogleカレンダーから空き時間を取得</li>
+<li>日時を選択して登録</li>
+<li>応募者にメールで連絡</li>
+</code></pre><p><strong>課題</strong>: 企業側の操作が必要、応募者は待つだけ</p><h3>新しい流れ（内部日程調整）</h3><pre><code class="language-">1. 応募が入る
+<li>応募完了画面に「面接日程を予約する」ボタン表示</li>
+<li>応募者が空きカレンダーを見て日時を選択</li>
+<li>予約確定、双方にメール送信</li>
+<li>ステータス自動更新</li>
+</code></pre><p><strong>メリット</strong>: 企業の操作不要、応募者が主体的に動ける</p><h3>両方を選択可能に</h3><p>企業の設定で選べるようにする:</p><pre><code class="language-javascript">// 企業設定
+{
+  schedulingMode: 'self_booking',  // 'self_booking' <table><tr><td>'manual'</td></tr></table> 'google_calendar'
+  // self_booking: 応募者が自分で予約
+  // manual: 従来通り企業が手動で設定
+  // google_calendar: Googleカレンダー連携
+}
+</code></pre><p>---</p><h2>次のアクション</h2><h3>準備</h3><ul><li>[ ] 既存の <code>interviews</code> コレクションとの整合性確認</li>
+<li>[ ] UIモックアップ作成</li>
+<li>[ ] Firestoreセキュリティルール設計</li>
+</ul>
+<h3>Phase 1 実装</h3><ul><li>[ ] <code>scheduling_settings</code> コレクション作成</li>
+<li>[ ] 空き時間設定画面（admin.html内のセクション）</li>
+<li>[ ] <code>interview_slots</code> コレクション作成</li>
+<li>[ ] 予約カレンダーコンポーネント</li>
+<li>[ ] 予約確定API</li>
+<li>[ ] ステータス自動更新ロジック</li>
+<li>[ ] 確認メール送信（既存のemail-service.js拡張）</li>
+</ul>
+<h3>Phase 2 実装</h3><ul><li>[ ] Cloud Scheduler でリマインダー設定</li>
+<li>[ ] メールテンプレート追加</li>
+<li>[ ] 変更・キャンセル処理</li>
+</ul>
+---</p><h2>参考</h2><ul><li>Calendly: https://calendly.com/</li>
+<li>TimeRex: https://timerex.net/</li>
+<li>YouCanBook.me: https://youcanbook.me/</li>
+</ul>
+---</p><p>*作成日: 2025-02-12*
+</p>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

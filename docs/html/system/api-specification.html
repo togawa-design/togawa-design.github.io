@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API仕様書 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>API仕様書</h1><h2>概要</h2><p>本システムのCloud Functions APIエンドポイント一覧と仕様。</p><p><strong>ベースURL:</strong>
+<ul><li>本番: <code>https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net</code></li>
+<li>開発: <code>https://asia-northeast1-lset-dev.cloudfunctions.net</code></li>
+</ul>
+---</p><h2>認証</h2><h3>Firebase ID Token認証（推奨）</h3>
+<pre><code class="language-">Authorization: Bearer <firebase_id_token>
+</code></pre><h3>認証不要エンドポイント</h3>
+一部のエンドポイントは認証なしでアクセス可能（CORS制限あり）</p><p>---</p><h2>エンドポイント一覧</h2><h3>アナリティクス系</h3><table><tr><td>エンドポイント</td><td>メソッド</td><td>認証</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>/getAnalyticsData</code></td><td>GET</td><td>任意</td><td>GA4データ取得</td></tr>
+<tr><td><code>/trackPageAnalytics</code></td><td>POST</td><td>不要</td><td>ページアナリティクス記録</td></tr>
+<tr><td><code>/getPageAnalytics</code></td><td>GET</td><td>任意</td><td>ページアナリティクス取得</td></tr>
+</table>
+<h3>認証・ユーザー管理系</h3><table><tr><td>エンドポイント</td><td>メソッド</td><td>認証</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>/createCompanyUser</code></td><td>POST</td><td>必要</td><td>会社ユーザー作成</td></tr>
+<tr><td><code>/createCompanyStaff</code></td><td>POST</td><td>必要</td><td>スタッフ作成</td></tr>
+<tr><td><code>/deleteCompanyUser</code></td><td>POST</td><td>必要</td><td>ユーザー削除</td></tr>
+<tr><td><code>/legacyLogin</code></td><td>POST</td><td>不要</td><td>レガシー認証ログイン</td></tr>
+<tr><td><code>/resetLegacyPassword</code></td><td>POST</td><td>必要</td><td>レガシーパスワードリセット</td></tr>
+<tr><td><code>/migrateCompanyUsersToFirebaseAuth</code></td><td>POST</td><td>必要</td><td>Firebase Auth移行</td></tr>
+</table>
+<h3>メール系</h3><table><tr><td>エンドポイント</td><td>メソッド</td><td>認証</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>/sendEmail</code></td><td>POST</td><td>必要</td><td>メール送信</td></tr>
+<tr><td><code>/inboundParse</code></td><td>POST</td><td>不要</td><td>受信メール処理（SendGrid Webhook）</td></tr>
+<tr><td><code>/getEmails</code></td><td>GET</td><td>必要</td><td>メール一覧取得</td></tr>
+</table>
+<h3>カレンダー系</h3><table><tr><td>エンドポイント</td><td>メソッド</td><td>認証</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>/initiateCalendarAuth</code></td><td>GET</td><td>必要</td><td>Google Calendar OAuth開始</td></tr>
+<tr><td><code>/calendarOAuthCallback</code></td><td>GET</td><td>不要</td><td>OAuth コールバック</td></tr>
+<tr><td><code>/getCalendarAvailability</code></td><td>GET</td><td>必要</td><td>空き時間取得</td></tr>
+<tr><td><code>/createCalendarEvent</code></td><td>POST</td><td>必要</td><td>予定作成</td></tr>
+<tr><td><code>/getCalendarIntegration</code></td><td>GET</td><td>必要</td><td>連携状態取得</td></tr>
+<tr><td><code>/revokeCalendarAuth</code></td><td>POST</td><td>必要</td><td>連携解除</td></tr>
+</table>
+<h3>給与データ系</h3><table><tr><td>エンドポイント</td><td>メソッド</td><td>認証</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>/syncSalaryData</code></td><td>POST</td><td>必要</td><td>e-Stat給与データ同期</td></tr>
+<tr><td><code>/getSalaryData</code></td><td>GET</td><td>任意</td><td>給与相場データ取得</td></tr>
+</table>
+<h3>ヘルスチェック</h3><table><tr><td>エンドポイント</td><td>メソッド</td><td>認証</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>/health</code></td><td>GET</td><td>不要</td><td>ヘルスチェック</td></tr>
+</table>
+---</p><h2>詳細仕様</h2><h3>getAnalyticsData</h3><p>GA4からアナリティクスデータを取得する。</p><p><strong>リクエスト:</strong>
+<pre><code class="language-">GET /getAnalyticsData?type={type}&days={days}&company_domain={domain}
+</code></pre><table><tr><td>パラメータ</td><td>型</td><td>必須</td><td>説明</td></tr>
+</table>
+<table><tr><td>type</td><td>string</td><td>○</td><td>データ種別（下記参照）</td></tr>
+<tr><td>days</td><td>number</td><td>×</td><td>期間（デフォルト: 30）</td></tr>
+<tr><td>company_domain</td><td>string</td><td>×</td><td>会社ドメインでフィルタ</td></tr>
+<tr><td>domain</td><td>string</td><td>×</td><td>会社ドメイン（type依存）</td></tr>
+</table>
+<strong>type一覧:</strong>
+<ul><li><code>overview</code> - 概要データ</li>
+<li><code>companies</code> - 会社別データ</li>
+<li><code>daily</code> - 日別データ</li>
+<li><code>applications</code> - 応募データ</li>
+<li><code>engagement</code> - エンゲージメントデータ</li>
+<li><code>traffic</code> - 流入元データ</li>
+<li><code>funnel</code> - ファネルデータ</li>
+<li><code>trends</code> - トレンドデータ</li>
+<li><code>company-detail</code> - 会社詳細データ</li>
+</ul>
+<strong>レスポンス例（overview）:</strong>
+<pre><code class="language-json">{
+  "success": true,
+  "data": {
+    "totalPageviews": 12500,
+    "totalUsers": 3200,
+    "companyViews": 4500,
+    "applyClicks": 120
+  }
+}
+</code></pre><p>---</p><h3>legacyLogin</h3><p>レガシー認証（ID/パスワード）でログインする。</p><p><strong>リクエスト:</strong>
+<pre><code class="language-">POST /legacyLogin
+Content-Type: application/json</p><p>{
+  "usernameOrEmail": "user@example.com",
+  "password": "password123"
+}
+</code></pre><p><strong>レスポンス（成功）:</strong>
+<pre><code class="language-json">{
+  "success": true,
+  "user": {
+    "docId": "user_123",
+    "companyDomain": "example-company",
+    "companyName": "株式会社サンプル",
+    "userName": "山田太郎",
+    "email": "user@example.com"
+  },
+  "companies": [
+    {
+      "docId": "user_123",
+      "companyDomain": "example-company",
+      "companyName": "株式会社サンプル"
+    }
+  ]
+}
+</code></pre><p><strong>レスポンス（複数会社所属）:</strong>
+<pre><code class="language-json">{
+  "success": true,
+  "requiresCompanySelection": true,
+  "companies": [
+    { "docId": "...", "companyDomain": "company-a", "companyName": "A社" },
+    { "docId": "...", "companyDomain": "company-b", "companyName": "B社" }
+  ]
+}
+</code></pre><p>---</p><h3>createCompanyUser</h3><p>会社ユーザーを作成する。Firebase Authにユーザーを作成し、Firestoreにメタデータを保存。</p><p><strong>リクエスト:</strong>
+<pre><code class="language-">POST /createCompanyUser
+Content-Type: application/json</p><p>{
+  "email": "newuser@example.com",
+  "password": "securePassword123",
+  "companyDomain": "example-company",
+  "name": "新規ユーザー",
+  "role": "staff",
+  "username": "newuser"
+}
+</code></pre><table><tr><td>フィールド</td><td>型</td><td>必須</td><td>説明</td></tr>
+</table>
+<table><tr><td>email</td><td>string</td><td>○</td><td>メールアドレス</td></tr>
+<tr><td>password</td><td>string</td><td>○</td><td>パスワード（8文字以上）</td></tr>
+<tr><td>companyDomain</td><td>string</td><td>○</td><td>会社ドメイン</td></tr>
+<tr><td>name</td><td>string</td><td>×</td><td>表示名</td></tr>
+<tr><td>role</td><td>string</td><td>×</td><td>権限（admin/staff）</td></tr>
+<tr><td>username</td><td>string</td><td>×</td><td>ユーザーID</td></tr>
+</table>
+<strong>レスポンス:</strong>
+<pre><code class="language-json">{
+  "success": true,
+  "uid": "firebase_uid_123",
+  "docId": "firebase_uid_123",
+  "email": "newuser@example.com",
+  "isExistingUser": false,
+  "message": "ユーザーを作成しました"
+}
+</code></pre><p>---</p><h3>sendEmail</h3><p>SendGrid経由でメールを送信する。</p><p><strong>リクエスト:</strong>
+<pre><code class="language-">POST /sendEmail
+Content-Type: application/json</p><p>{
+  "to": "recipient@example.com",
+  "subject": "件名",
+  "html": "<p>本文</p>",
+  "companyDomain": "example-company",
+  "applicationId": "app_123"
+}
+</code></pre><p><strong>レスポンス:</strong>
+<pre><code class="language-json">{
+  "success": true,
+  "messageId": "msg_xxx",
+  "emailId": "firestore_doc_id"
+}
+</code></pre><p>---</p><h3>getCalendarAvailability</h3><p>Google Calendarの空き時間を取得する。</p><p><strong>リクエスト:</strong>
+<pre><code class="language-">GET /getCalendarAvailability?companyDomain={domain}&startDate={date}&endDate={date}
+</code></pre><p><strong>レスポンス:</strong>
+<pre><code class="language-json">{
+  "success": true,
+  "availability": [
+    {
+      "date": "2026-02-15",
+      "slots": [
+        { "start": "10:00", "end": "11:00", "available": true },
+        { "start": "11:00", "end": "12:00", "available": false }
+      ]
+    }
+  ]
+}
+</code></pre><p>---</p><h2>エラーレスポンス</h2><p>すべてのエンドポイントで共通のエラー形式を使用。</p><pre><code class="language-json">{
+  "success": false,
+  "error": "エラーメッセージ"
+}
+</code></pre><table><tr><td>HTTPステータス</td><td>説明</td></tr>
+</table>
+<table><tr><td>400</td><td>リクエスト不正</td></tr>
+<tr><td>401</td><td>認証エラー</td></tr>
+<tr><td>403</td><td>権限エラー</td></tr>
+<tr><td>404</td><td>リソースが見つからない</td></tr>
+<tr><td>500</td><td>サーバーエラー</td></tr>
+</table>
+---</p><h2>CORS設定</h2><p>許可されているオリジン:
+<ul><li><code>https://togawa-design.github.io</code></li>
+<li><code>https://rikueco.jp</code></li>
+<li><code>http://localhost:3000</code>（開発環境）</li>
+<li><code>http://localhost:3001</code>（開発環境）</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

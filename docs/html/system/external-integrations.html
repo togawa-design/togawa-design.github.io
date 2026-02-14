@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>外部連携仕様書 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>外部連携仕様書</h1><h2>概要</h2><p>本システムが連携している外部サービスの仕様を記載する。</p><p>---</p><h2>連携サービス一覧</h2><table><tr><td>サービス</td><td>用途</td><td>連携方式</td></tr>
+</table>
+<table><tr><td>Google Analytics 4</td><td>アクセス解析</td><td>Data API</td></tr>
+<tr><td>SendGrid</td><td>メール送信・受信</td><td>Web API / Inbound Parse</td></tr>
+<tr><td>Cloudinary</td><td>画像ホスティング</td><td>Upload API</td></tr>
+<tr><td>Google Calendar</td><td>面接日程調整</td><td>Calendar API (OAuth)</td></tr>
+<tr><td>e-Stat</td><td>給与相場データ</td><td>REST API</td></tr>
+</table>
+---</p><h2>Google Analytics 4</h2><h3>概要</h3><p>ユーザー行動データの収集と分析。</p><h3>設定情報</h3><table><tr><td>項目</td><td>本番</td><td>開発</td></tr>
+</table>
+<table><tr><td>Property ID</td><td><code>520379160</code></td><td><code>524526933</code></td></tr>
+<tr><td>Measurement ID</td><td><code>G-XXXXXXX</code></td><td><code>G-XXXXXXX</code></td></tr>
+</table>
+<h3>使用API</h3><p><strong>Google Analytics Data API v1</strong></p><pre><code class="language-">https://analyticsdata.googleapis.com/v1beta
+</code></pre><h3>認証</h3><p>サービスアカウント認証（ADC: Application Default Credentials）</p><pre><code class="language-javascript">const { BetaAnalyticsDataClient } = require('@google-analytics/data');
+const client = new BetaAnalyticsDataClient();
+</code></pre><h3>取得データ</h3><table><tr><td>データ種別</td><td>イベント名</td><td>説明</td></tr>
+</table>
+<table><tr><td>ページビュー</td><td><code>page_view</code></td><td>ページ閲覧</td></tr>
+<tr><td>企業ページ閲覧</td><td><code>view_company_page</code></td><td>企業詳細ページ閲覧</td></tr>
+<tr><td>応募クリック</td><td><code>click_apply</code></td><td>応募ボタンクリック</td></tr>
+<tr><td>LINE相談</td><td><code>click_line</code></td><td>LINEボタンクリック</td></tr>
+<tr><td>フォーム送信</td><td><code>form_submit</code></td><td>フォーム送信完了</td></tr>
+</table>
+<h3>カスタムディメンション</h3><table><tr><td>ディメンション</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>company_domain</code></td><td>会社ドメイン</td></tr>
+<tr><td><code>job_id</code></td><td>求人ID</td></tr>
+<tr><td><code>page_type</code></td><td>ページ種別</td></tr>
+</table>
+---</p><h2>SendGrid</h2><h3>概要</h3><p>メール送信と受信（Inbound Parse）。</p><h3>設定情報</h3><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td>API Version</td><td>v3</td></tr>
+<tr><td>From Domain</td><td><code>mail.rikueco.jp</code></td></tr>
+</table>
+<h3>環境変数</h3><pre><code class="language-">SENDGRID_API_KEY=SG.xxxxxxxxxxxxx
+</code></pre><h3>メール送信</h3><p><strong>エンドポイント:</strong> <code>POST /v3/mail/send</code></p><pre><code class="language-javascript">const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);</p><p>const msg = {
+  to: 'recipient@example.com',
+  from: 'noreply@mail.rikueco.jp',
+  subject: '件名',
+  html: '<p>本文</p>'
+};</p><p>await sgMail.send(msg);
+</code></pre><h3>Inbound Parse（受信メール）</h3><p><strong>Webhook URL:</strong> <code>/inboundParse</code></p><p>SendGrid管理画面で設定:
+<li>Settings → Inbound Parse</li>
+<li>Domain: <code>mail.rikueco.jp</code></li>
+<li>URL: <code>https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/inboundParse</code></li></p><p><strong>受信データ形式:</strong>
+<pre><code class="language-json">{
+  "from": "sender@example.com",
+  "to": "company@mail.rikueco.jp",
+  "subject": "件名",
+  "text": "本文（テキスト）",
+  "html": "<p>本文（HTML）</p>",
+  "attachments": "添付ファイル数"
+}
+</code></pre><p>---</p><h2>Cloudinary</h2><h3>概要</h3><p>画像のアップロード、変換、配信。</p><h3>設定情報</h3><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td>Cloud Name</td><td><code>rikueco</code></td></tr>
+<tr><td>Upload Preset</td><td><code>ml_default</code></td></tr>
+<tr><td>Base URL</td><td><code>https://res.cloudinary.com/rikueco</code></td></tr>
+</table>
+<h3>クライアントサイドアップロード</h3><pre><code class="language-javascript">const formData = new FormData();
+formData.append('file', file);
+formData.append('upload_preset', 'ml_default');
+formData.append('folder', 'companies/logos');</p><p>const response = await fetch(
+  'https://api.cloudinary.com/v1_1/rikueco/image/upload',
+  { method: 'POST', body: formData }
+);</p><p>const data = await response.json();
+const imageUrl = data.secure_url;
+</code></pre><h3>画像変換（URL変換）</h3><pre><code class="language-"><h1>オリジナル</h1>
+https://res.cloudinary.com/rikueco/image/upload/v123/folder/image.jpg</p><h1>リサイズ（幅300px）</h1>
+https://res.cloudinary.com/rikueco/image/upload/w_300/v123/folder/image.jpg</p><h1>クロップ（正方形）</h1>
+https://res.cloudinary.com/rikueco/image/upload/c_fill,w_200,h_200/v123/folder/image.jpg
+</code></pre><h3>フォルダ構成</h3><table><tr><td>フォルダ</td><td>用途</td></tr>
+</table>
+<table><tr><td><code>companies/logos</code></td><td>会社ロゴ</td></tr>
+<tr><td><code>companies/photos</code></td><td>会社写真</td></tr>
+<tr><td><code>jobs/images</code></td><td>求人画像</td></tr>
+<tr><td><code>lp/hero</code></td><td>LPヒーロー画像</td></tr>
+</table>
+---</p><h2>Google Calendar API</h2><h3>概要</h3><p>面接日程の空き時間確認と予定作成。</p><h3>認証フロー（OAuth 2.0）</h3><pre><code class="language-">┌─────────┐     ┌──────────────────┐     ┌─────────────┐
+│ ユーザー │────▶│ initiateCalendarAuth │────▶│ Google OAuth │
+└─────────┘     └──────────────────┘     └─────────────┘
+                                                │
+                ┌──────────────────┐            │
+                │calendarOAuthCallback│◀───────────┘
+                └──────────────────┘
+                        │
+                        ▼
+                ┌──────────────────┐
+                │ Firestore保存     │
+                │ (calendar_tokens) │
+                └──────────────────┘
+</code></pre><h3>環境変数</h3><pre><code class="language-">GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxxx
+</code></pre><h3>スコープ</h3><pre><code class="language-">https://www.googleapis.com/auth/calendar.readonly
+https://www.googleapis.com/auth/calendar.events
+</code></pre><h3>API使用例</h3><p><strong>空き時間取得:</strong>
+<pre><code class="language-javascript">const calendar = google.calendar({ version: 'v3', auth: oauth2Client });</p><p>const response = await calendar.freebusy.query({
+  requestBody: {
+    timeMin: startDate.toISOString(),
+    timeMax: endDate.toISOString(),
+    items: [{ id: 'primary' }]
+  }
+});
+</code></pre><p><strong>予定作成:</strong>
+<pre><code class="language-javascript">const event = await calendar.events.insert({
+  calendarId: 'primary',
+  requestBody: {
+    summary: '面接: 山田太郎様',
+    start: { dateTime: '2026-02-20T10:00:00+09:00' },
+    end: { dateTime: '2026-02-20T11:00:00+09:00' },
+    attendees: [{ email: 'applicant@example.com' }],
+    conferenceData: {
+      createRequest: { requestId: 'unique-id' }
+    }
+  },
+  conferenceDataVersion: 1
+});
+</code></pre><h3>Firestoreスキーマ（calendar_tokens）</h3><pre><code class="language-javascript">{
+  companyDomain: "example-company",
+  accessToken: "ya29.xxxxx",
+  refreshToken: "1//xxxxx",
+  expiryDate: 1234567890000,
+  calendarEmail: "user@example.com",
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+</code></pre><p>---</p><h2>e-Stat API</h2><h3>概要</h3><p>政府統計ポータルから給与相場データを取得。</p><h3>設定情報</h3><table><tr><td>項目</td><td>値</td></tr>
+</table>
+<table><tr><td>Base URL</td><td><code>https://api.e-stat.go.jp/rest/3.0/app</code></td></tr>
+<tr><td>統計ID</td><td>賃金構造基本統計調査</td></tr>
+</table>
+<h3>API使用例</h3><pre><code class="language-javascript">const response = await fetch(
+  'https://api.e-stat.go.jp/rest/3.0/app/json/getStatsData?' +
+  <code>appId=${API_KEY}&statsDataId=${STATS_ID}&cdCat01=${industryCode}</code>
+);</p><p>const data = await response.json();
+</code></pre><h3>データ取得項目</h3><table><tr><td>項目</td><td>説明</td></tr>
+</table>
+<table><tr><td>業種別平均賃金</td><td>月額給与</td></tr>
+<tr><td>年齢別賃金</td><td>年齢層ごとの平均</td></tr>
+<tr><td>地域別賃金</td><td>都道府県ごとの平均</td></tr>
+</table>
+<h3>Firestoreキャッシュ（salary_data）</h3><pre><code class="language-javascript">{
+  industryCode: "I",
+  region: "tokyo",
+  averageSalary: 350000,
+  ageDistribution: {...},
+  lastSyncedAt: Timestamp
+}
+</code></pre><p>---</p><h2>連携状態確認</h2><h3>エンドポイント</h3><table><tr><td>サービス</td><td>確認方法</td></tr>
+</table>
+<table><tr><td>GA4</td><td><code>/getAnalyticsData?type=overview</code></td></tr>
+<tr><td>SendGrid</td><td><code>/health</code> で確認</td></tr>
+<tr><td>Calendar</td><td><code>/getCalendarIntegration?companyDomain=xxx</code></td></tr>
+</table>
+<h3>ダッシュボード</h3><ul><li>SendGrid: https://app.sendgrid.com</li>
+<li>Cloudinary: https://cloudinary.com/console</li>
+<li>GA4: https://analytics.google.com</li>
+<li>GCP: https://console.cloud.google.com</li>
+</ul>
+---</p><h2>トラブルシューティング</h2><h3>GA4データが取得できない</h3><p><li>サービスアカウントの権限確認</li>
+<li>Property IDの確認</li>
+<li>Data API有効化確認</li></p><h3>SendGrid送信エラー</h3><p><li>API Keyの確認</li>
+<li>From ドメインの認証確認</li>
+<li>送信制限の確認</li></p><h3>Calendar連携失敗</h3><p><li>OAuth同意画面の確認</li>
+<li>リダイレクトURIの設定確認</li>
+<li>トークンの有効期限確認</li></p><h3>Cloudinaryアップロード失敗</h3><p><li>Upload Presetの確認</li>
+<li>ファイルサイズ制限確認</li>
+<li>CORSの確認</li>
+</p>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

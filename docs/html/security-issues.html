@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>セキュリティ対策が必要な箇所 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="index.html">← 目次に戻る</a>
+  </nav>
+  <h1>セキュリティ対策が必要な箇所</h1><h2>対応済み</h2><h3>パスワードの平文保存</h3>
+<ul><li><strong>ファイル</strong>: <code>functions/index.js</code>, <code>src/features/admin/auth.js</code></li>
+<li><strong>対応内容</strong>: bcryptでハッシュ化するよう修正済み</li>
+</ul>
+<h3>XSS脆弱性（innerHTML直接代入）</h3>
+<ul><li><strong>対応内容</strong>: escapeHtml関数でエスケープ処理を追加</li>
+<li><strong>修正ファイル</strong>:</li>
+</ul>  - <code>src/features/admin/index.js:2031</code> - user.id, user.emailをエスケープ
+  - <code>src/features/admin/analytics.js:1787</code> - app.typeをエスケープ
+  - <code>src/features/admin/job-manage-embedded.js:2308</code> - meetingTypeをエスケープ
+  - <code>src/features/admin/announcements.js:106,116,122</code> - announcement.idをエスケープ</p><p>---</p><h3>2. sessionStorageへの認証情報保存</h3><p><strong>優先度</strong>: 高</p><p><strong>該当箇所</strong>:
+<table><tr><td>ファイル</td><td>行番号</td><td>保存内容</td></tr>
+</table>
+<table><tr><td><code>src/features/admin/auth.js</code></td><td>70-130</td><td>userRole, companyDomain</td></tr>
+<tr><td><code>src/features/admin/auth.js</code></td><td>254-259</td><td>pending_auth（email, uid, companies）</td></tr>
+<tr><td><code>src/features/admin/auth.js</code></td><td>365-370</td><td>available_companies</td></tr>
+</table>
+<strong>問題</strong>: 認証情報がsessionStorageに平文で保存されている。XSS攻撃でJavaScriptが注入された場合、これらの情報が窃取される。</p><p><strong>対策案</strong>:
+<ul><li>メモリ内のみで保持する（グローバル変数やクロージャ）</li>
+<li>HTTPOnly Cookieを使用する（サーバーサイドで設定）</li>
+<li>最低限必要な情報のみ保存し、sensitive情報は保存しない</li>
+</ul>
+---</p><h3>3. CORS設定に開発用オリジンが含まれる</h3><p><strong>優先度</strong>: 中</p><p><strong>該当箇所</strong>: <code>functions/index.js</code> 30-48行目</p><p><strong>問題</strong>: 本番環境のCloud Functionsに<code>localhost:3000</code>など開発用オリジンが許可されている。</p><pre><code class="language-javascript">const corsHandler = cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    // ... 多数のlocalhostポート
+  ]
+});
+</code></pre><p><strong>対策案</strong>:
+<ul><li>環境変数で本番/開発を切り替える</li>
+<li>本番デプロイ時は開発用オリジンを除外する</li>
+</ul>
+---</p><h3>4. APIパラメータのバリデーション不足</h3><p><strong>優先度</strong>: 中</p><p><strong>該当箇所</strong>:
+<table><tr><td>ファイル</td><td>行番号</td><td>パラメータ</td></tr>
+</table>
+<table><tr><td><code>functions/email.js</code></td><td>269-281</td><td><code>limit</code>パラメータ</td></tr>
+</table>
+<strong>問題</strong>: <code>limit</code>パラメータを<code>parseInt()</code>で処理しているが、負の値や極端に大きな値のバリデーションがない。</p><pre><code class="language-javascript">.limit(parseInt(limit)); // バリデーションなし
+</code></pre><p><strong>対策案</strong>:
+<pre><code class="language-javascript">const parsedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
+</code></pre><p>---</p><h3>5. Firestoreセキュリティルールの確認</h3><p><strong>優先度</strong>: 高</p><p><strong>確認が必要な項目</strong>:
+<ul><li><code>company_users</code>コレクションへの書き込み権限</li>
+<li>他社のデータへのアクセス制御</li>
+<li>管理者権限の検証</li>
+</ul>
+<strong>確認方法</strong>:
+<li>Firebase Console → Firestore → ルール</li>
+<li>各コレクションのread/write条件を確認</li>
+<li>テストツールでルールを検証</li></p><p>---</p><h3>6. Cloud Functions認証の強化</h3><p><strong>優先度</strong>: 中</p><p><strong>該当箇所</strong>: <code>functions/index.js</code> の各エンドポイント</p><p><strong>問題</strong>: 一部のエンドポイントが<code>--allow-unauthenticated</code>でデプロイされている。</p><p><strong>対策案</strong>:
+<ul><li>Firebase ID Tokenの検証を追加</li>
+<li>管理者用APIは<code>admin.auth().verifyIdToken()</code>で検証</li>
+<li>Rate Limitingの導入を検討</li>
+</ul>
+<pre><code class="language-javascript">// 例: ID Token検証
+const idToken = req.headers.authorization?.split('Bearer ')[1];
+const decodedToken = await admin.auth().verifyIdToken(idToken);
+</code></pre><p>---</p><h2>Firestoreセキュリティルール推奨設定</h2><pre><code class="language-javascript">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // company_users: 自分のドキュメントのみ読み書き可能
+    match /company_users/{userId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.uid ||
+         isCompanyAdmin(resource.data.companyDomain));
+      allow write: if request.auth != null &&
+        isCompanyAdmin(resource.data.companyDomain);
+    }</p><p>    // ヘルパー関数
+    function isCompanyAdmin(companyDomain) {
+      return get(/databases/$(database)/documents/company_users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/company_users/$(request.auth.uid)).data.companyDomain == companyDomain;
+    }
+  }
+}
+</code></pre><p>---</p><h2>チェックリスト</h2><ul><li>[x] パスワードハッシュ化（bcrypt）</li>
+<li>[x] XSS対策（escapeHtml追加）</li>
+<li>[ ] sessionStorage → メモリ保持に変更</li>
+<li>[ ] CORS設定を環境別に分離</li>
+<li>[ ] APIパラメータバリデーション追加</li>
+<li>[ ] Firestoreセキュリティルール確認・更新</li>
+<li>[ ] Cloud Functions認証強化</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

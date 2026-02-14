@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>採用プロセス分析機能 実装プラン - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>採用プロセス分析機能 実装プラン</h1><p>> 採用プロセスの健全性・効率性を可視化し、ボトルネックを特定する分析機能</p><p>---</p><h2>目次</h2><p><li><a href="#概要">概要</a></li>
+<li><a href="#リードタイム分析">リードタイム分析</a></li>
+<li><a href="#歩留まり分析">歩留まり分析</a></li>
+<li><a href="#品質分析">品質分析</a></li>
+<li><a href="#アラート機能">アラート機能</a></li>
+<li><a href="#ダッシュボード設計">ダッシュボード設計</a></li>
+<li><a href="#データ設計">データ設計</a></li>
+<li><a href="#実装ステップ">実装ステップ</a></li></p><p>---</p><h2>概要</h2><h3>目的</h3><ul><li>採用プロセスのどこに問題があるか特定する</li>
+<li>対応の遅延を早期発見する</li>
+<li>担当者のパフォーマンスを可視化する</li>
+<li>採用効率を継続的に改善する</li>
+</ul>
+<h3>主要KPI</h3><table><tr><td>KPI</td><td>説明</td><td>目標値（参考）</td></tr>
+</table>
+<table><tr><td>初回レスポンス時間</td><td>応募→初回連絡</td><td>24時間以内</td></tr>
+<tr><td>面談設定リードタイム</td><td>応募→面談日確定</td><td>3日以内</td></tr>
+<tr><td>選考リードタイム</td><td>応募→結果確定</td><td>14日以内</td></tr>
+<tr><td>最終歩留まり</td><td>応募→入社</td><td>業種による</td></tr>
+<tr><td>内定承諾率</td><td>内定→入社</td><td>80%以上</td></tr>
+</table>
+---</p><h2>リードタイム分析</h2><h3>測定ポイント</h3><pre><code class="language-">応募
+ │
+ ├─ T1: 初回レスポンス時間
+ │
+初回連絡
+ │
+ ├─ T2: 面談調整時間
+ │
+面談日確定
+ │
+ ├─ T3: 面談待ち時間
+ │
+面談実施
+ │
+ ├─ T4: 選考判断時間
+ │
+結果通知（内定/不採用）
+ │
+ ├─ T5: 入社準備期間
+ │
+入社
+</code></pre><h3>各リードタイムの定義</h3><table><tr><td>指標</td><td>開始</td><td>終了</td><td>計算式</td></tr>
+</table>
+<table><tr><td><strong>T1: 初回レスポンス</strong></td><td>応募日時</td><td>初回連絡日時</td><td><code>contactedAt - createdAt</code></td></tr>
+<tr><td><strong>T2: 面談調整</strong></td><td>初回連絡</td><td>面談日確定</td><td><code>interviewScheduledAt - contactedAt</code></td></tr>
+<tr><td><strong>T3: 面談待ち</strong></td><td>面談日確定</td><td>面談実施</td><td><code>interviewedAt - interviewScheduledAt</code></td></tr>
+<tr><td><strong>T4: 選考判断</strong></td><td>面談実施</td><td>結果通知</td><td><code>decidedAt - interviewedAt</code></td></tr>
+<tr><td><strong>T5: 入社準備</strong></td><td>内定</td><td>入社</td><td><code>joinedAt - decidedAt</code></td></tr>
+<tr><td><strong>総リードタイム</strong></td><td>応募</td><td>入社</td><td><code>joinedAt - createdAt</code></td></tr>
+</table>
+<h3>分析ビュー</h3><p>#### 1. サマリー（平均値）</p><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ 採用リードタイム分析                    期間: 過去30日   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  初回レスポンス    面談調整      面談待ち     選考判断   │
+│  ┌─────────┐    ┌─────────┐   ┌─────────┐  ┌─────────┐ │
+│  │  18時間  │ → │  2.5日   │ → │  4.2日   │ → │  1.8日   │ │
+│  │  ✅ 良好 │    │  ✅ 良好 │   │  ⚠️ 要改善│  │  ✅ 良好 │ │
+│  └─────────┘    └─────────┘   └─────────┘  └─────────┘ │
+│                                                         │
+│  総リードタイム（応募→入社）: 平均 12.3日               │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre><p>#### 2. 分布グラフ</p><pre><code class="language-">初回レスポンス時間の分布</p><p>  60% │ ████████████
+      │ ████████████
+  40% │ ████████████  ████
+      │ ████████████  ████
+  20% │ ████████████  ████  ████
+      │ ████████████  ████  ████  ████
+   0% └──────────────────────────────────
+       0-6h   6-12h  12-24h  24-48h  48h+</p><p>       ← 理想 ─────────────── 要改善 →
+</code></pre><p>#### 3. 比較分析</p><table><tr><td>比較軸</td><td>内容</td></tr>
+</table>
+<table><tr><td>期間比較</td><td>先月 vs 今月のリードタイム変化</td></tr>
+<tr><td>求人別</td><td>どの求人の選考が長引いているか</td></tr>
+<tr><td>担当者別</td><td>誰の対応が早い/遅いか</td></tr>
+<tr><td>流入元別</td><td>広告経由 vs 自然流入で差があるか</td></tr>
+</table>
+---</p><h2>歩留まり分析（ファネル分析）</h2><h3>ファネル可視化</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ 採用ファネル                           期間: 過去30日   │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ████████████████████████████████████████  応募: 100人  │
+│  ██████████████████████████████████       連絡済: 85人  │
+│  │                                         (-15人 連絡不通)
+│  ██████████████████████████               面談実施: 68人│
+│  │                                         (-17人 辞退/日程合わず)
+│  █████████████████                        内定: 42人    │
+│  │                                         (-26人 不採用)
+│  ████████████                             入社: 34人    │
+│                                            (-8人 内定辞退)
+│                                                         │
+│  最終歩留まり: 34%                                       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre><h3>各ステップの転換率</h3><table><tr><td>ステップ</td><td>転換率</td><td>離脱理由</td></tr>
+</table>
+<table><tr><td>応募→連絡済</td><td>85%</td><td>連絡不通、重複応募</td></tr>
+<tr><td>連絡済→面談実施</td><td>80%</td><td>面談辞退、日程合わず</td></tr>
+<tr><td>面談実施→内定</td><td>62%</td><td>不採用、保留</td></tr>
+<tr><td>内定→入社</td><td>81%</td><td>内定辞退、入社前辞退</td></tr>
+<tr><td><strong>全体</strong></td><td><strong>34%</strong></td><td>-</td></tr>
+</table>
+<h3>離脱理由の分布</h3><pre><code class="language-">不採用理由の内訳</p><p>  スキル不足      ████████████████  40%
+  経験不足        ████████████      30%
+  勤務条件不一致  ████████          20%
+  その他          ████              10%
+</code></pre><pre><code class="language-">辞退理由の内訳</p><p>  他社内定        ████████████████  45%
+  条件合わず      ████████████      30%
+  個人都合        ████████          20%
+  連絡不通        ████              5%
+</code></pre><p>---</p><h2>品質分析</h2><h3>担当者別パフォーマンス</h3><table><tr><td>担当者</td><td>担当数</td><td>平均レスポンス</td><td>採用率</td><td>内定承諾率</td></tr>
+</table>
+<table><tr><td>田中</td><td>35人</td><td>12時間</td><td>38%</td><td>85%</td></tr>
+<tr><td>佐藤</td><td>28人</td><td>24時間</td><td>32%</td><td>78%</td></tr>
+<tr><td>鈴木</td><td>22人</td><td>36時間</td><td>28%</td><td>72%</td></tr>
+<tr><td><strong>平均</strong></td><td>-</td><td>20時間</td><td>34%</td><td>81%</td></tr>
+</table>
+<h3>スコアカード</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ 採用品質スコアカード                                     │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  採用効率        候補者体験       選考品質              │
+│  ┌─────────┐    ┌─────────┐    ┌─────────┐            │
+│  │   B+    │    │   A-    │    │   B     │            │
+│  │  78点   │    │  85点   │    │  72点   │            │
+│  └─────────┘    └─────────┘    └─────────┘            │
+│                                                         │
+│  採用効率: 応募→入社の転換率                            │
+│  候補者体験: 平均レスポンス時間ベース                    │
+│  選考品質: 入社後90日定着率（※将来実装）               │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>アラート機能</h2><h3>アラート定義</h3><table><tr><td>レベル</td><td>アラート名</td><td>トリガー条件</td><td>アクション</td></tr>
+</table>
+<table><tr><td>🔴 緊急</td><td>対応遅延</td><td>48時間以上「新規」のまま</td><td>即時通知</td></tr>
+<tr><td>🔴 緊急</td><td>長期放置</td><td>7日以上ステータス変更なし</td><td>即時通知</td></tr>
+<tr><td>🟡 警告</td><td>面談待ち滞留</td><td>5日以上「面接調整中」のまま</td><td>日次サマリー</td></tr>
+<tr><td>🟡 警告</td><td>辞退率上昇</td><td>先週比で辞退率が20%以上増加</td><td>週次レポート</td></tr>
+<tr><td>🟡 警告</td><td>長期保留</td><td>14日以上「保留」のまま</td><td>週次レポート</td></tr>
+<tr><td>🔵 情報</td><td>レスポンス遅延傾向</td><td>平均レスポンス時間が目標を超過</td><td>週次レポート</td></tr>
+</table>
+<h3>アラート表示</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ ⚠️ 要対応アラート                                3件    │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ 🔴 対応遅延: 山田太郎さん（製造スタッフ）               │
+│    応募から52時間経過。早急に連絡してください。          │
+│    [対応する] [詳細を見る]                              │
+│                                                         │
+│ 🔴 長期放置: 佐藤花子さん（物流スタッフ）               │
+│    8日間ステータス変更なし。                            │
+│    [対応する] [詳細を見る]                              │
+│                                                         │
+│ 🟡 面談待ち滞留: 3件                                    │
+│    面接調整中のまま5日以上経過している応募があります。   │
+│    [一覧を見る]                                         │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>ダッシュボード設計</h2><h3>レイアウト</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────────────┐
+│ 採用プロセス分析                                    [期間選択▼] │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│ │ 応募数       │ │ 採用数       │ │ 歩留まり     │ │ 平均     ││
+│ │     125      │ │     42       │ │    34%       │ │ リード   ││
+│ │  ▲ +15%     │ │  ▲ +8%      │ │  ▲ +2pt     │ │ タイム   ││
+│ │  vs 先月    │ │  vs 先月    │ │  vs 先月    │ │ 12.3日   ││
+│ └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+│                                                                 │
+│ ┌────────────────────────────┐ ┌────────────────────────────┐  │
+│ │ 採用ファネル                │ │ リードタイム推移            │  │
+│ │                            │ │                            │  │
+│ │ ████████████████ 応募 125  │ │     ─●─ 初回レスポンス      │  │
+│ │ ████████████     連絡 98   │ │     ─■─ 面談設定            │  │
+│ │ ████████         面談 72   │ │     ─▲─ 選考判断            │  │
+│ │ █████            内定 48   │ │                            │  │
+│ │ ████             入社 42   │ │    [グラフ]                │  │
+│ │                            │ │                            │  │
+│ └────────────────────────────┘ └────────────────────────────┘  │
+│                                                                 │
+│ ┌────────────────────────────┐ ┌────────────────────────────┐  │
+│ │ 担当者別パフォーマンス      │ │ 要対応アラート              │  │
+│ │                            │ │                            │  │
+│ │ 田中  ████████████ 38%     │ │ 🔴 対応遅延: 2件            │  │
+│ │ 佐藤  ██████████   32%     │ │ 🟡 面談待ち滞留: 3件        │  │
+│ │ 鈴木  ████████     28%     │ │ 🟡 長期保留: 1件            │  │
+│ │                            │ │                            │  │
+│ └────────────────────────────┘ └────────────────────────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre><p>---</p><h2>データ設計</h2><h3>必要なフィールド追加</h3><p>現在の <code>applications</code> コレクションに以下のタイムスタンプを追加:</p><pre><code class="language-javascript">// applications/{applicationId}
+{
+  // 既存フィールド
+  status: 'new' <table><tr><td>'contacted'</td><td>'interviewing'</td><td>'interviewed'</td><td>'hired'</td><td>'joined'</td><td>'ng'</td><td>'rejected'</td></tr></table> 'withdrawn',
+  createdAt: Timestamp,
+  updatedAt: Timestamp,</p><p>  // 追加フィールド（リードタイム計算用）
+  timestamps: {
+    contactedAt: Timestamp | null,        // 初回連絡日時
+    interviewScheduledAt: Timestamp | null, // 面談日確定日時
+    interviewedAt: Timestamp | null,      // 面談実施日時
+    decidedAt: Timestamp | null,          // 結果確定日時
+    joinedAt: Timestamp | null            // 入社日時
+  },</p><p>  // 離脱理由（不採用・辞退の場合）
+  dropoffReason: {
+    category: 'skill' <table><tr><td>'experience'</td><td>'condition'</td><td>'other_offer'</td><td>'personal'</td><td>'no_contact'</td></tr></table> 'other',
+    detail: string | null
+  }
+}
+</code></pre><h3>集計用コレクション</h3><p>日次でバッチ処理してサマリーを保存:</p><pre><code class="language-javascript">// analytics_recruitment/{companyDomain}/daily/{date}
+{
+  date: '2025-02-12',</p><p>  // 件数
+  counts: {
+    applications: 15,       // 新規応募数
+    contacted: 12,          // 連絡済み数
+    interviewed: 8,         // 面談実施数
+    hired: 3,               // 内定数
+    joined: 2,              // 入社数
+    rejected: 4,            // 不採用数
+    withdrawn: 1            // 辞退数
+  },</p><p>  // 平均リードタイム（時間）
+  avgLeadTimes: {
+    toContact: 18.5,        // 初回レスポンス
+    toSchedule: 52.3,       // 面談設定まで
+    toInterview: 120.8,     // 面談実施まで
+    toDecision: 168.2,      // 結果確定まで
+    total: 295.6            // 入社まで
+  },</p><p>  // 担当者別
+  byAssignee: {
+    'tanaka': { applications: 5, hired: 2, avgResponseTime: 12 },
+    'sato': { applications: 4, hired: 1, avgResponseTime: 24 }
+  },</p><p>  createdAt: Timestamp
+}
+</code></pre><p>---</p><h2>実装ステップ</h2><h3>Phase 1: 基本分析（MVP）</h3><table><tr><td>タスク</td><td>内容</td></tr>
+</table>
+<table><tr><td>1-1</td><td><code>applications</code> コレクションに timestamps フィールド追加</td></tr>
+<tr><td>1-2</td><td>ステータス変更時に自動でタイムスタンプ記録</td></tr>
+<tr><td>1-3</td><td>リードタイム計算ユーティリティ関数作成</td></tr>
+<tr><td>1-4</td><td>サマリーカード表示（応募数、採用数、歩留まり、平均リードタイム）</td></tr>
+<tr><td>1-5</td><td>採用ファネル可視化</td></tr>
+</table>
+<h3>Phase 2: 詳細分析</h3><table><tr><td>タスク</td><td>内容</td></tr>
+</table>
+<table><tr><td>2-1</td><td>リードタイム分布グラフ</td></tr>
+<tr><td>2-2</td><td>担当者別パフォーマンス表示</td></tr>
+<tr><td>2-3</td><td>期間比較機能</td></tr>
+<tr><td>2-4</td><td>求人別・流入元別フィルター</td></tr>
+</table>
+<h3>Phase 3: アラート・レポート</h3><table><tr><td>タスク</td><td>内容</td></tr>
+</table>
+<table><tr><td>3-1</td><td>アラート条件設定</td></tr>
+<tr><td>3-2</td><td>ダッシュボードにアラート表示</td></tr>
+<tr><td>3-3</td><td>週次レポートメール送信（Cloud Scheduler）</td></tr>
+<tr><td>3-4</td><td>離脱理由分析</td></tr>
+</table>
+---</p><h2>関連ファイル</h2><h3>既存ファイル（修正対象）</h3><table><tr><td>ファイル</td><td>変更内容</td></tr>
+</table>
+<table><tr><td><code>src/features/applicants/index.js</code></td><td>ステータス変更時にタイムスタンプ記録</td></tr>
+<tr><td><code>src/shared/firestore-service.js</code></td><td>集計クエリ追加</td></tr>
+<tr><td><code>public/admin/sections/applicants.html</code></td><td>ダッシュボード追加</td></tr>
+</table>
+<h3>新規ファイル</h3><table><tr><td>ファイル</td><td>内容</td></tr>
+</table>
+<table><tr><td><code>src/features/admin/recruitment-analytics.js</code></td><td>採用分析モジュール</td></tr>
+<tr><td><code>src/shared/recruitment-metrics.js</code></td><td>指標計算ユーティリティ</td></tr>
+</table>
+---</p><h2>実装ステータス</h2><h3>✅ 完了済み</h3><table><tr><td>日付</td><td>内容</td></tr>
+</table>
+<table><tr><td>2026-02-12</td><td><strong>採用管理タブ（基本実装）</strong></td></tr>
+<tr><td></td><td>- 詳細分析セクションに「採用管理」タブを追加（admin専用）</td></tr>
+<tr><td></td><td>- 対応アラート表示（48時間以上未対応の応募者を検出）</td></tr>
+<tr><td></td><td>- 採用ファネル可視化（応募→連絡済→面接→内定→入社）</td></tr>
+<tr><td></td><td>- リードタイム統計カード（初回レスポンス/面談設定/選考判断/全体）</td></tr>
+<tr><td></td><td>- 企業別採用状況テーブル</td></tr>
+<tr><td>2026-02-12</td><td><strong>statusHistory自動記録（Phase 1完了）</strong></td></tr>
+<tr><td></td><td>- ステータス変更時に<code>statusHistory</code>配列へ自動追加</td></tr>
+<tr><td></td><td>- 記録内容: <code>status</code>, <code>timestamp</code>, <code>previousStatus</code></td></tr>
+<tr><td></td><td>- 対象関数: <code>changeStatus()</code>, <code>saveInterview()</code></td></tr>
+<tr><td>2026-02-12</td><td><strong>Phase 2: 分析機能拡張</strong></td></tr>
+<tr><td></td><td>- リードタイム分布グラフ（0-6h, 6-12h, 12-24h, 24-48h, 48h+）</td></tr>
+<tr><td></td><td>- 担当者別パフォーマンステーブル（担当数/平均レスポンス/採用率/承諾率）</td></tr>
+<tr><td>2026-02-12</td><td><strong>Phase 2.5: 企業別ドリルダウン機能</strong></td></tr>
+<tr><td></td><td>- 企業別採用状況テーブルの行をクリック可能に</td></tr>
+<tr><td></td><td>- 企業別詳細ビュー（ファネル/リードタイム/分布/担当者）</td></tr>
+<tr><td></td><td>- 一覧⇔詳細の画面切り替え</td></tr>
+</table>
+<h3>🚧 次のステップ</h3><table><tr><td>Phase</td><td>タスク</td><td>優先度</td></tr>
+</table>
+<table><tr><td>Phase 3</td><td>アラートのリアルタイム通知</td><td>低</td></tr>
+<tr><td>Phase 3</td><td>週次レポートメール送信</td><td>低</td></tr>
+</table>
+<h3>実装ファイル</h3><table><tr><td>ファイル</td><td>変更内容</td></tr>
+</table>
+<table><tr><td><code>public/admin/sections/analytics-detail.html</code></td><td>採用管理タブHTML追加</td></tr>
+<tr><td><code>src/features/admin/analytics.js</code></td><td>タブ制御・データ読み込み・レンダリング関数追加</td></tr>
+<tr><td><code>public/css/admin.css</code></td><td>採用管理タブ用スタイル追加</td></tr>
+<tr><td><code>src/features/applicants/index.js</code></td><td><code>changeStatus()</code>, <code>saveInterview()</code>にstatusHistory記録追加</td></tr>
+</table>
+---</p><h2>参考</h2><ul><li><a href="https://www.hrbrain.jp/media/human-resources/recruitment-kpi">採用KPIの考え方（参考記事）</a></li>
+<li>業界平均値は企業規模・業種により大きく異なるため、自社トレンドとの比較が重要</li>
+</ul>
+---</p><p>*作成日: 2025-02-12*
+*更新日: 2026-02-12*
+</p>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

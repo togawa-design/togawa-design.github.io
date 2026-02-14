@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>環境構築手順 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>環境構築手順</h1><h2>概要</h2>
+本プロジェクトは求人情報サイト（リクエコ）のフロントエンド・バックエンドを含む統合プロジェクトです。</p><h2>必要環境</h2><h3>システム要件</h3>
+<ul><li>Node.js: v18以上</li>
+<li>npm: v9以上</li>
+<li>Git</li>
+</ul>
+<h3>外部サービス</h3>
+<ul><li><strong>Firebase</strong>: Firestore, Authentication, Functions, Hosting</li>
+<li><strong>Cloudinary</strong>: 画像ホスティング</li>
+<li><strong>Google Apps Script (GAS)</strong>: 一部バックエンド処理（移行中）</li>
+</ul>
+---</p><h2>セットアップ手順</h2><h3>1. リポジトリのクローン</h3><pre><code class="language-bash">git clone git@github.com:togawa-design/togawa-design.github.io.git kikanko
+cd kikanko
+</code></pre><h3>2. 依存パッケージのインストール</h3><pre><code class="language-bash">npm install
+</code></pre><h3>3. Firebase CLIのインストール（未インストールの場合）</h3><pre><code class="language-bash">npm install -g firebase-tools
+firebase login
+</code></pre><h3>4. Firebase プロジェクトの接続</h3><pre><code class="language-bash">firebase use generated-area-484613-e3-90bd4
+</code></pre><p>---</p><h2>開発サーバーの起動</h2><h3>ローカル開発サーバー</h3><pre><code class="language-bash">npm run dev
+</code></pre><p>ブラウザで http://localhost:3000 が自動的に開きます。</p><h3>ビルド</h3><pre><code class="language-bash">npm run build
+</code></pre><p><code>dist/</code> ディレクトリに出力されます。</p><h3>プレビュー（ビルド後の確認）</h3><pre><code class="language-bash">npm run preview
+</code></pre><p>---</p><h2>プロジェクト構成</h2><pre><code class="language-">kikanko/
+├── src/                    # ソースコード
+│   ├── components/         # UIコンポーネント
+│   │   ├── atoms/          # 最小単位のコンポーネント
+│   │   └── molecules/      # 複合コンポーネント
+│   ├── features/           # 機能別モジュール
+│   │   ├── admin/          # 管理画面機能
+│   │   ├── home/           # トップページ機能
+│   │   ├── jobs/           # 求人一覧機能
+│   │   ├── lp/             # LP機能
+│   │   ├── recruit-settings/ # 採用ページ設定
+│   │   └── user-auth/      # ユーザー認証
+│   ├── pages/              # ページエントリーポイント
+│   └── shared/             # 共通モジュール
+├── public/                 # 静的ファイル
+│   ├── admin/sections/     # 管理画面セクションHTML
+│   ├── css/                # スタイルシート
+│   └── images/             # 画像ファイル
+├── functions/              # Cloud Functions
+├── gas/                    # Google Apps Script
+├── dist/                   # ビルド出力
+├── firestore.rules         # Firestoreセキュリティルール
+├── firestore.indexes.json  # Firestoreインデックス定義
+└── vite.config.js          # Vite設定
+</code></pre><p>---</p><h2>Firebase設定</h2><h3>Firestoreルールのデプロイ</h3><pre><code class="language-bash">firebase deploy --only firestore:rules
+</code></pre><h3>Firestoreインデックスのデプロイ</h3><pre><code class="language-bash">firebase deploy --only firestore:indexes
+</code></pre><h3>Cloud Functionsのデプロイ</h3><pre><code class="language-bash">cd functions
+npm install
+cd ..
+firebase deploy --only functions
+</code></pre><p>---</p><h2>環境変数・設定</h2><h3>Firebase設定</h3>
+<code>src/features/admin/config.js</code> に Firebase プロジェクト設定が記述されています。</p><pre><code class="language-javascript">export const config = {
+  firebaseConfig: {
+    apiKey: "...",
+    authDomain: "...",
+    projectId: "generated-area-484613-e3-90bd4",
+    storageBucket: "...",
+    messagingSenderId: "...",
+    appId: "..."
+  }
+};
+</code></pre><h3>Cloudinary設定</h3>
+<code>src/features/admin/image-uploader.js</code> に設定されています。</p><pre><code class="language-javascript">const CLOUDINARY_CONFIG = {
+  cloudName: 'dnvtqyhuw',
+  uploadPreset: 'rikueko_unsigned'
+};
+</code></pre><p>---</p><h2>デプロイ</h2><h3>GitHub Pages へのデプロイ</h3><pre><code class="language-bash">npm run deploy
+</code></pre><h3>Firebase Hosting へのデプロイ</h3><pre><code class="language-bash">firebase deploy --only hosting
+</code></pre><p>---</p><h2>トラブルシューティング</h2><h3>Firebase SDK 読み込みエラー</h3>
+各HTMLファイルに以下のスクリプトタグが必要です：</p><pre><code class="language-html"><script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</code></pre><h3>Firestoreインデックスエラー</h3>
+コンソールに表示されるリンクからインデックスを作成するか、以下を実行：</p><pre><code class="language-bash">firebase deploy --only firestore:indexes
+</code></pre><h3>CORS エラー</h3>
+ローカル開発では <code>npm run dev</code> で起動したVite開発サーバーを使用してください。</p><p>---</p><h2>関連ドキュメント</h2>
+<ul><li><a href="./screen-flow.html">画面遷移図</a></li>
+<li><a href="./detailed-design.html">詳細設計書</a></li>
+<li><a href="./firestore-schema.html">Firestore DB構成図</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

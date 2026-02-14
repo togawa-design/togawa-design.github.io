@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>デプロイ手順書 - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>デプロイ手順書</h1><h2>概要</h2><p>本システムのデプロイ手順を記載する。</p><p>---</p><h2>前提条件</h2><h3>必要なツール</h3><pre><code class="language-bash"><h1>Google Cloud SDK</h1>
+gcloud --version</p><h1>Node.js 22</h1>
+node --version</p><h1>Git</h1>
+git --version
+</code></pre><h3>認証設定</h3><pre><code class="language-bash"><h1>GCPにログイン</h1>
+gcloud auth login</p><h1>プロジェクト設定（本番）</h1>
+gcloud config set project generated-area-484613-e3</p><h1>プロジェクト設定（開発）</h1>
+gcloud config set project lset-dev
+</code></pre><p>---</p><h2>環境別設定</h2><table><tr><td>項目</td><td>本番環境</td><td>開発環境</td></tr>
+</table>
+<table><tr><td>GCP Project</td><td><code>generated-area-484613-e3</code></td><td><code>lset-dev</code></td></tr>
+<tr><td>Firebase Project</td><td><code>generated-area-484613-e3-90bd4</code></td><td><code>lset-dev</code></td></tr>
+<tr><td>GitHub Branch</td><td><code>main</code></td><td><code>develop</code></td></tr>
+</table>
+---</p><h2>フロントエンドデプロイ</h2><h3>GitHub Pages（自動デプロイ）</h3><p><code>main</code>ブランチへのプッシュで自動デプロイ。</p><pre><code class="language-bash"><h1>developで開発</h1>
+git checkout develop
+<h1>... 変更 ...</h1>
+git add .
+git commit -m "feat: 機能追加"
+git push origin develop</p><h1>mainにマージ</h1>
+git checkout main
+git merge develop
+git push origin main  # 自動でGitHub Pagesにデプロイ
+</code></pre><p>---</p><h2>Cloud Functions デプロイ</h2><h3>ディレクトリ移動</h3><pre><code class="language-bash">cd functions
+</code></pre><h3>依存関係インストール</h3><pre><code class="language-bash">npm install
+</code></pre><h3>個別デプロイコマンド</h3><p>#### アナリティクス系</p><pre><code class="language-bash"><h1>getAnalyticsData（本番）</h1>
+gcloud functions deploy getAnalyticsData \
+  --gen2 \
+  --runtime nodejs22 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3</p><h1>開発環境</h1>
+gcloud functions deploy getAnalyticsData \
+  --gen2 \
+  --runtime nodejs22 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --region asia-northeast1 \
+  --project lset-dev \
+  --set-env-vars FIREBASE_PROJECT_ID=lset-dev,GA4_PROPERTY_ID=524526933
+</code></pre><p>#### 認証系</p><pre><code class="language-bash"><h1>legacyLogin（本番）</h1>
+gcloud functions deploy legacyLogin \
+  --no-gen2 \
+  --runtime nodejs22 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3</p><h1>resetLegacyPassword（本番）</h1>
+gcloud functions deploy resetLegacyPassword \
+  --no-gen2 \
+  --runtime nodejs22 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3</p><h1>IAMポリシー追加（初回のみ）</h1>
+gcloud functions add-iam-policy-binding resetLegacyPassword \
+  --region=asia-northeast1 \
+  --member=allUsers \
+  --role=roles/cloudfunctions.invoker \
+  --project generated-area-484613-e3
+</code></pre><p>#### ユーザー管理系</p><pre><code class="language-bash"><h1>一括デプロイ</h1>
+npm run deploy:auth
+</code></pre><p>#### メール系</p><pre><code class="language-bash"><h1>sendEmail</h1>
+gcloud functions deploy sendEmail \
+  --gen2 \
+  --runtime nodejs22 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3 \
+  --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY
+</code></pre><p>#### カレンダー系</p><pre><code class="language-bash"><h1>一括デプロイ</h1>
+npm run deploy:calendar
+</code></pre><h3>npm scripts 一覧</h3><table><tr><td>コマンド</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>npm run deploy</code></td><td>getAnalyticsData</td></tr>
+<tr><td><code>npm run deploy:sendEmail</code></td><td>sendEmail</td></tr>
+<tr><td><code>npm run deploy:auth</code></td><td>認証系一括</td></tr>
+<tr><td><code>npm run deploy:calendar</code></td><td>カレンダー系一括</td></tr>
+<tr><td><code>npm run deploy:salary</code></td><td>給与データ系一括</td></tr>
+</table>
+---</p><h2>環境変数</h2><h3>本番環境で必要な環境変数</h3><table><tr><td>変数名</td><td>設定場所</td><td>説明</td></tr>
+</table>
+<table><tr><td><code>SENDGRID_API_KEY</code></td><td>sendEmail</td><td>SendGrid APIキー</td></tr>
+<tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Calendar系</td><td>Google OAuth Client ID</td></tr>
+<tr><td><code>GOOGLE_CLIENT_SECRET</code></td><td>Calendar系</td><td>Google OAuth Client Secret</td></tr>
+<tr><td><code>GA4_PROPERTY_ID</code></td><td>getAnalyticsData</td><td>GA4プロパティID</td></tr>
+<tr><td><code>FIREBASE_PROJECT_ID</code></td><td>全般</td><td>FirebaseプロジェクトID</td></tr>
+</table>
+<h3>環境変数の設定方法</h3><pre><code class="language-bash"><h1>デプロイ時に設定</h1>
+gcloud functions deploy functionName \
+  --set-env-vars KEY1=value1,KEY2=value2</p><h1>既存関数の環境変数更新</h1>
+gcloud functions deploy functionName \
+  --update-env-vars KEY1=new_value
+</code></pre><p>---</p><h2>デプロイ確認</h2><h3>Cloud Functions 確認</h3><pre><code class="language-bash"><h1>関数一覧</h1>
+gcloud functions list --project generated-area-484613-e3</p><h1>特定関数の詳細</h1>
+gcloud functions describe getAnalyticsData \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3</p><h1>ログ確認</h1>
+gcloud functions logs read getAnalyticsData \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3 \
+  --limit 50
+</code></pre><h3>ヘルスチェック</h3><pre><code class="language-bash">curl https://asia-northeast1-generated-area-484613-e3.cloudfunctions.net/health
+</code></pre><p>---</p><h2>ロールバック</h2><h3>Cloud Functions</h3><pre><code class="language-bash"><h1>前のバージョンを確認</h1>
+gcloud functions versions list getAnalyticsData \
+  --region asia-northeast1 \
+  --project generated-area-484613-e3</p><h1>特定バージョンにロールバック（再デプロイ）</h1>
+<h1>※ Gitで該当コミットをチェックアウトして再デプロイ</h1>
+git checkout <commit_hash>
+npm run deploy
+</code></pre><h3>フロントエンド</h3><pre><code class="language-bash"><h1>Gitで前のコミットにリバート</h1>
+git revert HEAD
+git push origin main
+</code></pre><p>---</p><h2>トラブルシューティング</h2><h3>デプロイ失敗時</h3><p><li>ログを確認</li>
+<pre><code class="language-bash">gcloud functions logs read functionName --limit 100
+</code></pre><p><li>Cloud Build ログを確認</li>
+   - GCPコンソール → Cloud Build → 履歴</p><p><li>権限エラーの場合</li>
+<pre><code class="language-bash">gcloud auth login
+gcloud config set project <project_id>
+</code></pre><h3>IAMエラー</h3><pre><code class="language-bash"><h1>allUsersにinvoker権限を付与</h1>
+gcloud functions add-iam-policy-binding functionName \
+  --region=asia-northeast1 \
+  --member=allUsers \
+  --role=roles/cloudfunctions.invoker
+</code></pre><p>---</p><h2>チェックリスト</h2><h3>デプロイ前</h3><ul><li>[ ] ローカルでテスト完了</li>
+<li>[ ] developブランチで動作確認</li>
+<li>[ ] 環境変数の確認</li>
+<li>[ ] 依存関係の更新（npm install）</li>
+</ul>
+<h3>デプロイ後</h3><ul><li>[ ] ヘルスチェック確認</li>
+<li>[ ] 主要機能の動作確認</li>
+<li>[ ] ログにエラーがないこと確認</li>
+<li>[ ] 本番環境でのE2Eテスト</li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>

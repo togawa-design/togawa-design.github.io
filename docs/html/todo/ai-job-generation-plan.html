@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI機能 実装プラン - L-SET ドキュメント</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    h1 { color: #1a1a1a; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #333; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { color: #444; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; }
+    pre { background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', 'Menlo', 'Consolas', monospace; line-height: 1.4; }
+    pre code { background: none; color: inherit; padding: 0; white-space: pre; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; font-weight: 600; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0066cc; }
+    ul, ol { padding-left: 1.5em; }
+    li { margin: 0.3em 0; }
+    blockquote { border-left: 4px solid #0066cc; margin: 1em 0; padding-left: 1em; color: #666; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../index.html">← 目次に戻る</a>
+  </nav>
+  <h1>AI機能 実装プラン</h1><p>> 管理画面にAI機能を追加し、求人作成・LP構築・応募者対応を効率化する。</p><p>---</p><h2>目次</h2><p><li><a href="#概要">概要</a></li>
+<li><a href="#コスト見積もり">コスト見積もり</a></li>
+<li><a href="#ai機能一覧">AI機能一覧</a></li>
+<li><a href="#実装ロードマップ">実装ロードマップ</a></li>
+<li><a href="#phase-1-求人作成支援">Phase 1: 求人作成支援</a></li>
+<li><a href="#phase-2-lp強化">Phase 2: LP強化</a></li>
+<li><a href="#phase-25-デザインカスタマイズ">Phase 2.5: デザインカスタマイズ</a></li>
+<li><a href="#phase-3-応募者対応">Phase 3: 応募者対応</a></li>
+<li><a href="#phase-4-分析支援">Phase 4: 分析支援</a></li>
+<li><a href="#技術仕様">技術仕様</a></li>
+<li><a href="#次のアクション">次のアクション</a></li></p><p>---</p><h2>概要</h2><h3>目的</h3><ul><li>求人作成の時間短縮</li>
+<li>求職者に響く文言の自動生成</li>
+<li>応募率・CVRの向上</li>
+</ul>
+<h3>推奨モデル</h3><table><tr><td>モデル</td><td>用途</td><td>特徴</td></tr>
+</table>
+<table><tr><td><strong>GPT-4o-mini</strong></td><td>文章生成全般</td><td>低コスト、高速、十分な品質</td></tr>
+<tr><td>GPT-4o</td><td>高品質な分析・レポート</td><td>高精度だがコスト高</td></tr>
+<tr><td>Claude 3.5 Sonnet</td><td>長文・複雑な文章</td><td>日本語品質が高い</td></tr>
+</table>
+<strong>結論</strong>: まずは <strong>GPT-4o-mini</strong> で開始し、品質が必要な機能のみ上位モデルを検討。</p><p>---</p><h2>コスト見積もり</h2><h3>単価比較</h3><table><tr><td>モデル</td><td>入力 (1Mトークン)</td><td>出力 (1Mトークン)</td><td>1回あたり目安</td></tr>
+</table>
+<table><tr><td>GPT-4o-mini</td><td>$0.15</td><td>$0.60</td><td><strong>約¥0.1</strong></td></tr>
+<tr><td>GPT-4o</td><td>$2.50</td><td>$10.00</td><td>約¥1.5</td></tr>
+<tr><td>Claude 3.5 Sonnet</td><td>$3.00</td><td>$15.00</td><td>約¥2.0</td></tr>
+</table>
+<h3>Phase別 機能数と利用想定</h3><table><tr><td>Phase</td><td>機能</td><td>1社あたり月間利用回数</td></tr>
+</table>
+<table><tr><td>Phase 1</td><td>説明文生成、タイトル提案、キャッチコピー</td><td>10-20回</td></tr>
+<tr><td>Phase 2</td><td>ポイント文言、FAQ生成、CTAボタン</td><td>5-10回</td></tr>
+<tr><td>Phase 2.5</td><td>テーマ提案、画像提案、レイアウト選択</td><td>3-5回</td></tr>
+<tr><td>Phase 3</td><td>返信メール、面接質問、日程調整</td><td>10-15回</td></tr>
+<tr><td>Phase 4</td><td>レポート要約、改善提案</td><td>5-10回</td></tr>
+<tr><td><strong>合計</strong></td><td>15機能</td><td><strong>33-60回/社</strong></td></tr>
+</table>
+<h3>月額コスト試算（GPT-4o-mini）</h3><table><tr><td>会社数</td><td>月間総利用回数</td><td>月額コスト</td></tr>
+</table>
+<table><tr><td>10社</td><td>300-550回</td><td><strong>¥30-60</strong></td></tr>
+<tr><td>50社</td><td>1,500-2,750回</td><td><strong>¥150-280</strong></td></tr>
+<tr><td>100社</td><td>3,000-5,500回</td><td><strong>¥300-550</strong></td></tr>
+<tr><td>500社</td><td>15,000-27,500回</td><td><strong>¥1,500-2,800</strong></td></tr>
+</table>
+<h3>GPT-4o 使用時（参考）</h3><table><tr><td>会社数</td><td>月間総利用回数</td><td>月額コスト</td></tr>
+</table>
+<table><tr><td>10社</td><td>300-550回</td><td>¥450-830</td></tr>
+<tr><td>50社</td><td>1,500-2,750回</td><td>¥2,250-4,130</td></tr>
+<tr><td>100社</td><td>3,000-5,500回</td><td>¥4,500-8,250</td></tr>
+</table>
+<strong>結論</strong>: Phase 4まで全機能実装しても、GPT-4o-miniなら <strong>月数百円〜数千円</strong> で運用可能。</p><p>---</p><h2>AI機能一覧</h2><h3>1. 求人関連（優先度: 高）</h3><table><tr><td>機能</td><td>説明</td><td>効果</td><td>Phase</td></tr>
+</table>
+<table><tr><td><strong>説明文生成</strong></td><td>職種・条件から文章生成</td><td>作成時間短縮</td><td>1</td></tr>
+<tr><td><strong>タイトル最適化</strong></td><td>CTR高いタイトル提案</td><td>応募率UP</td><td>1</td></tr>
+<tr><td><strong>キャッチコピー生成</strong></td><td>ファーストビュー用の文言</td><td>離脱率改善</td><td>1</td></tr>
+<tr><td><strong>給与相場提案</strong></td><td>地域・職種から相場を提示</td><td>競争力のある求人</td><td>2</td></tr>
+<tr><td><strong>必須スキル抽出</strong></td><td>説明文から要件を自動抽出</td><td>入力漏れ防止</td><td>2</td></tr>
+</table>
+<h3>2. LP/採用ページ（優先度: 高）</h3><table><tr><td>機能</td><td>説明</td><td>効果</td><td>Phase</td></tr>
+</table>
+<table><tr><td><strong>ポイント文言生成</strong></td><td>「この求人の魅力」を自動作成</td><td>訴求力UP</td><td>2</td></tr>
+<tr><td><strong>FAQ自動生成</strong></td><td>求人内容からよくある質問を生成</td><td>問い合わせ削減</td><td>2</td></tr>
+<tr><td><strong>CTAボタン文言</strong></td><td>「今すぐ応募」以外の候補提案</td><td>CVR改善</td><td>2</td></tr>
+</table>
+<h3>3. 応募者対応（優先度: 中）</h3><table><tr><td>機能</td><td>説明</td><td>効果</td><td>Phase</td></tr>
+</table>
+<table><tr><td><strong>返信メール生成</strong></td><td>応募者への返信テンプレート</td><td>対応時間短縮</td><td>3</td></tr>
+<tr><td><strong>面接質問提案</strong></td><td>職種に合った質問リスト</td><td>面接品質向上</td><td>3</td></tr>
+<tr><td><strong>不採用理由文</strong></td><td>丁寧な不採用通知文の生成</td><td>ブランド維持</td><td>3</td></tr>
+<tr><td><strong>日程調整文</strong></td><td>面接日程の案内文生成</td><td>事務効率化</td><td>3</td></tr>
+</table>
+<h3>4. 分析・レポート（優先度: 中）</h3><table><tr><td>機能</td><td>説明</td><td>効果</td><td>Phase</td></tr>
+</table>
+<table><tr><td><strong>レポート要約</strong></td><td>アナリティクスデータの要点抽出</td><td>意思決定支援</td><td>4</td></tr>
+<tr><td><strong>改善提案</strong></td><td>「応募率を上げるには」を提案</td><td>PDCAサイクル</td><td>4</td></tr>
+<tr><td><strong>競合分析</strong></td><td>同職種の他社求人との比較</td><td>差別化</td><td>4</td></tr>
+</table>
+<h3>5. デザイン・テーマ（優先度: 高）</h3><table><tr><td>機能</td><td>説明</td><td>効果</td><td>Phase</td></tr>
+</table>
+<table><tr><td><strong>会社別テーマ提案</strong></td><td>業種・会社HPからデザイン提案</td><td>ブランド統一感</td><td>2.5</td></tr>
+<tr><td><strong>フリー画像提案</strong></td><td>求人に合った画像を自動検索</td><td>作成時間短縮</td><td>2.5</td></tr>
+<tr><td><strong>レイアウト自動選択</strong></td><td>業種・ターゲットに最適な配置</td><td>CVR向上</td><td>2.5</td></tr>
+<tr><td><strong>カラー自動抽出</strong></td><td>会社HPからブランドカラー取得</td><td>統一感</td><td>2.5</td></tr>
+</table>
+<h3>6. 会社情報（優先度: 低）</h3><table><tr><td>機能</td><td>説明</td><td>効果</td><td>Phase</td></tr>
+</table>
+<table><tr><td><strong>会社紹介文生成</strong></td><td>基本情報から紹介文作成</td><td>初期設定の簡略化</td><td>-</td></tr>
+<tr><td><strong>採用メッセージ</strong></td><td>代表メッセージ・採用担当者コメント</td><td>魅力的な採用ページ</td><td>-</td></tr>
+</table>
+---</p><h2>実装ロードマップ</h2><pre><code class="language-">Phase 1: 求人作成支援
+├── 説明文生成 ← まずここから
+├── タイトル提案
+└── キャッチコピー生成</p><p>Phase 2: LP強化（文言）
+├── ポイント文言生成
+├── FAQ自動生成
+└── CTAボタン文言</p><p>Phase 2.5: デザインカスタマイズ ← 会社独自のLP
+├── 会社別テーマ提案（業種別プリセット）
+├── フリー画像自動提案（Unsplash連携）
+├── レイアウト自動選択
+└── カラー自動抽出（会社HPから）</p><p>Phase 3: 応募者対応
+├── 返信メール生成
+├── 面接質問提案
+└── 日程調整文</p><p>Phase 4: 分析支援
+├── レポート要約
+└── 改善提案
+</code></pre><p>---</p><h2>Phase 1: 求人作成支援</h2><h3>1.1 準備作業</h3><ul><li>[ ] OpenAI アカウント作成: https://platform.openai.com/signup</li>
+<li>[ ] APIキー発行: https://platform.openai.com/api-keys</li>
+<li>[ ] クレジット追加（$10程度で開始）</li>
+<li>[ ] APIキーを環境変数として設定</li>
+</ul>
+<h3>1.2 Cloud Function 作成</h3><p><strong>エンドポイント</strong>: <code>/generateJobDescription</code></p><pre><code class="language-javascript">// functions/index.js に追加
+const OpenAI = require('openai');</p><p>functions.http('generateJobDescription', async (req, res) => {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });</p><p>  const { jobTitle, location, salary, features, tone } = req.body;</p><p>  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'あなたは求人広告のプロライターです。' },
+      { role: 'user', content: <code>職種: ${jobTitle}\n勤務地: ${location}\n...</code> }
+    ]
+  });</p><p>  res.json({ success: true, generated: completion.choices[0].message.content });
+});
+</code></pre><p><strong>デプロイスクリプト</strong> (package.json):</p><pre><code class="language-json">"deploy:ai": "gcloud functions deploy generateJobDescription --gen2 --runtime nodejs20 --trigger-http --allow-unauthenticated --region asia-northeast1 --project generated-area-484613-e3 --set-env-vars OPENAI_API_KEY=$OPENAI_API_KEY"
+</code></pre><h3>1.3 フロントエンド UI</h3><p>求人編集画面に「AI生成」ボタンを追加:</p><pre><code class="language-">┌─────────────────────────────────────────┐
+│ 仕事内容                                 │
+│ ┌─────────────────────────────────────┐ │
+│ │                                     │ │
+│ │ (テキストエリア)                     │ │
+│ │                                     │ │
+│ └─────────────────────────────────────┘ │
+│ [✨ AIで生成] [📝 AIで改善]              │
+└─────────────────────────────────────────┘
+</code></pre><h3>1.4 プロンプト例</h3><p><strong>説明文生成</strong>:</p><pre><code class="language-">あなたは求人広告のプロライターです。
+以下の情報を元に、求職者の心に響く求人説明文を作成してください。</p><p>【職種】{jobTitle}
+【勤務地】{location}
+【給与】{salary}
+【特徴】{features}</p><p>要件:
+<ul><li>200〜400文字程度</li>
+<li>親しみやすいトーン</li>
+<li>具体的なメリットを強調</li>
+<li>応募を促す文言を含める</li>
+</ul></code></pre><p><strong>タイトル提案</strong>:</p><pre><code class="language-">以下の求人情報から、クリックされやすい求人タイトルを3つ提案してください。</p><p>【職種】{jobTitle}
+【給与】{salary}
+【特徴】{features}</p><p>要件:
+<ul><li>40文字以内</li>
+<li>数字を含める（給与、待遇など）</li>
+<li>感情に訴える表現を使う</li>
+</ul></code></pre><p><strong>出力例</strong>:</p><pre><code class="language-">1. 【月収30万円以上】未経験歓迎の期間工スタッフ
+<li>寮完備で安心！愛知県の製造スタッフ募集</li>
+<li>正社員登用あり◎大手メーカーで働く期間工</li>
+</code></pre><p>---</p><h2>Phase 2: LP強化</h2><h3>2.1 ポイント文言生成</h3><p>求人情報から「この求人の魅力」を自動生成。</p><pre><code class="language-">入力: 求人データ（給与、福利厚生、勤務条件など）
+出力: 3〜5個の魅力ポイント（見出し + 説明文）
+</code></pre><h3>2.2 FAQ自動生成</h3><p>求人内容から想定される質問と回答を生成。</p><pre><code class="language-">入力: 求人データ + 会社情報
+出力: 5〜10個のQ&A
+</code></pre><h3>2.3 CTAボタン文言</h3><p>状況に応じた応募ボタンのテキストを提案。</p><pre><code class="language-">候補例:
+<ul><li>今すぐ応募する</li>
+<li>詳しく話を聞いてみる</li>
+<li>まずは見学から！</li>
+<li>30秒で簡単応募</li>
+</ul></code></pre><p>---</p><h2>Phase 3: 応募者対応</h2><h3>3.1 返信メール生成</h3><p>状況に応じたメールテンプレートを生成。</p><table><tr><td>種類</td><td>内容</td></tr>
+</table>
+<table><tr><td>応募受付</td><td>応募への感謝 + 次のステップ案内</td></tr>
+<tr><td>面接案内</td><td>日時・場所・持ち物の案内</td></tr>
+<tr><td>不採用通知</td><td>丁寧なお断り + 今後の激励</td></tr>
+<tr><td>内定通知</td><td>祝福 + 入社手続きの案内</td></tr>
+</table>
+<h3>3.2 面接質問提案</h3><p>職種・業界に合わせた質問リストを生成。</p><pre><code class="language-">入力: 職種、必要スキル、経験年数
+出力: 10〜15個の面接質問（カテゴリ分け）
+</code></pre><p>---</p><h2>Phase 4: 分析支援</h2><h3>4.1 レポート要約</h3><p>アナリティクスデータを要約してインサイトを提示。</p><pre><code class="language-">入力: GA4データ（PV、応募数、流入経路など）
+出力: 要点3〜5個 + 改善提案
+</code></pre><h3>4.2 改善提案</h3><p>データに基づいた具体的な改善アクションを提案。</p><pre><code class="language-">例:
+<ul><li>「応募率が業界平均より20%低いです。CTAボタンの文言を変更してみましょう」</li>
+<li>「スマホからの離脱率が高いです。ファーストビューの読み込み速度を改善しましょう」</li>
+</ul></code></pre><p>---</p><h2>Phase 2.5: デザインカスタマイズ</h2><h3>コンセプト</h3><p><strong>項目（セクション）は変えずに、レイアウト・スタイルだけを会社ごとにカスタマイズ</strong></p><h3>2.5.1 変更可能なパラメータ</h3><table><tr><td>カテゴリ</td><td>パラメータ</td><td>選択肢</td></tr>
+</table>
+<table><tr><td><strong>カラー</strong></td><td>プライマリカラー</td><td>会社HPから抽出 or 手動設定</td></tr>
+<tr><td></td><td>セカンダリカラー</td><td>自動補完</td></tr>
+<tr><td></td><td>背景色</td><td>白/グレー/カスタム</td></tr>
+<tr><td><strong>レイアウト</strong></td><td>ポイント列数</td><td>2列 / 3列 / 4列</td></tr>
+<tr><td></td><td>画像配置</td><td>左 / 右 / 上 / フルワイド</td></tr>
+<tr><td></td><td>余白</td><td>コンパクト / 標準 / ゆったり</td></tr>
+<tr><td><strong>スタイル</strong></td><td>角丸</td><td>なし / 小 / 大</td></tr>
+<tr><td></td><td>影</td><td>なし / 薄い / 濃い</td></tr>
+<tr><td></td><td>ボタン形状</td><td>四角 / 角丸 / ピル型</td></tr>
+</table>
+<h3>2.5.2 業種別プリセット</h3><table><tr><td>業種</td><td>カラー</td><td>レイアウト</td><td>スタイル</td></tr>
+</table>
+<table><tr><td><strong>製造業・大手</strong></td><td>青系、落ち着いた色</td><td>3列、余白広め</td><td>カード、角丸大</td></tr>
+<tr><td><strong>物流・倉庫</strong></td><td>オレンジ系</td><td>2列、コンパクト</td><td>リスト、シンプル</td></tr>
+<tr><td><strong>IT・スタートアップ</strong></td><td>ビビッド、グラデーション</td><td>画像大きめ</td><td>モダン、影あり</td></tr>
+<tr><td><strong>飲食・サービス</strong></td><td>暖色系</td><td>画像多め</td><td>親しみやすい</td></tr>
+<tr><td><strong>介護・医療</strong></td><td>緑・パステル</td><td>ゆったり</td><td>柔らかい印象</td></tr>
+</table>
+<h3>2.5.3 テーマ設定の構造</h3><pre><code class="language-javascript">// 会社ごとのテーマ設定（Firestoreに保存）
+const companyTheme = {
+  // カラー
+  colors: {
+    primary: '#1E88E5',
+    secondary: '#FFC107',
+    background: '#FAFAFA',
+    text: '#333333'
+  },</p><p>  // レイアウト
+  layout: {
+    pointsColumns: 3,           // 2 <table><tr><td>3</td></tr></table> 4
+    imagePosition: 'right',     // left <table><tr><td>right</td><td>top</td></tr></table> fullwidth
+    spacing: 'comfortable',     // compact <table><tr><td>standard</td></tr></table> comfortable
+    heroStyle: 'overlay'        // simple <table><tr><td>overlay</td></tr></table> split
+  },</p><p>  // スタイル
+  style: {
+    borderRadius: 'large',      // none <table><tr><td>small</td></tr></table> large
+    shadow: 'soft',             // none <table><tr><td>subtle</td></tr></table> soft
+    buttonStyle: 'rounded'      // square <table><tr><td>rounded</td></tr></table> pill
+  }
+};
+</code></pre><h3>2.5.4 フリー画像自動提案</h3><p><strong>使用API</strong>（すべて無料枠あり）:</p><table><tr><td>API</td><td>無料枠</td><td>特徴</td></tr>
+</table>
+<table><tr><td><strong>Unsplash</strong></td><td>月5,000リクエスト</td><td>高品質、商用利用可</td></tr>
+<tr><td><strong>Pexels</strong></td><td>月20,000リクエスト</td><td>動画もあり</td></tr>
+<tr><td><strong>Pixabay</strong></td><td>無制限</td><td>種類豊富</td></tr>
+</table>
+<strong>実装フロー</strong>:</p><pre><code class="language-">入力: 職種「製造スタッフ」、勤務地「愛知県」</p><p>AI処理:
+<li>キーワード生成: "factory", "manufacturing", "industrial", "automotive"</li>
+<li>Unsplash APIで画像検索</li>
+<li>5枚の候補を表示</li></p><p>出力:
+┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐
+│ 🏭  │ │ 🔧  │ │ 👷  │ │ ⚙️  │ │ 🚗  │
+└─────┘ └─────┘ └─────┘ └─────┘ └─────┘
+  選択     選択     選択     選択     選択
+</code></pre><h3>2.5.5 テーマ提案UI</h3><pre><code class="language-">┌─────────────────────────────────────────────────────────┐
+│ 🎨 あなたの会社に合ったデザインを提案                    │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  会社HP: [https://example.com      ] [分析する]         │
+│                                                         │
+│  または業種を選択:                                       │
+│  [製造業 ▼]  [大企業 ▼]  [若年層向け ▼]                 │
+│                                                         │
+│  ─────────────────────────────────────────────          │
+│                                                         │
+│  【提案されたテーマ】                                    │
+│                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │
+│  │  テーマA    │  │  テーマB    │  │  テーマC    │     │
+│  │  (信頼感)   │  │  (活気)     │  │  (親しみ)   │     │
+│  │  🔵⬜⬜    │  │  🟠⬜⬜    │  │  🟢⬜⬜    │     │
+│  │  [プレビュー]│  │  [プレビュー]│  │  [プレビュー]│     │
+│  └─────────────┘  └─────────────┘  └─────────────┘     │
+│                                                         │
+│  [テーマAを適用]  [テーマBを適用]  [テーマCを適用]       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+</code></pre><h3>2.5.6 会社HP分析機能</h3><pre><code class="language-">入力: 会社HPのURL
+        ↓
+処理:
+<li>HPをスクレイピング</li>
+<li>ブランドカラー抽出（#FF5733など）</li>
+<li>会社概要・理念のテキスト取得</li>
+<li>トーン分析（フォーマル/カジュアル）</li>
+        ↓
+出力:
+<ul><li>テーマカラー自動設定</li>
+<li>会社の雰囲気に合った文体で求人文生成</li>
+<li>おすすめセクション構成提案</li>
+</ul></code></pre><h3>2.5.7 追加コスト</h3><table><tr><td>機能</td><td>コスト</td></tr>
+</table>
+<table><tr><td>Unsplash/Pexels API</td><td><strong>無料</strong></td></tr>
+<tr><td>AI画像キーワード生成</td><td>約¥0.05/回</td></tr>
+<tr><td>会社HP分析</td><td>約¥0.1/回</td></tr>
+<tr><td>DALL-E 3 画像生成（オプション）</td><td>約¥6/枚</td></tr>
+</table>
+---</p><h2>技術仕様</h2><h3>API設計</h3><pre><code class="language-">POST /generateJobDescription
+Content-Type: application/json</p><p>Request:
+{
+  "jobTitle": "期間工",
+  "location": "愛知県豊田市",
+  "salary": "月給30万円〜",
+  "features": ["寮完備", "未経験OK", "正社員登用あり"],
+  "targetMedia": "indeed",  // optional: indeed <table><tr><td>kyujinbox</td></tr></table> lp
+  "tone": "friendly"        // friendly <table><tr><td>formal</td></tr></table> casual
+}</p><p>Response:
+{
+  "success": true,
+  "generated": {
+    "description": "生成された説明文...",
+    "titles": ["タイトル候補1", "タイトル候補2", "タイトル候補3"]
+  },
+  "usage": {
+    "promptTokens": 150,
+    "completionTokens": 300,
+    "estimatedCost": 0.0006
+  }
+}
+</code></pre><h3>媒体別対応</h3><table><tr><td>媒体</td><td>文字数制限</td><td>特徴</td></tr>
+</table>
+<table><tr><td>Indeed</td><td>4000文字</td><td>SEO重視、キーワード含める</td></tr>
+<tr><td>求人ボックス</td><td>2000文字</td><td>シンプル・簡潔</td></tr>
+<tr><td>スタンバイ</td><td>3000文字</td><td>条件明確に</td></tr>
+<tr><td>自社LP</td><td>制限なし</td><td>ストーリー性重視</td></tr>
+</table>
+<pre><code class="language-javascript">const MEDIA_PROMPTS = {
+  indeed: '【Indeed向け】検索されやすいキーワードを含め、SEOを意識した文章で...',
+  kyujinbox: '【求人ボックス向け】2000文字以内で簡潔に要点をまとめ...',
+  lp: '【自社LP向け】会社の魅力を伝えるストーリー調で...'
+};
+</code></pre><h3>セキュリティ</h3><ul><li>APIキーはCloud Functionsの環境変数に保存</li>
+<li>フロントエンドからは直接OpenAI APIを呼ばない</li>
+<li>レート制限を設定（1社あたり月100回など）</li>
+</ul>
+<h3>使用量トラッキング</h3><pre><code class="language-javascript">// Firestoreに使用量を記録
+await db.collection('ai_usage').add({
+  companyDomain: 'xxx',
+  function: 'generateJobDescription',
+  model: 'gpt-4o-mini',
+  promptTokens: 150,
+  completionTokens: 300,
+  estimatedCost: 0.0006,
+  timestamp: new Date()
+});
+</code></pre><p>---</p><h2>次のアクション</h2><h3>準備</h3><p><li>[ ] OpenAI アカウント作成</li>
+<li>[ ] APIキー発行</li>
+<li>[ ] $10クレジット追加</li></p><h3>Phase 1 実装</h3><p><li>[ ] Cloud Function作成（generateJobDescription）</li>
+<li>[ ] openai パッケージ追加（functions/package.json）</li>
+<li>[ ] プロンプトテンプレート作成</li>
+<li>[ ] フロントエンドUI実装</li>
+<li>[ ] テスト・調整</li>
+<li>[ ] 本番デプロイ</li></p><h3>Phase 2 実装</h3><p><li>[ ] ポイント文言生成API</li>
+<li>[ ] FAQ自動生成API</li>
+<li>[ ] CTAボタン文言提案</li></p><h3>Phase 2.5 実装</h3><p><li>[ ] Unsplash API連携（APIキー取得）</li>
+<li>[ ] 業種別テーマプリセット作成（5-10種類）</li>
+<li>[ ] テーマ設定をFirestoreに保存する仕組み</li>
+<li>[ ] LPビルダーにテーマ適用機能追加</li>
+<li>[ ] 会社HP分析機能（オプション）</li></p><p>---</p><h2>参考リンク</h2><ul><li><a href="https://platform.openai.com/">OpenAI Platform</a></li>
+<li><a href="https://openai.com/pricing">OpenAI Pricing</a></li>
+<li><a href="https://platform.openai.com/docs/api-reference">OpenAI API Reference</a></li>
+</ul>
+  <div class="footer">
+    <p>Generated from Markdown - L-SET Documentation</p>
+  </div>
+</body>
+</html>
