@@ -22,6 +22,7 @@ export const config = {
   apiEndpoint: apiEndpoints.analytics,
   cloudFunctionsBaseUrl: cloudFunctionsBaseUrl,
   legacyLoginUrl: apiEndpoints.legacyLogin,
+  resetLegacyPasswordUrl: apiEndpoints.resetLegacyPassword,
   firebaseConfig: envFirebaseConfig
 };
 

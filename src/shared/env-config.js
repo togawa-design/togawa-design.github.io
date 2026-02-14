@@ -32,6 +32,7 @@ export const apiEndpoints = {
   pageAnalytics: `${cloudFunctionsBaseUrl}/getPageAnalytics`,
   trackPageAnalytics: `${cloudFunctionsBaseUrl}/trackPageAnalytics`,
   legacyLogin: `${cloudFunctionsBaseUrl}/legacyLogin`,
+  resetLegacyPassword: `${cloudFunctionsBaseUrl}/resetLegacyPassword`,
   sendEmail: `${cloudFunctionsBaseUrl}/sendEmail`,
   getEmails: `${cloudFunctionsBaseUrl}/getEmails`,
   createCompanyUser: `${cloudFunctionsBaseUrl}/createCompanyUser`,

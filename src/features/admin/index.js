@@ -1711,7 +1711,7 @@ function showCompanyUserModal(user, companyDomain, companyName) {
     usernameInput.value = generateUsername(companyDomain);
     passwordInput.value = generatePassword();
     passwordInput.placeholder = 'パスワード';
-    passwordInput.required = true;
+    passwordInput.required = false;
     if (nameInput) nameInput.value = '';
     if (roleSelect) roleSelect.value = 'staff';
     isActiveCheckbox.checked = true;
@@ -2029,14 +2029,14 @@ async function loadAdminUsersData() {
     }
 
     container.innerHTML = adminUsers.map(user => `
-      <div class="admin-user-item" data-id="${user.id}">
+      <div class="admin-user-item" data-id="${escapeHtml(user.id)}">
         <div class="admin-user-info">
-          <span class="admin-user-email">${user.email || '(メールなし)'}</span>
+          <span class="admin-user-email">${escapeHtml(user.email || '(メールなし)')}</span>
           ${user.id === currentUser.uid ? '<span class="admin-user-badge">あなた</span>' : ''}
           <span class="admin-user-date">${user.createdAt ? user.createdAt.toLocaleDateString('ja-JP') : ''}</span>
         </div>
         ${user.id !== currentUser.uid ? `
-          <button class="btn-delete-admin" data-id="${user.id}" data-email="${user.email}">削除</button>
+          <button class="btn-delete-admin" data-id="${escapeHtml(user.id)}" data-email="${escapeHtml(user.email)}">削除</button>
         ` : ''}
       </div>
     `).join('');

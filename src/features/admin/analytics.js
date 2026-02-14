@@ -1784,7 +1784,7 @@ function renderDetailRecentApplications(data) {
     <tr>
       <td>${escapeHtml(app.date)}</td>
       <td>${escapeHtml(app.job)}</td>
-      <td><span class="type-badge ${app.type}">${typeLabels[app.type] || app.type}</span></td>
+      <td><span class="type-badge ${escapeHtml(app.type)}">${typeLabels[app.type] || escapeHtml(app.type)}</span></td>
       <td>${escapeHtml(app.source)}</td>
     </tr>
   `).join('');

@@ -7,10 +7,14 @@
 const functions = require('@google-cloud/functions-framework');
 const { BetaAnalyticsDataClient } = require('@google-analytics/data');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 const admin = require('firebase-admin');
 
 // メールサービス
 const emailService = require('./email');
+
+// 給与相場同期サービス（e-Stat API連携）
+const salarySyncService = require('./salary-sync');
 
 // Firebase Admin初期化（環境変数でプロジェクトを切り替え）
 // FIREBASE_PROJECT_ID: 本番=generated-area-484613-e3-90bd4, 開発=lset-dev
@@ -50,6 +54,9 @@ const corsHandler = cors({
 
 // メールサービスのHTTPエンドポイントを登録
 emailService.register(functions, corsHandler);
+
+// 給与相場同期サービスのHTTPエンドポイントを登録
+salarySyncService.register(functions, corsHandler);
 
 // GA4プロパティID（数字のみ）
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '520379160'; // G-E1XC94EG05 の数字部分
@@ -3721,16 +3728,47 @@ functions.http('legacyLogin', async (req, res) => {
       const isEmail = usernameOrEmail.includes('@');
       let matchingDocs = [];
 
+      // パスワード検証ヘルパー（bcryptハッシュと平文の両方に対応）
+      const verifyPassword = async (storedPassword, inputPassword) => {
+        if (!storedPassword) return false;
+        // bcryptハッシュは$2a$, $2b$, $2y$で始まる
+        if (storedPassword.startsWith('$2')) {
+          return await bcrypt.compare(inputPassword, storedPassword);
+        }
+        // 平文パスワード（レガシー）
+        return storedPassword === inputPassword;
+      };
+
+      // パスワードをハッシュ化してマイグレーション
+      const migratePasswordIfNeeded = async (docId, storedPassword) => {
+        if (storedPassword && !storedPassword.startsWith('$2')) {
+          const hashedPassword = await bcrypt.hash(storedPassword, 10);
+          await db.collection('company_users').doc(docId).update({
+            password: hashedPassword,
+            passwordMigratedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log(`[legacyLogin] Password migrated to bcrypt for user: ${docId}`);
+        }
+      };
+
       if (isEmail) {
         // emailで検索
         const snapshot = await db.collection('company_users')
           .where('email', '==', usernameOrEmail)
           .get();
 
-        matchingDocs = snapshot.docs.filter(doc => {
+        for (const doc of snapshot.docs) {
           const data = doc.data();
-          return data.password === password && data.isActive !== false;
-        });
+          if (data.isActive === false) continue;
+          const isValid = await verifyPassword(data.password, password);
+          if (isValid) {
+            matchingDocs.push(doc);
+            // 平文パスワードの場合はハッシュ化してマイグレーション
+            migratePasswordIfNeeded(doc.id, data.password).catch(e => {
+              console.error('Password migration failed:', e);
+            });
+          }
+        }
       } else {
         // usernameで検索
         const snapshot = await db.collection('company_users')
@@ -3741,8 +3779,15 @@ functions.http('legacyLogin', async (req, res) => {
         if (!snapshot.empty) {
           const doc = snapshot.docs[0];
           const data = doc.data();
-          if (data.password === password && data.isActive !== false) {
-            matchingDocs = [doc];
+          if (data.isActive !== false) {
+            const isValid = await verifyPassword(data.password, password);
+            if (isValid) {
+              matchingDocs = [doc];
+              // 平文パスワードの場合はハッシュ化してマイグレーション
+              migratePasswordIfNeeded(doc.id, data.password).catch(e => {
+                console.error('Password migration failed:', e);
+              });
+            }
           }
         }
       }
@@ -3808,4 +3853,103 @@ functions.http('legacyLogin', async (req, res) => {
         error: 'ログインに失敗しました'
       });
     }
+});
+
+/**
+ * レガシーユーザーのパスワードリセット
+ * パスワードをbcryptでハッシュ化して保存
+ */
+functions.http('resetLegacyPassword', async (req, res) => {
+  // CORS処理
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://togawa-design.github.io',
+    'https://rikueco.jp'
+  ];
+  const origin = req.get('Origin');
+  if (allowedOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+  }
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ success: false, error: 'Method not allowed' });
+    return;
+  }
+
+  try {
+    const { userId, newPassword, adminUid } = req.body;
+
+    if (!userId || !newPassword) {
+      res.status(400).json({ success: false, error: 'userId と newPassword は必須です' });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({ success: false, error: 'パスワードは8文字以上で入力してください' });
+      return;
+    }
+
+    const db = admin.firestore();
+
+    // ユーザーが存在するか確認
+    const userDoc = await db.collection('company_users').doc(userId).get();
+    if (!userDoc.exists) {
+      res.status(404).json({ success: false, error: 'ユーザーが見つかりません' });
+      return;
+    }
+
+    const userData = userDoc.data();
+
+    // レガシーユーザーのみ対象（Firebase Auth ユーザーは sendPasswordResetEmail を使用）
+    if (userData.uid && !userData._legacyAuth) {
+      res.status(400).json({
+        success: false,
+        error: 'Firebase Authユーザーはメールでパスワードリセットしてください'
+      });
+      return;
+    }
+
+    // 管理者権限チェック（オプション）
+    if (adminUid) {
+      const adminDoc = await db.collection('company_users').doc(adminUid).get();
+      if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+        res.status(403).json({ success: false, error: '管理者権限が必要です' });
+        return;
+      }
+      // 同じ会社のユーザーかチェック
+      if (adminDoc.data().companyDomain !== userData.companyDomain) {
+        res.status(403).json({ success: false, error: '異なる会社のユーザーです' });
+        return;
+      }
+    }
+
+    // パスワードをbcryptでハッシュ化
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Firestoreを更新
+    await db.collection('company_users').doc(userId).update({
+      password: hashedPassword,
+      passwordResetAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log(`[resetLegacyPassword] Password reset for user: ${userId}`);
+
+    res.json({ success: true, message: 'パスワードをリセットしました' });
+
+  } catch (error) {
+    console.error('resetLegacyPassword error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'パスワードリセットに失敗しました'
+    });
+  }
 });

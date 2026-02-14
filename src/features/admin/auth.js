@@ -1033,13 +1033,20 @@ export async function resetCompanyUserPassword(userId, newPassword) {
       return await sendPasswordResetEmail(userData.email);
     }
 
-    // レガシーユーザーの場合は直接更新
-    await firebaseDb.collection('company_users').doc(userId).update({
-      password: newPassword,
-      passwordResetAt: firebase.firestore.FieldValue.serverTimestamp()
+    // レガシーユーザーの場合はCloud Functions経由でハッシュ化して保存
+    const response = await fetch(config.resetLegacyPasswordUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        userId: userId,
+        newPassword: newPassword,
+        adminUid: sessionStorage.getItem(config.userIdKey)
+      })
     });
 
-    return { success: true };
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error('Failed to reset password:', error);
     return { success: false, error: error.message };

@@ -2305,7 +2305,7 @@ function updateJmInterviewInfo(scheduledAt, staffName, meetingType, location, me
 
   const dayName = CalendarService.getDayOfWeek(scheduledAt);
   const typeLabels = { in_person: '対面', online: 'オンライン', phone: '電話' };
-  const displayType = typeLabels[meetingType] || meetingType;
+  const displayType = typeLabels[meetingType] || escapeHtml(meetingType);
   console.log('[updateJmInterviewInfo] meetingType:', meetingType, '-> displayType:', displayType);
 
   // 時刻フォーマット
