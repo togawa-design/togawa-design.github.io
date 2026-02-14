@@ -202,13 +202,13 @@ function convertMdToHtml(mdContent, title, relativePath) {
     .mermaid-modal-scroll { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
     .mermaid-modal-diagram { transform-origin: top center; transition: transform 0.15s ease; display: inline-block; }
     .mermaid-modal-diagram svg { max-width: none !important; display: block; }
-    .mermaid-modal-close { position: absolute; top: 12px; right: 16px; font-size: 28px; cursor: pointer; color: #666; z-index: 10; line-height: 1; }
+    .mermaid-modal-close { position: fixed; top: 40px; right: 40px; font-size: 32px; cursor: pointer; color: #666; z-index: 10001; line-height: 1; background: rgba(255,255,255,0.98); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(0,0,0,0.25); }
     .mermaid-modal-close:hover { color: #333; }
-    .mermaid-modal-controls { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.95); padding: 8px 16px; border-radius: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
+    .mermaid-modal-controls { position: fixed; top: 40px; left: 40px; display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.98); padding: 10px 18px; border-radius: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.25); z-index: 10001; }
     .mermaid-modal-btn { width: 36px; height: 36px; border: none; background: #f0f0f0; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
     .mermaid-modal-btn:hover { background: #ddd; }
     .mermaid-modal-zoom { font-size: 14px; min-width: 60px; text-align: center; color: #333; font-weight: 600; }
-    .mermaid-modal-hint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); color: #888; font-size: 0.8em; background: rgba(255,255,255,0.9); padding: 4px 12px; border-radius: 12px; }
+    .mermaid-modal-hint { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); color: #666; font-size: 0.85em; background: rgba(255,255,255,0.98); padding: 8px 16px; border-radius: 16px; z-index: 10001; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
