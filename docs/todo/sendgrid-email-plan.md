@@ -5,28 +5,39 @@ SendGridを使用して、企業と応募者間のメール送受信をシステ
 
 ## アーキテクチャ
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    フロントエンド                            │
-│  job-manage.html / applicants.html / mypage.html            │
-│  → 統合タイムライン（メッセージ + メール）                    │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Cloud Functions                           │
-│  ・sendEmail      - メール送信                              │
-│  ・inboundParse   - メール受信（Webhook）                   │
-│  ・getEmails      - メール一覧取得                          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│    SendGrid     │  │    Firestore    │  │  Cloud Storage  │
-│  Mail Send API  │  │  emails collection│ │   (添付ファイル) │
-│  Inbound Parse  │  │                 │  │                 │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+```mermaid
+flowchart TB
+    subgraph Frontend["フロントエンド"]
+        FE1["job-manage.html"]
+        FE2["applicants.html"]
+        FE3["mypage.html"]
+        Timeline["統合タイムライン<br/>(メッセージ + メール)"]
+    end
+
+    subgraph CF["Cloud Functions"]
+        SendEmail["sendEmail<br/>メール送信"]
+        InboundParse["inboundParse<br/>メール受信(Webhook)"]
+        GetEmails["getEmails<br/>メール一覧取得"]
+    end
+
+    subgraph Storage["ストレージ"]
+        SendGrid["SendGrid<br/>Mail Send API<br/>Inbound Parse"]
+        Firestore["Firestore<br/>emails collection"]
+        CloudStorage["Cloud Storage<br/>添付ファイル"]
+    end
+
+    Frontend --> CF
+    SendEmail --> SendGrid
+    SendEmail --> Firestore
+    InboundParse --> Firestore
+    InboundParse --> CloudStorage
+    GetEmails --> Firestore
+
+    style Frontend fill:#e3f2fd
+    style CF fill:#fff3e0
+    style SendGrid fill:#2196f3,color:#fff
+    style Firestore fill:#ffca28,color:#333
+    style CloudStorage fill:#4caf50,color:#fff
 ```
 
 ---
