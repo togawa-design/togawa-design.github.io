@@ -53,35 +53,26 @@
 
 ### 公開ページの遷移
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           トップページ                               │
-│                          (index.html)                               │
-└─────────────────────────────────────────────────────────────────────┘
-          │                    │                    │
-          ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│   求人一覧       │  │   会社一覧       │  │  勤務地別求人    │
-│  (jobs.html)    │  │ (company.html)  │  │ (location.html) │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-          │                    │                    │
-          ▼                    ▼                    │
-┌─────────────────┐  ┌─────────────────┐           │
-│   求人詳細       │  │  会社採用ページ   │◄──────────┘
-│(job-detail.html)│  │(company-recruit)│
-└─────────────────┘  └─────────────────┘
-          │                    │
-          ▼                    ▼
-┌─────────────────────────────────────────┐
-│              求人LP (lp.html)           │
-│        ※求人ごとのランディングページ      │
-└─────────────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────┐
-│             応募フォーム                 │
-│           （モーダル表示）               │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    TOP["トップページ<br/>(index.html)"]
+
+    TOP --> JOBS["求人一覧<br/>(jobs.html)"]
+    TOP --> COMPANY["会社一覧<br/>(company.html)"]
+    TOP --> LOCATION["勤務地別求人<br/>(location.html)"]
+
+    JOBS --> JOBDETAIL["求人詳細<br/>(job-detail.html)"]
+    COMPANY --> RECRUIT["会社採用ページ<br/>(company-recruit.html)"]
+    LOCATION --> RECRUIT
+
+    JOBDETAIL --> LP["求人LP<br/>(lp.html)"]
+    RECRUIT --> LP
+
+    LP --> FORM["応募フォーム<br/>(モーダル表示)"]
+
+    style TOP fill:#4a90d9,color:#fff
+    style LP fill:#5cb85c,color:#fff
+    style FORM fill:#d9534f,color:#fff
 ```
 
 ---
@@ -183,36 +174,29 @@ admin.html (SPA - シングルページアプリケーション)
 
 ### Admin認証（Firebase Authentication + Google OAuth）
 
-```
-1. admin.html にアクセス
-       │
-       ▼
-2. 未認証の場合 → 認証モーダル表示
-       │
-       ├─► 「Googleでログイン」
-       │         │
-       │         ▼
-       │   Google OAuth 認証画面
-       │         │
-       │         ▼
-       │   admin_users コレクション確認
-       │         │
-       │         ├─► 登録済み (role: admin) → Admin画面表示
-       │         └─► 未登録 → エラー表示
-       │
-       └─► 「会社ユーザーログイン」
-                 │
-                 ▼
-           メールアドレス/パスワード入力
-                 │
-                 ▼
-           Firebase Authentication 照合
-                 │
-                 ▼
-           company_users コレクション確認
-                 │
-                 ├─► 登録済み → 会社ユーザー画面表示（自社のみ）
-                 └─► 未登録 → エラー表示
+```mermaid
+flowchart TD
+    A["admin.html にアクセス"] --> B{"認証状態"}
+    B -->|未認証| C["認証モーダル表示"]
+
+    C --> D["Googleでログイン"]
+    C --> E["会社ユーザーログイン"]
+
+    D --> F["Google OAuth 認証画面"]
+    F --> G{"admin_users<br/>コレクション確認"}
+    G -->|登録済み| H["✅ Admin画面表示"]
+    G -->|未登録| I["❌ エラー表示"]
+
+    E --> J["メールアドレス/<br/>パスワード入力"]
+    J --> K["Firebase Auth 照合"]
+    K --> L{"company_users<br/>コレクション確認"}
+    L -->|登録済み| M["✅ 会社ユーザー画面<br/>(自社のみ)"]
+    L -->|未登録| N["❌ エラー表示"]
+
+    style H fill:#5cb85c,color:#fff
+    style M fill:#5cb85c,color:#fff
+    style I fill:#d9534f,color:#fff
+    style N fill:#d9534f,color:#fff
 ```
 
 ### 会社ユーザーの画面制限
@@ -266,24 +250,34 @@ admin.html (SPA - シングルページアプリケーション)
 
 ## データフロー概要
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         求職者の行動                                │
-└─────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  ページ閲覧 → page-analytics.js → Cloud Functions → Firestore      │
-│  （PV/スクロール/滞在時間/CTAクリック/応募完了）                       │
-└─────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  管理画面でデータ確認                                                │
-│  ├── 概要ダッシュボード: GA4 API + Firestore                        │
-│  ├── アナリティクス詳細: GA4 API + Firestore + 独自計算              │
-│  └── 採用管理: Firestore (applications コレクション)                 │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph USER["👤 求職者の行動"]
+        A1["ページ閲覧"]
+        A2["スクロール"]
+        A3["CTAクリック"]
+        A4["応募完了"]
+    end
+
+    subgraph COLLECT["📊 データ収集"]
+        B["page-analytics.js"]
+        C["Cloud Functions"]
+        D["Firestore"]
+    end
+
+    subgraph ADMIN["📈 管理画面でデータ確認"]
+        E["概要ダッシュボード<br/>(GA4 API + Firestore)"]
+        F["アナリティクス詳細<br/>(GA4 API + Firestore + 独自計算)"]
+        G["採用管理<br/>(applications コレクション)"]
+    end
+
+    A1 & A2 & A3 & A4 --> B
+    B --> C --> D
+    D --> E & F & G
+
+    style USER fill:#e3f2fd
+    style COLLECT fill:#fff3e0
+    style ADMIN fill:#e8f5e9
 ```
 
 ---

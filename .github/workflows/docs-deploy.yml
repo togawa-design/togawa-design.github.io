@@ -1,0 +1,59 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'docs/**/*.md'
+      - 'scripts/convert-md-to-html.cjs'
+
+  # 手動実行も可能
+  workflow_dispatch:
+
+# Workload Identity Federation用の権限
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  convert-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install marked (Markdown parser)
+        run: npm install marked
+
+      - name: Convert MD to HTML
+        run: node scripts/convert-md-to-html.cjs
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/851938313917/locations/global/workloadIdentityPools/github-actions/providers/github'
+          service_account: 'docs-deployer@lset-dev.iam.gserviceaccount.com'
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: lset-dev
+
+      - name: Upload to Cloud Storage
+        run: |
+          gsutil -m cp -r docs/html/* gs://lset-dev-docs/docs/
+
+      - name: Summary
+        run: |
+          echo "## Docs Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Files uploaded to:** \`gs://lset-dev-docs/docs/\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Access URL:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`https://asia-northeast1-lset-dev.cloudfunctions.net/serveDoc?path=index.html\`" >> $GITHUB_STEP_SUMMARY
