@@ -194,9 +194,11 @@ function convertMdToHtml(mdContent, title, relativePath) {
     .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
     .mermaid { background: white; padding: 20px; border-radius: 8px; margin: 1em 0; }
   </style>
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+    });
   </script>
 </head>
 <body>
