@@ -179,6 +179,24 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated();
     }
 
+    // ===== admin_activity コレクション - 管理画面利用ログ（2026-02-14追加） =====
+    // 注意: UI側でadmin専用セクションとして制御（nav-admin内に配置）
+    match /admin_activity/{docId} {
+      // 読み書きは認証ユーザー（匿名認証含む）
+      allow read, write: if isAuthenticated();
+    }
+
+    // ===== ad_costs コレクション - 広告費用データ（2026-02-15追加） =====
+    match /ad_costs/{docId} {
+      // 読み取り: 管理者は全て、会社ユーザーは自社データのみ
+      allow read: if isAdmin() ||
+        (isAuthenticated() &&
+         exists(/databases/$(database)/documents/company_users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/company_users/$(request.auth.uid)).data.companyDomain == resource.data.companyDomain);
+      // 書き込み: 管理者のみ
+      allow write: if isAdmin();
+    }
+
     // 注意: 上記にマッチしないドキュメントへのアクセスは拒否されます
   }
 }

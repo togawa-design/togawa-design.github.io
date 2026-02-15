@@ -49,7 +49,13 @@ firestore/
 ├── favorites/                    # お気に入り求人
 │   └── {favoriteId}/
 │
-└── page_analytics_events/        # アナリティクスイベント
+├── page_analytics_events/        # アナリティクスイベント
+│   └── {docId}/
+│
+├── admin_activity/               # 管理画面利用ログ
+│   └── {docId}/
+│
+└── ad_costs/                     # 広告費用データ
     └── {docId}/
 ```
 
@@ -380,6 +386,36 @@ firestore/
 }
 ```
 
+### admin_activity（管理画面利用ログ）
+
+```typescript
+// /admin_activity/{docId}
+{
+  userId: string,             // ユーザーID
+  userType: string,           // 'admin' | 'company'
+  action: string,             // 操作内容
+  section: string,            // セクション名
+  details: object,            // 詳細情報
+  createdAt: Timestamp
+}
+```
+
+### ad_costs（広告費用データ）
+
+```typescript
+// /ad_costs/{docId}
+{
+  companyDomain: string,      // 対象会社ドメイン
+  yearMonth: string,          // 対象年月（"2026-02"形式）
+  channel: string,            // 広告チャンネル（'google' | 'tiktok' | 'x' | 'meta' | 'yahoo' | 'line'）
+  budget: number,             // 予算（円）
+  spend: number,              // 実績費用（円）
+  createdBy: string,          // 作成者（'admin'等）
+  createdAt: Timestamp,
+  updatedAt: Timestamp
+}
+```
+
 ---
 
 ## インデックス設定
@@ -495,6 +531,8 @@ firestore/
 | interviews | 自社のみ | 認証ユーザー |
 | favorites | 本人のみ | 本人のみ |
 | page_analytics_events | 認証ユーザー | 全員 |
+| admin_activity | 認証ユーザー | 認証ユーザー |
+| ad_costs | 管理者全て・会社ユーザー自社のみ | 管理者 |
 
 ---
 
@@ -514,6 +552,7 @@ erDiagram
     applications ||--o| interviews : "1:0..1 参照"
     users ||--o{ favorites : "1:N 参照"
     companies ||--o{ notifications : "1:N 参照"
+    companies ||--o{ ad_costs : "1:N 参照"
 
     companies {
         string companyDomain PK
@@ -608,6 +647,15 @@ erDiagram
         string title
         string status
         string targetAudience
+    }
+
+    ad_costs {
+        string docId PK
+        string companyDomain FK
+        string yearMonth
+        string channel
+        number budget
+        number spend
     }
 ```
 

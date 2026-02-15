@@ -23,6 +23,7 @@ import * as JobsLoader from '@shared/jobs-loader.js';
 import { escapeHtml, showToast } from '@shared/utils.js';
 import { showConfirmDialog } from '@shared/modal.js';
 import { initKeyboardShortcuts } from '@shared/keyboard-shortcuts.js';
+import { initActivityTracker, updateUserInfo, trackLogin, trackSectionView, updateLastActive } from '@shared/activity-tracker.js';
 
 // Job-Manage Embedded
 import {
@@ -57,6 +58,12 @@ import * as DataMigration from './data-migration.js';
 // お知らせ管理
 import { initAnnouncementsSection } from './announcements.js';
 
+// 利用状況
+import { initAdminUsageSection } from './admin-usage.js';
+
+// 広告費用管理
+import { initAdCostsSection } from './ad-costs.js';
+
 // 通知ベルコンポーネント
 import { NotificationBell } from '@components/organisms/NotificationBell.js';
 
@@ -81,11 +88,58 @@ function showDashboard() {
   // 権限に応じてUIを制御
   applyRoleBasedUI();
 
+  // アクティビティトラッカーを初期化
+  initializeActivityTracker();
+
   // 通知ベルを初期化
   initNotificationBell();
 
   // 会社ビューモード（Admin専用）
   initCompanyViewMode();
+}
+
+/**
+ * アクティビティトラッカーを初期化
+ */
+function initializeActivityTracker() {
+  if (typeof firebase === 'undefined' || !firebase.firestore) return;
+
+  const db = firebase.firestore();
+  const companyDomain = getUserCompanyDomain();
+  const userId = sessionStorage.getItem('company_user_id') || '';
+  const companiesJson = sessionStorage.getItem('available_companies');
+  let companyName = companyDomain;
+
+  if (companiesJson) {
+    try {
+      const companies = JSON.parse(companiesJson);
+      const current = companies.find(c => c.companyDomain === companyDomain);
+      if (current) {
+        companyName = current.companyName || companyDomain;
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  initActivityTracker(db, {
+    userId,
+    userName: userId,
+    companyDomain,
+    companyName
+  });
+
+  // Firebase認証切れイベントをリッスン
+  window.addEventListener('firebaseAuthExpired', () => {
+    showToast('セッションが切れました。再度ログインしてください。', 'warning');
+    handleLogout();
+  }, { once: true });
+
+  // 定期的に lastActiveAt を更新（5分ごと）
+  setInterval(() => {
+    const docId = sessionStorage.getItem('company_user_doc_id');
+    if (docId) {
+      updateLastActive(docId);
+    }
+  }, 5 * 60 * 1000);
 }
 
 /**
@@ -638,6 +692,16 @@ async function switchSection(sectionName, options = {}) {
     initAnnouncementsSection();
   }
 
+  // 管理画面利用状況セクションに切り替えた場合
+  if (sectionName === 'admin-usage') {
+    initAdminUsageSection();
+  }
+
+  // 広告費用管理セクションに切り替えた場合
+  if (sectionName === 'ad-costs') {
+    initAdCostsSection();
+  }
+
   // Job-Manage埋め込みセクションに切り替えた場合は初期化
   if (sectionName === 'job-manage') {
     // 戻るボタンのイベントハンドラー設定（動的読み込み対応）
@@ -663,6 +727,9 @@ async function switchSection(sectionName, options = {}) {
   if (sectionName === 'company-detail') {
     initCompanyDetailSection();
   }
+
+  // セクション表示をトラッキング
+  trackSectionView(sectionName);
 
   // 切り替え完了（次フレームで解除）
   requestAnimationFrame(() => {
@@ -795,6 +862,11 @@ function setupCompanySelectModal() {
     if (result.success) {
       hideCompanySelectModal();
       showDashboard();
+      // ログインをトラッキング
+      if (result.userId) {
+        sessionStorage.setItem('company_user_doc_id', result.userId);
+        trackLogin(result.userId);
+      }
       navigateToJobManage(result.companyDomain, result.companyName, 'overview', null, 'jobs');
     } else {
       showToast(result.error || '会社の選択に失敗しました', 'error');
@@ -898,6 +970,11 @@ function bindEvents() {
         } else {
           // 単一会社の場合は直接遷移
           showDashboard();
+          // ログインをトラッキング
+          if (result.userId) {
+            sessionStorage.setItem('company_user_doc_id', result.userId);
+            trackLogin(result.userId);
+          }
           navigateToJobManage(result.companyDomain, result.companyName || result.companyDomain, 'overview', null, 'jobs');
         }
       } else {
