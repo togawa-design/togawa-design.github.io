@@ -64,6 +64,9 @@ import { initAdminUsageSection } from './admin-usage.js';
 // 広告費用管理
 import { initAdCostsSection } from './ad-costs.js';
 
+// 広告URL発行
+import { initAdUrlSection } from './ad-url.js';
+
 // 通知ベルコンポーネント
 import { NotificationBell } from '@components/organisms/NotificationBell.js';
 
@@ -700,6 +703,11 @@ async function switchSection(sectionName, options = {}) {
   // 広告費用管理セクションに切り替えた場合
   if (sectionName === 'ad-costs') {
     initAdCostsSection();
+  }
+
+  // 広告URL発行セクションに切り替えた場合
+  if (sectionName === 'ad-url') {
+    initAdUrlSection();
   }
 
   // Job-Manage埋め込みセクションに切り替えた場合は初期化
