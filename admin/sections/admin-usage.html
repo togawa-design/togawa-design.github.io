@@ -173,60 +173,123 @@
     display: flex;
   }
 
+  /* モーダル内のタイトル */
+  #company-usage-modal .modal-body h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+  }
+
+  #company-usage-modal .modal-body h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+
+  #company-usage-modal .modal-body h4:first-of-type {
+    margin-top: 0;
+  }
+
   .usage-detail-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: var(--bg-secondary);
+    padding: 1.25rem;
+    background: var(--bg-secondary, #f8f9fa);
     border-radius: 8px;
+    border: 1px solid var(--border-color);
   }
 
   .usage-detail-item {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   .usage-detail-item .label {
     font-size: 0.75rem;
     color: var(--text-secondary);
+    display: block;
   }
 
   .usage-detail-item .value {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: 700;
+    color: var(--primary-color);
+    display: block;
+  }
+
+  /* モーダル内テーブル */
+  #company-usage-modal .table-container {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
   }
 
   .activity-list {
-    max-height: 300px;
+    max-height: 250px;
     overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg, #fff);
   }
 
   .activity-item {
-    display: flex;
-    gap: 1rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-light);
-    font-size: 0.875rem;
+    display: grid;
+    grid-template-columns: 90px 100px 60px 1fr;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--border-light, #eee);
+    font-size: 0.8125rem;
+    align-items: center;
+  }
+
+  .activity-item:last-child {
+    border-bottom: none;
+  }
+
+  .activity-item:hover {
+    background: var(--bg-secondary, #f8f9fa);
   }
 
   .activity-time {
-    min-width: 80px;
     color: var(--text-muted);
+    font-size: 0.75rem;
   }
 
   .activity-user {
-    min-width: 100px;
     font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .activity-action {
-    min-width: 60px;
     color: var(--text-secondary);
   }
 
   .activity-section {
     color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* モーダル内バーチャート */
+  #company-usage-modal .usage-bar-chart {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.75rem;
   }
 
   /* 機能別タブ */
@@ -264,6 +327,13 @@
     text-align: center;
     padding: 2rem;
     color: var(--text-secondary);
+  }
+
+  .no-data-inline {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
   }
 
   .error-message {
