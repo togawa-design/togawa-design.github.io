@@ -3,6 +3,7 @@
  */
 
 import { config, USER_ROLES } from './config.js';
+import { showToast } from '@shared/utils.js';
 
 let firebaseAuth = null;
 let firebaseDb = null;
@@ -147,6 +148,59 @@ async function loadUserRole(uid, email) {
 export function checkSession() {
   const session = sessionStorage.getItem(config.sessionKey);
   return !!session;
+}
+
+/**
+ * Firebase Auth の認証状態を確認
+ * 認証が切れている場合は再ログインを促す
+ * @returns {boolean} 認証が有効かどうか
+ */
+export function checkFirebaseAuth() {
+  if (!firebaseAuth) return false;
+
+  const authMethod = sessionStorage.getItem('auth_method');
+
+  // 固定認証の場合はFirebase Authを使用していないのでスキップ
+  if (!authMethod || authMethod === 'legacy_fixed') {
+    return true; // 固定認証ユーザーはFirebase Auth不要
+  }
+
+  // Firebase Auth / Google認証の場合は currentUser を確認
+  if (!firebaseAuth.currentUser) {
+    console.warn('[Auth] Firebase Auth session expired');
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Firebase Auth の再認証を試行
+ * トークンが期限切れの場合に呼び出す
+ */
+export async function refreshFirebaseAuth() {
+  if (!firebaseAuth || !firebaseAuth.currentUser) {
+    return false;
+  }
+
+  try {
+    // トークンを強制的にリフレッシュ
+    await firebaseAuth.currentUser.getIdToken(true);
+    idToken = await firebaseAuth.currentUser.getIdToken();
+    console.log('[Auth] Firebase token refreshed');
+    return true;
+  } catch (error) {
+    console.error('[Auth] Failed to refresh token:', error);
+    return false;
+  }
+}
+
+/**
+ * 認証切れ時にログイン画面に戻す
+ */
+export function handleAuthExpired() {
+  showToast('セッションが切れました。再度ログインしてください。', 'warning');
+  handleLogout();
 }
 
 // ログイン処理（admin固定認証）

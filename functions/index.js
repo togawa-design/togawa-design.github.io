@@ -1230,37 +1230,62 @@ async function getFunnelData(client, days, companyDomain = null) {
     }
 
     // 会社指定がある場合は、その会社のファネルデータのみを取得
-    // ヘルパー関数：イベント数取得
-    const getEventCount = async (eventName) => {
+    // 最適化: 複数イベントを1回のリクエストで取得
+    const getMultipleEventCounts = async (eventNames) => {
       try {
         const [response] = await client.runReport({
           property: `properties/${GA4_PROPERTY_ID}`,
           dateRanges: [{ startDate, endDate }],
+          dimensions: [{ name: 'eventName' }],
           metrics: [{ name: 'eventCount' }],
           dimensionFilter: {
             andGroup: {
               expressions: [
-                { filter: { fieldName: 'eventName', stringFilter: { value: eventName } } },
-                { filter: { fieldName: 'customEvent:company_domain', stringFilter: { value: companyDomain } } }
+                {
+                  filter: {
+                    fieldName: 'eventName',
+                    inListFilter: { values: eventNames }
+                  }
+                },
+                {
+                  filter: {
+                    fieldName: 'customEvent:company_domain',
+                    stringFilter: { value: companyDomain }
+                  }
+                }
               ]
             }
           }
         });
-        return parseInt(response.rows?.[0]?.metricValues?.[0]?.value) || 0;
+
+        // レスポンスをイベント名→カウントのマップに変換
+        const counts = {};
+        eventNames.forEach(name => counts[name] = 0);
+        response.rows?.forEach(row => {
+          const eventName = row.dimensionValues[0].value;
+          const count = parseInt(row.metricValues[0].value) || 0;
+          counts[eventName] = count;
+        });
+        return counts;
       } catch (e) {
-        return 0;
+        console.warn('Failed to get event counts:', e.message);
+        const counts = {};
+        eventNames.forEach(name => counts[name] = 0);
+        return counts;
       }
     };
 
-    // 全てのAPI呼び出しを並列実行
-    const [companyViews, applyClicks, lineClicks, formSubmits, recentAppsResult, jobPerformance] = await Promise.all([
-      getEventCount('view_company_page'),
-      getEventCount('click_apply'),
-      getEventCount('click_line'),
-      getEventCount('form_submit'),
+    // 全てのAPI呼び出しを並列実行（イベント取得は1リクエストにまとめる）
+    const [eventCounts, recentAppsResult, jobPerformance] = await Promise.all([
+      getMultipleEventCounts(['view_company_page', 'click_apply', 'click_line', 'form_submit']),
       getRecentApplications(companyDomain, 50).catch(e => { console.warn('Failed to get recent applications:', e.message); return { applications: [] }; }),
       getJobPerformanceData(client, days, companyDomain).catch(e => { console.warn('Failed to get job performance:', e.message); return { jobs: [] }; })
     ]);
+
+    const companyViews = eventCounts['view_company_page'];
+    const applyClicks = eventCounts['click_apply'];
+    const lineClicks = eventCounts['click_line'];
+    const formSubmits = eventCounts['form_submit'];
 
     const totalConversions = applyClicks + lineClicks + formSubmits;
 
@@ -3951,5 +3976,118 @@ functions.http('resetLegacyPassword', async (req, res) => {
       success: false,
       error: 'パスワードリセットに失敗しました'
     });
+  }
+});
+
+// =====================================================
+// ドキュメント配信（開発環境専用）
+// Cloud Storage + 署名付きURL
+// =====================================================
+
+/**
+ * ドキュメントを署名付きURLで配信（開発環境専用）
+ * 認証なし - URLを知っていればアクセス可能
+ *
+ * 使用方法:
+ * GET /serveDoc?path=system/auth-design.html
+ * → Cloud Storageの署名付きURLにリダイレクト
+ */
+functions.http('serveDoc', async (req, res) => {
+  // CORS処理
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5500',
+    'https://togawa-design.github.io'
+  ];
+  const origin = req.get('Origin') || '';
+  if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+    res.set('Access-Control-Allow-Origin', origin);
+  }
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  try {
+    const docPath = req.query.path;
+
+    if (!docPath) {
+      res.status(400).json({ error: 'path parameter is required' });
+      return;
+    }
+
+    // パストラバーサル対策
+    const normalizedPath = docPath.replace(/\.\./g, '').replace(/^\/+/, '');
+
+    // 許可される拡張子
+    if (!normalizedPath.endsWith('.html')) {
+      res.status(400).json({ error: 'Only HTML files are allowed' });
+      return;
+    }
+
+    // 公開URLにリダイレクト（バケットは公開設定済み）
+    const publicUrl = `https://storage.googleapis.com/lset-dev-docs/docs/${normalizedPath}`;
+    res.redirect(302, publicUrl);
+
+  } catch (error) {
+    console.error('serveDoc error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ドキュメント一覧を取得（開発環境専用）
+ */
+functions.http('listDocs', async (req, res) => {
+  // CORS処理
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5500',
+    'https://togawa-design.github.io'
+  ];
+  const origin = req.get('Origin') || '';
+  if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+    res.set('Access-Control-Allow-Origin', origin);
+  }
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  try {
+    const bucket = admin.storage().bucket('lset-dev-docs');
+    const [files] = await bucket.getFiles({ prefix: 'docs/' });
+
+    const docs = files
+      .filter(file => file.name.endsWith('.html'))
+      .map(file => ({
+        path: file.name.replace('docs/', ''),
+        name: file.name.split('/').pop(),
+        updated: file.metadata.updated
+      }));
+
+    res.json({ success: true, docs });
+
+  } catch (error) {
+    console.error('listDocs error:', error);
+    res.status(500).json({ error: error.message });
   }
 });

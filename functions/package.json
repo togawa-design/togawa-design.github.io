@@ -19,7 +19,10 @@
     "deploy:auth": "npm run deploy:createCompanyUser && npm run deploy:createCompanyStaff && npm run deploy:deleteCompanyUser && npm run deploy:migrateCompanyUsers && npm run deploy:legacyLogin",
     "deploy:syncSalaryData": "gcloud functions deploy syncSalaryData --gen2 --runtime nodejs22 --trigger-http --allow-unauthenticated --region asia-northeast1 --project generated-area-484613-e3",
     "deploy:getSalaryData": "gcloud functions deploy getSalaryData --gen2 --runtime nodejs22 --trigger-http --allow-unauthenticated --region asia-northeast1 --project generated-area-484613-e3",
-    "deploy:salary": "npm run deploy:syncSalaryData && npm run deploy:getSalaryData"
+    "deploy:salary": "npm run deploy:syncSalaryData && npm run deploy:getSalaryData",
+    "deploy:serveDoc": "gcloud functions deploy serveDoc --gen2 --runtime nodejs22 --trigger-http --allow-unauthenticated --region asia-northeast1 --project lset-dev",
+    "deploy:listDocs": "gcloud functions deploy listDocs --gen2 --runtime nodejs22 --trigger-http --allow-unauthenticated --region asia-northeast1 --project lset-dev",
+    "deploy:docs": "npm run deploy:serveDoc && npm run deploy:listDocs"
   },
   "engines": {
     "node": "22"

@@ -12,6 +12,7 @@ import { initPageTracking, trackCTAClick } from '@shared/page-analytics.js';
 import '@shared/jobs-loader.js';
 import * as FirestoreService from '@shared/firestore-service.js';
 import { createApplicationNotification } from '@features/notifications/notification-service.js';
+import { initTracking, getTrackingDataForApplication } from '@shared/utm-tracking.js';
 
 // UTMパラメータのキー一覧
 const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
@@ -765,6 +766,9 @@ class CompanyLPPage {
 
   // UTMパラメータを取得・保存
   captureUTMParams() {
+    // 初回訪問とUTMパラメータを永続化（First-touch attribution用）
+    initTracking();
+
     const urlParams = new URLSearchParams(window.location.search);
 
     UTM_PARAMS.forEach(param => {
@@ -1128,6 +1132,10 @@ class CompanyLPPage {
         return null;
       }
 
+      // トラッキングデータを取得（UTM、初回訪問日時、LPデザインパターン）
+      const lpDesignPattern = this.lpSettings?.designPattern || 'standard';
+      const trackingData = getTrackingDataForApplication(lpDesignPattern);
+
       const applicationData = {
         companyDomain: data.company_domain,
         companyName: data.company_name,
@@ -1148,11 +1156,28 @@ class CompanyLPPage {
         source: document.referrer || 'direct',
         userAgent: navigator.userAgent,
         timestamp: new Date(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+
+        // トラッキングデータ（広告効果測定用）
+        utm_source: trackingData.utm_source,
+        utm_medium: trackingData.utm_medium,
+        utm_campaign: trackingData.utm_campaign,
+        utm_content: trackingData.utm_content,
+        utm_term: trackingData.utm_term,
+        landingPage: trackingData.landingPage,
+        lpDesignPattern: trackingData.lpDesignPattern,
+        firstVisitAt: trackingData.firstVisitAt,
+        daysToConversion: trackingData.daysToConversion
       };
 
       const docRef = await window.firebaseDb.collection('applications').add(applicationData);
       console.log('[Application] Saved to Firestore:', docRef.id);
+      console.log('[Application] Tracking data:', {
+        utm_source: trackingData.utm_source,
+        utm_medium: trackingData.utm_medium,
+        utm_campaign: trackingData.utm_campaign,
+        daysToConversion: trackingData.daysToConversion
+      });
       return docRef.id;
     } catch (error) {
       console.error('[Application] Failed to save:', error);
