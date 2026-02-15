@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E1XC94EG05"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    var debugMode = new URLSearchParams(window.location.search).has('debug_mode');
+    gtag('config', 'G-E1XC94EG05', { 'debug_mode': debugMode });
+  </script>
+
+  <!-- 基本SEO（動的に更新） -->
+  <title>求人情報 | L-SET</title>
+  <meta name="description" content="求人詳細ページ。高待遇求人が見つかります。">
+  <meta name="robots" content="index, follow">
+
+  <!-- OGP -->
+  <meta property="og:title" content="求人情報 | L-SET">
+  <meta property="og:description" content="求人詳細ページ。高待遇求人が見つかります。">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="L-SET">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/dev/favicon.ico" sizes="any">
+  <link rel="icon" href="/dev/assets/icon-UOgtcMxq.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/dev/assets/apple-touch-icon-BzAbfiIz.png">
+
+  <!-- テーマカラー -->
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- スタイルシート -->
+  <link rel="stylesheet" href="/dev/css/style.css">
+  <link rel="stylesheet" href="/dev/css/lp.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/dev/js/lp-D4zGkxys.js"></script>
+  <link rel="modulepreload" crossorigin href="/dev/js/modulepreload-polyfill-YP0FEG5d.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/utils-BNVq905i.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/jobs-loader-BCrPIti6.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/modal-BOD5e818.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/env-config-D7nHl_jQ.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/image-uploader-x8rXLj59.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/firestore-service-DLRBhsIB.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/LPEditor-D4u8uHPS.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/api-DNw_QHEo.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/page-analytics-DKT8Fxyi.js">
+  <link rel="modulepreload" crossorigin href="/dev/js/notification-service-ClOyQwj0.js">
+</head>
+<body class="lp-body">
+  <!-- LP専用ヘッダー -->
+  <header class="lp-header" role="banner">
+    <div class="lp-header-inner">
+      <div class="lp-logo">
+        <a href="./">
+          <img src="/dev/assets/logo-DTIMJJ5W.png" alt="L-SET" class="logo-img">
+        </a>
+      </div>
+      <div class="lp-header-cta">
+        <a href="#lp-apply" class="lp-btn-apply-header">
+          <span>WEBで応募</span>
+        </a>
+        <a href="tel:0120-000-000" class="lp-btn-tel-header">
+          <span class="tel-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+          </span>
+          <span>電話で応募</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main role="main" id="lp-main">
+    <!-- ローディング表示 -->
+    <div id="lp-loading" class="lp-loading">
+      <div class="loading-spinner"></div>
+      <p>読み込み中...</p>
+    </div>
+
+    <!-- LPコンテンツがここに動的に挿入される -->
+    <div id="lp-content"></div>
+  </main>
+
+  <!-- LP専用フッター -->
+  <footer class="lp-footer" role="contentinfo">
+    <div class="lp-footer-inner">
+      <div class="lp-footer-cta">
+        <p class="lp-footer-cta-text">まずはお気軽にご応募ください</p>
+        <div class="lp-footer-cta-buttons">
+          <a href="#lp-apply" class="lp-btn-apply-footer">WEBで応募する</a>
+          <a href="tel:0120-000-000" class="lp-btn-tel-footer">電話で応募する</a>
+        </div>
+      </div>
+      <div class="lp-footer-links">
+        <a href="./">トップページ</a>
+        <a href="./#jobs">求人一覧</a>
+        <a href="./privacy.html">プライバシーポリシー</a>
+        <a href="./legal.html">特定商取引法に基づく表記</a>
+      </div>
+      <p class="lp-footer-copyright"><small>&copy; 2025 L-SET All Rights Reserved.</small></p>
+    </div>
+  </footer>
+
+  <!-- 応募モーダル -->
+  <div id="apply-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content apply-modal-content">
+      <button class="modal-close" aria-label="閉じる">&times;</button>
+
+      <!-- 応募フォーム -->
+      <div id="apply-step-form" class="apply-step">
+        <h2 class="modal-title">応募フォーム</h2>
+        <p class="modal-subtitle" id="apply-job-info"></p>
+        <form id="apply-form" class="apply-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>お名前 <span class="required">*</span></label>
+              <input type="text" id="apply-name" placeholder="山田 太郎" required>
+            </div>
+            <div class="form-group">
+              <label>ふりがな <span class="required">*</span></label>
+              <input type="text" id="apply-name-kana" placeholder="やまだ たろう" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>生年月日 <span class="required">*</span></label>
+              <input type="date" id="apply-birthdate" required>
+            </div>
+            <div class="form-group">
+              <label>性別</label>
+              <select id="apply-gender">
+                <option value="">選択しない</option>
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>電話番号 <span class="required">*</span></label>
+            <input type="tel" id="apply-phone" placeholder="090-1234-5678" required>
+          </div>
+          <div class="form-group">
+            <label>メールアドレス <span class="required">*</span></label>
+            <input type="email" id="apply-email" placeholder="example@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>現在の住所（市区町村まで） <span class="required">*</span></label>
+            <input type="text" id="apply-address" placeholder="東京都渋谷区" required>
+          </div>
+          <div class="form-group">
+            <label>備考・質問（任意）</label>
+            <textarea id="apply-message" rows="3" placeholder="企業へのメッセージや質問があればご記入ください"></textarea>
+          </div>
+          <button type="submit" class="btn-primary btn-full">応募する</button>
+        </form>
+        <div id="apply-form-error" class="form-error" style="display: none;"></div>
+      </div>
+
+      <!-- 完了画面 -->
+      <div id="apply-step-complete" class="apply-step" style="display: none;">
+        <div class="apply-complete">
+          <div class="apply-complete-icon">&#10003;</div>
+          <h2 class="modal-title">応募が完了しました</h2>
+          <p class="modal-text">ご応募ありがとうございます。<br>企業からメールまたは電話でご連絡いたします。</p>
+          <div class="apply-complete-actions">
+            <button type="button" class="btn-primary modal-close-btn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</body>
+</html>

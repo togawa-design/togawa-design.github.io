@@ -1,0 +1,162 @@
+      <section id="section-announcements" class="admin-section">
+        <div class="section-header">
+          <h3>お知らせ管理</h3>
+          <button id="btn-add-announcement" class="btn-primary">+ 新規お知らせ</button>
+        </div>
+
+        <div class="info-box">
+          <p><strong>お知らせ機能について:</strong> 求職者や会社ユーザーに向けてお知らせを配信できます。掲載期間を設定することで自動的に公開/非公開を切り替えます。</p>
+        </div>
+
+        <!-- フィルター -->
+        <div class="filter-row" style="margin-bottom: 1rem; display: flex; gap: 1rem;">
+          <select id="announcement-status-filter" class="filter-select">
+            <option value="all">すべてのステータス</option>
+            <option value="published">公開中</option>
+            <option value="draft">下書き</option>
+          </select>
+          <select id="announcement-target-filter" class="filter-select">
+            <option value="all">すべての対象</option>
+            <option value="job_seekers">求職者向け</option>
+            <option value="company_users">会社ユーザー向け</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table" id="announcements-table">
+            <thead>
+              <tr>
+                <th>タイトル</th>
+                <th>対象</th>
+                <th>ステータス</th>
+                <th>掲載期間</th>
+                <th>作成日</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="announcements-tbody">
+              <tr>
+                <td colspan="6" class="loading-cell">データを読み込み中...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 空の場合の表示 -->
+        <div id="announcements-empty" class="empty-state" style="display: none;">
+          <p>お知らせはまだありません</p>
+          <button class="btn-primary" onclick="document.getElementById('btn-add-announcement').click()">最初のお知らせを作成</button>
+        </div>
+
+        <!-- お知らせ作成/編集モーダル -->
+      <div class="modal-overlay" id="announcement-modal" style="display: none;">
+        <div class="modal-content modal-medium announcement-modal">
+          <div class="modal-header">
+            <h4 id="announcement-modal-title">
+              <span class="modal-title-icon">📢</span>
+              新規お知らせ
+            </h4>
+            <button class="modal-close" onclick="closeAnnouncementModal()">&times;</button>
+          </div>
+          <form id="announcement-form">
+            <input type="hidden" id="announcement-id">
+            <div class="modal-body">
+              <!-- タイトル -->
+              <div class="form-group">
+                <label for="announcement-title" class="form-label-icon">
+                  <span class="label-icon">📝</span>
+                  タイトル <span class="required">*</span>
+                </label>
+                <input type="text" id="announcement-title" class="form-input-styled" required placeholder="例: システムメンテナンスのお知らせ">
+              </div>
+
+              <!-- 本文 -->
+              <div class="form-group">
+                <label for="announcement-content" class="form-label-icon">
+                  <span class="label-icon">📄</span>
+                  本文 <span class="required">*</span>
+                </label>
+                <textarea id="announcement-content" class="form-textarea-styled" rows="6" required placeholder="お知らせの詳細内容を入力してください..."></textarea>
+              </div>
+
+              <!-- 配信設定 -->
+              <div class="form-section">
+                <h5 class="form-section-title">
+                  <span class="section-icon">⚙️</span>
+                  配信設定
+                </h5>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="announcement-target" class="form-label-small">対象者</label>
+                    <select id="announcement-target" class="form-select-styled">
+                      <option value="all">👥 全員</option>
+                      <option value="job_seekers">🔍 求職者向け</option>
+                      <option value="company_users">🏢 会社ユーザー向け</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="announcement-status" class="form-label-small">ステータス</label>
+                    <select id="announcement-status" class="form-select-styled">
+                      <option value="draft">📝 下書き</option>
+                      <option value="published">✅ 公開</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 公開期間 -->
+              <div class="form-section">
+                <h5 class="form-section-title">
+                  <span class="section-icon">📅</span>
+                  公開期間
+                </h5>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="announcement-start-date" class="form-label-small">開始日</label>
+                    <input type="date" id="announcement-start-date" class="form-input-styled">
+                  </div>
+                  <div class="form-group">
+                    <label for="announcement-end-date" class="form-label-small">終了日</label>
+                    <input type="date" id="announcement-end-date" class="form-input-styled">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 表示順 -->
+              <div class="form-group">
+                <label for="announcement-priority" class="form-label-small">
+                  表示順 <span class="form-hint">（数字が小さいほど上に表示）</span>
+                </label>
+                <input type="number" id="announcement-priority" class="form-input-styled form-input-narrow" value="0" min="0">
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" onclick="closeAnnouncementModal()">キャンセル</button>
+              <button type="submit" class="btn-primary" id="btn-save-announcement">
+                <span class="btn-icon">💾</span>
+                保存
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 削除確認モーダル -->
+      <div class="modal-overlay" id="announcement-delete-modal" style="display: none;">
+        <div class="modal-content modal-small">
+          <div class="modal-header">
+            <h4>お知らせの削除</h4>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>このお知らせを削除しますか？</p>
+            <p class="text-muted" id="delete-announcement-title"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeDeleteModal()">キャンセル</button>
+            <button type="button" class="btn-danger" id="btn-confirm-delete">削除</button>
+          </div>
+        </div>
+      </div>
+      </section>

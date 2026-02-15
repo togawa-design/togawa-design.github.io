@@ -1,0 +1,556 @@
+<section id="section-ad-costs" class="admin-section">
+  <div class="section-header">
+    <h3>広告費用管理</h3>
+  </div>
+
+  <div class="analytics-tabs">
+    <button class="analytics-tab active" data-tab="input">入力</button>
+    <button class="analytics-tab" data-tab="list">一覧</button>
+    <button class="analytics-tab" data-tab="report">レポート</button>
+    <button class="analytics-tab" data-tab="import">インポート</button>
+  </div>
+
+  <div id="ad-costs-content" class="ad-costs-content">
+    <!-- 動的に挿入 -->
+  </div>
+
+  <!-- 編集モーダル -->
+  <div id="ad-cost-edit-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4>広告費用編集</h4>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 動的に挿入 -->
+      </div>
+    </div>
+  </div>
+
+  <style>
+  /* コンテンツエリア */
+  .ad-costs-content {
+    min-height: 400px;
+  }
+
+  /* フィルター */
+  .ad-costs-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .ad-costs-filters .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .ad-costs-filters .filter-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  /* 入力タブ */
+  .ad-costs-input-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .ad-cost-channel-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 120px 1fr 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .ad-cost-channel-card .channel-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .ad-cost-channel-card .channel-icon {
+    font-size: 1.25rem;
+  }
+
+  .ad-cost-channel-card .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .ad-cost-channel-card .input-group label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .ad-cost-channel-card .input-group input {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  .ad-cost-channel-card .btn-save {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .ad-cost-channel-card .btn-save:hover {
+    opacity: 0.9;
+  }
+
+  .ad-cost-channel-card .btn-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 一覧タブ */
+  .ad-costs-list-container {
+    overflow-x: auto;
+  }
+
+  /* ========================================
+     レポートタブ
+     ======================================== */
+  .report-section {
+    margin-bottom: 2rem;
+  }
+
+  .report-section h4 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  /* サマリーカード */
+  .report-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .report-summary-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .report-summary-card .summary-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .report-summary-card .summary-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .report-summary-card .summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+
+  .report-summary-card .summary-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .report-summary-card.highlight {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+    border-color: var(--primary-color);
+  }
+
+  /* CPAカード特別スタイル */
+  .cpa-card {
+    border-left: 4px solid var(--primary-color);
+  }
+
+  .cpa-card.good {
+    border-left-color: var(--success-color, #22c55e);
+  }
+
+  .cpa-card.warning {
+    border-left-color: var(--warning-color, #f59e0b);
+  }
+
+  .cpa-card.danger {
+    border-left-color: var(--error-color, #ef4444);
+  }
+
+  /* グラフエリア */
+  .report-chart-container {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .report-chart-container h5 {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+  }
+
+  .chart-wrapper {
+    position: relative;
+    height: 300px;
+  }
+
+  /* チャンネル別テーブル */
+  .channel-breakdown-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .channel-breakdown-table th,
+  .channel-breakdown-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .channel-breakdown-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .channel-breakdown-table td {
+    font-size: 0.875rem;
+  }
+
+  .channel-breakdown-table .channel-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .channel-breakdown-table .money {
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .channel-breakdown-table .cpa-value {
+    font-weight: 600;
+  }
+
+  .channel-breakdown-table .cpa-value.good {
+    color: var(--success-color, #22c55e);
+  }
+
+  .channel-breakdown-table .cpa-value.warning {
+    color: var(--warning-color, #f59e0b);
+  }
+
+  .channel-breakdown-table .cpa-value.danger {
+    color: var(--error-color, #ef4444);
+  }
+
+  /* 棒グラフ（CSS版） */
+  .bar-chart-css {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .bar-chart-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 80px;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .bar-chart-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bar-chart-bar {
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar-chart-fill {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.5s ease;
+  }
+
+  .bar-chart-fill.google { background: #4285f4; }
+  .bar-chart-fill.tiktok { background: #000000; }
+  .bar-chart-fill.x { background: #1da1f2; }
+  .bar-chart-fill.meta { background: #1877f2; }
+  .bar-chart-fill.yahoo { background: #720e9e; }
+  .bar-chart-fill.line { background: #06c755; }
+
+  .bar-chart-value {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  /* インポートタブ */
+  .import-section {
+    margin-bottom: 2rem;
+  }
+
+  .import-section h4 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+
+  .platform-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .platform-link-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .platform-link-card .platform-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    text-align: center;
+  }
+
+  .platform-link-card .platform-info {
+    flex: 1;
+  }
+
+  .platform-link-card .platform-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .platform-link-card .platform-note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .platform-link-card .btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+
+  .platform-link-card .btn-link:hover {
+    text-decoration: underline;
+  }
+
+  /* CSVインポートエリア */
+  .csv-import-area {
+    background: var(--bg-secondary, #f8f9fa);
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .csv-import-area.dragover {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.05);
+  }
+
+  .csv-format-select {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .csv-format-select label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg, #fff);
+  }
+
+  .csv-format-select label:has(input:checked) {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .csv-format-select input[type="radio"] {
+    margin: 0;
+  }
+
+  .file-input-wrapper {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .file-input-wrapper input[type="file"] {
+    display: none;
+  }
+
+  .btn-file-select {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-color, #3b82f6);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .btn-file-select:hover {
+    opacity: 0.9;
+  }
+
+  .selected-file-name {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  /* プレビューテーブル */
+  .csv-preview {
+    margin-top: 1.5rem;
+    text-align: left;
+  }
+
+  .csv-preview h5 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .csv-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .csv-preview-table th,
+  .csv-preview-table td {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    text-align: left;
+  }
+
+  .csv-preview-table th {
+    background: var(--bg-tertiary, #e9ecef);
+    font-weight: 600;
+  }
+
+  .import-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn-import {
+    padding: 0.75rem 2rem;
+    background: var(--success-color, #22c55e);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-import:hover {
+    opacity: 0.9;
+  }
+
+  .btn-import:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* モーダル */
+  #ad-cost-edit-modal {
+    display: none;
+  }
+
+  #ad-cost-edit-modal.active {
+    display: flex;
+  }
+
+  /* 保存済みインジケーター */
+  .saved-indicator {
+    font-size: 0.75rem;
+    color: var(--success-color, #22c55e);
+    margin-left: 0.5rem;
+  }
+
+  /* レスポンシブ */
+  @media (max-width: 768px) {
+    .ad-cost-channel-card {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .ad-cost-channel-card .channel-name {
+      font-size: 1rem;
+    }
+
+    .ad-costs-filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .report-summary-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .bar-chart-row {
+      grid-template-columns: 80px 1fr 60px;
+    }
+  }
+  </style>
+</section>

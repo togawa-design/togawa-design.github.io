@@ -1,0 +1,342 @@
+<section id="section-ad-url" class="admin-section">
+  <div class="section-header">
+    <h3>広告URL発行</h3>
+  </div>
+
+  <div class="ad-url-content">
+    <!-- フィルター -->
+    <div class="ad-url-filters">
+      <div class="filter-group">
+        <label class="filter-label">会社選択</label>
+        <select id="ad-url-company-select" class="filter-select">
+          <option value="">会社を選択...</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">求人選択</label>
+        <select id="ad-url-job-select" class="filter-select" disabled>
+          <option value="">求人を選択...</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LP URL 表示 -->
+    <div id="ad-url-lp-info" class="ad-url-lp-info" style="display: none;">
+      <div class="lp-url-card">
+        <div class="lp-url-label">LP URL</div>
+        <div class="lp-url-value">
+          <span id="ad-url-base-url"></span>
+          <button type="button" class="btn-copy-small" data-copy-target="base-url" title="URLをコピー">📋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- チャンネル別URL -->
+    <div id="ad-url-channels" class="ad-url-channels" style="display: none;">
+      <h4>広告用URL（UTMパラメーター付き）</h4>
+      <p class="ad-url-description">各広告プラットフォームにコピペしてください</p>
+
+      <!-- カスタマイズオプション -->
+      <div class="ad-url-options">
+        <div class="option-group">
+          <label class="option-label">utm_medium</label>
+          <select id="ad-url-medium-select" class="option-select">
+            <option value="paid">paid（汎用）</option>
+            <option value="cpc">cpc（検索広告）</option>
+            <option value="display">display（ディスプレイ）</option>
+            <option value="video">video（動画広告）</option>
+            <option value="social">social（SNS広告）</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="ad-url-channel-list" class="ad-url-channel-list">
+        <!-- 動的に生成 -->
+      </div>
+    </div>
+
+    <!-- 初期状態メッセージ -->
+    <div id="ad-url-empty-state" class="ad-url-empty-state">
+      <div class="empty-icon">🔗</div>
+      <p>会社と求人を選択すると、広告用URLを発行できます</p>
+    </div>
+  </div>
+
+  <style>
+  /* コンテンツエリア */
+  .ad-url-content {
+    min-height: 400px;
+  }
+
+  /* フィルター */
+  .ad-url-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .ad-url-filters .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 200px;
+  }
+
+  .ad-url-filters .filter-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .ad-url-filters .filter-select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: var(--card-bg, #fff);
+  }
+
+  .ad-url-filters .filter-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* LP URL表示 */
+  .ad-url-lp-info {
+    margin-bottom: 1.5rem;
+  }
+
+  .lp-url-card {
+    background: var(--bg-secondary, #f8f9fa);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .lp-url-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .lp-url-value {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
+  }
+
+  .btn-copy-small {
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .btn-copy-small:hover {
+    background: var(--bg-secondary);
+  }
+
+  /* チャンネル別URL */
+  .ad-url-channels h4 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+
+  .ad-url-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  /* カスタマイズオプション */
+  .ad-url-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 8px;
+  }
+
+  .ad-url-options .option-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ad-url-options .option-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .ad-url-options .option-select {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: var(--card-bg, #fff);
+  }
+
+  /* チャンネルリスト */
+  .ad-url-channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .ad-url-channel-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid var(--channel-color, var(--primary-color));
+  }
+
+  .channel-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .channel-icon {
+    font-size: 1.25rem;
+  }
+
+  .channel-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .channel-url-box {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .channel-url-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: var(--bg-secondary, #f8f9fa);
+    color: var(--text-primary);
+  }
+
+  .channel-url-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+
+  .btn-copy {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color, #3b82f6);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .btn-copy:hover {
+    opacity: 0.9;
+  }
+
+  .btn-copy.copied {
+    background: var(--success-color, #22c55e);
+  }
+
+  /* 詳細版トグル */
+  .channel-advanced {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .channel-advanced-toggle {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .channel-advanced-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .channel-advanced-content {
+    display: none;
+    margin-top: 0.5rem;
+  }
+
+  .channel-advanced-content.show {
+    display: block;
+  }
+
+  .advanced-url-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .advanced-url-note {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* 空状態 */
+  .ad-url-empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+  }
+
+  .ad-url-empty-state .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  /* レスポンシブ */
+  @media (max-width: 768px) {
+    .ad-url-filters {
+      flex-direction: column;
+    }
+
+    .ad-url-filters .filter-group {
+      min-width: 100%;
+    }
+
+    .channel-url-box {
+      flex-direction: column;
+    }
+
+    .btn-copy {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .ad-url-options {
+      flex-direction: column;
+    }
+  }
+  </style>
+</section>
